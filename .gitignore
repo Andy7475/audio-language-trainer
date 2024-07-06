@@ -1,0 +1,5 @@
+.env
+*.env
+*.pyc
+*.ipynb_checkpoints
+audio_language_trainer_code.py

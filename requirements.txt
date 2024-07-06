@@ -1,0 +1,15 @@
+python-dotenv
+google-auth
+google-cloud-core
+google-cloud-aiplatform
+google-cloud-texttospeech
+google-cloud-translate
+pydub
+networkx
+spacy
+pandas
+numpy
+matplotlib
+altair
+requests
+anthropic
