@@ -195,3 +195,11 @@ def play_audio(segment: AudioSegment, filename: str = None, autoplay: bool = Fal
         os.remove(filename)
 
     return audio
+
+
+def join_audio_segments(audio_segments: list[AudioSegment], gap_ms=100) -> AudioSegment:
+    """Joins audio segments together with a tiny gap between each one in ms
+    Returns a single joined up audio segment"""
+    gap_audio = AudioSegment.silent(duration=gap_ms)
+    audio_with_gap = [audio_seg + gap_audio for audio_seg in audio_segments]
+    return sum(audio_with_gap)
