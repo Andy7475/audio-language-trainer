@@ -12,4 +12,7 @@ numpy
 matplotlib
 altair
 requests
-anthropic
+anthropic                      #for querying the Anthropic models hosted on Google Cloud
+pytest
+hvplot
+colorcet
