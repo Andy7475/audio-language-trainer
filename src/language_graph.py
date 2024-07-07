@@ -117,6 +117,7 @@ def plot_sentence_graph(G: nx.DiGraph):
         pos=pos,
         edge_color="black",
         node_color=node_colors,
+        arrowhead_length=0.1,
         with_labels=False,  # We'll add labels separately
         arrows=True,
         node_size=1000,
@@ -151,76 +152,200 @@ def plot_sentence_graph(G: nx.DiGraph):
     return combined_plot
 
 
-# def create_graph_from_text(self, input_text: list[tuple], custom_stop_words=[",", ";"]):
-#     """From a list of tuples like [('personA', 'hello'), ('personB', 'bye')]"""
-#     self.lemmas_pos = []
-#     self.max_target_phrase_length = 0
-#     self.input_phrases = input_text
+from py2cytoscape.data.cynetwork import CyNetwork
+from py2cytoscape.data.cyrest_client import CyRestClient
+import networkx as nx
 
-#     utterances = []
-#     for person, utterance in input_text:
-#         doc = self.nlp(utterance.lower())
-#         utterance = tuple()
-#         for sent in doc.sents:
-#             sentence_pos = []
-#             phrase = tuple()
 
-#             for token in sent:
-#                 lemma = token.lemma_
-#                 pos = token.pos_
-#                 text = token.text
-#                 if lemma in custom_stop_words:
-#                     continue
+def custom_networkx_to_cytoscape(G):
+    cyjs = {"data": {}, "elements": {"nodes": [], "edges": []}}
 
-#                 if pos == "PUNCT":
-#                     if lemma in self.punct_to_EOS:
-#                         word = "<EOS>"
-#                     else:
-#                         word = text
-#                 elif pos in ["PRON"]:  # so I and me get written separately
-#                     word = text
-#                 else:
-#                     word = text  # used to be lemmas but removing this now as too hard to correct sentence fragments with lots of lemmas
-#                 if word != "<EOS>":  # don't have it as part of target phrases
-#                     phrase = phrase + (word,)
-#                     utterance = utterance + (word,)
-#                 sentence_pos.append({word: {"pos": pos}})
+    for node, data in G.nodes(data=True):
+        cyjs["elements"]["nodes"].append(
+            {
+                "data": {
+                    "id": str(node),
+                    "name": str(node),
+                    **{k: str(v) for k, v in data.items()},
+                }
+            }
+        )
 
-#             self.target_phrases |= {phrase}
-#             # phrase_length = len([word for word in phrase if word not in self.EOS_tokens]) #don't include EOS when calculating phrase length
-#             self.max_target_phrase_length = max(
-#                 len(phrase), self.max_target_phrase_length
-#             )
+    for source, target, data in G.edges(data=True):
+        cyjs["elements"]["edges"].append(
+            {
+                "data": {
+                    "source": str(source),
+                    "target": str(target),
+                    **{k: str(v) for k, v in data.items()},
+                }
+            }
+        )
 
-#             self.lemmas_pos.append(sentence_pos)
-#         self.target_phrases |= {utterance}
-#     for lemmas_pos_sentence in self.lemmas_pos:
-#         if len(lemmas_pos_sentence) == 1:  # single word utterance
-#             curr_lemma = list(lemmas_pos_sentence[0].keys())[0]
-#             curr_pos = lemmas_pos_sentence[0][curr_lemma]["pos"]
-#             if curr_pos == "PUNCT":
-#                 continue
-#             self.add_word(curr_lemma, curr_pos)
-#         else:
-#             for i in range(len(lemmas_pos_sentence) - 1):
-#                 curr_lemma = list(lemmas_pos_sentence[i].keys())[0]
-#                 curr_pos = lemmas_pos_sentence[i][curr_lemma]["pos"]
-#                 if curr_pos == "PUNCT":
-#                     # print("punct lemma ", curr_lemma)
-#                     continue
+    return cyjs
 
-#                 next_lemma = list(lemmas_pos_sentence[i + 1].keys())[0]
-#                 next_pos = lemmas_pos_sentence[i + 1][next_lemma]["pos"]
-#                 if next_pos == "PUNCT":  # end the sentence
-#                     # print("punct lemma ", next_lemma)
-#                     if next_lemma in self.punct_to_EOS:
-#                         next_lemma = "<EOS>"
-#                     elif next_lemma in ["?"]:  # punctuation to keep
-#                         next_lemma = next_lemma
-#                     else:
-#                         continue
 
-#                 self.add_word(curr_lemma, curr_pos)
-#                 self.add_word(next_lemma, next_pos)
-#                 self.add_word_sequence(curr_lemma, next_lemma)
-#     self.target_phrases_not_yet_heard = self.target_phrases.copy()
+import ipycytoscape
+import ipywidgets as widgets
+import networkx as nx
+
+
+class POSNode(ipycytoscape.Node):
+    def __init__(self, name, pos):
+        super().__init__()
+        self.data["id"] = str(name)
+        self.data["label"] = str(name) + " (" + str(pos) + ")"
+        self.classes = pos
+
+
+def create_interactive_sentence_graph(G: nx.DiGraph):
+    # Define a color map for POS tags
+    pos_color_map = {
+        "NOUN": "#FFA07A",  # Light Salmon
+        "VERB": "#98FB98",  # Pale Green
+        "ADJ": "#87CEFA",  # Light Sky Blue
+        "ADV": "#DDA0DD",  # Plum
+        "AUX": "#F0E68C",  # Khaki
+        "PRON": "#FFB6C1",  # Light Pink
+        "DET": "#E6E6FA",  # Lavender
+        "PUNCT": "#D3D3D3",  # Light Gray
+        "EOS": "#FFDAB9",  # Peach Puff
+        "ADP": "#20B2AA",  # Light Sea Green
+        "INTJ": "#FF6347",  # Tomato
+        "PROPN": "#9370DB",  # Medium Purple
+        "UNKNOWN": "#FFFFFF",  # White (for any unrecognized POS)
+    }
+
+    cytoscapeobj = ipycytoscape.CytoscapeWidget()
+
+    def update_graph():
+        # Create a new NetworkX graph with POSNode objects
+        G_pos = nx.DiGraph()
+        node_mapping = (
+            {}
+        )  # To keep track of original nodes and their corresponding POSNode objects
+        for node, data in G.nodes(data=True):
+            pos = data.get("pos", "UNKNOWN")
+            pos_node = POSNode(node, pos)
+            G_pos.add_node(pos_node)
+            node_mapping[node] = pos_node
+
+        for source, target in G.edges():
+            G_pos.add_edge(node_mapping[source], node_mapping[target])
+
+        cytoscapeobj.graph.clear()
+        cytoscapeobj.graph.add_graph_from_networkx(G_pos, directed=True)
+
+    update_graph()
+
+    # Set up the visual style
+    style = [
+        {
+            "selector": "node",
+            "style": {
+                "label": "data(label)",
+                "text-valign": "center",
+                "text-halign": "center",
+                "font-size": "12px",
+                "width": "60px",
+                "height": "60px",
+            },
+        },
+        {
+            "selector": "edge",
+            "style": {
+                "width": 3,
+                "line-color": "#999",
+                "target-arrow-color": "#999",
+                "target-arrow-shape": "triangle",
+                "curve-style": "bezier",
+            },
+        },
+    ]
+
+    # Add color styles for each POS
+    for pos, color in pos_color_map.items():
+        style.append({"selector": f"node.{pos}", "style": {"background-color": color}})
+
+    cytoscapeobj.set_style(style)
+
+    # Set the layout
+    cytoscapeobj.set_layout(name="cose", nodeSpacing=80)
+
+    # Create a button to regenerate the graph
+    button = widgets.Button(description="Regenerate Graph")
+    button.on_click(lambda b: update_graph())
+
+    return widgets.VBox([button, cytoscapeobj])
+
+
+import networkx as nx
+import random
+from collections import defaultdict
+
+
+def enrich_graph(G: nx.DiGraph, num_enrichments: int = 5):
+    def select_node_to_enrich(pos: str):
+        pos_nodes = [n for n in G.nodes() if G.nodes[n]["pos"] == pos]
+        if not pos_nodes:
+            return None
+        weights = [1 / (G.degree(n) + 1) for n in pos_nodes]
+        return random.choices(pos_nodes, weights=weights)[0]
+
+    def find_connection_candidate(target_pos: str, exclude_node: str):
+        candidates = [
+            n
+            for n in G.nodes()
+            if G.nodes[n]["pos"] == target_pos and n != exclude_node
+        ]
+        if not candidates:
+            return None
+        weights = [1 / (G.degree(n) + 1) for n in candidates]
+        return random.choices(candidates, weights=weights)[0]
+
+    # Build a dictionary of POS connections and their directions
+    pos_connections = defaultdict(lambda: defaultdict(int))
+    for source, target in G.edges():
+        source_pos = G.nodes[source]["pos"]
+        target_pos = G.nodes[target]["pos"]
+        pos_connections[source_pos][target_pos] += 1
+
+    for _ in range(num_enrichments):
+        # Select a random POS to enrich
+        pos_to_enrich = random.choice(
+            list(set(nx.get_node_attributes(G, "pos").values()))
+        )
+
+        # Select a poorly connected node of that POS
+        node_to_enrich = select_node_to_enrich(pos_to_enrich)
+        if node_to_enrich is None:
+            continue
+
+        # Find a target POS using weighted random sampling
+        target_pos_candidates = pos_connections[pos_to_enrich]
+        if not target_pos_candidates:
+            continue
+
+        target_pos_list = list(target_pos_candidates.keys())
+        target_pos_weights = list(target_pos_candidates.values())
+        target_pos = random.choices(target_pos_list, weights=target_pos_weights, k=1)[0]
+
+        # Find a poorly connected node of the target POS that isn't already connected
+        new_connection = find_connection_candidate(target_pos, node_to_enrich)
+        if new_connection is None:
+            continue
+
+        # Add the new edge, maintaining the original direction
+        if G.has_edge(node_to_enrich, new_connection):
+            continue
+
+        G.add_edge(node_to_enrich, new_connection)
+        print(
+            f"Added edge from {node_to_enrich} ({pos_to_enrich}) to {new_connection} ({target_pos})"
+        )
+
+    return G
+
+
+# Usage example:
+# enriched_graph = enrich_graph(original_graph, num_enrichments=10)
