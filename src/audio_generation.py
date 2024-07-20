@@ -2,12 +2,18 @@ import io
 import os
 import sys
 import uuid
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import IPython.display as ipd
+import librosa
+import numpy as np
+import soundfile as sf
 from google.cloud import texttospeech
 from google.cloud import translate_v2 as translate
 from pydub import AudioSegment
+
+from src.config_loader import config
+from src.translation import translate_from_english
 
 
 def setup_ffmpeg():
@@ -26,114 +32,19 @@ def setup_ffmpeg():
 setup_ffmpeg()
 
 
-def get_optimal_voice_models(
-    language_code: str,
-    preferred_country_code: Optional[str] = None,
-    cheap_voices: bool = False,
-) -> Dict[str, str]:
-    """Returns a dictionary of keys: language_code - (e.g. en-GB), male_voice and female_voice from Google TTS services. voice models to use based on a 2-char language code and preferred country code,
-    e.g. en and GB would prefer british english voices over en and US. if cheap = True it picks poor quality but cheaper voices
-    which is useful for testing. Otherwise it priorities voices in the rank Studio > Neural2 > Wavenet > Standard
-    which you'll want for production.
-
-    These voice codes are needed for TTS and translation services at Google API"""
-    # Initialize clients
-    tts_client = texttospeech.TextToSpeechClient()
-    translate_client = translate.Client()
-
-    # Check if the language is supported by Google Translate
-    supported_languages = [
-        lang["language"] for lang in translate_client.get_languages()
-    ]
-    if language_code not in supported_languages:
-        raise ValueError(
-            f"Language code '{language_code}' is not supported by Google Translate"
-        )
-
-    # Get all available voices
-    voices = tts_client.list_voices().voices
-
-    # Filter voices for the given language code
-    language_voices = [
-        v
-        for v in voices
-        if any(lc.startswith(language_code) for lc in v.language_codes)
-    ]
-
-    if not language_voices:
-        raise ValueError(f"No voices found for language code '{language_code}'")
-
-    # Determine the best language code
-    available_codes = set(sum((list(v.language_codes) for v in language_voices), []))
-    if preferred_country_code:
-        preferred_full_code = f"{language_code}-{preferred_country_code.upper()}"
-        if preferred_full_code in available_codes:
-            best_language_code = preferred_full_code
-        else:
-            print(
-                f"Preferred country code '{preferred_country_code}' not available for {language_code}"
-            )
-            best_language_code = sorted(available_codes)[0]
-    else:
-        best_language_code = sorted(available_codes)[0]
-
-    # Print a message if there are multiple country codes available
-    if len(available_codes) > 1:
-        print(
-            f"Multiple country codes available for {language_code}: {', '.join(sorted(available_codes))}"
-        )
-
-    def select_best_voice(
-        voices: List[texttospeech.Voice], gender: texttospeech.SsmlVoiceGender
-    ) -> texttospeech.Voice:
-        # Filter voices by gender
-        gender_voices = [v for v in voices if v.ssml_gender == gender]
-
-        # Prefer voices matching the best_language_code
-        matching_voices = [
-            v for v in gender_voices if best_language_code in v.language_codes
-        ]
-
-        voices_to_choose = matching_voices if matching_voices else gender_voices
-
-        # Define voice type preference order
-        voice_types = (
-            ["Standard", "Wavenet", "Neural", "Studio"]
-            if cheap_voices
-            else ["Studio", "Neural", "Wavenet", "Standard"]
-        )
-
-        # Prefer voice types in the specified order
-        for voice_type in voice_types:
-            typed_voices = [v for v in voices_to_choose if voice_type in v.name]
-            if typed_voices:
-                # Return the first voice of this type
-                return typed_voices[0]
-
-        # If no preferred voice types found, return the first available voice
-        return voices_to_choose[0] if voices_to_choose else None
-
-    best_male_voice = select_best_voice(
-        language_voices, texttospeech.SsmlVoiceGender.MALE
-    )
-    best_female_voice = select_best_voice(
-        language_voices, texttospeech.SsmlVoiceGender.FEMALE
-    )
-
-    return {
-        "language_code": best_language_code,
-        "male_voice": best_male_voice.name if best_male_voice else None,
-        "female_voice": best_female_voice.name if best_female_voice else None,
-    }
-
-
 def text_to_speech(
     text: str,
-    language_code: str = "en-US",
-    voice_name: str = "en-US-Wavenet-D",
+    language_code: str = None,
+    voice_name: str = None,
     speaking_rate: float = 1.0,
 ) -> AudioSegment:
     client = texttospeech.TextToSpeechClient()
+
+    # Use config values if parameters are not provided
+    if language_code is None:
+        language_code = config.english_voice_models["language_code"]
+    if voice_name is None:
+        voice_name = config.english_voice_models["male_voice"]
 
     synthesis_input = texttospeech.SynthesisInput(text=text)
     voice = texttospeech.VoiceSelectionParams(
@@ -151,6 +62,55 @@ def text_to_speech(
     audio_segment = AudioSegment.from_mp3(io.BytesIO(response.audio_content))
 
     return audio_segment
+
+
+def generate_translated_phrase_audio(
+    translated_phrase: tuple[str, str],
+    english_voice_models: dict = None,
+    target_voice_models: dict = None,
+) -> AudioSegment:
+    """Creates and english, thinking pause, slow target, fast target audio segment"""
+
+    # Use config values if parameters are not provided
+    if english_voice_models is None:
+        english_voice_models = config.english_voice_models
+    if target_voice_models is None:
+        target_voice_models = config.target_language_voice_models
+
+    english_audio = text_to_speech(
+        text=translated_phrase[0],
+        language_code=english_voice_models["language_code"],
+        voice_name=english_voice_models["male_voice"],
+        speaking_rate=1.0,
+    )
+
+    target_audio_slow = text_to_speech(
+        text=translated_phrase[1],
+        language_code=target_voice_models["language_code"],
+        voice_name=target_voice_models["female_voice"],
+        speaking_rate=0.6,
+    )
+
+    target_audio_fast = text_to_speech(
+        text=translated_phrase[1],
+        language_code=target_voice_models["language_code"],
+        voice_name=target_voice_models["female_voice"],
+        speaking_rate=1.0,
+    )
+
+    THINKING_GAP = AudioSegment.silent(duration=500)
+
+    phrase_audio = join_audio_segments(
+        [
+            english_audio,
+            THINKING_GAP,
+            target_audio_fast,
+            target_audio_slow,
+            target_audio_fast,
+        ],
+        gap_ms=150,
+    )
+    return phrase_audio
 
 
 def export_audio(final_audio: AudioSegment, filename: str = None) -> str:
@@ -203,3 +163,115 @@ def join_audio_segments(audio_segments: list[AudioSegment], gap_ms=100) -> Audio
     gap_audio = AudioSegment.silent(duration=gap_ms)
     audio_with_gap = [audio_seg + gap_audio for audio_seg in audio_segments]
     return sum(audio_with_gap)
+
+
+def speed_up_audio(
+    audio_segment: AudioSegment, speed_factor: float = 2.0
+) -> AudioSegment:
+    """
+    Speed up an AudioSegment without changing its pitch, with added de-reverb.
+
+    :param audio_segment: Input AudioSegment
+    :param speed_factor: Factor by which to speed up the audio (e.g., 2.0 for double speed)
+    :return: Sped up AudioSegment
+    """
+    # Convert AudioSegment to numpy array
+    samples = np.array(audio_segment.get_array_of_samples()).astype(np.float32)
+
+    # Normalize the audio data
+    samples = samples / np.iinfo(audio_segment.array_type).max
+
+    # Check if audio is stereo and convert to mono if it is
+    if audio_segment.channels == 2:
+        samples = samples.reshape((-1, 2))
+        samples = samples.mean(axis=1)
+
+    # Get sample rate
+    sample_rate = audio_segment.frame_rate
+
+    # Simple de-reverb using spectral subtraction
+    D = librosa.stft(samples)
+    D_mag, D_phase = librosa.magphase(D)
+
+    # Estimate and subtract the reverb
+    reverb_time = 0.3  # Adjust this value to control de-reverb strength (in seconds)
+    freq = librosa.fft_frequencies(sr=sample_rate)
+    reverb_decay = np.exp(
+        -np.outer(freq, np.arange(D.shape[1]) / sample_rate) / reverb_time
+    )
+    D_mag_dereverb = np.maximum(
+        D_mag - np.mean(D_mag, axis=1, keepdims=True) * reverb_decay, 0
+    )
+
+    # Reconstruct the signal
+    D_dereverb = D_mag_dereverb * D_phase
+    samples = librosa.istft(D_dereverb)
+
+    # Time stretch audio using librosa
+    stretched_audio = librosa.effects.time_stretch(samples, rate=speed_factor)
+
+    # Convert back to int16 for AudioSegment
+    stretched_audio = (stretched_audio * np.iinfo(np.int16).max).astype(np.int16)
+
+    # Convert back to AudioSegment
+    buffer = io.BytesIO()
+    sf.write(buffer, stretched_audio, sample_rate, format="wav", subtype="PCM_16")
+    buffer.seek(0)
+
+    return AudioSegment.from_wav(buffer)
+
+
+def generate_normal_and_fast_audio(
+    audio_segments: List[AudioSegment],
+) -> Tuple[AudioSegment, AudioSegment]:
+    """
+    Generate normal speed and fast versions of the dialogue.
+
+    :param audio_segments: List of AudioSegment objects representing each utterance
+    :return: A tuple containing (normal_speed_audio, fast_speed_audio)
+    """
+    normal_speed = join_audio_segments(audio_segments, gap_ms=500)
+    fast_segments = []
+    for segment in audio_segments:
+        fast_segment = speed_up_audio(segment)
+        fast_segments.append(fast_segment)
+
+    fast_audio = join_audio_segments(fast_segments * 10, gap_ms=200)
+    return normal_speed, fast_audio
+
+
+def generate_audio_from_dialogue(dialogue: List[Dict[str, str]]) -> List[AudioSegment]:
+    """
+    Generate audio from a dialogue in the target language, using different voices for each speaker.
+
+    :param dialogue: List of dictionaries containing 'speaker' and 'text' keys
+    :return: Combined AudioSegment of the entire dialogue in the target language
+    """
+    audio_segments = []
+
+    # Get voice models from config
+    target_voice_models = config.target_language_voice_models
+
+    for utterance in dialogue:
+        speaker = utterance["speaker"]
+        text = utterance["text"]
+
+        # Translate the text
+        translated_text = translate_from_english(text)
+
+        # Choose voice based on speaker
+        if speaker == "Sam":
+            target_voice = target_voice_models["male_voice"]
+        else:  # 'Alex' or any other speaker
+            target_voice = target_voice_models["female_voice"]
+
+        # Generate audio for translated text (normal and slow speed)
+        target_audio_normal = text_to_speech(
+            text=translated_text,
+            language_code=target_voice_models["language_code"],
+            voice_name=target_voice,
+        )
+
+        audio_segments.append(target_audio_normal)
+
+    return audio_segments

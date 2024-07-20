@@ -1,0 +1,32 @@
+dialogue 1
+
+[{'speaker': 'Alex',
+  'text': 'Hey Sam, are you tired today? We can watch a programme about hiking tonight.'},
+ {'speaker': 'Sam',
+  'text': "Thanks, but I'm so sorry. I have to hurry to the university this evening."},
+ {'speaker': 'Alex',
+  'text': "That's okay. If we had watched it tonight, we would have become better hikers."},
+ {'speaker': 'Sam',
+  'text': "I know. Although I'm busy today, I hope we can watch it next week."},
+ {'speaker': 'Alex',
+  'text': "Sounds good! Why don't we watch it on Friday at 8 o'clock?"},
+ {'speaker': 'Sam',
+  'text': "Yes, that works for me. I'll be here with some snacks."}]
+
+dialogue 2
+[{'speaker': 'Alex',
+  'text': "Sam, it's eight o'clock. Are you watching the hiking programme?"},
+ {'speaker': 'Sam',
+  'text': 'Yes, I am. The trip looks hard. What about the food?'},
+ {'speaker': 'Alex',
+  'text': 'I see some lunch and tea. We got bananas for our trip, right?'},
+ {'speaker': 'Sam',
+  'text': 'Yes, and I want to put some green apples in my bag.'},
+ {'speaker': 'Alex',
+  'text': "That's fine. Did you see the expensive shoes they are using?"},
+ {'speaker': 'Sam',
+  'text': "I never saw shoes like that. It's important for the long walk."},
+ {'speaker': 'Alex',
+  'text': "You're right. What about the weather during our trip?"},
+ {'speaker': 'Sam',
+  'text': "The programme says it's often beautiful in the summer."}]

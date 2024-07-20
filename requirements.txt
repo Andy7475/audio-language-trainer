@@ -14,5 +14,6 @@ altair
 requests
 anthropic                      #for querying the Anthropic models hosted on Google Cloud
 pytest
-hvplot
-colorcet
+pysnooper
+librosa                         #for speeding up dialogue
+soundfile                       #for speeding up dialogue

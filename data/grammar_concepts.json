@@ -1,0 +1,340 @@
+{
+  "verb_tenses": [
+    {
+      "name": "Simple Present",
+      "example": "I drink coffee"
+    },
+    {
+      "name": "Present Continuous",
+      "example": "I am drinking coffee"
+    },
+    {
+      "name": "Simple Past",
+      "example": "I drank coffee"
+    },
+    {
+      "name": "Past Continuous",
+      "example": "I was drinking coffee"
+    },
+    {
+      "name": "Present Perfect",
+      "example": "I have drunk coffee"
+    },
+    {
+      "name": "Past Perfect",
+      "example": "I had drunk coffee"
+    },
+    {
+      "name": "Simple Future",
+      "example": "I will drink coffee"
+    },
+    {
+      "name": "Future Continuous",
+      "example": "I will be drinking coffee"
+    },
+    {
+      "name": "Present Perfect Continuous",
+      "example": "I have been drinking coffee"
+    },
+    {
+      "name": "Past Perfect Continuous",
+      "example": "I had been drinking coffee"
+    },
+    {
+      "name": "Future Perfect",
+      "example": "I will have drunk coffee"
+    },
+    {
+      "name": "Future Perfect Continuous",
+      "example": "I will have been drinking coffee"
+    }
+  ],
+  "noun_forms": [
+    {
+      "name": "Singular",
+      "example": "coffee"
+    },
+    {
+      "name": "Plural",
+      "example": "coffees"
+    },
+    {
+      "name": "Countable",
+      "example": "cups of coffee"
+    },
+    {
+      "name": "Uncountable",
+      "example": "coffee"
+    }
+  ],
+  "pronouns": [
+    {
+      "name": "Personal",
+      "example": "I drink coffee"
+    },
+    {
+      "name": "Possessive",
+      "example": "my coffee"
+    },
+    {
+      "name": "Reflexive",
+      "example": "I made myself coffee"
+    },
+    {
+      "name": "Demonstrative",
+      "example": "this coffee, that coffee"
+    },
+    {
+      "name": "Relative",
+      "example": "The coffee which I bought is delicious"
+    },
+    {
+      "name": "Indefinite",
+      "example": "Someone spilled coffee"
+    }
+  ],
+  "adjective_forms": [
+    {
+      "name": "Comparative",
+      "example": "stronger coffee"
+    },
+    {
+      "name": "Superlative",
+      "example": "the strongest coffee"
+    }
+  ],
+  "adverb_types": [
+    {
+      "name": "Manner",
+      "example": "I carefully sipped the coffee"
+    },
+    {
+      "name": "Place",
+      "example": "I drink coffee here"
+    },
+    {
+      "name": "Time",
+      "example": "I'll have coffee later"
+    },
+    {
+      "name": "Frequency",
+      "example": "I often drink coffee"
+    },
+    {
+      "name": "Degree",
+      "example": "I really like coffee"
+    }
+  ],
+  "sentence_structures": [
+    {
+      "name": "Simple sentences",
+      "example": "I like coffee."
+    },
+    {
+      "name": "Compound sentences",
+      "example": "I like coffee, but I don't like tea."
+    },
+    {
+      "name": "Complex sentences",
+      "example": "Although I like coffee, I try to limit my intake."
+    },
+    {
+      "name": "Compound-complex sentences",
+      "example": "I like coffee, and I drink it often, but when I have too much, I get jittery."
+    }
+  ],
+  "clauses": [
+    {
+      "name": "Independent clauses",
+      "example": "I drink coffee"
+    },
+    {
+      "name": "Dependent clauses",
+      "example": "because I like coffee"
+    },
+    {
+      "name": "Relative clauses",
+      "example": "The coffee that I bought is delicious"
+    },
+    {
+      "name": "Noun clauses",
+      "example": "What I want is a cup of coffee"
+    },
+    {
+      "name": "Adverbial clauses",
+      "example": "When I wake up, I drink coffee"
+    }
+  ],
+  "phrases": [
+    {
+      "name": "Noun phrases",
+      "example": "hot coffee"
+    },
+    {
+      "name": "Verb phrases",
+      "example": "is brewing coffee"
+    },
+    {
+      "name": "Prepositional phrases",
+      "example": "in the coffee shop"
+    },
+    {
+      "name": "Gerund phrases",
+      "example": "Drinking coffee is my morning ritual"
+    },
+    {
+      "name": "Infinitive phrases",
+      "example": "to drink coffee"
+    },
+    {
+      "name": "Participial phrases",
+      "example": "Sipping coffee, I read the newspaper"
+    }
+  ],
+  "voice": [
+    {
+      "name": "Active voice",
+      "example": "I drink coffee"
+    },
+    {
+      "name": "Passive voice",
+      "example": "Coffee is drunk by me"
+    }
+  ],
+  "mood": [
+    {
+      "name": "Indicative",
+      "example": "I drink coffee"
+    },
+    {
+      "name": "Imperative",
+      "example": "Drink your coffee!"
+    },
+    {
+      "name": "Subjunctive",
+      "example": "If I were you, I would drink coffee"
+    }
+  ],
+  "conditionals": [
+    {
+      "name": "Zero conditional",
+      "example": "If you heat water, it boils"
+    },
+    {
+      "name": "First conditional",
+      "example": "If it rains, I'll have coffee inside"
+    },
+    {
+      "name": "Second conditional",
+      "example": "If I had coffee, I would drink it"
+    },
+    {
+      "name": "Third conditional",
+      "example": "If I had known you were coming, I would have made coffee"
+    },
+    {
+      "name": "Mixed conditionals",
+      "example": "If I liked coffee, I would have ordered some"
+    }
+  ],
+  "reported_speech": [
+    {
+      "name": "Direct speech",
+      "example": "\"I love coffee,\" she said"
+    },
+    {
+      "name": "Indirect speech",
+      "example": "She said that she loved coffee"
+    }
+  ],
+  "questions": [
+    {
+      "name": "Yes/No questions",
+      "example": "Do you like coffee?"
+    },
+    {
+      "name": "Wh- questions",
+      "example": "Where did you buy this coffee?"
+    },
+    {
+      "name": "Tag questions",
+      "example": "You like coffee, don't you?"
+    }
+  ],
+  "negation": [
+    {
+      "name": "Simple negation",
+      "example": "I don't like coffee"
+    },
+    {
+      "name": "Double negation",
+      "example": "I don't never drink coffee"
+    }
+  ],
+  "modals": [
+    {
+      "name": "Ability",
+      "example": "I can make good coffee"
+    },
+    {
+      "name": "Permission",
+      "example": "May I have some coffee?"
+    },
+    {
+      "name": "Obligation",
+      "example": "You must try this coffee"
+    },
+    {
+      "name": "Possibility",
+      "example": "It might be too late for coffee"
+    }
+  ],
+  "quantifiers": [
+    {
+      "name": "Quantifiers",
+      "example": "Much coffee, many cups, a lot of beans, few sips, little cream, some sugar, any milk"
+    }
+  ],
+  "articles": [
+    {
+      "name": "Definite article",
+      "example": "the coffee"
+    },
+    {
+      "name": "Indefinite articles",
+      "example": "a coffee, an espresso"
+    },
+    {
+      "name": "Zero article",
+      "example": "Coffee is popular"
+    }
+  ],
+  "conjunctions": [
+    {
+      "name": "Coordinating",
+      "example": "I like coffee and tea"
+    },
+    {
+      "name": "Subordinating",
+      "example": "I drink coffee because I like it"
+    },
+    {
+      "name": "Correlative",
+      "example": "Either you drink coffee or you don't"
+    }
+  ],
+  "prepositions": [
+    {
+      "name": "Time prepositions",
+      "example": "before coffee, after lunch"
+    },
+    {
+      "name": "Place prepositions",
+      "example": "at the cafe, in the mug"
+    },
+    {
+      "name": "Direction prepositions",
+      "example": "into the cup, through the filter"
+    }
+  ]
+}

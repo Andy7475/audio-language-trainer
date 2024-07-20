@@ -1,15 +1,7 @@
 {
-"tenses": [
-"present simple",
-"past simple",
-"present perfect",
-"past perfect",
-"future simple"
-],
 "verbs": [
 "arrive",
 "ask",
-"ate",
 "bake",
 "be",
 "become",
@@ -91,7 +83,6 @@
 "write"
 ],
 "vocab": [
-"a/an",
 "about",
 "after",
 "all",
@@ -265,11 +256,7 @@
 "television",
 "tense",
 "thanks",
-"that",
-"that's",
-"the",
 "theatre",
-"their",
 "themselves",
 "then",
 "there",
