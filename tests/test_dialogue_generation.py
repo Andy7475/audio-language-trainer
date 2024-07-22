@@ -1,14 +1,83 @@
 import unittest
-from unittest.mock import patch, mock_open
-from typing import List
-from src.dialogue_generation import (
-    get_current_story_part,
-    get_last_recap,
-    load_story_plan,
-    load_recaps,
-    get_story_recap,
-)
+from typing import Dict, List, Set, Tuple
+from unittest.mock import mock_open, patch
 
+import pytest
+
+from src.dialogue_generation import (get_current_story_part, get_last_recap,
+                                     get_story_recap, get_vocab_from_dialogue,
+                                     load_recaps, load_story_plan)
+
+# Mock the Google Cloud clients
+@pytest.fixture(autouse=True)
+def mock_google_cloud():
+    with patch('google.cloud.texttospeech.TextToSpeechClient'), \
+         patch('google.cloud.translate_v2.Client'):
+        yield
+
+@pytest.fixture
+def sample_dialogue() -> List[Dict[str, str]]:
+    return [
+        {'speaker': 'Alice', 'text': "I am reading a book."},
+        {'speaker': 'Bob', 'text': "That's great! I love reading too."},
+        {'speaker': 'Alice', 'text': "It's about space exploration. Very interesting!"},
+        {'speaker': 'Bob', 'text': "Wow! I read a book about Mars last month."}
+    ]
+
+@pytest.fixture
+def expected_vocab() -> Set[Tuple[str, str]]:
+    return {
+        ('i', 'PRON'),
+        ('be', 'AUX'),
+        ('read', 'VERB'),
+        ('a', 'DET'),
+        ('book', 'NOUN'),
+        ('that', 'PRON'),
+        ('great', 'ADJ'),
+        ('love', 'VERB'),
+        ('too', 'ADV'),
+        ('it', 'PRON'),
+        ('about', 'ADP'),
+        ('space', 'NOUN'),
+        ('exploration', 'NOUN'),
+        ('very', 'ADV'),
+        ('interesting', 'ADJ'),
+        ('wow', 'INTJ'),
+        ('mars', 'PROPN'),
+        ('last', 'ADJ'),
+        ('month', 'NOUN')
+    }
+
+def test_get_vocab_from_dialogue(sample_dialogue: List[Dict[str, str]], expected_vocab: Set[Tuple[str, str]]):
+    result = get_vocab_from_dialogue(sample_dialogue)
+    assert result == expected_vocab, f"Expected {expected_vocab}, but got {result}"
+
+# Additional test cases
+def test_empty_dialogue():
+    assert get_vocab_from_dialogue([]) == set(), "Empty dialogue should return an empty set"
+
+def test_dialogue_with_punctuation():
+    dialogue = [{'speaker': 'Alice', 'text': "Hello, world! How are you?"}]
+    expected = {
+        ('hello', 'INTJ'),
+        ('world', 'NOUN'),
+        ('how', 'SCONJ'),
+        ('be', 'AUX'),
+        ('you', 'PRON')
+    }
+    assert get_vocab_from_dialogue(dialogue) == expected, "Punctuation should be ignored"
+
+def test_dialogue_with_repeated_words():
+    dialogue = [{'speaker': 'Alice', 'text': "The cat and the dog. The cat is sleeping."}]
+    expected = {
+        ('the', 'DET'),
+        ('cat', 'NOUN'),
+        ('and', 'CCONJ'),
+        ('dog', 'NOUN'),
+        ('be', 'AUX'),
+        ('sleep', 'VERB')
+    }
+    assert get_vocab_from_dialogue(dialogue) == expected, "Repeated words should only appear once in the output"
 
 class TestStoryProgressionFunctions(unittest.TestCase):
     def setUp(self):

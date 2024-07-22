@@ -5,8 +5,6 @@ import time
 from typing import Dict, Optional, List
 
 # Assume these imports are available
-from google.cloud import texttospeech
-from google.cloud import translate_v2 as translate
 
 
 class ConfigLoader:
@@ -59,7 +57,6 @@ class ConfigLoader:
                 COUNTRY_CODE_TARGET_LANGUAGE=None,
                 USE_CHEAP_VOICE_MODELS=True,
             )
-            self._update_voice_models()
 
     def _check_reload(self):
         try:
@@ -92,6 +89,9 @@ class ConfigLoader:
 
         These voice codes are needed for TTS and translation services at Google API"""
         # Initialize clients
+        from google.cloud import texttospeech
+        from google.cloud import translate_v2 as translate
+
         tts_client = texttospeech.TextToSpeechClient()
         translate_client = translate.Client()
 
@@ -182,8 +182,7 @@ class ConfigLoader:
             "female_voice": best_female_voice.name if best_female_voice else None,
         }
 
-        # ... (copy the entire get_optimal_voice_models function here) ...
-        # Replace 'config.USE_CHEAP_VOICE_MODELS' with 'cheap_voices'
+
 
     def __getattr__(self, name):
         self._check_reload()
@@ -191,8 +190,23 @@ class ConfigLoader:
 
     def get_voice_models(self):
         """Returns the voice models to use"""
-        self._check_reload()  # Ensure config is up-to-date
+        if not self.english_voice_models:
+            self.english_voice_models = self._get_optimal_voice_models(
+                "en", self.config.COUNTRY_CODE_ENGLISH, self.config.USE_CHEAP_VOICE_MODELS
+            )
+        if not self.target_language_voice_models:
+            self.target_language_voice_models = self._get_optimal_voice_models(
+                self.config.TARGET_LANGUAGE,
+                self.config.COUNTRY_CODE_TARGET_LANGUAGE,
+                self.config.USE_CHEAP_VOICE_MODELS,
+            )
         return self.english_voice_models, self.target_language_voice_models
+
+config = ConfigLoader()
+
+print("Config loader initialized.")
+print(f"Config file location: {config.config_file}")
+print(f"Current working directory: {os.getcwd()}")
 
 
 config = ConfigLoader()
