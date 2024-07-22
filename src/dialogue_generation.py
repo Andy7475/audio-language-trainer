@@ -1,12 +1,18 @@
-from anthropic import AnthropicVertex
 import json
-from dotenv import load_dotenv
 import os
-from src.config_loader import config
 import random
 import re
-from typing import List
+import subprocess
+import sys
+from typing import Dict, List, Set, Tuple
+
 import pysnooper
+import spacy
+from anthropic import AnthropicVertex
+from dotenv import load_dotenv
+
+from src.config_loader import config
+from src.utils import anthropic_generate, extract_json_from_llm_response
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -301,52 +307,6 @@ def get_least_used_words(category, count):
     return selected_words
 
 
-def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:
-
-    client = AnthropicVertex(region=config.ANTHROPIC_REGION, project_id=PROJECT_ID)
-
-    if model is None:
-        model = config.ANTHROPIC_MODEL_NAME
-    message = client.messages.create(
-        max_tokens=max_tokens,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-        model=model,
-    )
-    response_json = message.model_dump_json(indent=2)
-
-    response = json.loads(response_json)
-    return response["content"][0]["text"]
-
-
-def extract_json_from_llm_response(response):
-    """
-    Extract JSON from an LLM response.
-
-    :param response: String containing the LLM's response
-    :return: Extracted JSON as a Python object, or None if no valid JSON is found
-    """
-    # Try to find JSON-like structure in the response
-    json_pattern = (
-        r"\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{(?:[^{}]|(?:\{[^{}]*\}))*\}))*\}))*\}"
-    )
-    json_match = re.search(json_pattern, response)
-    if json_match:
-        json_str = json_match.group(0)
-        try:
-            return json.loads(json_str)
-        except json.JSONDecodeError:
-            print("Found JSON-like structure, but it's not valid JSON")
-            return None
-    else:
-        print("No JSON-like structure found in the response")
-        return None
-
-
 def get_dialogue(llm_response: str):
     """
     Extract dialogue from an LLM response.
@@ -360,3 +320,37 @@ def get_dialogue(llm_response: str):
     else:
         print("No valid dialogue found in the response")
         return None
+
+
+
+def ensure_spacy_model(model_name="en_core_web_md"):
+    try:
+        spacy.load(model_name)
+    except OSError:
+        print(f"Downloading spaCy model {model_name}...")
+        subprocess.check_call([sys.executable, "-m", "spacy", "download", model_name])
+
+def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
+    """For a given Engish dialogue, extracts the vocab used as the lemmas, the reason is so the
+    known_vocab_list can be updated with usage information."""
+    # Load the English language model
+    ensure_spacy_model()
+    nlp = spacy.load("en_core_web_md")
+    
+    # Initialize an empty set to store unique (lemma, pos) pairs
+    vocab_set = set()
+    
+    # Iterate through each utterance in the dialogue
+    for utterance in dialogue:
+        # Process the text with spaCy
+        doc = nlp(utterance['text'])
+        
+        # Iterate through each token in the processed document
+        for token in doc:
+            # Skip punctuation
+            if token.pos_ != "PUNCT":
+                # Add the lemma and its POS tag to the set
+                vocab_set.add((token.lemma_.lower(), token.pos_))
+    
+    return vocab_set
+
