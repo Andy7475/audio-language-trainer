@@ -269,23 +269,38 @@ def generate_dialogue_prompt(
     return prompt, verbs + vocab
 
 
-def update_vocab_usage(used_words):
+import json
+from typing import Set, Tuple
+
+def update_vocab_usage(used_words: Set[Tuple[str, str]]):
+    """Taking a list of (word, POS) e.g. ('can', 'VERB') we update the vocab_usage
+    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
+    lessons. words that haven't been used have a higher chance of being sampled.
+    
+    No return statement"""
     # Load the current usage
     with open(VOCAB_USAGE_PATH, "r") as f:
         vocab_usage = json.load(f)
 
     # Update the usage count for each used word
-    for word in used_words:
-        if word in vocab_usage["verbs"]:
-            vocab_usage["verbs"][word] += 1
-        elif word in vocab_usage["vocab"]:
-            vocab_usage["vocab"][word] += 1
+    for word, pos in used_words:
+        if pos == "VERB":
+            if word in vocab_usage["verbs"]:
+                vocab_usage["verbs"][word] += 1
+            else:
+                vocab_usage["verbs"][word] = 1
+        else:
+            if word in vocab_usage["vocab"]:
+                vocab_usage["vocab"][word] += 1
+            else:
+                vocab_usage["vocab"][word] = 1
 
     # Save the updated usage dictionary
     with open(VOCAB_USAGE_PATH, "w") as f:
         json.dump(vocab_usage, f, indent=2)
 
     print("vocab_usage.json has been updated.")
+
 
 
 def get_least_used_words(category, count):
@@ -321,8 +336,6 @@ def get_dialogue(llm_response: str):
         print("No valid dialogue found in the response")
         return None
 
-
-
 def ensure_spacy_model(model_name="en_core_web_md"):
     try:
         spacy.load(model_name)
@@ -332,7 +345,7 @@ def ensure_spacy_model(model_name="en_core_web_md"):
 
 def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
     """For a given Engish dialogue, extracts the vocab used as the lemmas, the reason is so the
-    known_vocab_list can be updated with usage information."""
+    vocab_usage.json can be updated with usage information."""
     # Load the English language model
     ensure_spacy_model()
     nlp = spacy.load("en_core_web_md")

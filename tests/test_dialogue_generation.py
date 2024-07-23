@@ -1,12 +1,12 @@
 import unittest
 from typing import Dict, List, Set, Tuple
 from unittest.mock import mock_open, patch
-
+import json
 import pytest
 
 from src.dialogue_generation import (get_current_story_part, get_last_recap,
                                      get_story_recap, get_vocab_from_dialogue,
-                                     load_recaps, load_story_plan)
+                                     load_recaps, load_story_plan, update_vocab_usage)
 
 # Mock the Google Cloud clients
 @pytest.fixture(autouse=True)
@@ -78,6 +78,89 @@ def test_dialogue_with_repeated_words():
         ('sleep', 'VERB')
     }
     assert get_vocab_from_dialogue(dialogue) == expected, "Repeated words should only appear once in the output"
+
+
+def test_update_vocab_usage_existing_words():
+    mock_vocab_usage = {
+        "verbs": {"run": 1},
+        "vocab": {"fast": 2}
+    }
+    used_words = {("run", "VERB"), ("fast", "ADJ"), ("quick", "ADJ")}
+    
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        with patch("json.dump") as mock_dump:
+            update_vocab_usage(used_words)
+            
+    expected_vocab_usage = {
+        "verbs": {"run": 2},
+        "vocab": {"fast": 3, "quick": 1}
+    }
+    mock_dump.assert_called_once_with(expected_vocab_usage, unittest.mock.ANY, indent=2)
+
+def test_update_vocab_usage_new_words():
+    mock_vocab_usage = {
+        "verbs": {},
+        "vocab": {}
+    }
+    used_words = {("jump", "VERB"), ("high", "ADJ")}
+    
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        with patch("json.dump") as mock_dump:
+            update_vocab_usage(used_words)
+            
+    expected_vocab_usage = {
+        "verbs": {"jump": 1},
+        "vocab": {"high": 1}
+    }
+    mock_dump.assert_called_once_with(expected_vocab_usage, unittest.mock.ANY, indent=2)
+
+def test_update_vocab_usage_empty_set():
+    mock_vocab_usage = {
+        "verbs": {"exist": 1},
+        "vocab": {"test": 1}
+    }
+    used_words = set()
+    
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        with patch("json.dump") as mock_dump:
+            update_vocab_usage(used_words)
+            
+    expected_vocab_usage = {
+        "verbs": {"exist": 1},
+        "vocab": {"test": 1}
+    }
+    mock_dump.assert_called_once_with(expected_vocab_usage, unittest.mock.ANY, indent=2)
+
+def test_update_vocab_usage_non_verb_pos():
+    mock_vocab_usage = {
+        "verbs": {},
+        "vocab": {}
+    }
+    used_words = {("beautiful", "ADJ"), ("quickly", "ADV"), ("the", "DET")}
+    
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        with patch("json.dump") as mock_dump:
+            update_vocab_usage(used_words)
+            
+    expected_vocab_usage = {
+        "verbs": {},
+        "vocab": {"beautiful": 1, "quickly": 1, "the": 1}
+    }
+    mock_dump.assert_called_once_with(expected_vocab_usage, unittest.mock.ANY, indent=2)
+
+def test_update_vocab_usage_file_not_found():
+    used_words = {("test", "NOUN")}
+    
+    with patch("builtins.open", side_effect=FileNotFoundError):
+        with pytest.raises(FileNotFoundError):
+            update_vocab_usage(used_words)
+
+def test_update_vocab_usage_permission_error():
+    used_words = {("test", "NOUN")}
+    
+    with patch("builtins.open", side_effect=PermissionError):
+        with pytest.raises(PermissionError):
+            update_vocab_usage(used_words)
 
 class TestStoryProgressionFunctions(unittest.TestCase):
     def setUp(self):
