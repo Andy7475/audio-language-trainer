@@ -25,8 +25,13 @@ RECAP_PATH = "../data/story_recap.json"
 
 
 def generate_story_plan(story_guide: str = None, test=True) -> dict:
+    """This function generates an outline story following the story_structure written below.
+    When we are creating dialgoue, we will feed the story_plan into the function a bit at a time for subsequent dialogues
+    so there is some continuity.
+    
+    returns: a JSON story plan, but it also saves it to STORY_PLAN_PATH"""
     story_structure = [
-        "Exposition: Introduce the main characters and setting",
+        "Exposition: Introduce the main characters (Alex and Sam) and setting",
         "Rising_Action: Present a challenge or conflict",
         "Climax: The turning point where the conflict reaches its peak",
         "Falling_Action: Events following the climax",
@@ -56,17 +61,7 @@ def generate_story_plan(story_guide: str = None, test=True) -> dict:
     else:
         llm_response = anthropic_generate(prompt)
     # Extract the JSON part from the response
-    json_match = re.search(r"\{[\s\S]*\}", llm_response)
-    if json_match:
-        json_str = json_match.group(0)
-        try:
-            story_plan = json.loads(json_str)
-        except json.JSONDecodeError:
-            print("Error: Unable to parse JSON from LLM response")
-            story_plan = {}
-    else:
-        print("Error: No JSON found in LLM response")
-        story_plan = {}
+    story_plan = extract_json_from_llm_response(llm_response)
 
     # Normalize keys to lowercase
     story_plan = {k.lower(): v for k, v in story_plan.items()}
