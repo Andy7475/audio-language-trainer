@@ -11,6 +11,7 @@ import soundfile as sf
 from google.cloud import texttospeech
 from google.cloud import translate_v2 as translate
 from pydub import AudioSegment
+from tqdm import tqdm
 
 from src.config_loader import config
 from src.translation import translate_from_english
@@ -81,14 +82,14 @@ def generate_translated_phrase_audio(
         text=translated_phrase[0],
         language_code=english_voice_models["language_code"],
         voice_name=english_voice_models["male_voice"],
-        speaking_rate=1.0,
+        speaking_rate=0.9,
     )
 
     target_audio_slow = text_to_speech(
         text=translated_phrase[1],
         language_code=target_voice_models["language_code"],
         voice_name=target_voice_models["female_voice"],
-        speaking_rate=0.6,
+        speaking_rate=config.SPEAKING_RATE_SLOW,
     )
 
     target_audio_fast = text_to_speech(
@@ -98,7 +99,7 @@ def generate_translated_phrase_audio(
         speaking_rate=1.0,
     )
 
-    THINKING_GAP = AudioSegment.silent(duration=500)
+    THINKING_GAP = AudioSegment.silent(duration=config.THINKING_GAP_MS)
 
     phrase_audio = join_audio_segments(
         [
@@ -106,9 +107,9 @@ def generate_translated_phrase_audio(
             THINKING_GAP,
             target_audio_fast,
             target_audio_slow,
-            target_audio_fast,
+            # target_audio_fast,
         ],
-        gap_ms=150,
+        gap_ms=500,  # GAP AT END
     )
     return phrase_audio
 
@@ -225,7 +226,8 @@ def generate_normal_and_fast_audio(
     audio_segments: List[AudioSegment],
 ) -> Tuple[AudioSegment, AudioSegment]:
     """
-    Generate normal speed and fast versions of the dialogue.
+    Generate normal speed and (10 copies) of a fast version of the dialogue. Designed to be
+    called after generate_audio_from_dialogue as that func returns a list of audio segments
 
     :param audio_segments: List of AudioSegment objects representing each utterance
     :return: A tuple containing (normal_speed_audio, fast_speed_audio)
@@ -240,35 +242,38 @@ def generate_normal_and_fast_audio(
     return normal_speed, fast_audio
 
 
-def generate_audio_from_dialogue(dialogue: List[Dict[str, str]]) -> List[AudioSegment]:
+def generate_audio_from_dialogue(
+    dialogue: List[Dict[str, str]], in_target_language=True
+) -> List[AudioSegment]:
     """
     Generate audio from a dialogue in the target language, using different voices for each speaker.
+    It will do the audio in the target language so assumes the dialogue is translated.
 
-    :param dialogue: List of dictionaries containing 'speaker' and 'text' keys
+    :param dialogue: List of dictionaries containing 'speaker' and 'text' keys, already translated
     :return: Combined AudioSegment of the entire dialogue in the target language
     """
     audio_segments = []
 
     # Get voice models from config
-    target_voice_models = config.target_language_voice_models
+    if in_target_language:
+        voice_models = config.target_language_voice_models
+    else:
+        voice_models = config.english_voice_models
 
-    for utterance in dialogue:
+    for utterance in tqdm(dialogue):
         speaker = utterance["speaker"]
         text = utterance["text"]
 
-        # Translate the text
-        translated_text = translate_from_english(text)
-
         # Choose voice based on speaker
         if speaker == "Sam":
-            target_voice = target_voice_models["male_voice"]
+            target_voice = voice_models["male_voice"]
         else:  # 'Alex' or any other speaker
-            target_voice = target_voice_models["female_voice"]
+            target_voice = voice_models["female_voice"]
 
         # Generate audio for translated text (normal and slow speed)
         target_audio_normal = text_to_speech(
-            text=translated_text,
-            language_code=target_voice_models["language_code"],
+            text=text,
+            language_code=voice_models["language_code"],
             voice_name=target_voice,
         )
 

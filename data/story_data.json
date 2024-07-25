@@ -1,0 +1,1455 @@
+{
+  "exposition": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    cost, sing, can, write, has, take, must, take, went, call\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    father, before, herself, child, theatre, boring, who, idea, how, I, sister, I'm, theatre, French, throat, it, dining, but, weather, food, policeman, city, nothing, cup, six, television, five, Sweden, child, he, while, off, politics, French, myself, off, person, lunch, we, first, her, then, present, got, yet, girl, after, hungry, day, with, time, probably, tomorrow, Swedish, about, angry, big, four, angry, next, good, three, yet, here, away, many, much, kettle, down, fish, how, lesson, child, was, expensive, now, off, you, fine, which, down, angry, while, glass, himself, Sweden, herself, father, lot, not, clever, problem, my, nothing, teacher, computer, tired, English, but, tonight\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Passive voice, Dependent clauses, Second conditional\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: This is the beginning of the story.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: exposition: Two friends, Alex and Sam, decide to learn a new language together.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, I've got an idea. How about we learn French together?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "French? But it's probably expensive. I'm not sure we can afford it."
+      },
+      {
+        "speaker": "Alex",
+        "text": "If we took lessons from a good teacher, it wouldn't cost much."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Hmm... I see. When would the lessons be taken?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Probably after work, while we're not too tired."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Fine. Let's call the teacher tomorrow and see what can be done."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Great! I'm excited about this new idea."
+      }
+    ],
+    "recap": "Alex suggests to Sam that they learn French together, addressing Sam's concerns about cost and timing. They agree to contact a teacher the next day to explore the possibility of taking French lessons after work.",
+    "uncorrected_phrase_list": [
+      "i see",
+      "'s call",
+      "we took",
+      "it cost",
+      "an idea",
+      "we learn",
+      "'s taken",
+      "hmm i see",
+      "'s taken ?",
+      "this new idea",
+      "sam i 've got",
+      "sure we be taken",
+      "french together ?",
+      "'s call the lessons",
+      "work while we can afford",
+      "hmm i 'm not sure we took",
+      "excited about this new idea",
+      "work while we would n't cost",
+      "hmm i see what can be taken ?",
+      "sam i see what can afford it cost",
+      "a good teacher it 's probably after work",
+      "good teacher it would the lessons be done",
+      "lessons from a good teacher tomorrow and see",
+      "what can afford it would the teacher tomorrow",
+      "sam , i 've got an idea .",
+      "how about we learn french together ?",
+      "french ?",
+      "but it 's probably expensive .",
+      "i 'm not sure we can afford it .",
+      "if we took lessons from a good teacher , it would n't cost much .",
+      "hmm ... i see .",
+      "when would the lessons be taken ?",
+      "probably after work , while we 're not too tired .",
+      "fine .",
+      "let 's call the teacher tomorrow and see what can be done .",
+      "great !",
+      "i 'm excited about this new idea ."
+    ],
+    "corrected_phrase_list": [
+      "I've got",
+      "We learn",
+      "It's expensive",
+      "You're not sure",
+      "We can afford",
+      "They took lessons",
+      "I'm excited",
+      "How about French?",
+      "We're not too tired",
+      "Let's call tomorrow",
+      "I see an idea",
+      "You've got a teacher",
+      "We're excited about French",
+      "It wouldn't cost much",
+      "They can afford lessons",
+      "I'm not sure about work",
+      "We've got a new idea",
+      "You're excited about learning",
+      "How about lessons after work?",
+      "I'm not sure we can learn French",
+      "Sam, I've got an idea.",
+      "How about we learn French together?",
+      "French?",
+      "But it's probably expensive.",
+      "I'm not sure we can afford it.",
+      "If we took lessons from a good teacher, it wouldn't cost much.",
+      "Hmm... I see.",
+      "When would the lessons be taken?",
+      "Probably after work, while we're not too tired.",
+      "Fine.",
+      "Let's call the teacher tomorrow and see what can be done.",
+      "Great!",
+      "I'm excited about this new idea."
+    ],
+    "translated_dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, jag har en id\u00e9. Vad s\u00e4gs om att vi l\u00e4r oss franska tillsammans?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Franska? Men det \u00e4r nog dyrt. Jag \u00e4r inte s\u00e4ker p\u00e5 att vi har r\u00e5d."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Om vi tog lektioner av en bra l\u00e4rare skulle det inte kosta mycket."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Hmm... jag f\u00f6rst\u00e5r. N\u00e4r skulle lektionerna tas?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "F\u00f6rmodligen efter jobbet, medan vi inte \u00e4r alltf\u00f6r tr\u00f6tta."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Bra. L\u00e5t oss ringa l\u00e4raren imorgon och se vad som kan g\u00f6ras."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Bra! Jag \u00e4r exalterad \u00f6ver denna nya id\u00e9."
+      }
+    ],
+    "translated_phrase_list": [
+      [
+        "I've got",
+        "jag har"
+      ],
+      [
+        "We learn",
+        "Vi l\u00e4r"
+      ],
+      [
+        "It's expensive",
+        "Det \u00e4r dyrt"
+      ],
+      [
+        "You're not sure",
+        "Du \u00e4r inte s\u00e4ker"
+      ],
+      [
+        "We can afford",
+        "Vi har r\u00e5d"
+      ],
+      [
+        "They took lessons",
+        "De tog lektioner"
+      ],
+      [
+        "I'm excited",
+        "jag \u00e4r glad"
+      ],
+      [
+        "How about French?",
+        "Vad s\u00e4gs om franska?"
+      ],
+      [
+        "We're not too tired",
+        "Vi \u00e4r inte f\u00f6r tr\u00f6tta"
+      ],
+      [
+        "Let's call tomorrow",
+        "L\u00e5t oss ringa imorgon"
+      ],
+      [
+        "I see an idea",
+        "Jag ser en id\u00e9"
+      ],
+      [
+        "You've got a teacher",
+        "Du har en l\u00e4rare"
+      ],
+      [
+        "We're excited about French",
+        "Vi \u00e4r exalterade \u00f6ver franskan"
+      ],
+      [
+        "It wouldn't cost much",
+        "Det skulle inte kosta mycket"
+      ],
+      [
+        "They can afford lessons",
+        "De har r\u00e5d med lektioner"
+      ],
+      [
+        "I'm not sure about work",
+        "Jag \u00e4r inte s\u00e4ker p\u00e5 jobbet"
+      ],
+      [
+        "We've got a new idea",
+        "Vi har en ny id\u00e9"
+      ],
+      [
+        "You're excited about learning",
+        "Du \u00e4r exalterad \u00f6ver att l\u00e4ra dig"
+      ],
+      [
+        "How about lessons after work?",
+        "Vad s\u00e4gs om lektioner efter jobbet?"
+      ],
+      [
+        "I'm not sure we can learn French",
+        "Jag \u00e4r inte s\u00e4ker p\u00e5 att vi kan l\u00e4ra oss franska"
+      ],
+      [
+        "Sam, I've got an idea.",
+        "Sam, jag har en id\u00e9."
+      ],
+      [
+        "How about we learn French together?",
+        "Vad s\u00e4gs om att vi l\u00e4r oss franska tillsammans?"
+      ],
+      [
+        "French?",
+        "Franska?"
+      ],
+      [
+        "But it's probably expensive.",
+        "Men det \u00e4r nog dyrt."
+      ],
+      [
+        "I'm not sure we can afford it.",
+        "Jag \u00e4r inte s\u00e4ker p\u00e5 att vi har r\u00e5d."
+      ],
+      [
+        "If we took lessons from a good teacher, it wouldn't cost much.",
+        "Om vi tog lektioner av en bra l\u00e4rare skulle det inte kosta mycket."
+      ],
+      [
+        "Hmm... I see.",
+        "Hmm... jag f\u00f6rst\u00e5r."
+      ],
+      [
+        "When would the lessons be taken?",
+        "N\u00e4r skulle lektionerna tas?"
+      ],
+      [
+        "Probably after work, while we're not too tired.",
+        "F\u00f6rmodligen efter jobbet, medan vi inte \u00e4r alltf\u00f6r tr\u00f6tta."
+      ],
+      [
+        "Fine.",
+        "Bra."
+      ],
+      [
+        "Let's call the teacher tomorrow and see what can be done.",
+        "L\u00e5t oss ringa l\u00e4raren imorgon och se vad som kan g\u00f6ras."
+      ],
+      [
+        "Great!",
+        "Bra!"
+      ],
+      [
+        "I'm excited about this new idea.",
+        "Jag \u00e4r exalterad \u00f6ver denna nya id\u00e9."
+      ]
+    ]
+  },
+  "rising_action": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    see, must, travel, travel, forget, dream, discuss, discuss, miss, wake\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    beautiful, we, in, ever, where, well, theatre, brother, teacher, film, lunch, mother, five, back, where, question, books, funny, wine, twelve, breakfast, lot, better, every, got, very, my, lunch, app, this, city, there, sister, six, while, shoe, out, dining, tea, books, in, lift, crown, never, computer, walk, fish, which, hungry, yes, himself, cup, theatre, sick, meeting, not, warm, table, this, now, our, entire, am, telephone, student, nothing, and, wine, in, month, many, house, much, key, question, nothing, day, us, cold, to, person, six, one, already, funny, clock, walk, course, our, student, you, door, week, football, meeting, dinner, by, good, food, book\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Noun clauses, Obligation, Dependent clauses\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex suggests to Sam that they learn French together, addressing Sam's concerns about cost and timing. They agree to contact a teacher the next day to explore the possibility of taking French lessons after work.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: rising_action: They face challenges in their studies and personal lives that test their commitment.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, where are you? We must not forget our meeting with the French teacher."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I am in the lift. My brother got sick, which is why I'm not there already."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh no! I hope he's better now. Did you miss breakfast while helping him?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, I'm very hungry. Can we discuss the teacher over lunch?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Of course. I see a beautiful dining room where we can eat and talk."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good. I dream that one day we will travel to France and speak French well."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Me too! Let's go now. Our teacher will understand why we missed the meeting."
+      }
+    ],
+    "recap": "Alex and Sam were supposed to meet their French teacher, but Sam was delayed due to his brother's illness. They decided to have lunch together instead, where they plan to discuss the teacher and their shared dream of traveling to France. They hope their teacher will understand the reason for missing the meeting.",
+    "uncorrected_phrase_list": [
+      "i see",
+      "'s go",
+      "oh no",
+      "i hope",
+      "i dream",
+      "you miss",
+      "we missed",
+      "we discuss",
+      "brother got",
+      "french well",
+      "yes i hope lift",
+      "he 's better now",
+      "my 'm very hungry",
+      "my must not forget",
+      "'s am in the teacher",
+      "a room where are you ?",
+      "which is why we missed",
+      "our teacher over lunch",
+      "day we can eat and talk",
+      "meeting with the teacher",
+      "room where we will travel",
+      "sam where we discuss the lift",
+      "breakfast while helping him ?",
+      "we discuss the teacher over lunch",
+      "sick which is why i 'm not forget",
+      "we will understand why i dream that one day",
+      "french teacher will understand why i hope lift",
+      "sam where are you miss breakfast while helping",
+      "brother got sick which is why we discuss the teacher",
+      "teacher will understand why i see a beautiful dining",
+      "sam , where are you ?",
+      "we must not forget our meeting with the french teacher .",
+      "i am in the lift .",
+      "my brother got sick , which is why i 'm not there already .",
+      "oh no !",
+      "i hope he 's better now .",
+      "did you miss breakfast while helping him ?",
+      "yes , i 'm very hungry .",
+      "can we discuss the teacher over lunch ?",
+      "of course .",
+      "i see a beautiful dining room where we can eat and talk .",
+      "good .",
+      "i dream that one day we will travel to france and speak french well .",
+      "me too !",
+      "let 's go now .",
+      "our teacher will understand why we missed the meeting ."
+    ],
+    "corrected_phrase_list": [
+      "We must",
+      "You're hungry",
+      "I'm sick",
+      "They forgot",
+      "We can eat",
+      "You hope",
+      "I dream",
+      "We speak French",
+      "You're in the lift",
+      "They missed breakfast",
+      "We can discuss now",
+      "I see a dining room",
+      "You dream of travel",
+      "We will speak French well",
+      "They're not there already",
+      "I hope we can talk now",
+      "You must not forget lunch",
+      "We can eat and talk there",
+      "They will understand why we missed",
+      "I dream we will travel and speak",
+      "Sam, where are you?",
+      "We must not forget our meeting with the French teacher.",
+      "I am in the lift.",
+      "My brother got sick, which is why I'm not there already.",
+      "Oh no!",
+      "I hope he's better now.",
+      "Did you miss breakfast while helping him?",
+      "Yes, I'm very hungry.",
+      "Can we discuss the teacher over lunch?",
+      "Of course.",
+      "I see a beautiful dining room where we can eat and talk.",
+      "Good.",
+      "I dream that one day we will travel to France and speak French well.",
+      "Me too!",
+      "Let's go now.",
+      "Our teacher will understand why we missed the meeting."
+    ],
+    "translated_dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, var \u00e4r du? Vi f\u00e5r inte gl\u00f6mma v\u00e5rt m\u00f6te med franskl\u00e4raren."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Jag \u00e4r i hissen. Min bror blev sjuk, d\u00e4rf\u00f6r \u00e4r jag inte d\u00e4r redan."
+      },
+      {
+        "speaker": "Alex",
+        "text": "\u00c5 nej! Jag hoppas att han \u00e4r b\u00e4ttre nu. Missade du frukost n\u00e4r du hj\u00e4lpte honom?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Ja, jag \u00e4r v\u00e4ldigt hungrig. Kan vi diskutera l\u00e4raren under lunchen?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Sj\u00e4lvklart. Jag ser en vacker matsal d\u00e4r vi kan \u00e4ta och prata."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Bra. Jag dr\u00f6mmer om att vi en dag ska resa till Frankrike och prata franska bra."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Jag med! L\u00e5t oss g\u00e5 nu. V\u00e5r l\u00e4rare kommer att f\u00f6rst\u00e5 varf\u00f6r vi missade m\u00f6tet."
+      }
+    ],
+    "translated_phrase_list": [
+      [
+        "We must",
+        "Vi m\u00e5ste"
+      ],
+      [
+        "You're hungry",
+        "Du \u00e4r hungrig"
+      ],
+      [
+        "I'm sick",
+        "jag \u00e4r sjuk"
+      ],
+      [
+        "They forgot",
+        "De gl\u00f6mde"
+      ],
+      [
+        "We can eat",
+        "Vi kan \u00e4ta"
+      ],
+      [
+        "You hope",
+        "Du hoppas"
+      ],
+      [
+        "I dream",
+        "jag dr\u00f6mmer"
+      ],
+      [
+        "We speak French",
+        "Vi talar franska"
+      ],
+      [
+        "You're in the lift",
+        "Du \u00e4r i hissen"
+      ],
+      [
+        "They missed breakfast",
+        "De missade frukosten"
+      ],
+      [
+        "We can discuss now",
+        "Vi kan diskutera nu"
+      ],
+      [
+        "I see a dining room",
+        "Jag ser en matsal"
+      ],
+      [
+        "You dream of travel",
+        "Du dr\u00f6mmer om att resa"
+      ],
+      [
+        "We will speak French well",
+        "Vi kommer att prata franska bra"
+      ],
+      [
+        "They're not there already",
+        "De \u00e4r inte d\u00e4r redan"
+      ],
+      [
+        "I hope we can talk now",
+        "Jag hoppas att vi kan prata nu"
+      ],
+      [
+        "You must not forget lunch",
+        "Du f\u00e5r inte gl\u00f6mma lunchen"
+      ],
+      [
+        "We can eat and talk there",
+        "Vi kan \u00e4ta och prata d\u00e4r"
+      ],
+      [
+        "They will understand why we missed",
+        "De kommer att f\u00f6rst\u00e5 varf\u00f6r vi missade"
+      ],
+      [
+        "I dream we will travel and speak",
+        "Jag dr\u00f6mmer att vi ska resa och prata"
+      ],
+      [
+        "Sam, where are you?",
+        "Sam, var \u00e4r du?"
+      ],
+      [
+        "We must not forget our meeting with the French teacher.",
+        "Vi f\u00e5r inte gl\u00f6mma v\u00e5rt m\u00f6te med franskl\u00e4raren."
+      ],
+      [
+        "I am in the lift.",
+        "Jag \u00e4r i hissen."
+      ],
+      [
+        "My brother got sick, which is why I'm not there already.",
+        "Min bror blev sjuk, d\u00e4rf\u00f6r \u00e4r jag inte d\u00e4r redan."
+      ],
+      [
+        "Oh no!",
+        "\u00c5 nej!"
+      ],
+      [
+        "I hope he's better now.",
+        "Jag hoppas att han \u00e4r b\u00e4ttre nu."
+      ],
+      [
+        "Did you miss breakfast while helping him?",
+        "Missade du frukost n\u00e4r du hj\u00e4lpte honom?"
+      ],
+      [
+        "Yes, I'm very hungry.",
+        "Ja, jag \u00e4r v\u00e4ldigt hungrig."
+      ],
+      [
+        "Can we discuss the teacher over lunch?",
+        "Kan vi diskutera l\u00e4raren under lunchen?"
+      ],
+      [
+        "Of course.",
+        "Sj\u00e4lvklart."
+      ],
+      [
+        "I see a beautiful dining room where we can eat and talk.",
+        "Jag ser en vacker matsal d\u00e4r vi kan \u00e4ta och prata."
+      ],
+      [
+        "Good.",
+        "Bra."
+      ],
+      [
+        "I dream that one day we will travel to France and speak French well.",
+        "Jag dr\u00f6mmer om att vi en dag ska resa till Frankrike och prata franska bra."
+      ],
+      [
+        "Me too!",
+        "Jag med!"
+      ],
+      [
+        "Let's go now.",
+        "L\u00e5t oss g\u00e5 nu."
+      ],
+      [
+        "Our teacher will understand why we missed the meeting.",
+        "V\u00e5r l\u00e4rare kommer att f\u00f6rst\u00e5 varf\u00f6r vi missade m\u00f6tet."
+      ]
+    ]
+  },
+  "climax": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    work, had, make, recognise, eat, live, write, cost, hear, cost\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    his, why, leg, well, idea, although, in, app, cup, from, I'm, green, food, tense, yet, in, why, hungry, tooth, banana, from, trip, shoe, computer, present, clock, mother, two, idea, since, lesson, often, table, or, easy, hungry, often, every, sister, it's, our, crown, which, probably, teacher, entire, programme, myself, tea, time, cigarette, breakfast, probably, o'clock, in, mother, much, from, theatre, who, well, coffee, from, often, within, brilliant, door, now, ourselves, his, key, every, although, since, yesterday, banana, twelve, was, politics, tense, because, often, after, him, different, green, tooth, tired, Swedish, different, television, why, English, girl, book, ourselves, warm, head, six, off\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Present Perfect, Future Perfect, Time prepositions\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex and Sam were supposed to meet their French teacher, but Sam was delayed due to his brother's illness. They decided to have lunch together instead, where they plan to discuss the teacher and their shared dream of traveling to France. They hope their teacher will understand the reason for missing the meeting.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: climax: A language competition is announced, pushing them to their limits.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Have you heard? Our teacher has announced a brilliant language competition!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "No, I haven't heard yet. What's the idea?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "It's a programme to make us work harder. We'll have written twelve lessons by next month."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Twelve? That's much! I'm tense already. When does it start?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "At six o'clock tomorrow. We'll probably be tired after every lesson."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Although it's difficult, I think it's a brilliant idea to improve our French."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, and by the time we finish, we'll have recognised different French accents."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Well, let's have a cup of coffee now and start working on our first lesson."
+      }
+    ],
+    "recap": "Alex informs Sam about a newly announced language competition involving twelve intensive French lessons over the next month. Despite initial apprehension about the workload, both students recognize the potential benefits, including improved language skills and accent recognition. They decide to start preparing for the competition, beginning with a cup of coffee.",
+    "uncorrected_phrase_list": [
+      "i think",
+      "us work",
+      "'s have",
+      "you have",
+      "it start",
+      "well let",
+      "you heard",
+      "we finish",
+      "it start ?",
+      "next month",
+      "o'clock tomorrow",
+      "i have recognised",
+      "no i have you heard",
+      "a programme to make",
+      "teacher has announced",
+      "we 'll have recognised",
+      "different french accents",
+      "what 's a brilliant language",
+      "difficult i 'm tense already",
+      "lessons by the time we finish",
+      "i have written twelve lessons",
+      "brilliant language competition",
+      "programme to improve our french",
+      "that 's difficult i have you heard",
+      "lessons by the idea to make us work",
+      "yes and start working on our teacher",
+      "a cup of coffee now and start working",
+      "lessons by the time we 'll have written",
+      "brilliant idea to improve our first lesson",
+      "we 'll probably be tired after every lesson",
+      "have you heard ?",
+      "our teacher has announced a brilliant language competition !",
+      "no , i have n't heard yet .",
+      "what 's the idea ?",
+      "it 's a programme to make us work harder .",
+      "we 'll have written twelve lessons by next month .",
+      "twelve ?",
+      "that 's much !",
+      "i 'm tense already .",
+      "when does it start ?",
+      "at six o'clock tomorrow .",
+      "we 'll probably be tired after every lesson .",
+      "although it 's difficult , i think it 's a brilliant idea to improve our french .",
+      "yes , and by the time we finish , we 'll have recognised different french accents .",
+      "well , let 's have a cup of coffee now and start working on our first lesson ."
+    ],
+    "corrected_phrase_list": [
+      "I'm tense",
+      "It's difficult",
+      "We'll start",
+      "You've heard",
+      "They're tired",
+      "It's brilliant",
+      "We'll work harder",
+      "You'll have written",
+      "They've announced",
+      "We'll be tired",
+      "It's a programme",
+      "You'll have recognised",
+      "We'll improve our French",
+      "They'll start at six o'clock",
+      "We'll have a cup of coffee",
+      "You'll be tired after every lesson",
+      "They'll have written twelve lessons",
+      "We'll recognise different French accents",
+      "You'll have finished by next month",
+      "We'll start working on our first lesson",
+      "Have you heard?",
+      "Our teacher has announced a brilliant language competition!",
+      "No, I haven't heard yet.",
+      "What's the idea?",
+      "It's a programme to make us work harder.",
+      "We'll have written twelve lessons by next month.",
+      "Twelve?",
+      "That's much!",
+      "I'm tense already.",
+      "When does it start?",
+      "At six o'clock tomorrow.",
+      "We'll probably be tired after every lesson.",
+      "Although it's difficult, I think it's a brilliant idea to improve our French.",
+      "Yes, and by the time we finish, we'll have recognised different French accents.",
+      "Well, let's have a cup of coffee now and start working on our first lesson."
+    ],
+    "translated_dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Har du h\u00f6rt? V\u00e5r l\u00e4rare har utlyst en lysande spr\u00e5kt\u00e4vling!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Nej, jag har inte h\u00f6rt \u00e4nnu. Vad \u00e4r tanken?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Det \u00e4r ett program f\u00f6r att f\u00e5 oss att arbeta h\u00e5rdare. Vi kommer att ha skrivit tolv lektioner till n\u00e4sta m\u00e5nad."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Tolv? Det \u00e4r mycket! Jag \u00e4r redan sp\u00e4nd. N\u00e4r b\u00f6rjar det?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Klockan sex imorgon. Vi kommer nog att vara tr\u00f6tta efter varje lektion."
+      },
+      {
+        "speaker": "Sam",
+        "text": "\u00c4ven om det \u00e4r sv\u00e5rt tycker jag att det \u00e4r en lysande id\u00e9 att f\u00f6rb\u00e4ttra v\u00e5r franska."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Ja, och n\u00e4r vi \u00e4r klara kommer vi att ha k\u00e4nt igen olika franska accenter."
+      },
+      {
+        "speaker": "Sam",
+        "text": "N\u00e5v\u00e4l, l\u00e5t oss ta en kopp kaffe nu och b\u00f6rja jobba p\u00e5 v\u00e5r f\u00f6rsta lektion."
+      }
+    ],
+    "translated_phrase_list": [
+      [
+        "I'm tense",
+        "Jag \u00e4r sp\u00e4nd"
+      ],
+      [
+        "It's difficult",
+        "Det \u00e4r sv\u00e5rt"
+      ],
+      [
+        "We'll start",
+        "Vi b\u00f6rjar"
+      ],
+      [
+        "You've heard",
+        "Du har h\u00f6rt"
+      ],
+      [
+        "They're tired",
+        "De \u00e4r tr\u00f6tta"
+      ],
+      [
+        "It's brilliant",
+        "Det \u00e4r lysande"
+      ],
+      [
+        "We'll work harder",
+        "Vi kommer att jobba h\u00e5rdare"
+      ],
+      [
+        "You'll have written",
+        "Du kommer att ha skrivit"
+      ],
+      [
+        "They've announced",
+        "De har meddelat"
+      ],
+      [
+        "We'll be tired",
+        "Vi kommer att vara tr\u00f6tta"
+      ],
+      [
+        "It's a programme",
+        "Det \u00e4r ett program"
+      ],
+      [
+        "You'll have recognised",
+        "Du kommer att ha k\u00e4nt igen"
+      ],
+      [
+        "We'll improve our French",
+        "Vi ska f\u00f6rb\u00e4ttra v\u00e5r franska"
+      ],
+      [
+        "They'll start at six o'clock",
+        "De b\u00f6rjar klockan sex"
+      ],
+      [
+        "We'll have a cup of coffee",
+        "Vi tar en kopp kaffe"
+      ],
+      [
+        "You'll be tired after every lesson",
+        "Du kommer att vara tr\u00f6tt efter varje lektion"
+      ],
+      [
+        "They'll have written twelve lessons",
+        "De kommer att ha skrivit tolv lektioner"
+      ],
+      [
+        "We'll recognise different French accents",
+        "Vi kommer att k\u00e4nna igen olika franska accenter"
+      ],
+      [
+        "You'll have finished by next month",
+        "Du kommer att vara klar n\u00e4sta m\u00e5nad"
+      ],
+      [
+        "We'll start working on our first lesson",
+        "Vi b\u00f6rjar jobba p\u00e5 v\u00e5r f\u00f6rsta lektion"
+      ],
+      [
+        "Have you heard?",
+        "Har du h\u00f6rt?"
+      ],
+      [
+        "Our teacher has announced a brilliant language competition!",
+        "V\u00e5r l\u00e4rare har utlyst en lysande spr\u00e5kt\u00e4vling!"
+      ],
+      [
+        "No, I haven't heard yet.",
+        "Nej, jag har inte h\u00f6rt \u00e4nnu."
+      ],
+      [
+        "What's the idea?",
+        "Vad \u00e4r tanken?"
+      ],
+      [
+        "It's a programme to make us work harder.",
+        "Det \u00e4r ett program f\u00f6r att f\u00e5 oss att arbeta h\u00e5rdare."
+      ],
+      [
+        "We'll have written twelve lessons by next month.",
+        "Vi kommer att ha skrivit tolv lektioner till n\u00e4sta m\u00e5nad."
+      ],
+      [
+        "Twelve?",
+        "Tolv?"
+      ],
+      [
+        "That's much!",
+        "Det \u00e4r mycket!"
+      ],
+      [
+        "I'm tense already.",
+        "Jag \u00e4r redan sp\u00e4nd."
+      ],
+      [
+        "When does it start?",
+        "N\u00e4r b\u00f6rjar det?"
+      ],
+      [
+        "At six o'clock tomorrow.",
+        "Klockan sex imorgon."
+      ],
+      [
+        "We'll probably be tired after every lesson.",
+        "Vi kommer nog att vara tr\u00f6tta efter varje lektion."
+      ],
+      [
+        "Although it's difficult, I think it's a brilliant idea to improve our French.",
+        "\u00c4ven om det \u00e4r sv\u00e5rt tycker jag att det \u00e4r en lysande id\u00e9 att f\u00f6rb\u00e4ttra v\u00e5r franska."
+      ],
+      [
+        "Yes, and by the time we finish, we'll have recognised different French accents.",
+        "Ja, och n\u00e4r vi \u00e4r klara kommer vi att ha k\u00e4nt igen olika franska accenter."
+      ],
+      [
+        "Well, let's have a cup of coffee now and start working on our first lesson.",
+        "N\u00e5v\u00e4l, l\u00e5t oss ta en kopp kaffe nu och b\u00f6rja jobba p\u00e5 v\u00e5r f\u00f6rsta lektion."
+      ]
+    ]
+  },
+  "falling_action": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    had, wake, sit, wake, has, close, swim, shall, hurry, learn\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    important, hungry, before, Swedish, today, head, we, book, yesterday, tomorrow, meeting, not, was, person, in, fish, throat, university, about, since, many, or, evening, tooth, summer, film, I, and, everybody, father, green, person, when, course, entire, yourself, not, sibling, English, with, money, course, well, but, breakfast, evening, how, off, tonight, yesterday, coffee, but, girl, question, until, herself, if, I, bicycle, beautiful, university, out, already, outside, to, myself, important, clever, every, yesterday, out, breakfast, lot, then, mother, every, coffee, on, within, where, film, dinner, his, to, table, everybody, bicycle, father, me, well, who, herself, books, clever, lot, on, because, myself, nothing, tense\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Noun clauses, Simple sentences, Present Perfect Continuous\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex informs Sam about a newly announced language competition involving twelve intensive French lessons over the next month. Despite initial apprehension about the workload, both students recognize the potential benefits, including improved language skills and accent recognition. They decide to start preparing for the competition, beginning with a cup of coffee.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: falling_action: They prepare for the competition, supporting each other through difficulties.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "How has your French course been since yesterday, Sam?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I have been learning many important words, but my head hurts."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I understand. Shall we sit and have coffee?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, please. I'm hungry too. When is dinner?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Dinner is not until this evening. We can have breakfast now if you'd like."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's a clever idea. I wake up hungry every morning."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Me too. Let's hurry to the university coffee shop before our next meeting."
+      }
+    ],
+    "recap": "Sam has been taking a French course and is feeling mentally exhausted. Alex suggests having coffee, and they decide to grab breakfast at the university coffee shop before their next meeting, as Sam is hungry and it's too early for dinner.",
+    "uncorrected_phrase_list": [
+      "my let",
+      "we sit",
+      "i wake",
+      "me too",
+      "my hurts",
+      "'s hurry",
+      "my hurts",
+      "dinner ?",
+      "you hurts",
+      "head hurts",
+      "yes please",
+      "hungry too",
+      "i understand",
+      "a clever idea",
+      "our next meeting",
+      "that 's a clever idea",
+      "i 'm hungry every morning",
+      "breakfast now if you hurts",
+      "the university coffee shop",
+      "dinner is not until this evening",
+      "we can have breakfast now if you 'd like",
+      "breakfast now hurry to the university coffee",
+      "your french course been since yesterday sam ?",
+      "we can have breakfast now hurry to the university",
+      "the university coffee shop before our next meeting",
+      "course been learning many important words but my let",
+      "how has your french course been since yesterday , sam ?",
+      "i have been learning many important words , but my head hurts .",
+      "i understand .",
+      "shall we sit and have coffee ?",
+      "yes , please .",
+      "i 'm hungry too .",
+      "when is dinner ?",
+      "dinner is not until this evening .",
+      "we can have breakfast now if you 'd like .",
+      "that 's a clever idea .",
+      "i wake up hungry every morning .",
+      "me too .",
+      "let 's hurry to the university coffee shop before our next meeting ."
+    ],
+    "corrected_phrase_list": [
+      "We understand",
+      "You hurry",
+      "I'm hungry",
+      "They wake up",
+      "It's evening",
+      "We have coffee",
+      "You learn words",
+      "My head hurts",
+      "Dinner is now",
+      "We sit and learn",
+      "You wake up hungry",
+      "I have been learning",
+      "They hurry to breakfast",
+      "We understand your head hurts",
+      "You have been learning French",
+      "I wake up hungry every morning",
+      "We can have breakfast now",
+      "They hurry to the coffee shop",
+      "You understand my head hurts since yesterday",
+      "We have been learning many important words",
+      "How has your French course been since yesterday, Sam?",
+      "I have been learning many important words, but my head hurts.",
+      "I understand.",
+      "Shall we sit and have coffee?",
+      "Yes, please.",
+      "I'm hungry too.",
+      "When is dinner?",
+      "Dinner is not until this evening.",
+      "We can have breakfast now if you'd like.",
+      "That's a clever idea.",
+      "I wake up hungry every morning.",
+      "Me too.",
+      "Let's hurry to the university coffee shop before our next meeting."
+    ],
+    "translated_dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hur har din franskakurs varit sedan ig\u00e5r, Sam?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Jag har l\u00e4rt mig m\u00e5nga viktiga ord, men jag f\u00e5r ont i huvudet."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Jag f\u00f6rst\u00e5r. Ska vi sitta och fika?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Ja tack. Jag \u00e4r ocks\u00e5 hungrig. N\u00e4r \u00e4r det middag?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Middag \u00e4r inte f\u00f6rr\u00e4n i kv\u00e4ll. Vi kan \u00e4ta frukost nu om du vill."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Det \u00e4r en smart id\u00e9. Jag vaknar hungrig varje morgon."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Jag med. L\u00e5t oss skynda till universitetskaf\u00e9et innan v\u00e5rt n\u00e4sta m\u00f6te."
+      }
+    ],
+    "translated_phrase_list": [
+      [
+        "We understand",
+        "Vi f\u00f6rst\u00e5r"
+      ],
+      [
+        "You hurry",
+        "Skynda dig"
+      ],
+      [
+        "I'm hungry",
+        "jag \u00e4r hungrig"
+      ],
+      [
+        "They wake up",
+        "De vaknar"
+      ],
+      [
+        "It's evening",
+        "Det \u00e4r kv\u00e4ll"
+      ],
+      [
+        "We have coffee",
+        "Vi fikar"
+      ],
+      [
+        "You learn words",
+        "Du l\u00e4r dig ord"
+      ],
+      [
+        "My head hurts",
+        "Mitt huvud g\u00f6r ont"
+      ],
+      [
+        "Dinner is now",
+        "Middagen \u00e4r nu"
+      ],
+      [
+        "We sit and learn",
+        "Vi sitter och l\u00e4r oss"
+      ],
+      [
+        "You wake up hungry",
+        "Du vaknar hungrig"
+      ],
+      [
+        "I have been learning",
+        "Jag har l\u00e4rt mig"
+      ],
+      [
+        "They hurry to breakfast",
+        "De skyndar till frukost"
+      ],
+      [
+        "We understand your head hurts",
+        "Vi f\u00f6rst\u00e5r att du g\u00f6r ont i huvudet"
+      ],
+      [
+        "You have been learning French",
+        "Du har l\u00e4rt dig franska"
+      ],
+      [
+        "I wake up hungry every morning",
+        "Jag vaknar hungrig varje morgon"
+      ],
+      [
+        "We can have breakfast now",
+        "Vi kan \u00e4ta frukost nu"
+      ],
+      [
+        "They hurry to the coffee shop",
+        "De skyndar till kaf\u00e9et"
+      ],
+      [
+        "You understand my head hurts since yesterday",
+        "Du f\u00f6rst\u00e5r att jag har ont i huvudet sedan ig\u00e5r"
+      ],
+      [
+        "We have been learning many important words",
+        "Vi har l\u00e4rt oss m\u00e5nga viktiga ord"
+      ],
+      [
+        "How has your French course been since yesterday, Sam?",
+        "Hur har din franskakurs varit sedan ig\u00e5r, Sam?"
+      ],
+      [
+        "I have been learning many important words, but my head hurts.",
+        "Jag har l\u00e4rt mig m\u00e5nga viktiga ord, men jag f\u00e5r ont i huvudet."
+      ],
+      [
+        "I understand.",
+        "Jag f\u00f6rst\u00e5r."
+      ],
+      [
+        "Shall we sit and have coffee?",
+        "Ska vi sitta och fika?"
+      ],
+      [
+        "Yes, please.",
+        "Ja tack."
+      ],
+      [
+        "I'm hungry too.",
+        "Jag \u00e4r ocks\u00e5 hungrig."
+      ],
+      [
+        "When is dinner?",
+        "N\u00e4r \u00e4r det middag?"
+      ],
+      [
+        "Dinner is not until this evening.",
+        "Middag \u00e4r inte f\u00f6rr\u00e4n i kv\u00e4ll."
+      ],
+      [
+        "We can have breakfast now if you'd like.",
+        "Vi kan \u00e4ta frukost nu om du vill."
+      ],
+      [
+        "That's a clever idea.",
+        "Det \u00e4r en smart id\u00e9."
+      ],
+      [
+        "I wake up hungry every morning.",
+        "Jag vaknar hungrig varje morgon."
+      ],
+      [
+        "Me too.",
+        "Jag med."
+      ],
+      [
+        "Let's hurry to the university coffee shop before our next meeting.",
+        "L\u00e5t oss skynda till universitetskaf\u00e9et innan v\u00e5rt n\u00e4sta m\u00f6te."
+      ]
+    ]
+  },
+  "resolution": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    meet, stand, fall, go, speak, eat, play, hope, like, study\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    child, telephone, sorry, why, cinema, during, outside, tense, thanks, on, next, is, bicycle, am, Sweden, always, by, politics, I'm, theatre, person, no, well, lot, brilliant, football, how, in, him, by, was, often, mother, probably, politics, three, I, because, until, while, crown, present, yesterday, student, meeting, tonight, clever, problem, yourselves, cup, kettle, wife, angry, better, evening, not, telephone, radio, then, year, trip, today, different, dinner, when, sick, policeman, or, on, hard, month, back, long, day, his, time, person, wine, tea, are, easy, him, what, this, warm, during, lift, funny, tea, myself, important, she, yesterday, am, time, dining, money, from, question, door\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Future Perfect Continuous, Present Perfect, Frequency\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Sam has been taking a French course and is feeling mentally exhausted. Alex suggests having coffee, and they decide to grab breakfast at the university coffee shop before their next meeting, as Sam is hungry and it's too early for dinner.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: resolution: They participate in the competition, growing closer as friends and more confident in their language skills.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "How are you feeling, Sam? Better after our breakfast?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thanks, I'm feeling brilliant now. The tea was what I needed."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's good. By this time tomorrow, we will have been speaking French for three hours in the competition!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I know! I've been studying a lot. I often practice while I'm on my bicycle."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's clever! I hope we do well. What time is the meeting tonight?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's at 7. I'm probably going to eat dinner during the meeting."
+      },
+      {
+        "speaker": "Alex",
+        "text": "No problem. I'll see you then!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "See you! I'm going outside to study now."
+      }
+    ],
+    "recap": "Alex and Sam are preparing for a French speaking competition tomorrow. They discuss their preparation strategies, including Sam's habit of practicing while cycling. They also confirm plans for a meeting at 7 PM, where Sam intends to eat dinner during the meeting.",
+    "uncorrected_phrase_list": [
+      "we do",
+      "i hope",
+      "i know",
+      "that see",
+      "i needed",
+      "what hope",
+      "no problem",
+      "it 's good",
+      "you feeling",
+      "that 's good",
+      "our breakfast ?",
+      "i 'm on my bicycle",
+      "i 'm feeling sam ?",
+      "the meeting tonight",
+      "tomorrow we do well",
+      "our have been studying a lot",
+      "brilliant now see you feeling",
+      "thanks i 've been studying a lot",
+      "time is the tea was what i 'll see",
+      "the tea was what i 've been studying",
+      "french for three hours in the meeting",
+      "this time is the tea was what i 'm going",
+      "time tomorrow we will have been speaking",
+      "i 've been speaking french for three hours",
+      "this time is the tea was what i often practice",
+      "i 'm going to eat dinner during the competition",
+      "french for three hours in the meeting tonight ?",
+      "how are you feeling , sam ?",
+      "better after our breakfast ?",
+      "thanks , i 'm feeling brilliant now .",
+      "the tea was what i needed .",
+      "that 's good .",
+      "by this time tomorrow , we will have been speaking french for three hours in the competition !",
+      "i know !",
+      "i 've been studying a lot .",
+      "i often practice while i 'm on my bicycle .",
+      "that 's clever !",
+      "i hope we do well .",
+      "what time is the meeting tonight ?",
+      "it 's at 7 .",
+      "i 'm probably going to eat dinner during the meeting .",
+      "no problem .",
+      "i 'll see you then !",
+      "see you !",
+      "i 'm going outside to study now ."
+    ],
+    "corrected_phrase_list": [
+      "I'm feeling",
+      "We're speaking",
+      "You're studying",
+      "They're eating",
+      "I hope",
+      "You know",
+      "We practice",
+      "It's clever",
+      "I'll see you",
+      "You're going outside",
+      "We're feeling brilliant now",
+      "I'm eating during the meeting",
+      "You've been studying a lot",
+      "They often practice while cycling",
+      "We hope we do well",
+      "I'm probably going to eat dinner",
+      "You're going outside to study now",
+      "We will have been speaking French",
+      "I've been studying while on my bicycle",
+      "By this time tomorrow, you'll be competing",
+      "How are you feeling, Sam?",
+      "Better after our breakfast?",
+      "Thanks, I'm feeling brilliant now.",
+      "The tea was what I needed.",
+      "That's good.",
+      "By this time tomorrow, we will have been speaking French for three hours in the competition!",
+      "I know!",
+      "I've been studying a lot.",
+      "I often practice while I'm on my bicycle.",
+      "That's clever!",
+      "I hope we do well.",
+      "What time is the meeting tonight?",
+      "It's at 7.",
+      "I'm probably going to eat dinner during the meeting.",
+      "No problem.",
+      "I'll see you then!",
+      "See you!",
+      "I'm going outside to study now."
+    ],
+    "translated_dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hur m\u00e5r du, Sam? B\u00e4ttre efter v\u00e5r frukost?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Tack, jag k\u00e4nner mig briljant nu. Teet var vad jag beh\u00f6vde."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Det \u00e4r bra. Vid den h\u00e4r tiden imorgon kommer vi att ha pratat franska i tre timmar i t\u00e4vlingen!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Jag vet! Jag har pluggat mycket. Jag tr\u00e4nar ofta n\u00e4r jag sitter p\u00e5 cykeln."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Det \u00e4r smart! Jag hoppas att vi klarar oss bra. Vilken tid \u00e4r m\u00f6tet ikv\u00e4ll?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Klockan \u00e4r 7. Jag ska nog \u00e4ta middag under m\u00f6tet."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Inga problem. Vi ses d\u00e5!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Vi ses! Jag ska ut och plugga nu."
+      }
+    ],
+    "translated_phrase_list": [
+      [
+        "I'm feeling",
+        "Jag k\u00e4nner mig"
+      ],
+      [
+        "We're speaking",
+        "Vi pratar"
+      ],
+      [
+        "You're studying",
+        "Du studerar"
+      ],
+      [
+        "They're eating",
+        "De \u00e4ter"
+      ],
+      [
+        "I hope",
+        "jag hoppas"
+      ],
+      [
+        "You know",
+        "Du vet"
+      ],
+      [
+        "We practice",
+        "Vi tr\u00e4nar"
+      ],
+      [
+        "It's clever",
+        "Det \u00e4r smart"
+      ],
+      [
+        "I'll see you",
+        "Vi ses"
+      ],
+      [
+        "You're going outside",
+        "Du g\u00e5r ut"
+      ],
+      [
+        "We're feeling brilliant now",
+        "Vi k\u00e4nner oss lysande nu"
+      ],
+      [
+        "I'm eating during the meeting",
+        "Jag \u00e4ter under m\u00f6tet"
+      ],
+      [
+        "You've been studying a lot",
+        "Du har pluggat mycket"
+      ],
+      [
+        "They often practice while cycling",
+        "De tr\u00e4nar ofta medan de cyklar"
+      ],
+      [
+        "We hope we do well",
+        "Vi hoppas att vi klarar oss bra"
+      ],
+      [
+        "I'm probably going to eat dinner",
+        "Jag ska nog \u00e4ta middag"
+      ],
+      [
+        "You're going outside to study now",
+        "Du ska ut och studera nu"
+      ],
+      [
+        "We will have been speaking French",
+        "Vi kommer att ha pratat franska"
+      ],
+      [
+        "I've been studying while on my bicycle",
+        "Jag har pluggat medan jag cyklade"
+      ],
+      [
+        "By this time tomorrow, you'll be competing",
+        "Vid den h\u00e4r tiden imorgon kommer du att t\u00e4vla"
+      ],
+      [
+        "How are you feeling, Sam?",
+        "Hur m\u00e5r du, Sam?"
+      ],
+      [
+        "Better after our breakfast?",
+        "B\u00e4ttre efter v\u00e5r frukost?"
+      ],
+      [
+        "Thanks, I'm feeling brilliant now.",
+        "Tack, jag k\u00e4nner mig briljant nu."
+      ],
+      [
+        "The tea was what I needed.",
+        "Teet var vad jag beh\u00f6vde."
+      ],
+      [
+        "That's good.",
+        "Det \u00e4r bra."
+      ],
+      [
+        "By this time tomorrow, we will have been speaking French for three hours in the competition!",
+        "Vid den h\u00e4r tiden imorgon kommer vi att ha pratat franska i tre timmar i t\u00e4vlingen!"
+      ],
+      [
+        "I know!",
+        "Jag vet!"
+      ],
+      [
+        "I've been studying a lot.",
+        "Jag har pluggat mycket."
+      ],
+      [
+        "I often practice while I'm on my bicycle.",
+        "Jag tr\u00e4nar ofta n\u00e4r jag sitter p\u00e5 cykeln."
+      ],
+      [
+        "That's clever!",
+        "Det \u00e4r smart!"
+      ],
+      [
+        "I hope we do well.",
+        "Jag hoppas att vi klarar oss bra."
+      ],
+      [
+        "What time is the meeting tonight?",
+        "Vilken tid \u00e4r m\u00f6tet ikv\u00e4ll?"
+      ],
+      [
+        "It's at 7.",
+        "Klockan \u00e4r 7."
+      ],
+      [
+        "I'm probably going to eat dinner during the meeting.",
+        "Jag ska nog \u00e4ta middag under m\u00f6tet."
+      ],
+      [
+        "No problem.",
+        "Inga problem."
+      ],
+      [
+        "I'll see you then!",
+        "Vi ses d\u00e5!"
+      ],
+      [
+        "See you!",
+        "Vi ses!"
+      ],
+      [
+        "I'm going outside to study now.",
+        "Jag ska ut och plugga nu."
+      ]
+    ]
+  }
+}
