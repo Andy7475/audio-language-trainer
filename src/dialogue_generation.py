@@ -100,7 +100,7 @@ def generate_dialogue_prompt(
     last_recap: str,
     verb_count=10,
     verb_use_count=3,
-    vocab_count=100,
+    vocab_count=30,
     vocab_use_count=10,
     grammar_concept_count=10,
     grammar_use_count=3,
