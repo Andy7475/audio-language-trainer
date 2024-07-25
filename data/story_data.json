@@ -1,0 +1,488 @@
+{
+  "exposition": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    cost, sing, can, write, has, take, must, take, went, call\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    father, before, herself, child, theatre, boring, who, idea, how, I, sister, I'm, theatre, French, throat, it, dining, but, weather, food, policeman, city, nothing, cup, six, television, five, Sweden, child, he, while, off, politics, French, myself, off, person, lunch, we, first, her, then, present, got, yet, girl, after, hungry, day, with, time, probably, tomorrow, Swedish, about, angry, big, four, angry, next, good, three, yet, here, away, many, much, kettle, down, fish, how, lesson, child, was, expensive, now, off, you, fine, which, down, angry, while, glass, himself, Sweden, herself, father, lot, not, clever, problem, my, nothing, teacher, computer, tired, English, but, tonight\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Passive voice, Dependent clauses, Second conditional\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: This is the beginning of the story.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: exposition: Two friends, Alex and Sam, decide to learn a new language together.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, I've got an idea. How about we learn French together?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "French? But it's probably expensive. I'm not sure we can afford it."
+      },
+      {
+        "speaker": "Alex",
+        "text": "If we took lessons from a good teacher, it wouldn't cost much."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Hmm... I see. When would the lessons be taken?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Probably after work, while we're not too tired."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Fine. Let's call the teacher tomorrow and see what can be done."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Great! I'm excited about this new idea."
+      }
+    ],
+    "recap": "Alex suggests to Sam that they learn French together, addressing Sam's concerns about cost and timing. They agree to contact a teacher the next day to explore the possibility of taking French lessons after work.",
+    "uncorrected_phrase_list": [
+      "i see",
+      "it let",
+      "'s call",
+      "we took",
+      "we learn",
+      "french ?",
+      "i 've got",
+      "hmm i see",
+      "sure we took",
+      "this new idea",
+      "what can afford it",
+      "the lessons be done",
+      "sam i 'm not too done",
+      "hmm i 've got an idea",
+      "good teacher it let work",
+      "excited about this new idea",
+      "tomorrow and see what can afford",
+      "what can afford it would n't cost",
+      "lessons from a good teacher tomorrow",
+      "teacher it would the lessons be taken",
+      "good teacher it let work while we took",
+      "a good teacher it let work while we took",
+      "french together call the teacher tomorrow",
+      "sam i 'm not sure we learn french together call"
+    ],
+    "corrected_phrase_list": [
+      "I see",
+      "It lets",
+      "Let's call",
+      "We took",
+      "We learn",
+      "French?",
+      "I've got",
+      "Hmm, I see",
+      "Sure, we took",
+      "This new idea",
+      "What can we afford it",
+      "The lessons should be done",
+      "Sam, I'm not too done",
+      "Hmm, I've got an idea",
+      "A good teacher lets it work",
+      "Excited about this new idea",
+      "Tomorrow and see what we can afford",
+      "What we can afford it wouldn't cost",
+      "Lessons from a good teacher tomorrow",
+      "A good teacher it would let the lessons be taken",
+      "A good teacher lets it work while we took",
+      "A good teacher lets it work while we took",
+      "French together, let's call the teacher tomorrow",
+      "Sam, I'm not sure we learn French together, let's call"
+    ]
+  },
+  "rising_action": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    see, must, travel, travel, forget, dream, discuss, discuss, miss, wake\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    beautiful, we, in, ever, where, well, theatre, brother, teacher, film, lunch, mother, five, back, where, question, books, funny, wine, twelve, breakfast, lot, better, every, got, very, my, lunch, app, this, city, there, sister, six, while, shoe, out, dining, tea, books, in, lift, crown, never, computer, walk, fish, which, hungry, yes, himself, cup, theatre, sick, meeting, not, warm, table, this, now, our, entire, am, telephone, student, nothing, and, wine, in, month, many, house, much, key, question, nothing, day, us, cold, to, person, six, one, already, funny, clock, walk, course, our, student, you, door, week, football, meeting, dinner, by, good, food, book\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Noun clauses, Obligation, Dependent clauses\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex suggests to Sam that they learn French together, addressing Sam's concerns about cost and timing. They agree to contact a teacher the next day to explore the possibility of taking French lessons after work.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: rising_action: They face challenges in their studies and personal lives that test their commitment.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, where are you? We must not forget our meeting with the French teacher."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I am in the lift. My brother got sick, which is why I'm not there already."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh no! I hope he's better now. Did you miss breakfast while helping him?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, I'm very hungry. Can we discuss the teacher over lunch?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Of course. I see a beautiful dining room where we can eat and talk."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good. I dream that one day we will travel to France and speak French well."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Me too! Let's go now. Our teacher will understand why we missed the meeting."
+      }
+    ],
+    "recap": "Alex and Sam were supposed to meet their French teacher, but Sam was delayed due to his brother's illness. They decided to have lunch together instead, where they plan to discuss the teacher and their shared dream of traveling to France. They hope their teacher will understand the reason for missing the meeting.",
+    "uncorrected_phrase_list": [
+      "'s go",
+      "i see",
+      "i hope",
+      "me too",
+      "i dream",
+      "we missed",
+      "'s go now",
+      "we discuss",
+      "better now",
+      "brother got",
+      "yes i dream",
+      "french well",
+      "day we discuss",
+      "i am in the lift",
+      "we will understand",
+      "day we must forget",
+      "teacher over lunch",
+      "we can eat and talk",
+      "yes i 'm very hungry",
+      "i dream that one day",
+      "room where we discuss",
+      "i see a beautiful dining",
+      "breakfast while helping him ?",
+      "our will understand why i see",
+      "sam where we can eat and speak",
+      "my is why we discuss the meeting",
+      "room where are you miss breakfast",
+      "brother got sick which is why i hope",
+      "teacher will travel to france and speak",
+      "meeting with the french breakfast while helping"
+    ],
+    "corrected_phrase_list": [
+      "Let's go",
+      "I see",
+      "I hope",
+      "Me too",
+      "I dream",
+      "We missed",
+      "Let's go now",
+      "We discuss",
+      "Better now",
+      "My brother got",
+      "Yes, I dream",
+      "French well",
+      "The day we discuss",
+      "I am in the elevator",
+      "We will understand",
+      "The day we must forget",
+      "The teacher over lunch",
+      "We can eat and talk",
+      "Yes, I'm very hungry",
+      "I dream that one day",
+      "The room where we discuss",
+      "I see a beautiful dining room",
+      "Breakfast while helping him?",
+      "Our meeting will understand why I see",
+      "Where we can eat and speak, Sam",
+      "My question is why we discuss the meeting",
+      "The room where you missed breakfast",
+      "My brother got sick, which is why I hope",
+      "The teacher will travel to France and speak",
+      "A meeting with the French breakfast while helping"
+    ]
+  },
+  "climax": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    work, had, make, recognise, eat, live, write, cost, hear, cost\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    his, why, leg, well, idea, although, in, app, cup, from, I'm, green, food, tense, yet, in, why, hungry, tooth, banana, from, trip, shoe, computer, present, clock, mother, two, idea, since, lesson, often, table, or, easy, hungry, often, every, sister, it's, our, crown, which, probably, teacher, entire, programme, myself, tea, time, cigarette, breakfast, probably, o'clock, in, mother, much, from, theatre, who, well, coffee, from, often, within, brilliant, door, now, ourselves, his, key, every, although, since, yesterday, banana, twelve, was, politics, tense, because, often, after, him, different, green, tooth, tired, Swedish, different, television, why, English, girl, book, ourselves, warm, head, six, off\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Present Perfect, Future Perfect, Time prepositions\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex and Sam were supposed to meet their French teacher, but Sam was delayed due to his brother's illness. They decided to have lunch together instead, where they plan to discuss the teacher and their shared dream of traveling to France. They hope their teacher will understand the reason for missing the meeting.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: climax: A language competition is announced, pushing them to their limits.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Have you heard? Our teacher has announced a brilliant language competition!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "No, I haven't heard yet. What's the idea?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "It's a programme to make us work harder. We'll have written twelve lessons by next month."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Twelve? That's much! I'm tense already. When does it start?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "At six o'clock tomorrow. We'll probably be tired after every lesson."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Although it's difficult, I think it's a brilliant idea to improve our French."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, and by the time we finish, we'll have recognised different French accents."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Well, let's have a cup of coffee now and start working on our first lesson."
+      }
+    ],
+    "recap": "Alex informs Sam about a newly announced language competition involving twelve intensive French lessons over the next month. Despite initial apprehension about the workload, both students recognize the potential benefits, including improved language skills and accent recognition. They decide to start preparing for the competition, beginning with a cup of coffee.",
+    "uncorrected_phrase_list": [
+      "us work",
+      "'s have",
+      "i think",
+      "well let",
+      "it start",
+      "we finish",
+      "you heard",
+      "'s improve",
+      "that announced",
+      "it start working",
+      "o'clock tomorrow",
+      "no i 'm tense already",
+      "lessons by the idea ?",
+      "a programme to improve",
+      "no i think it 's a cup",
+      "what 's the idea to make",
+      "brilliant idea to improve",
+      "what 's the time we finish",
+      "the time we 'll have written",
+      "different french competition",
+      "i think it 's a cup of coffee",
+      "no i have written twelve lessons",
+      "yes and start working on our teacher",
+      "lessons by the time we 'll have recognised",
+      "teacher has announced a brilliant language",
+      "i have recognised different french accents",
+      "difficult i think it 's the idea to improve",
+      "idea to improve our teacher has announced a cup",
+      "coffee now and start working on our teacher has announced",
+      "the time we 'll have recognised different french competition"
+    ],
+    "corrected_phrase_list": [
+      "Let's work",
+      "Let's have",
+      "I think",
+      "Well, let's",
+      "Let it start",
+      "We'll finish",
+      "You've heard",
+      "Let's improve",
+      "That's announced",
+      "Let it start working",
+      "Tomorrow at 9 o'clock",
+      "No, I'm already tense",
+      "Lessons by the idea?",
+      "A program to improve",
+      "No, I think it's a coffee",
+      "What's the idea to make?",
+      "Brilliant idea to improve",
+      "What time will we finish?",
+      "The time we'll have written",
+      "Different French competition",
+      "I think it's a cup of coffee",
+      "No, I have written twelve lessons",
+      "Yes, and start working on our teacher",
+      "Lessons by the time we'll have recognized",
+      "The teacher has announced a brilliant language",
+      "I have recognized different French accents",
+      "I think it's a difficult idea to improve",
+      "Idea to improve our teacher has announced a coffee",
+      "Coffee now and start working on our teacher has announced",
+      "The time we'll have recognized different French competition"
+    ]
+  },
+  "falling_action": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    had, wake, sit, wake, has, close, swim, shall, hurry, learn\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    important, hungry, before, Swedish, today, head, we, book, yesterday, tomorrow, meeting, not, was, person, in, fish, throat, university, about, since, many, or, evening, tooth, summer, film, I, and, everybody, father, green, person, when, course, entire, yourself, not, sibling, English, with, money, course, well, but, breakfast, evening, how, off, tonight, yesterday, coffee, but, girl, question, until, herself, if, I, bicycle, beautiful, university, out, already, outside, to, myself, important, clever, every, yesterday, out, breakfast, lot, then, mother, every, coffee, on, within, where, film, dinner, his, to, table, everybody, bicycle, father, me, well, who, herself, books, clever, lot, on, because, myself, nothing, tense\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Noun clauses, Simple sentences, Present Perfect Continuous\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex informs Sam about a newly announced language competition involving twelve intensive French lessons over the next month. Despite initial apprehension about the workload, both students recognize the potential benefits, including improved language skills and accent recognition. They decide to start preparing for the competition, beginning with a cup of coffee.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: falling_action: They prepare for the competition, supporting each other through difficulties.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "How has your French course been since yesterday, Sam?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I have been learning many important words, but my head hurts."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I understand. Shall we sit and have coffee?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, please. I'm hungry too. When is dinner?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Dinner is not until this evening. We can have breakfast now if you'd like."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's a clever idea. I wake up hungry every morning."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Me too. Let's hurry to the university coffee shop before our next meeting."
+      }
+    ],
+    "recap": "Sam has been taking a French course and is feeling mentally exhausted. Alex suggests having coffee, and they decide to grab breakfast at the university coffee shop before their next meeting, as Sam is hungry and it's too early for dinner.",
+    "uncorrected_phrase_list": [
+      "we sit",
+      "i wake",
+      "me let",
+      "'s hurry",
+      "dinner ?",
+      "i 'm like",
+      "head hurts",
+      "head hurts",
+      "yes please",
+      "hungry too",
+      "you 'd like",
+      "i understand",
+      "this evening",
+      "my understand",
+      "university coffee ?",
+      "i have been learning",
+      "hungry every morning",
+      "that 's a clever idea",
+      "the university coffee",
+      "we can have breakfast",
+      "we can have coffee shop",
+      "course been since yesterday",
+      "shop before our next meeting",
+      "we can have breakfast now like",
+      "dinner is not until this evening",
+      "french course been since yesterday",
+      "me have been since yesterday sam ?",
+      "'s hurry to the university coffee ?",
+      "many important words but my understand",
+      "your french course been learning many important words"
+    ],
+    "corrected_phrase_list": [
+      "We sit",
+      "I wake",
+      "Let me",
+      "Let's hurry",
+      "Is it dinner?",
+      "I'm like",
+      "My head hurts",
+      "My head hurts",
+      "Yes, please",
+      "I'm hungry too",
+      "You'd like",
+      "I understand",
+      "This evening",
+      "I understand",
+      "University coffee?",
+      "I have been learning",
+      "I'm hungry every morning",
+      "That's a clever idea",
+      "The university coffee",
+      "We can have breakfast",
+      "We can have coffee at the shop",
+      "The course has been since yesterday",
+      "Let's go to the shop before our next meeting",
+      "We can have breakfast now like",
+      "Dinner is not until this evening",
+      "The French course has been since yesterday",
+      "Have I been since yesterday, Sam?",
+      "Let's hurry to the university coffee",
+      "I understand many important words",
+      "Your French course has been learning many important words"
+    ]
+  },
+  "resolution": {
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    meet, stand, fall, go, speak, eat, play, hope, like, study\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    child, telephone, sorry, why, cinema, during, outside, tense, thanks, on, next, is, bicycle, am, Sweden, always, by, politics, I'm, theatre, person, no, well, lot, brilliant, football, how, in, him, by, was, often, mother, probably, politics, three, I, because, until, while, crown, present, yesterday, student, meeting, tonight, clever, problem, yourselves, cup, kettle, wife, angry, better, evening, not, telephone, radio, then, year, trip, today, different, dinner, when, sick, policeman, or, on, hard, month, back, long, day, his, time, person, wine, tea, are, easy, him, what, this, warm, during, lift, funny, tea, myself, important, she, yesterday, am, time, dining, money, from, question, door\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Future Perfect Continuous, Present Perfect, Frequency\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Sam has been taking a French course and is feeling mentally exhausted. Alex suggests having coffee, and they decide to grab breakfast at the university coffee shop before their next meeting, as Sam is hungry and it's too early for dinner.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: resolution: They participate in the competition, growing closer as friends and more confident in their language skills.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "How are you feeling, Sam? Better after our breakfast?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thanks, I'm feeling brilliant now. The tea was what I needed."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's good. By this time tomorrow, we will have been speaking French for three hours in the competition!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I know! I've been studying a lot. I often practice while I'm on my bicycle."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's clever! I hope we do well. What time is the meeting tonight?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's at 7. I'm probably going to eat dinner during the meeting."
+      },
+      {
+        "speaker": "Alex",
+        "text": "No problem. I'll see you then!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "See you! I'm going outside to study now."
+      }
+    ],
+    "recap": "Alex and Sam are preparing for a French speaking competition tomorrow. They discuss their preparation strategies, including Sam's habit of practicing while cycling. They also confirm plans for a meeting at 7 PM, where Sam intends to eat dinner during the meeting.",
+    "uncorrected_phrase_list": [
+      "we do",
+      "i know",
+      "i hope",
+      "i needed",
+      "i 'll see",
+      "we do well",
+      "no problem",
+      "it 's good",
+      "you feeling",
+      "breakfast ?",
+      "what speaking",
+      "thanks i needed",
+      "our breakfast ?",
+      "you feeling sam ?",
+      "the meeting tonight",
+      "that are you feeling",
+      "it 'll see you feeling",
+      "the tea was what i hope",
+      "i 'm going to eat dinner",
+      "thanks i 'm on my bicycle",
+      "we will have been speaking",
+      "thanks i 'm going to study",
+      "thanks i 've been studying a lot",
+      "the tea was what i often practice",
+      "tomorrow we will have been studying",
+      "dinner during the meeting tonight ?",
+      "this time is the tea was what i needed",
+      "tea was what i needed in the competition",
+      "i 've been speaking french for three hours",
+      "this time tomorrow we will have been speaking"
+    ],
+    "corrected_phrase_list": [
+      "we do",
+      "I know",
+      "I hope",
+      "I needed",
+      "I'll see",
+      "we do well",
+      "no problem",
+      "it's good",
+      "you feeling?",
+      "breakfast?",
+      "what am I speaking?",
+      "thanks, I needed that",
+      "our breakfast?",
+      "you feeling, Sam?",
+      "the meeting is tonight",
+      "how are you feeling?",
+      "I'll see you feeling",
+      "the tea was what I hoped for",
+      "I'm going to eat dinner",
+      "thanks, I'm on my bicycle",
+      "we will have been speaking",
+      "thanks, I'm going to study",
+      "thanks, I've been studying a lot",
+      "the tea was what I often practice",
+      "tomorrow we will have been studying",
+      "dinner during the meeting tonight?",
+      "this time, the tea was what I needed",
+      "the tea was what I needed in the competition",
+      "I've been speaking French for three hours",
+      "this time tomorrow, we will have been speaking"
+    ]
+  }
+}

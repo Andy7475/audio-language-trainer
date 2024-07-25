@@ -8,15 +8,17 @@ from typing import Dict, List, Set, Tuple
 
 import pysnooper
 import spacy
-from anthropic import AnthropicVertex
 from dotenv import load_dotenv
 
 from src.config_loader import config
-from src.utils import anthropic_generate, extract_json_from_llm_response
+from src.utils import (
+    anthropic_generate,
+    extract_json_from_llm_response,
+    load_json,
+    save_json,
+)
 
 load_dotenv()  # so we can use environment variables for various global settings
-
-PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 
 GRAMMAR_USAGE_PATH = "../data/grammar_concepts_usage.json"
 VOCAB_USAGE_PATH = "../data/vocab_usage.json"
@@ -28,7 +30,7 @@ def generate_story_plan(story_guide: str = None, test=True) -> dict:
     """This function generates an outline story following the story_structure written below.
     When we are creating dialgoue, we will feed the story_plan into the function a bit at a time for subsequent dialogues
     so there is some continuity.
-    
+
     returns: a JSON story plan, but it also saves it to STORY_PLAN_PATH"""
     story_structure = [
         "Exposition: Introduce the main characters (Alex and Sam) and setting",
@@ -66,9 +68,7 @@ def generate_story_plan(story_guide: str = None, test=True) -> dict:
     # Normalize keys to lowercase
     story_plan = {k.lower(): v for k, v in story_plan.items()}
 
-    with open(STORY_PLAN_PATH, "w") as f:
-        json.dump(story_plan, f, indent=2)
-
+    save_json(story_plan, STORY_PLAN_PATH)
     return story_plan
 
 
@@ -77,122 +77,36 @@ def generate_recap(dialogue, test=True):
     Based on the following dialogue, provide a brief recap of the events and character interactions. 
     Keep the recap to 2-3 sentences, focusing on the main points that are relevant for continuing the story.
     
+    Output should JSON of the form {{"recap" : "your recap here"}}
+
     Dialogue:
     {json.dumps(dialogue, indent=2)}
     """
 
     # Here, you would send this prompt to your LLM and get the response
     if test:
-        llm_response = "Alex and Sam met to study together. They discussed their progress and challenges in learning the new language. They also made plans to attend a language exchange event next week."
+        llm_response = """{"recap" : "Alex and Sam met to study together. They discussed their progress and challenges in learning the new language. They also made plans to attend a language exchange event next week."}"""
     else:
         llm_response = anthropic_generate(prompt)
 
-    # Load existing recaps
-    if os.path.exists(RECAP_PATH):
-        with open(RECAP_PATH, "r") as f:
-            recaps = json.load(f)
-    else:
-        recaps = {"recaps": []}
+    recap = extract_json_from_llm_response(llm_response)["recap"]
 
-    # Append new recap
-    recaps["recaps"].append(llm_response)
-
-    # Save updated recaps
-    with open(RECAP_PATH, "w") as f:
-        json.dump(recaps, f, indent=2)
-
-    return llm_response
+    return recap
 
 
-def get_story_recap(num_recaps=None):
-    """
-    Retrieve the specified number of most recent recaps.
-    If num_recaps is None, return all recaps.
-
-    :param num_recaps: Number of most recent recaps to retrieve (optional)
-    :return: List of recaps
-    """
-    if os.path.exists(RECAP_PATH):
-        with open(RECAP_PATH, "r") as f:
-            recaps = json.load(f)["recaps"]
-        if num_recaps is not None:
-            return recaps[-num_recaps:]
-        return recaps
-    else:
-        return []
-
-
-def get_story_plan():
-    try:
-        with open(STORY_PLAN_PATH, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return generate_story_plan()
-
-
-def get_current_story_part(recaps: List[str], story_plan: dict) -> str:
-    """
-    Determine which part of the story we're currently in based on the number of recaps.
-
-    :param recaps: List of existing recaps
-    :param story_plan: Dictionary containing the story plan
-    :return: Current part of the story
-    """
-    DIALOGUES_PER_STORY_PART = 1  # UNIT TEST will fail if this is changed
-    story_parts = list(story_plan.keys())
-    current_part_index = min(
-        len(recaps) // DIALOGUES_PER_STORY_PART, len(story_parts) - 1
-    )
-    return story_parts[current_part_index]
-
-
-def get_last_recap(recaps: List[str]) -> str:
-    """
-    Get the last recap or a default message if no recaps exist.
-
-    :param recaps: List of existing recaps
-    :return: Last recap or default message
-    """
-    return recaps[-1] if recaps else "This is the beginning of the story."
-
-
-def load_story_plan():
-    """
-    Load the story plan from the JSON file.
-
-    :return: Dictionary containing the story plan
-    """
-    try:
-        with open(STORY_PLAN_PATH, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}  # Return an empty dict if file not found
-
-
-def load_recaps():
-    """
-    Load the recaps from the JSON file.
-
-    :return: List of recaps
-    """
-    try:
-        with open(RECAP_PATH, "r") as f:
-            return json.load(f)["recaps"]
-    except FileNotFoundError:
-        return []
-
-
-@pysnooper.snoop(output="pysnoop.txt")
 def generate_dialogue_prompt(
+    story_part: str,
+    story_part_outline: str,
+    last_recap: str,
     verb_count=10,
     verb_use_count=3,
     vocab_count=100,
     vocab_use_count=10,
     grammar_concept_count=10,
+    grammar_use_count=3,
 ):
     # Load the JSON files
-    with open(GRAMMAR_USAGE_PATH, "r") as f:
-        grammar_concepts = json.load(f)
+    grammar_concepts = load_json(GRAMMAR_USAGE_PATH)
 
     # Select verbs
     verbs = get_least_used_words("verbs", verb_count)
@@ -203,39 +117,14 @@ def generate_dialogue_prompt(
     vocab_str = ", ".join(vocab)
 
     # Select grammar concepts
-    usable_concepts = [
-        concept
-        for category in grammar_concepts.values()
-        for concept, details in category.items()
-        if details["use"]
-    ]
-    selected_concepts = random.sample(
-        usable_concepts, min(grammar_concept_count, len(usable_concepts))
-    )
+    selected_concepts = select_grammar_concepts(grammar_concepts, grammar_concept_count)
+    used_concepts = selected_concepts[:grammar_use_count]
 
-    # Sort concepts by usage
-    selected_concepts.sort(
-        key=lambda x: sum(
-            details["times_seen"]
-            for category in grammar_concepts.values()
-            for concept, details in category.items()
-            if concept == x
-        )
-    )
-
-    # Get story plan and recap
-    story_plan = get_story_plan()
-    recaps = get_story_recap()
-
-    # Determine which part of the story we're currently in
-    current_part = get_current_story_part(recaps, story_plan)
-
-    # Get the last recap
-    last_recap = get_last_recap(recaps)
+    # Update grammar concept usage
+    update_grammar_concept_usage(grammar_concepts, used_concepts)
 
     # Generate the prompt
-    prompt = f"""
-    Create a brief dialogue for language learners using the following guidelines:
+    prompt = f"""Create a brief dialogue for language learners using the following guidelines:
     1. This is for language practice. Only use words from the lists provided below.
     2. Pick from about {verb_use_count} of these verbs:
     {verbs_str}
@@ -243,59 +132,58 @@ def generate_dialogue_prompt(
     3. Use at least {vocab_use_count} words from this vocabulary list:
     {vocab_str}
     4. Focus on these grammatical concepts (use each at least once, but no more than twice):
-    {', '.join(selected_concepts[:3])}
+    {', '.join(used_concepts)}
     5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).
     6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.
-    7. Output the dialogue in JSON format with speakers clearly labeled. For example:
+    7. Recap from last episode: {last_recap}. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.
+    8. Output the dialogue in JSON format with speakers clearly labeled. For example:
     {{
         "dialogue": [
         {{"speaker": "Alex", "text": "Hello! How are you today?"}},
         {{"speaker": "Sam", "text": "I'm doing well, thanks for asking."}}
         ]
     }}
-    8. Current story phase and plan: {current_part}: {story_plan[current_part]}
-    9. Recap from last episode: {last_recap}
-    10. Create dialogue for the current story plan.
+    8. Current story phase and plan: {story_part}: {story_part_outline}
+    9. Create dialogue for the current story plan.
     Remember:
     - Only use words from the provided lists.
     - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).
-    - Keep the language simple and appropriate for beginners.
+    - Keep the language simple and appropriate for beginner language learners.
     """
-    return prompt, verbs + vocab
+    return prompt
 
 
-import json
-from typing import Set, Tuple
+def select_grammar_concepts(
+    grammar_concepts: Dict, count: int
+) -> List[Tuple[str, str]]:
+    usable_concepts = [
+        (category, concept)
+        for category, concepts in grammar_concepts.items()
+        for concept, details in concepts.items()
+        if details["use"]
+    ]
 
-def update_vocab_usage(used_words: Set[Tuple[str, str]]):
-    """Taking a list of (word, POS) e.g. ('can', 'VERB') we update the vocab_usage
-    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
-    lessons. words that haven't been used have a higher chance of being sampled.
-    
-    No return statement"""
-    # Load the current usage
-    with open(VOCAB_USAGE_PATH, "r") as f:
-        vocab_usage = json.load(f)
+    # Sort concepts by usage (least used first)
+    usable_concepts.sort(key=lambda x: grammar_concepts[x[0]][x[1]]["times_seen"])
 
-    # Update the usage count for each used word
-    for word, pos in used_words:
-        if pos == "VERB":
-            if word in vocab_usage["verbs"]:
-                vocab_usage["verbs"][word] += 1
-            else:
-                vocab_usage["verbs"][word] = 1
-        else:
-            if word in vocab_usage["vocab"]:
-                vocab_usage["vocab"][word] += 1
-            else:
-                vocab_usage["vocab"][word] = 1
+    # Format the concepts as "category - concept"
+    formatted_concepts = [
+        f"{category} - {concept}" for category, concept in usable_concepts[:count]
+    ]
 
-    # Save the updated usage dictionary
-    with open(VOCAB_USAGE_PATH, "w") as f:
-        json.dump(vocab_usage, f, indent=2)
+    return formatted_concepts
 
-    print("vocab_usage.json has been updated.")
 
+def update_grammar_concept_usage(
+    grammar_concepts: Dict, used_concepts: List[str]
+) -> None:
+    for used_concept in used_concepts:
+        category, concept = used_concept.split(" - ")
+        if category in grammar_concepts and concept in grammar_concepts[category]:
+            grammar_concepts[category][concept]["times_seen"] += 1
+
+    with open(GRAMMAR_USAGE_PATH, "w") as f:
+        json.dump(grammar_concepts, f, indent=2)
 
 
 def get_least_used_words(category, count):
@@ -317,19 +205,21 @@ def get_least_used_words(category, count):
     return selected_words
 
 
-def get_dialogue(llm_response: str):
+def generate_dialogue(dialogue_prompt: str):
     """
     Extract dialogue from an LLM response.
 
     :param llm_response: String containing the LLM's response
     :return: List of dialogue turns, or None if no valid dialogue is found
     """
+    llm_response = anthropic_generate(dialogue_prompt)
     extracted_json = extract_json_from_llm_response(llm_response)
     if extracted_json and "dialogue" in extracted_json:
         return extracted_json["dialogue"]
     else:
         print("No valid dialogue found in the response")
         return None
+
 
 def ensure_spacy_model(model_name="en_core_web_md"):
     try:
@@ -338,27 +228,54 @@ def ensure_spacy_model(model_name="en_core_web_md"):
         print(f"Downloading spaCy model {model_name}...")
         subprocess.check_call([sys.executable, "-m", "spacy", "download", model_name])
 
+
 def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
     """For a given Engish dialogue, extracts the vocab used as the lemmas, the reason is so the
     vocab_usage.json can be updated with usage information."""
     # Load the English language model
     ensure_spacy_model()
     nlp = spacy.load("en_core_web_md")
-    
+
     # Initialize an empty set to store unique (lemma, pos) pairs
     vocab_set = set()
-    
+
     # Iterate through each utterance in the dialogue
     for utterance in dialogue:
         # Process the text with spaCy
-        doc = nlp(utterance['text'])
-        
+        doc = nlp(utterance["text"])
+
         # Iterate through each token in the processed document
         for token in doc:
             # Skip punctuation
             if token.pos_ != "PUNCT":
                 # Add the lemma and its POS tag to the set
                 vocab_set.add((token.lemma_.lower(), token.pos_))
-    
+
     return vocab_set
 
+
+def update_vocab_usage(used_words: Set[Tuple[str, str]]):
+    """Taking a list of (word, POS) e.g. ('can', 'VERB') we update the vocab_usage
+    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
+    lessons. words that haven't been used have a higher chance of being sampled.
+
+    No return statement"""
+    # Load the current usage
+
+    vocab_usage = load_json(VOCAB_USAGE_PATH)
+
+    # Update the usage count for each used word
+    for word, pos in used_words:
+        if pos == "VERB":
+            if word in vocab_usage["verbs"]:
+                vocab_usage["verbs"][word] += 1
+            else:
+                vocab_usage["verbs"][word] = 1
+        else:
+            if word in vocab_usage["vocab"]:
+                vocab_usage["vocab"][word] += 1
+            else:
+                vocab_usage["vocab"][word] = 1
+
+    # Save the updated usage dictionary
+    save_json(vocab_usage, VOCAB_USAGE_PATH)

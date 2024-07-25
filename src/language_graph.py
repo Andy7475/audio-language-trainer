@@ -33,7 +33,8 @@ class EdgeUsage:
 
 def get_sentences_from_dialogue(dialogue: List[Dict[str, str]]) -> List[List[WordNode]]:
     """Splits up dialogue into sentences then splits those up into tokens using spacy.
-    Returns a list of sentences, where each sentence is a list of WordNodes."""
+    Returns a list of sentences, where each sentence is a list of WordNodes, which detail the word and POS.
+    """
 
     nlp = spacy.load("en_core_web_md")
     sentences = []
@@ -79,8 +80,11 @@ def get_directed_graph_from_sentence(sentence: List[WordNode]) -> nx.DiGraph:
 
 
 def generate_phrases_strategically(
-    graph: nx.DiGraph, max_phrases: int = 1000, max_phrase_length: int = 10
+    graph: nx.DiGraph, max_phrases: int = 50, max_phrase_length: int = 10
 ) -> List[Tuple[WordNode, ...]]:
+    """Uses breadth first phrase traversal to generate diverse phrases from the language graph,
+    prioritses exploring from verbs"""
+
     def bfs_explore(start_node):
         phrases = []
         for path in nx.bfs_edges(graph, start_node, depth_limit=max_phrase_length - 1):
@@ -127,17 +131,21 @@ def is_valid_phrase(phrase: Tuple[WordNode, ...]) -> bool:
 
 
 def generate_all_phrases(
-    graph: nx.DiGraph, max_phrases: int = 1000
+    graph: nx.DiGraph, max_phrases: int = 1000, max_phrase_length: int = 10
 ) -> Set[Tuple[WordNode, ...]]:
     all_phrases = generate_phrases_strategically(
-        graph, max_phrases * 2
+        graph, max_phrases * 2, max_phrase_length
     )  # Generate more phrases than needed
     valid_phrases = set(phrase for phrase in all_phrases if is_valid_phrase(phrase))
     return set(list(valid_phrases)[:max_phrases])  # Return at most max_phrases
 
 
-def generate_phrases(graph: nx.DiGraph) -> List[List[WordNode]]:
-    all_paths = generate_all_phrases(graph)
+def generate_phrases(
+    graph: nx.DiGraph, max_phrases: int = 1000, max_phrase_length: int = 10
+) -> List[List[WordNode]]:
+    """Creates max_phrases possible phrases to pick from within our graph, the intention is then
+    this list is subsequently filtered using generate_phrase_progression"""
+    all_paths = generate_all_phrases(graph, max_phrases, max_phrase_length)
     phrases = []
     edge_usage = {(u, v): EdgeUsage() for u, v in graph.edges()}
 
@@ -199,7 +207,9 @@ def get_merged_graph_from_sentences(
     sentences: List[List[Dict[str, str]]]
 ) -> nx.DiGraph:
     """
-    Create a merged graph from multiple sentences.
+    Create a merged graph from multiple sentences. i.e. each word in each sentence
+    is considered a node in the graph. Words next to each other are connected with edges.
+    This function creates a single graph from all the graphs for each sentence.
 
     :param sentences: A list of sentences, where each sentence is a list of word dictionaries.
     :return: A single merged NetworkX DiGraph.
@@ -303,6 +313,12 @@ def create_interactive_sentence_graph(G: nx.DiGraph):
 
 
 def enrich_graph(G: nx.DiGraph, num_enrichments: int = 5):
+    """Based on some rules that allow for what words can connect (e.g. pronouns can come before verbs)
+    This creates additional connections in our language graph to increase
+    the diveristy of phrases we can create.
+
+    Returns a graph with more edges"""
+
     def select_node_to_enrich(pos: str):
         pos_nodes = [n for n in G.nodes() if n.pos == pos]
         if not pos_nodes:
@@ -395,6 +411,8 @@ def generate_phrase_progression(
     num_short_phrases: int = 10,
     num_medium_phrases: int = 30,
 ) -> List[str]:
+    """This iterates through the list of phrases we have generated from generate_phrases()
+    and provides both short and medium phrases to practice from"""
     # Initialize edge usage counter
     edge_usage = defaultdict(int)
 
@@ -457,6 +475,5 @@ def generate_phrase_progression(
 
     progression.sort(key=len)
     # Add original sentences as strings at the end
-    progression.extend(phrase_to_string(sentence) for sentence in original_sentences)
 
     return progression
