@@ -1,10 +1,17 @@
+import json
+import os
+import re
 from collections import defaultdict
+
 from anthropic import AnthropicVertex
 from dotenv import load_dotenv
-import os
-import json
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
 from src.config_loader import config
-import re
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -79,3 +86,102 @@ def extract_json_from_llm_response(response):
     else:
         print("No JSON-like structure found in the response")
         return None
+
+
+def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
+    """Creates a PDF booklet with english and target language phrases and dialogue arranged in the order they
+    appears in the story"""
+    doc = SimpleDocTemplate(output_filename, pagesize=letter)
+    elements = []
+
+    styles = getSampleStyleSheet()
+    title_style = styles["Heading1"]
+    title_style.alignment = 1  # Center alignment
+    subtitle_style = styles["Heading2"]
+    subtitle_style.alignment = 1  # Center alignment
+
+    # Create a custom style for table cells
+    cell_style = ParagraphStyle(
+        "CellStyle",
+        parent=styles["Normal"],
+        fontSize=10,
+        leading=12,
+        alignment=TA_LEFT,
+    )
+
+    elements.append(Paragraph("Comprehensive Story Translation", title_style))
+    elements.append(Spacer(1, 12))
+
+    for story_part, data in story_data_dict.items():
+        # Add story part title
+        elements.append(Paragraph(story_part.capitalize(), subtitle_style))
+        elements.append(Spacer(1, 12))
+
+        # Process translated phrases
+        if "translated_phrase_list" in data:
+            elements.append(Paragraph("Translated Phrases", styles["Heading3"]))
+            phrases_data = [["English", "Target Language"]]  # Table header
+            for eng, swe in data["translated_phrase_list"]:
+                phrases_data.append(
+                    [Paragraph(eng, cell_style), Paragraph(swe, cell_style)]
+                )
+
+            phrases_table = Table(phrases_data, colWidths=[250, 250])
+            phrases_table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                        ("FONTSIZE", (0, 0), (-1, 0), 14),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                        ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                        ("FONTSIZE", (0, 1), (-1, -1), 10),
+                        ("TOPPADDING", (0, 1), (-1, -1), 6),
+                        ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
+                        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ]
+                )
+            )
+            elements.append(phrases_table)
+            elements.append(Spacer(1, 12))
+
+        # Process dialogue
+        if "dialogue" in data and "translated_dialogue" in data:
+            elements.append(Paragraph("Dialogue", styles["Heading3"]))
+            dialogue_data = [["English", "Target Language"]]  # Table header
+            for eng, swe in zip(data["dialogue"], data["translated_dialogue"]):
+                dialogue_data.append(
+                    [
+                        Paragraph(f"{eng['text']}", cell_style),
+                        Paragraph(f"{swe['text']}", cell_style),
+                    ]
+                )
+
+            dialogue_table = Table(dialogue_data, colWidths=[250, 250])
+            dialogue_table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                        ("FONTSIZE", (0, 0), (-1, 0), 14),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
+                        ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
+                        ("FONTSIZE", (0, 1), (-1, -1), 10),
+                        ("TOPPADDING", (0, 1), (-1, -1), 6),
+                        ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
+                        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ]
+                )
+            )
+            elements.append(dialogue_table)
+            elements.append(Spacer(1, 24))  # Add extra space between story parts
+
+    doc.build(elements)

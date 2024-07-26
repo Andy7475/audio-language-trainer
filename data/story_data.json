@@ -1,1454 +1,1273 @@
 {
   "exposition": {
-    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    cost, sing, can, write, has, take, must, take, went, call\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    father, before, herself, child, theatre, boring, who, idea, how, I, sister, I'm, theatre, French, throat, it, dining, but, weather, food, policeman, city, nothing, cup, six, television, five, Sweden, child, he, while, off, politics, French, myself, off, person, lunch, we, first, her, then, present, got, yet, girl, after, hungry, day, with, time, probably, tomorrow, Swedish, about, angry, big, four, angry, next, good, three, yet, here, away, many, much, kettle, down, fish, how, lesson, child, was, expensive, now, off, you, fine, which, down, angry, while, glass, himself, Sweden, herself, father, lot, not, clever, problem, my, nothing, teacher, computer, tired, English, but, tonight\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Passive voice, Dependent clauses, Second conditional\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: This is the beginning of the story.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: exposition: Two friends, Alex and Sam, decide to learn a new language together.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 5 of these verbs:\n    order, give, eat, bring, like, take, eat, drink, bring, need\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    order, jam, almond milk, muffin, later, special, cinnamon, latte, decaf, small, expensive, card, price, syrup, here, oat milk, free, napkin, to go, bitter, spoon, bagel, morning, yes, card, allergy, butter, pastry, pastry, croissant\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    verb_tenses - Simple Present, verb_tenses - Present Continuous, verb_tenses - Simple Past\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: This is the beginning of the story.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: exposition: Alex and Sam, two friends, decide to meet at a new caf\u00e9 in town. They're excited to try the caf\u00e9's famous pastries and catch up.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for beginner language learners.\n    ",
     "dialogue": [
       {
         "speaker": "Alex",
-        "text": "Sam, I've got an idea. How about we learn French together?"
+        "text": "Good morning, Sam! Are you ordering a pastry?"
       },
       {
         "speaker": "Sam",
-        "text": "French? But it's probably expensive. I'm not sure we can afford it."
+        "text": "Yes, I'm ordering a cinnamon muffin. What are you eating?"
       },
       {
         "speaker": "Alex",
-        "text": "If we took lessons from a good teacher, it wouldn't cost much."
+        "text": "I ordered a croissant earlier. It was expensive but so good!"
       },
       {
         "speaker": "Sam",
-        "text": "Hmm... I see. When would the lessons be taken?"
+        "text": "I like the special latte here. Do you need almond milk?"
       },
       {
         "speaker": "Alex",
-        "text": "Probably after work, while we're not too tired."
+        "text": "No, thanks. I'm drinking decaf with oat milk. It's not bitter."
       },
       {
         "speaker": "Sam",
-        "text": "Fine. Let's call the teacher tomorrow and see what can be done."
+        "text": "Great! Are you taking your order to go?"
       },
       {
         "speaker": "Alex",
-        "text": "Great! I'm excited about this new idea."
+        "text": "No, I'm eating here. Can you bring me a napkin, please?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Sure! I'll bring you a napkin and a spoon."
       }
     ],
-    "recap": "Alex suggests to Sam that they learn French together, addressing Sam's concerns about cost and timing. They agree to contact a teacher the next day to explore the possibility of taking French lessons after work.",
-    "uncorrected_phrase_list": [
-      "i see",
-      "'s call",
-      "we took",
-      "it cost",
-      "an idea",
-      "we learn",
-      "'s taken",
-      "hmm i see",
-      "'s taken ?",
-      "this new idea",
-      "sam i 've got",
-      "sure we be taken",
-      "french together ?",
-      "'s call the lessons",
-      "work while we can afford",
-      "hmm i 'm not sure we took",
-      "excited about this new idea",
-      "work while we would n't cost",
-      "hmm i see what can be taken ?",
-      "sam i see what can afford it cost",
-      "a good teacher it 's probably after work",
-      "good teacher it would the lessons be done",
-      "lessons from a good teacher tomorrow and see",
-      "what can afford it would the teacher tomorrow",
-      "sam , i 've got an idea .",
-      "how about we learn french together ?",
-      "french ?",
-      "but it 's probably expensive .",
-      "i 'm not sure we can afford it .",
-      "if we took lessons from a good teacher , it would n't cost much .",
-      "hmm ... i see .",
-      "when would the lessons be taken ?",
-      "probably after work , while we 're not too tired .",
-      "fine .",
-      "let 's call the teacher tomorrow and see what can be done .",
-      "great !",
-      "i 'm excited about this new idea ."
-    ],
+    "recap": "Alex and Sam are at a caf\u00e9, discussing their breakfast orders. Alex has already ordered a croissant and is drinking decaf with oat milk, while Sam is ordering a cinnamon muffin and enjoys the special latte. They decide to eat at the caf\u00e9, with Sam offering to bring Alex a napkin and spoon.",
     "corrected_phrase_list": [
-      "I've got",
-      "We learn",
-      "It's expensive",
-      "You're not sure",
-      "We can afford",
-      "They took lessons",
-      "I'm excited",
-      "How about French?",
-      "We're not too tired",
-      "Let's call tomorrow",
-      "I see an idea",
-      "You've got a teacher",
-      "We're excited about French",
-      "It wouldn't cost much",
-      "They can afford lessons",
-      "I'm not sure about work",
-      "We've got a new idea",
-      "You're excited about learning",
-      "How about lessons after work?",
-      "I'm not sure we can learn French",
-      "Sam, I've got an idea.",
-      "How about we learn French together?",
-      "French?",
-      "But it's probably expensive.",
-      "I'm not sure we can afford it.",
-      "If we took lessons from a good teacher, it wouldn't cost much.",
-      "Hmm... I see.",
-      "When would the lessons be taken?",
-      "Probably after work, while we're not too tired.",
-      "Fine.",
-      "Let's call the teacher tomorrow and see what can be done.",
+      "Good morning",
+      "Ordering pastry",
+      "Eating here",
+      "Bring napkin",
+      "Need milk",
+      "Not bitter",
+      "To go",
+      "Special latte",
+      "Expensive but good",
+      "Drinking decaf",
+      "Can you bring",
+      "Ordering a muffin",
+      "What are you eating",
+      "I ordered earlier",
+      "Do you need milk",
+      "Are you taking order",
+      "Can you bring napkin",
+      "I'll bring napkin and spoon",
+      "Ordered croissant earlier",
+      "Drinking decaf with oat milk",
+      "Good morning, Sam!",
+      "Are you ordering a pastry?",
+      "Yes, I'm ordering a cinnamon muffin.",
+      "What are you eating?",
+      "I ordered a croissant earlier.",
+      "It was expensive but so good!",
+      "I like the special latte here.",
+      "Do you need almond milk?",
+      "No, thanks.",
+      "I'm drinking decaf with oat milk.",
+      "It's not bitter.",
       "Great!",
-      "I'm excited about this new idea."
+      "Are you taking your order to go?",
+      "No, I'm eating here.",
+      "Can you bring me a napkin, please?",
+      "Sure!",
+      "I'll bring you a napkin and a spoon."
     ],
     "translated_dialogue": [
       {
         "speaker": "Alex",
-        "text": "Sam, jag har en id\u00e9. Vad s\u00e4gs om att vi l\u00e4r oss franska tillsammans?"
+        "text": "\u0414\u043e\u0431\u0440\u043e \u0458\u0443\u0442\u0440\u043e, \u0421\u0430\u043c! \u0414\u0430 \u043b\u0438 \u043d\u0430\u0440\u0443\u0447\u0443\u0458\u0435\u0442\u0435 \u043f\u0435\u0446\u0438\u0432\u043e?"
       },
       {
         "speaker": "Sam",
-        "text": "Franska? Men det \u00e4r nog dyrt. Jag \u00e4r inte s\u00e4ker p\u00e5 att vi har r\u00e5d."
+        "text": "\u0414\u0430, \u043d\u0430\u0440\u0443\u0447\u0443\u0458\u0435\u043c \u043c\u0430\u0444\u0438\u043d \u0441\u0430 \u0446\u0438\u043c\u0435\u0442\u043e\u043c. \u0428\u0442\u043e \u0442\u043e \u0458\u0435\u0434\u0435\u0448?"
       },
       {
         "speaker": "Alex",
-        "text": "Om vi tog lektioner av en bra l\u00e4rare skulle det inte kosta mycket."
+        "text": "\u0420\u0430\u043d\u0438\u0458\u0435 \u0441\u0430\u043c \u043d\u0430\u0440\u0443\u0447\u0438\u043e \u043a\u0440\u043e\u0430\u0441\u0430\u043d. \u0411\u0438\u043b\u043e \u0458\u0435 \u0441\u043a\u0443\u043f\u043e, \u0430\u043b\u0438 \u0442\u0430\u043a\u043e \u0434\u043e\u0431\u0440\u043e!"
       },
       {
         "speaker": "Sam",
-        "text": "Hmm... jag f\u00f6rst\u00e5r. N\u00e4r skulle lektionerna tas?"
+        "text": "\u0421\u0432\u0438\u0452\u0430 \u043c\u0438 \u0441\u0435 \u0441\u043f\u0435\u0446\u0438\u0458\u0430\u043b\u043d\u0438 \u043b\u0430\u0442\u0442\u0435 \u043e\u0432\u0434\u0435. \u0414\u0430 \u043b\u0438 \u0432\u0430\u043c \u0442\u0440\u0435\u0431\u0430 \u0431\u0430\u0434\u0435\u043c\u043e\u0432\u043e \u043c\u043b\u0435\u043a\u043e?"
       },
       {
         "speaker": "Alex",
-        "text": "F\u00f6rmodligen efter jobbet, medan vi inte \u00e4r alltf\u00f6r tr\u00f6tta."
+        "text": "\u041d\u0435 \u0445\u0432\u0430\u043b\u0430. \u041f\u0438\u0458\u0435\u043c \u0431\u0435\u0437 \u043a\u043e\u0444\u0435\u0438\u043d\u0430 \u0441\u0430 \u043e\u0432\u0441\u0435\u043d\u0438\u043c \u043c\u043b\u0435\u043a\u043e\u043c. \u041d\u0438\u0458\u0435 \u0433\u043e\u0440\u043a\u043e."
       },
       {
         "speaker": "Sam",
-        "text": "Bra. L\u00e5t oss ringa l\u00e4raren imorgon och se vad som kan g\u00f6ras."
+        "text": "\u0412\u0435\u043b\u0438\u043a\u0438! \u0414\u0430 \u043b\u0438 \u043f\u0440\u0435\u0443\u0437\u0438\u043c\u0430\u0442\u0435 \u0441\u0432\u043e\u0458\u0443 \u043d\u0430\u0440\u0443\u045f\u0431\u0443?"
       },
       {
         "speaker": "Alex",
-        "text": "Bra! Jag \u00e4r exalterad \u00f6ver denna nya id\u00e9."
+        "text": "\u041d\u0435, \u0458\u0430 \u0458\u0435\u0434\u0435\u043c \u043e\u0432\u0434\u0435. \u041c\u043e\u0436\u0435\u0442\u0435 \u043b\u0438 \u043c\u0438 \u0434\u043e\u043d\u0435\u0442\u0438 \u0441\u0430\u043b\u0432\u0435\u0442\u0443, \u043c\u043e\u043b\u0438\u043c \u0432\u0430\u0441?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "\u041d\u0430\u0440\u0430\u0432\u043d\u043e! \u0414\u043e\u043d\u0435\u045b\u0443 \u0442\u0438 \u0441\u0430\u043b\u0432\u0435\u0442\u0443 \u0438 \u043a\u0430\u0448\u0438\u043a\u0443."
       }
     ],
     "translated_phrase_list": [
       [
-        "I've got",
-        "jag har"
+        "Good morning",
+        "\u0414\u043e\u0431\u0440\u043e \u0458\u0443\u0442\u0440\u043e"
       ],
       [
-        "We learn",
-        "Vi l\u00e4r"
+        "Ordering pastry",
+        "\u041d\u0430\u0440\u0443\u0447\u0438\u0432\u0430\u045a\u0435 \u043f\u0435\u0446\u0438\u0432\u0430"
       ],
       [
-        "It's expensive",
-        "Det \u00e4r dyrt"
+        "Eating here",
+        "\u0408\u0435\u043b\u043e \u043e\u0432\u0434\u0435"
       ],
       [
-        "You're not sure",
-        "Du \u00e4r inte s\u00e4ker"
+        "Bring napkin",
+        "\u0414\u043e\u043d\u0435\u0441\u0438 \u0441\u0430\u043b\u0432\u0435\u0442\u0443"
       ],
       [
-        "We can afford",
-        "Vi har r\u00e5d"
+        "Need milk",
+        "\u0422\u0440\u0435\u0431\u0430 \u043c\u043b\u0435\u043a\u043e"
       ],
       [
-        "They took lessons",
-        "De tog lektioner"
+        "Not bitter",
+        "\u041d\u0435 \u0433\u043e\u0440\u0430\u043a"
       ],
       [
-        "I'm excited",
-        "jag \u00e4r glad"
+        "To go",
+        "\u0414\u0430 \u0438\u0434\u0435"
       ],
       [
-        "How about French?",
-        "Vad s\u00e4gs om franska?"
+        "Special latte",
+        "\u0421\u043f\u0435\u0446\u0438\u0458\u0430\u043b\u043d\u0438 \u043b\u0430\u0442\u0442\u0435"
       ],
       [
-        "We're not too tired",
-        "Vi \u00e4r inte f\u00f6r tr\u00f6tta"
+        "Expensive but good",
+        "\u0421\u043a\u0443\u043f\u043e \u0430\u043b\u0438 \u0434\u043e\u0431\u0440\u043e"
       ],
       [
-        "Let's call tomorrow",
-        "L\u00e5t oss ringa imorgon"
+        "Drinking decaf",
+        "\u041f\u0438\u0458\u0435\u045a\u0435 \u0431\u0435\u0437 \u043a\u043e\u0444\u0435\u0438\u043d\u0430"
       ],
       [
-        "I see an idea",
-        "Jag ser en id\u00e9"
+        "Can you bring",
+        "\u041c\u043e\u0436\u0435\u0442\u0435 \u043b\u0438 \u0434\u043e\u043d\u0435\u0442\u0438"
       ],
       [
-        "You've got a teacher",
-        "Du har en l\u00e4rare"
+        "Ordering a muffin",
+        "\u041d\u0430\u0440\u0443\u0447\u0438\u0432\u0430\u045a\u0435 \u043c\u0430\u0444\u0438\u043d\u0430"
       ],
       [
-        "We're excited about French",
-        "Vi \u00e4r exalterade \u00f6ver franskan"
+        "What are you eating",
+        "\u0428\u0442\u043e \u0442\u043e \u0458\u0435\u0434\u0435\u0448"
       ],
       [
-        "It wouldn't cost much",
-        "Det skulle inte kosta mycket"
+        "I ordered earlier",
+        "\u041d\u0430\u0440\u0443\u0447\u0438\u043e \u0441\u0430\u043c \u0440\u0430\u043d\u0438\u0458\u0435"
       ],
       [
-        "They can afford lessons",
-        "De har r\u00e5d med lektioner"
+        "Do you need milk",
+        "\u0414\u0430 \u043b\u0438 \u0442\u0438 \u0442\u0440\u0435\u0431\u0430 \u043c\u043b\u0435\u043a\u043e"
       ],
       [
-        "I'm not sure about work",
-        "Jag \u00e4r inte s\u00e4ker p\u00e5 jobbet"
+        "Are you taking order",
+        "\u0414\u0430 \u043b\u0438 \u043f\u0440\u0438\u043c\u0430\u0442\u0435 \u0440\u0435\u0434"
       ],
       [
-        "We've got a new idea",
-        "Vi har en ny id\u00e9"
+        "Can you bring napkin",
+        "\u041c\u043e\u0436\u0435\u0442\u0435 \u043b\u0438 \u0434\u043e\u043d\u0435\u0442\u0438 \u0441\u0430\u043b\u0432\u0435\u0442\u0443"
       ],
       [
-        "You're excited about learning",
-        "Du \u00e4r exalterad \u00f6ver att l\u00e4ra dig"
+        "I'll bring napkin and spoon",
+        "\u0414\u043e\u043d\u0435\u045b\u0443 \u0441\u0430\u043b\u0432\u0435\u0442\u0443 \u0438 \u043a\u0430\u0448\u0438\u043a\u0443"
       ],
       [
-        "How about lessons after work?",
-        "Vad s\u00e4gs om lektioner efter jobbet?"
+        "Ordered croissant earlier",
+        "\u0420\u0430\u043d\u0438\u0458\u0435 \u043d\u0430\u0440\u0443\u0447\u0438\u043e \u043a\u0440\u043e\u0430\u0441\u0430\u043d"
       ],
       [
-        "I'm not sure we can learn French",
-        "Jag \u00e4r inte s\u00e4ker p\u00e5 att vi kan l\u00e4ra oss franska"
+        "Drinking decaf with oat milk",
+        "\u041f\u0438\u0442\u0438 \u0431\u0435\u0437 \u043a\u043e\u0444\u0435\u0438\u043d\u0430 \u0441\u0430 \u043e\u0432\u0441\u0435\u043d\u0438\u043c \u043c\u043b\u0435\u043a\u043e\u043c"
       ],
       [
-        "Sam, I've got an idea.",
-        "Sam, jag har en id\u00e9."
+        "Good morning, Sam!",
+        "\u0414\u043e\u0431\u0440\u043e \u0458\u0443\u0442\u0440\u043e, \u0421\u0430\u043c!"
       ],
       [
-        "How about we learn French together?",
-        "Vad s\u00e4gs om att vi l\u00e4r oss franska tillsammans?"
+        "Are you ordering a pastry?",
+        "\u0414\u0430 \u043b\u0438 \u043d\u0430\u0440\u0443\u0447\u0443\u0458\u0435\u0442\u0435 \u043f\u0435\u0446\u0438\u0432\u043e?"
       ],
       [
-        "French?",
-        "Franska?"
+        "Yes, I'm ordering a cinnamon muffin.",
+        "\u0414\u0430, \u043d\u0430\u0440\u0443\u0447\u0443\u0458\u0435\u043c \u043c\u0430\u0444\u0438\u043d \u0441\u0430 \u0446\u0438\u043c\u0435\u0442\u043e\u043c."
       ],
       [
-        "But it's probably expensive.",
-        "Men det \u00e4r nog dyrt."
+        "What are you eating?",
+        "\u0428\u0442\u043e \u0442\u043e \u0458\u0435\u0434\u0435\u0448?"
       ],
       [
-        "I'm not sure we can afford it.",
-        "Jag \u00e4r inte s\u00e4ker p\u00e5 att vi har r\u00e5d."
+        "I ordered a croissant earlier.",
+        "\u0420\u0430\u043d\u0438\u0458\u0435 \u0441\u0430\u043c \u043d\u0430\u0440\u0443\u0447\u0438\u043e \u043a\u0440\u043e\u0430\u0441\u0430\u043d."
       ],
       [
-        "If we took lessons from a good teacher, it wouldn't cost much.",
-        "Om vi tog lektioner av en bra l\u00e4rare skulle det inte kosta mycket."
+        "It was expensive but so good!",
+        "\u0411\u0438\u043b\u043e \u0458\u0435 \u0441\u043a\u0443\u043f\u043e, \u0430\u043b\u0438 \u0442\u0430\u043a\u043e \u0434\u043e\u0431\u0440\u043e!"
       ],
       [
-        "Hmm... I see.",
-        "Hmm... jag f\u00f6rst\u00e5r."
+        "I like the special latte here.",
+        "\u0421\u0432\u0438\u0452\u0430 \u043c\u0438 \u0441\u0435 \u0441\u043f\u0435\u0446\u0438\u0458\u0430\u043b\u043d\u0438 \u043b\u0430\u0442\u0442\u0435 \u043e\u0432\u0434\u0435."
       ],
       [
-        "When would the lessons be taken?",
-        "N\u00e4r skulle lektionerna tas?"
+        "Do you need almond milk?",
+        "\u0414\u0430 \u043b\u0438 \u0432\u0430\u043c \u0442\u0440\u0435\u0431\u0430 \u0431\u0430\u0434\u0435\u043c\u043e\u0432\u043e \u043c\u043b\u0435\u043a\u043e?"
       ],
       [
-        "Probably after work, while we're not too tired.",
-        "F\u00f6rmodligen efter jobbet, medan vi inte \u00e4r alltf\u00f6r tr\u00f6tta."
+        "No, thanks.",
+        "\u041d\u0435 \u0445\u0432\u0430\u043b\u0430."
       ],
       [
-        "Fine.",
-        "Bra."
+        "I'm drinking decaf with oat milk.",
+        "\u041f\u0438\u0458\u0435\u043c \u0431\u0435\u0437 \u043a\u043e\u0444\u0435\u0438\u043d\u0430 \u0441\u0430 \u043e\u0432\u0441\u0435\u043d\u0438\u043c \u043c\u043b\u0435\u043a\u043e\u043c."
       ],
       [
-        "Let's call the teacher tomorrow and see what can be done.",
-        "L\u00e5t oss ringa l\u00e4raren imorgon och se vad som kan g\u00f6ras."
+        "It's not bitter.",
+        "\u041d\u0438\u0458\u0435 \u0433\u043e\u0440\u043a\u043e."
       ],
       [
         "Great!",
-        "Bra!"
+        "\u0412\u0435\u043b\u0438\u043a\u0438!"
       ],
       [
-        "I'm excited about this new idea.",
-        "Jag \u00e4r exalterad \u00f6ver denna nya id\u00e9."
+        "Are you taking your order to go?",
+        "\u0414\u0430 \u043b\u0438 \u043f\u0440\u0435\u0443\u0437\u0438\u043c\u0430\u0442\u0435 \u0441\u0432\u043e\u0458\u0443 \u043d\u0430\u0440\u0443\u045f\u0431\u0443?"
+      ],
+      [
+        "No, I'm eating here.",
+        "\u041d\u0435, \u0458\u0430 \u0458\u0435\u0434\u0435\u043c \u043e\u0432\u0434\u0435."
+      ],
+      [
+        "Can you bring me a napkin, please?",
+        "\u041c\u043e\u0436\u0435\u0442\u0435 \u043b\u0438 \u043c\u0438 \u0434\u043e\u043d\u0435\u0442\u0438 \u0441\u0430\u043b\u0432\u0435\u0442\u0443, \u043c\u043e\u043b\u0438\u043c \u0432\u0430\u0441?"
+      ],
+      [
+        "Sure!",
+        "\u041d\u0430\u0440\u0430\u0432\u043d\u043e!"
+      ],
+      [
+        "I'll bring you a napkin and a spoon.",
+        "\u0414\u043e\u043d\u0435\u045b\u0443 \u0442\u0438 \u0441\u0430\u043b\u0432\u0435\u0442\u0443 \u0438 \u043a\u0430\u0448\u0438\u043a\u0443."
       ]
     ]
   },
   "rising_action": {
-    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    see, must, travel, travel, forget, dream, discuss, discuss, miss, wake\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    beautiful, we, in, ever, where, well, theatre, brother, teacher, film, lunch, mother, five, back, where, question, books, funny, wine, twelve, breakfast, lot, better, every, got, very, my, lunch, app, this, city, there, sister, six, while, shoe, out, dining, tea, books, in, lift, crown, never, computer, walk, fish, which, hungry, yes, himself, cup, theatre, sick, meeting, not, warm, table, this, now, our, entire, am, telephone, student, nothing, and, wine, in, month, many, house, much, key, question, nothing, day, us, cold, to, person, six, one, already, funny, clock, walk, course, our, student, you, door, week, football, meeting, dinner, by, good, food, book\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Noun clauses, Obligation, Dependent clauses\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex suggests to Sam that they learn French together, addressing Sam's concerns about cost and timing. They agree to contact a teacher the next day to explore the possibility of taking French lessons after work.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: rising_action: They face challenges in their studies and personal lives that test their commitment.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 5 of these verbs:\n    bring, ask, need, ask, ask, like, drink, pay, like, have\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    extra, money, chair, water, apple, large, vegetarian, croissant, toast, spoon, toast, without, table, without, milk, tasty, medium, allergy, vegetarian, cookie, smoothie, vegetarian, cappuccino, card, water, sandwich, muffin, americano, napkin, to go\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    verb_tenses - Past Continuous, verb_tenses - Present Perfect, verb_tenses - Past Perfect\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex and Sam are at a caf\u00e9, discussing their breakfast orders. Alex has already ordered a croissant and is drinking decaf with oat milk, while Sam is ordering a cinnamon muffin and enjoys the special latte. They decide to eat at the caf\u00e9, with Sam offering to bring Alex a napkin and spoon.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: rising_action: Upon arriving, they discover the caf\u00e9 is unexpectedly busy, with a long queue. They debate whether to wait or find another place, as they have limited time.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for beginner language learners.\n    ",
     "dialogue": [
       {
         "speaker": "Alex",
-        "text": "Sam, where are you? We must not forget our meeting with the French teacher."
+        "text": "Sam, look at the long queue! I had been hoping for a quick cappuccino."
       },
       {
         "speaker": "Sam",
-        "text": "I am in the lift. My brother got sick, which is why I'm not there already."
+        "text": "I know, it's so busy. Have you brought extra money for a to-go order?"
       },
       {
         "speaker": "Alex",
-        "text": "Oh no! I hope he's better now. Did you miss breakfast while helping him?"
+        "text": "I have, but I was liking the idea of sitting at a table. What do you need?"
       },
       {
         "speaker": "Sam",
-        "text": "Yes, I'm very hungry. Can we discuss the teacher over lunch?"
+        "text": "I've been craving a large vegetarian sandwich and a smoothie."
       },
       {
         "speaker": "Alex",
-        "text": "Of course. I see a beautiful dining room where we can eat and talk."
+        "text": "While we've been waiting, I've asked about the wait time. It's 20 minutes."
       },
       {
         "speaker": "Sam",
-        "text": "Good. I dream that one day we will travel to France and speak French well."
+        "text": "That's too long! Let's find another caf\u00e9. I'm asking Google for options now."
       },
       {
         "speaker": "Alex",
-        "text": "Me too! Let's go now. Our teacher will understand why we missed the meeting."
+        "text": "Good idea. I hope we can still get tasty food without waiting."
       }
     ],
-    "recap": "Alex and Sam were supposed to meet their French teacher, but Sam was delayed due to his brother's illness. They decided to have lunch together instead, where they plan to discuss the teacher and their shared dream of traveling to France. They hope their teacher will understand the reason for missing the meeting.",
-    "uncorrected_phrase_list": [
-      "i see",
-      "'s go",
-      "oh no",
-      "i hope",
-      "i dream",
-      "you miss",
-      "we missed",
-      "we discuss",
-      "brother got",
-      "french well",
-      "yes i hope lift",
-      "he 's better now",
-      "my 'm very hungry",
-      "my must not forget",
-      "'s am in the teacher",
-      "a room where are you ?",
-      "which is why we missed",
-      "our teacher over lunch",
-      "day we can eat and talk",
-      "meeting with the teacher",
-      "room where we will travel",
-      "sam where we discuss the lift",
-      "breakfast while helping him ?",
-      "we discuss the teacher over lunch",
-      "sick which is why i 'm not forget",
-      "we will understand why i dream that one day",
-      "french teacher will understand why i hope lift",
-      "sam where are you miss breakfast while helping",
-      "brother got sick which is why we discuss the teacher",
-      "teacher will understand why i see a beautiful dining",
-      "sam , where are you ?",
-      "we must not forget our meeting with the french teacher .",
-      "i am in the lift .",
-      "my brother got sick , which is why i 'm not there already .",
-      "oh no !",
-      "i hope he 's better now .",
-      "did you miss breakfast while helping him ?",
-      "yes , i 'm very hungry .",
-      "can we discuss the teacher over lunch ?",
-      "of course .",
-      "i see a beautiful dining room where we can eat and talk .",
-      "good .",
-      "i dream that one day we will travel to france and speak french well .",
-      "me too !",
-      "let 's go now .",
-      "our teacher will understand why we missed the meeting ."
-    ],
+    "recap": "Alex and Sam are at a caf\u00e9 with a long queue, hoping to get coffee and food. After learning the wait time is 20 minutes, they decide it's too long and opt to search for another caf\u00e9. They're looking for a place where they can get quick service for their desired items.",
     "corrected_phrase_list": [
-      "We must",
-      "You're hungry",
-      "I'm sick",
-      "They forgot",
-      "We can eat",
-      "You hope",
-      "I dream",
-      "We speak French",
-      "You're in the lift",
-      "They missed breakfast",
-      "We can discuss now",
-      "I see a dining room",
-      "You dream of travel",
-      "We will speak French well",
-      "They're not there already",
-      "I hope we can talk now",
-      "You must not forget lunch",
-      "We can eat and talk there",
-      "They will understand why we missed",
-      "I dream we will travel and speak",
-      "Sam, where are you?",
-      "We must not forget our meeting with the French teacher.",
-      "I am in the lift.",
-      "My brother got sick, which is why I'm not there already.",
-      "Oh no!",
-      "I hope he's better now.",
-      "Did you miss breakfast while helping him?",
-      "Yes, I'm very hungry.",
-      "Can we discuss the teacher over lunch?",
-      "Of course.",
-      "I see a beautiful dining room where we can eat and talk.",
-      "Good.",
-      "I dream that one day we will travel to France and speak French well.",
-      "Me too!",
-      "Let's go now.",
-      "Our teacher will understand why we missed the meeting."
+      "Look, Sam!",
+      "I'm hoping",
+      "It's busy",
+      "You've brought",
+      "I was liking",
+      "We're waiting",
+      "I've asked",
+      "Let's find",
+      "Good idea",
+      "Look at the queue",
+      "I've been craving",
+      "Have you brought money?",
+      "I'm asking Google now",
+      "We can get food",
+      "The wait time is long",
+      "I hope for tasty food",
+      "Have you been waiting long?",
+      "We've been hoping for quick food",
+      "I've been asking about the time",
+      "Let's find another place to eat",
+      "Sam, look at the long queue!",
+      "I had been hoping for a quick cappuccino.",
+      "I know, it's so busy.",
+      "Have you brought extra money for a to-go order?",
+      "I have, but I was liking the idea of sitting at a table.",
+      "What do you need?",
+      "I've been craving a large vegetarian sandwich and a smoothie.",
+      "While we've been waiting, I've asked about the wait time.",
+      "It's 20 minutes.",
+      "That's too long!",
+      "Let's find another caf\u00e9.",
+      "I'm asking Google for options now.",
+      "Good idea.",
+      "I hope we can still get tasty food without waiting."
     ],
     "translated_dialogue": [
       {
         "speaker": "Alex",
-        "text": "Sam, var \u00e4r du? Vi f\u00e5r inte gl\u00f6mma v\u00e5rt m\u00f6te med franskl\u00e4raren."
+        "text": "\u0421\u0435\u043c\u0435, \u043f\u043e\u0433\u043b\u0435\u0434\u0430\u0458 \u0434\u0443\u0433\u0438 \u0440\u0435\u0434! \u041d\u0430\u0434\u0430\u043e \u0441\u0430\u043c \u0441\u0435 \u0431\u0440\u0437\u043e\u043c \u043a\u0430\u043f\u0443\u045b\u0438\u043d\u0443."
       },
       {
         "speaker": "Sam",
-        "text": "Jag \u00e4r i hissen. Min bror blev sjuk, d\u00e4rf\u00f6r \u00e4r jag inte d\u00e4r redan."
+        "text": "\u0417\u043d\u0430\u043c, \u0442\u0430\u043a\u043e \u0458\u0435 \u0437\u0430\u0443\u0437\u0435\u0442\u043e. \u0414\u0430 \u043b\u0438 \u0441\u0442\u0435 \u0434\u043e\u043d\u0435\u043b\u0438 \u0434\u043e\u0434\u0430\u0442\u043d\u0438 \u043d\u043e\u0432\u0430\u0446 \u0437\u0430 \u043f\u043e\u0440\u0443\u045f\u0431\u0438\u043d\u0443?"
       },
       {
         "speaker": "Alex",
-        "text": "\u00c5 nej! Jag hoppas att han \u00e4r b\u00e4ttre nu. Missade du frukost n\u00e4r du hj\u00e4lpte honom?"
+        "text": "\u0408\u0435\u0441\u0430\u043c, \u0430\u043b\u0438 \u043c\u0438 \u0441\u0435 \u0434\u043e\u043f\u0430\u043b\u0430 \u0438\u0434\u0435\u0458\u0430 \u0434\u0430 \u0441\u0435\u0434\u043d\u0435\u043c \u0437\u0430 \u0441\u0442\u043e. \u0428\u0442\u0430 \u0442\u0438 \u0442\u0440\u0435\u0431\u0430?"
       },
       {
         "speaker": "Sam",
-        "text": "Ja, jag \u00e4r v\u00e4ldigt hungrig. Kan vi diskutera l\u00e4raren under lunchen?"
+        "text": "\u0416\u0435\u043b\u0435\u043e \u0441\u0430\u043c \u0432\u0435\u043b\u0438\u043a\u0438 \u0432\u0435\u0433\u0435\u0442\u0430\u0440\u0438\u0458\u0430\u043d\u0441\u043a\u0438 \u0441\u0435\u043d\u0434\u0432\u0438\u0447 \u0438 \u0441\u043c\u0443\u0442\u0438."
       },
       {
         "speaker": "Alex",
-        "text": "Sj\u00e4lvklart. Jag ser en vacker matsal d\u00e4r vi kan \u00e4ta och prata."
+        "text": "\u0414\u043e\u043a \u0441\u043c\u043e \u0447\u0435\u043a\u0430\u043b\u0438, \u043f\u0438\u0442\u0430\u043e \u0441\u0430\u043c \u0437\u0430 \u0432\u0440\u0435\u043c\u0435 \u0447\u0435\u043a\u0430\u045a\u0430. 20 \u043c\u0438\u043d\u0443\u0442\u0430 \u0458\u0435."
       },
       {
         "speaker": "Sam",
-        "text": "Bra. Jag dr\u00f6mmer om att vi en dag ska resa till Frankrike och prata franska bra."
+        "text": "\u0422\u043e \u0458\u0435 \u043f\u0440\u0435\u0434\u0443\u0433\u043e! \u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u043d\u0430\u0452\u0435\u043c\u043e \u0434\u0440\u0443\u0433\u0438 \u043a\u0430\u0444\u0438\u045b. \u0421\u0430\u0434\u0430 \u0442\u0440\u0430\u0436\u0438\u043c \u043e\u0434 \u0413\u0443\u0433\u043b\u0430 \u043e\u043f\u0446\u0438\u0458\u0435."
       },
       {
         "speaker": "Alex",
-        "text": "Jag med! L\u00e5t oss g\u00e5 nu. V\u00e5r l\u00e4rare kommer att f\u00f6rst\u00e5 varf\u00f6r vi missade m\u00f6tet."
+        "text": "\u0414\u043e\u0431\u0440\u0430 \u0438\u0434\u0435\u0458\u0430. \u041d\u0430\u0434\u0430\u043c \u0441\u0435 \u0434\u0430 \u045b\u0435\u043c\u043e \u0458\u043e\u0448 \u0443\u0432\u0435\u043a \u043c\u043e\u045b\u0438 \u0434\u0430 \u0434\u043e\u0431\u0438\u0458\u0435\u043c\u043e \u0443\u043a\u0443\u0441\u043d\u0443 \u0445\u0440\u0430\u043d\u0443 \u0431\u0435\u0437 \u0447\u0435\u043a\u0430\u045a\u0430."
       }
     ],
     "translated_phrase_list": [
       [
-        "We must",
-        "Vi m\u00e5ste"
+        "Look, Sam!",
+        "\u0412\u0438\u0434\u0438, \u0421\u0430\u043c!"
       ],
       [
-        "You're hungry",
-        "Du \u00e4r hungrig"
+        "I'm hoping",
+        "\u041d\u0430\u0434\u0430\u043c \u0441\u0435"
       ],
       [
-        "I'm sick",
-        "jag \u00e4r sjuk"
+        "It's busy",
+        "\u0417\u0430\u0443\u0437\u0435\u0442\u043e \u0458\u0435"
       ],
       [
-        "They forgot",
-        "De gl\u00f6mde"
+        "You've brought",
+        "\u0422\u0438 \u0441\u0438 \u0434\u043e\u043d\u0435\u043e"
       ],
       [
-        "We can eat",
-        "Vi kan \u00e4ta"
+        "I was liking",
+        "\u0421\u0432\u0438\u0452\u0430\u043b\u043e \u043c\u0438 \u0441\u0435"
       ],
       [
-        "You hope",
-        "Du hoppas"
+        "We're waiting",
+        "\u0427\u0435\u043a\u0430\u043b\u0438"
       ],
       [
-        "I dream",
-        "jag dr\u00f6mmer"
+        "I've asked",
+        "\u041f\u0438\u0442\u0430\u043e \u0441\u0430\u043c"
       ],
       [
-        "We speak French",
-        "Vi talar franska"
+        "Let's find",
+        "\u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u043e\u0442\u043a\u0440\u0438\u0458\u0435\u043c\u043e"
       ],
       [
-        "You're in the lift",
-        "Du \u00e4r i hissen"
+        "Good idea",
+        "\u0414\u043e\u0431\u0440\u0430 \u0438\u0434\u0435\u0458\u0430"
       ],
       [
-        "They missed breakfast",
-        "De missade frukosten"
+        "Look at the queue",
+        "\u041f\u043e\u0433\u043b\u0435\u0434\u0430\u0458 \u0440\u0435\u0434"
       ],
       [
-        "We can discuss now",
-        "Vi kan diskutera nu"
+        "I've been craving",
+        "\u0408\u0430 \u0441\u0430\u043c \u0436\u0443\u0434\u0438\u043e"
       ],
       [
-        "I see a dining room",
-        "Jag ser en matsal"
+        "Have you brought money?",
+        "\u0408\u0435\u0441\u0438 \u043b\u0438 \u0434\u043e\u043d\u0435\u043e \u043d\u043e\u0432\u0430\u0446?"
       ],
       [
-        "You dream of travel",
-        "Du dr\u00f6mmer om att resa"
+        "I'm asking Google now",
+        "\u0421\u0430\u0434\u0430 \u043f\u0438\u0442\u0430\u043c \u0413\u0443\u0433\u043b"
       ],
       [
-        "We will speak French well",
-        "Vi kommer att prata franska bra"
+        "We can get food",
+        "\u041c\u043e\u0436\u0435\u043c\u043e \u0434\u043e\u0431\u0438\u0442\u0438 \u0445\u0440\u0430\u043d\u0443"
       ],
       [
-        "They're not there already",
-        "De \u00e4r inte d\u00e4r redan"
+        "The wait time is long",
+        "\u0412\u0440\u0435\u043c\u0435 \u0447\u0435\u043a\u0430\u045a\u0430 \u0458\u0435 \u0434\u0443\u0433\u043e"
       ],
       [
-        "I hope we can talk now",
-        "Jag hoppas att vi kan prata nu"
+        "I hope for tasty food",
+        "\u041d\u0430\u0434\u0430\u043c \u0441\u0435 \u0443\u043a\u0443\u0441\u043d\u043e\u0458 \u0445\u0440\u0430\u043d\u0438"
       ],
       [
-        "You must not forget lunch",
-        "Du f\u00e5r inte gl\u00f6mma lunchen"
+        "Have you been waiting long?",
+        "\u0414\u0430 \u043b\u0438 \u0441\u0442\u0435 \u0434\u0443\u0433\u043e \u0447\u0435\u043a\u0430\u043b\u0438?"
       ],
       [
-        "We can eat and talk there",
-        "Vi kan \u00e4ta och prata d\u00e4r"
+        "We've been hoping for quick food",
+        "\u041d\u0430\u0434\u0430\u043b\u0438 \u0441\u043c\u043e \u0441\u0435 \u0431\u0440\u0437\u043e\u0458 \u0445\u0440\u0430\u043d\u0438"
       ],
       [
-        "They will understand why we missed",
-        "De kommer att f\u00f6rst\u00e5 varf\u00f6r vi missade"
+        "I've been asking about the time",
+        "\u041f\u0438\u0442\u0430\u043e \u0441\u0430\u043c \u043e \u0432\u0440\u0435\u043c\u0435\u043d\u0443"
       ],
       [
-        "I dream we will travel and speak",
-        "Jag dr\u00f6mmer att vi ska resa och prata"
+        "Let's find another place to eat",
+        "\u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u043d\u0430\u0452\u0435\u043c\u043e \u0434\u0440\u0443\u0433\u043e \u043c\u0435\u0441\u0442\u043e \u0437\u0430 \u0458\u0435\u043b\u043e"
       ],
       [
-        "Sam, where are you?",
-        "Sam, var \u00e4r du?"
+        "Sam, look at the long queue!",
+        "\u0421\u0435\u043c\u0435, \u043f\u043e\u0433\u043b\u0435\u0434\u0430\u0458 \u0434\u0443\u0433\u0438 \u0440\u0435\u0434!"
       ],
       [
-        "We must not forget our meeting with the French teacher.",
-        "Vi f\u00e5r inte gl\u00f6mma v\u00e5rt m\u00f6te med franskl\u00e4raren."
+        "I had been hoping for a quick cappuccino.",
+        "\u041d\u0430\u0434\u0430\u043e \u0441\u0430\u043c \u0441\u0435 \u0431\u0440\u0437\u043e\u043c \u043a\u0430\u043f\u0443\u045b\u0438\u043d\u0443."
       ],
       [
-        "I am in the lift.",
-        "Jag \u00e4r i hissen."
+        "I know, it's so busy.",
+        "\u0417\u043d\u0430\u043c, \u0442\u0430\u043a\u043e \u0458\u0435 \u0437\u0430\u0443\u0437\u0435\u0442\u043e."
       ],
       [
-        "My brother got sick, which is why I'm not there already.",
-        "Min bror blev sjuk, d\u00e4rf\u00f6r \u00e4r jag inte d\u00e4r redan."
+        "Have you brought extra money for a to-go order?",
+        "\u0414\u0430 \u043b\u0438 \u0441\u0442\u0435 \u0434\u043e\u043d\u0435\u043b\u0438 \u0434\u043e\u0434\u0430\u0442\u043d\u0438 \u043d\u043e\u0432\u0430\u0446 \u0437\u0430 \u043f\u043e\u0440\u0443\u045f\u0431\u0438\u043d\u0443?"
       ],
       [
-        "Oh no!",
-        "\u00c5 nej!"
+        "I have, but I was liking the idea of sitting at a table.",
+        "\u0408\u0435\u0441\u0430\u043c, \u0430\u043b\u0438 \u043c\u0438 \u0441\u0435 \u0434\u043e\u043f\u0430\u043b\u0430 \u0438\u0434\u0435\u0458\u0430 \u0434\u0430 \u0441\u0435\u0434\u0438\u043c \u0437\u0430 \u0441\u0442\u043e\u043b\u043e\u043c."
       ],
       [
-        "I hope he's better now.",
-        "Jag hoppas att han \u00e4r b\u00e4ttre nu."
+        "What do you need?",
+        "\u0428\u0442\u0430 \u0442\u0438 \u0442\u0440\u0435\u0431\u0430?"
       ],
       [
-        "Did you miss breakfast while helping him?",
-        "Missade du frukost n\u00e4r du hj\u00e4lpte honom?"
+        "I've been craving a large vegetarian sandwich and a smoothie.",
+        "\u0416\u0435\u043b\u0435\u043e \u0441\u0430\u043c \u0432\u0435\u043b\u0438\u043a\u0438 \u0432\u0435\u0433\u0435\u0442\u0430\u0440\u0438\u0458\u0430\u043d\u0441\u043a\u0438 \u0441\u0435\u043d\u0434\u0432\u0438\u0447 \u0438 \u0441\u043c\u0443\u0442\u0438."
       ],
       [
-        "Yes, I'm very hungry.",
-        "Ja, jag \u00e4r v\u00e4ldigt hungrig."
+        "While we've been waiting, I've asked about the wait time.",
+        "\u0414\u043e\u043a \u0441\u043c\u043e \u0447\u0435\u043a\u0430\u043b\u0438, \u043f\u0438\u0442\u0430\u043e \u0441\u0430\u043c \u0437\u0430 \u0432\u0440\u0435\u043c\u0435 \u0447\u0435\u043a\u0430\u045a\u0430."
       ],
       [
-        "Can we discuss the teacher over lunch?",
-        "Kan vi diskutera l\u00e4raren under lunchen?"
+        "It's 20 minutes.",
+        "\u0422\u043e \u0458\u0435 20 \u043c\u0438\u043d\u0443\u0442\u0430."
       ],
       [
-        "Of course.",
-        "Sj\u00e4lvklart."
+        "That's too long!",
+        "\u0422\u043e \u0458\u0435 \u043f\u0440\u0435\u0434\u0443\u0433\u043e!"
       ],
       [
-        "I see a beautiful dining room where we can eat and talk.",
-        "Jag ser en vacker matsal d\u00e4r vi kan \u00e4ta och prata."
+        "Let's find another caf\u00e9.",
+        "\u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u043d\u0430\u0452\u0435\u043c\u043e \u0434\u0440\u0443\u0433\u0438 \u043a\u0430\u0444\u0438\u045b."
       ],
       [
-        "Good.",
-        "Bra."
+        "I'm asking Google for options now.",
+        "\u0421\u0430\u0434\u0430 \u0442\u0440\u0430\u0436\u0438\u043c \u043e\u0434 \u0413\u0443\u0433\u043b\u0430 \u043e\u043f\u0446\u0438\u0458\u0435."
       ],
       [
-        "I dream that one day we will travel to France and speak French well.",
-        "Jag dr\u00f6mmer om att vi en dag ska resa till Frankrike och prata franska bra."
+        "Good idea.",
+        "\u0414\u043e\u0431\u0440\u0430 \u0438\u0434\u0435\u0458\u0430."
       ],
       [
-        "Me too!",
-        "Jag med!"
-      ],
-      [
-        "Let's go now.",
-        "L\u00e5t oss g\u00e5 nu."
-      ],
-      [
-        "Our teacher will understand why we missed the meeting.",
-        "V\u00e5r l\u00e4rare kommer att f\u00f6rst\u00e5 varf\u00f6r vi missade m\u00f6tet."
+        "I hope we can still get tasty food without waiting.",
+        "\u041d\u0430\u0434\u0430\u043c \u0441\u0435 \u0434\u0430 \u0438 \u0434\u0430\u0459\u0435 \u043c\u043e\u0436\u0435\u043c\u043e \u0434\u043e\u0431\u0438\u0442\u0438 \u0443\u043a\u0443\u0441\u043d\u0443 \u0445\u0440\u0430\u043d\u0443 \u0431\u0435\u0437 \u0447\u0435\u043a\u0430\u045a\u0430."
       ]
     ]
   },
   "climax": {
-    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    work, had, make, recognise, eat, live, write, cost, hear, cost\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    his, why, leg, well, idea, although, in, app, cup, from, I'm, green, food, tense, yet, in, why, hungry, tooth, banana, from, trip, shoe, computer, present, clock, mother, two, idea, since, lesson, often, table, or, easy, hungry, often, every, sister, it's, our, crown, which, probably, teacher, entire, programme, myself, tea, time, cigarette, breakfast, probably, o'clock, in, mother, much, from, theatre, who, well, coffee, from, often, within, brilliant, door, now, ourselves, his, key, every, although, since, yesterday, banana, twelve, was, politics, tense, because, often, after, him, different, green, tooth, tired, Swedish, different, television, why, English, girl, book, ourselves, warm, head, six, off\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Present Perfect, Future Perfect, Time prepositions\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex and Sam were supposed to meet their French teacher, but Sam was delayed due to his brother's illness. They decided to have lunch together instead, where they plan to discuss the teacher and their shared dream of traveling to France. They hope their teacher will understand the reason for missing the meeting.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: climax: A language competition is announced, pushing them to their limits.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 5 of these verbs:\n    have, give, like, pay, drink, like, need, want, bring, give\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    sugar, black coffee, cash, bill, bitter, orange, to go, sugar, oat milk, water, price, decaf, americano, bagel, juice, afternoon, orange, iced coffee, allergy, cold, toast, spoon, goodbye, bagel, americano, cup, today, caramel, sandwich, americano\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    verb_tenses - Simple Future, verb_tenses - Future Continuous, verb_tenses - Present Perfect Continuous\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex and Sam are at a caf\u00e9 with a long queue, hoping to get coffee and food. After learning the wait time is 20 minutes, they decide it's too long and opt to search for another caf\u00e9. They're looking for a place where they can get quick service for their desired items.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: climax: Just as they're about to leave, a staff member approaches them with a surprising offer that could solve their dilemma.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for beginner language learners.\n    ",
     "dialogue": [
       {
-        "speaker": "Alex",
-        "text": "Have you heard? Our teacher has announced a brilliant language competition!"
-      },
-      {
         "speaker": "Sam",
-        "text": "No, I haven't heard yet. What's the idea?"
+        "text": "Alex, I've been needing an americano all afternoon."
       },
       {
         "speaker": "Alex",
-        "text": "It's a programme to make us work harder. We'll have written twelve lessons by next month."
+        "text": "I know! We'll be drinking our coffee soon. I'll have a black coffee with oat milk."
       },
       {
         "speaker": "Sam",
-        "text": "Twelve? That's much! I'm tense already. When does it start?"
+        "text": "Look! A staff member is coming. Maybe they'll give us good news."
+      },
+      {
+        "speaker": "Staff",
+        "text": "Hello! We'll be bringing your drinks to go if you like. Have you wanted anything else?"
       },
       {
         "speaker": "Alex",
-        "text": "At six o'clock tomorrow. We'll probably be tired after every lesson."
+        "text": "That's great! I've been wanting a bagel too. Do you have any?"
+      },
+      {
+        "speaker": "Staff",
+        "text": "Yes, we do. By 3 PM, we'll be giving out free bagels with every coffee purchase."
       },
       {
         "speaker": "Sam",
-        "text": "Although it's difficult, I think it's a brilliant idea to improve our French."
+        "text": "Perfect! We'll take two americanos and two bagels then."
       },
       {
         "speaker": "Alex",
-        "text": "Yes, and by the time we finish, we'll have recognised different French accents."
-      },
-      {
-        "speaker": "Sam",
-        "text": "Well, let's have a cup of coffee now and start working on our first lesson."
+        "text": "Fantastic! We'll be enjoying our coffee and bagels soon after all."
       }
     ],
-    "recap": "Alex informs Sam about a newly announced language competition involving twelve intensive French lessons over the next month. Despite initial apprehension about the workload, both students recognize the potential benefits, including improved language skills and accent recognition. They decide to start preparing for the competition, beginning with a cup of coffee.",
-    "uncorrected_phrase_list": [
-      "i think",
-      "us work",
-      "'s have",
-      "you have",
-      "it start",
-      "well let",
-      "you heard",
-      "we finish",
-      "it start ?",
-      "next month",
-      "o'clock tomorrow",
-      "i have recognised",
-      "no i have you heard",
-      "a programme to make",
-      "teacher has announced",
-      "we 'll have recognised",
-      "different french accents",
-      "what 's a brilliant language",
-      "difficult i 'm tense already",
-      "lessons by the time we finish",
-      "i have written twelve lessons",
-      "brilliant language competition",
-      "programme to improve our french",
-      "that 's difficult i have you heard",
-      "lessons by the idea to make us work",
-      "yes and start working on our teacher",
-      "a cup of coffee now and start working",
-      "lessons by the time we 'll have written",
-      "brilliant idea to improve our first lesson",
-      "we 'll probably be tired after every lesson",
-      "have you heard ?",
-      "our teacher has announced a brilliant language competition !",
-      "no , i have n't heard yet .",
-      "what 's the idea ?",
-      "it 's a programme to make us work harder .",
-      "we 'll have written twelve lessons by next month .",
-      "twelve ?",
-      "that 's much !",
-      "i 'm tense already .",
-      "when does it start ?",
-      "at six o'clock tomorrow .",
-      "we 'll probably be tired after every lesson .",
-      "although it 's difficult , i think it 's a brilliant idea to improve our french .",
-      "yes , and by the time we finish , we 'll have recognised different french accents .",
-      "well , let 's have a cup of coffee now and start working on our first lesson ."
-    ],
+    "recap": "Sam and Alex are waiting for coffee at a caf\u00e9, with Sam craving an americano and Alex wanting a black coffee with oat milk. A staff member informs them that drinks will be available to go and that free bagels will be given with coffee purchases after 3 PM, leading Sam to order two americanos and two bagels for them both.",
     "corrected_phrase_list": [
-      "I'm tense",
-      "It's difficult",
-      "We'll start",
-      "You've heard",
-      "They're tired",
-      "It's brilliant",
-      "We'll work harder",
-      "You'll have written",
-      "They've announced",
-      "We'll be tired",
-      "It's a programme",
-      "You'll have recognised",
-      "We'll improve our French",
-      "They'll start at six o'clock",
-      "We'll have a cup of coffee",
-      "You'll be tired after every lesson",
-      "They'll have written twelve lessons",
-      "We'll recognise different French accents",
-      "You'll have finished by next month",
-      "We'll start working on our first lesson",
-      "Have you heard?",
-      "Our teacher has announced a brilliant language competition!",
-      "No, I haven't heard yet.",
-      "What's the idea?",
-      "It's a programme to make us work harder.",
-      "We'll have written twelve lessons by next month.",
-      "Twelve?",
-      "That's much!",
-      "I'm tense already.",
-      "When does it start?",
-      "At six o'clock tomorrow.",
-      "We'll probably be tired after every lesson.",
-      "Although it's difficult, I think it's a brilliant idea to improve our French.",
-      "Yes, and by the time we finish, we'll have recognised different French accents.",
-      "Well, let's have a cup of coffee now and start working on our first lesson."
+      "I've been needing",
+      "They'll be drinking",
+      "We'll have coffee",
+      "Look! Coming",
+      "You'll be bringing",
+      "I've been wanting",
+      "We do",
+      "They'll be giving",
+      "We'll take two",
+      "You'll be enjoying",
+      "Alex, we've been needing",
+      "I know! We'll be drinking",
+      "A staff member is coming",
+      "Have you wanted anything?",
+      "Do you have any?",
+      "We'll be giving out free",
+      "We'll take americanos and bagels",
+      "We'll be enjoying our coffee soon",
+      "I've been needing coffee all afternoon",
+      "They'll be bringing your drinks to go",
+      "Alex, I've been needing an americano all afternoon.",
+      "I know!",
+      "We'll be drinking our coffee soon.",
+      "I'll have a black coffee with oat milk.",
+      "Look!",
+      "A staff member is coming.",
+      "Maybe they'll give us good news.",
+      "Hello!",
+      "We'll be bringing your drinks to go if you like.",
+      "Have you wanted anything else?",
+      "That's great!",
+      "I've been wanting a bagel too.",
+      "Do you have any?",
+      "Yes, we do.",
+      "By 3 PM, we'll be giving out free bagels with every coffee purchase.",
+      "Perfect!",
+      "We'll take two americanos and two bagels then.",
+      "Fantastic!",
+      "We'll be enjoying our coffee and bagels soon after all."
     ],
     "translated_dialogue": [
       {
-        "speaker": "Alex",
-        "text": "Har du h\u00f6rt? V\u00e5r l\u00e4rare har utlyst en lysande spr\u00e5kt\u00e4vling!"
-      },
-      {
         "speaker": "Sam",
-        "text": "Nej, jag har inte h\u00f6rt \u00e4nnu. Vad \u00e4r tanken?"
+        "text": "\u0410\u043b\u0435\u043a, \u0442\u0440\u0435\u0431\u0430\u043e \u043c\u0438 \u0458\u0435 \u0430\u043c\u0435\u0440\u0438\u0446\u0430\u043d\u043e \u0446\u0435\u043b\u043e \u043f\u043e\u043f\u043e\u0434\u043d\u0435."
       },
       {
         "speaker": "Alex",
-        "text": "Det \u00e4r ett program f\u00f6r att f\u00e5 oss att arbeta h\u00e5rdare. Vi kommer att ha skrivit tolv lektioner till n\u00e4sta m\u00e5nad."
+        "text": "\u0417\u043d\u0430\u043c! \u0423\u0441\u043a\u043e\u0440\u043e \u045b\u0435\u043c\u043e \u043f\u0438\u0442\u0438 \u043a\u0430\u0444\u0443. \u041f\u043e\u043f\u0438\u045b\u0443 \u0446\u0440\u043d\u0443 \u043a\u0430\u0444\u0443 \u0441\u0430 \u043e\u0432\u0441\u0435\u043d\u0438\u043c \u043c\u043b\u0435\u043a\u043e\u043c."
       },
       {
         "speaker": "Sam",
-        "text": "Tolv? Det \u00e4r mycket! Jag \u00e4r redan sp\u00e4nd. N\u00e4r b\u00f6rjar det?"
+        "text": "\u041f\u043e\u0433\u043b\u0435\u0434\u0430\u0458! \u0414\u043e\u043b\u0430\u0437\u0438 \u0447\u043b\u0430\u043d \u043e\u0441\u043e\u0431\u0459\u0430. \u041c\u043e\u0436\u0434\u0430 \u045b\u0435 \u043d\u0430\u043c \u0434\u0430\u0442\u0438 \u0434\u043e\u0431\u0440\u0435 \u0432\u0435\u0441\u0442\u0438."
+      },
+      {
+        "speaker": "Staff",
+        "text": "\u0417\u0434\u0440\u0430\u0432\u043e! \u0414\u043e\u043d\u0435\u045b\u0435\u043c\u043e \u0432\u0430\u043c \u043f\u0438\u045b\u0435 \u0430\u043a\u043e \u0436\u0435\u043b\u0438\u0442\u0435. \u0414\u0430 \u043b\u0438 \u0441\u0442\u0435 \u0445\u0442\u0435\u043b\u0438 \u0458\u043e\u0448 \u043d\u0435\u0448\u0442\u043e?"
       },
       {
         "speaker": "Alex",
-        "text": "Klockan sex imorgon. Vi kommer nog att vara tr\u00f6tta efter varje lektion."
+        "text": "\u0422\u043e \u0458\u0435 \u0441\u0458\u0430\u0458\u043d\u043e! \u0418 \u0458\u0430 \u0441\u0430\u043c \u0436\u0435\u043b\u0435\u043e \u043f\u0435\u0446\u0438\u0432\u043e. \u0414\u0430 \u043b\u0438 \u0438\u043c\u0430\u0442\u0435 \u043d\u0435\u043a\u0435?"
+      },
+      {
+        "speaker": "Staff",
+        "text": "\u0414\u0430. \u0414\u043e 15:00 \u0434\u0435\u043b\u0438\u045b\u0435\u043c\u043e \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u0435 \u0452\u0435\u0432\u0440\u0435\u043a\u0435 \u0443\u0437 \u0441\u0432\u0430\u043a\u0443 \u043a\u0443\u043f\u043e\u0432\u0438\u043d\u0443 \u043a\u0430\u0444\u0435."
       },
       {
         "speaker": "Sam",
-        "text": "\u00c4ven om det \u00e4r sv\u00e5rt tycker jag att det \u00e4r en lysande id\u00e9 att f\u00f6rb\u00e4ttra v\u00e5r franska."
+        "text": "\u0421\u0430\u0432\u0440\u0448\u0435\u043d! \u041e\u043d\u0434\u0430 \u045b\u0435\u043c\u043e \u0443\u0437\u0435\u0442\u0438 \u0434\u0432\u0430 \u0430\u043c\u0435\u0440\u0438\u0446\u0430\u043d\u0430 \u0438 \u0434\u0432\u0430 \u0431\u0430\u0433\u0435\u043b\u0430."
       },
       {
         "speaker": "Alex",
-        "text": "Ja, och n\u00e4r vi \u00e4r klara kommer vi att ha k\u00e4nt igen olika franska accenter."
-      },
-      {
-        "speaker": "Sam",
-        "text": "N\u00e5v\u00e4l, l\u00e5t oss ta en kopp kaffe nu och b\u00f6rja jobba p\u00e5 v\u00e5r f\u00f6rsta lektion."
+        "text": "\u0424\u0430\u043d\u0442\u0430\u0441\u0442\u0438\u0447\u0430\u043d! \u0423\u0441\u043a\u043e\u0440\u043e \u045b\u0435\u043c\u043e \u0443\u0436\u0438\u0432\u0430\u0442\u0438 \u0443 \u043a\u0430\u0444\u0438 \u0438 \u043f\u0435\u0446\u0438\u0432\u0430\u043c\u0430."
       }
     ],
     "translated_phrase_list": [
       [
-        "I'm tense",
-        "Jag \u00e4r sp\u00e4nd"
+        "I've been needing",
+        "\u0422\u0440\u0435\u0431\u0430\u043e \u0441\u0430\u043c"
       ],
       [
-        "It's difficult",
-        "Det \u00e4r sv\u00e5rt"
+        "They'll be drinking",
+        "\u041e\u043d\u0438 \u045b\u0435 \u043f\u0438\u0442\u0438"
       ],
       [
-        "We'll start",
-        "Vi b\u00f6rjar"
+        "We'll have coffee",
+        "\u041f\u043e\u043f\u0438\u045b\u0435\u043c\u043e \u043a\u0430\u0444\u0443"
       ],
       [
-        "You've heard",
-        "Du har h\u00f6rt"
+        "Look! Coming",
+        "\u041f\u043e\u0433\u043b\u0435\u0434\u0430\u0458! \u0414\u043e\u043b\u0430\u0437\u0438\u043c"
       ],
       [
-        "They're tired",
-        "De \u00e4r tr\u00f6tta"
+        "You'll be bringing",
+        "\u0422\u0438 \u045b\u0435\u0448 \u0434\u043e\u043d\u0435\u0442\u0438"
       ],
       [
-        "It's brilliant",
-        "Det \u00e4r lysande"
+        "I've been wanting",
+        "\u0416\u0435\u043b\u0435\u043e \u0441\u0430\u043c"
       ],
       [
-        "We'll work harder",
-        "Vi kommer att jobba h\u00e5rdare"
+        "We do",
+        "\u0420\u0430\u0434\u0438\u043c\u043e"
       ],
       [
-        "You'll have written",
-        "Du kommer att ha skrivit"
+        "They'll be giving",
+        "\u041e\u043d\u0438 \u045b\u0435 \u0434\u0430\u0442\u0438"
       ],
       [
-        "They've announced",
-        "De har meddelat"
+        "We'll take two",
+        "\u0423\u0437\u0435\u045b\u0435\u043c\u043e \u0434\u0432\u0430"
       ],
       [
-        "We'll be tired",
-        "Vi kommer att vara tr\u00f6tta"
+        "You'll be enjoying",
+        "\u0412\u0438 \u045b\u0435\u0442\u0435 \u0443\u0436\u0438\u0432\u0430\u0442\u0438"
       ],
       [
-        "It's a programme",
-        "Det \u00e4r ett program"
+        "Alex, we've been needing",
+        "\u0410\u043b\u0435\u043a, \u0442\u0440\u0435\u0431\u0430\u043b\u0438 \u0441\u043c\u043e"
       ],
       [
-        "You'll have recognised",
-        "Du kommer att ha k\u00e4nt igen"
+        "I know! We'll be drinking",
+        "\u0417\u043d\u0430\u043c! \u041f\u0438\u045b\u0435\u043c\u043e"
       ],
       [
-        "We'll improve our French",
-        "Vi ska f\u00f6rb\u00e4ttra v\u00e5r franska"
+        "A staff member is coming",
+        "\u0414\u043e\u043b\u0430\u0437\u0438 \u0447\u043b\u0430\u043d \u043e\u0441\u043e\u0431\u0459\u0430"
       ],
       [
-        "They'll start at six o'clock",
-        "De b\u00f6rjar klockan sex"
+        "Have you wanted anything?",
+        "\u0414\u0430 \u043b\u0438 \u0441\u0442\u0435 \u0436\u0435\u043b\u0435\u043b\u0438 \u043d\u0435\u0448\u0442\u043e?"
       ],
       [
-        "We'll have a cup of coffee",
-        "Vi tar en kopp kaffe"
+        "Do you have any?",
+        "\u0414\u0430 \u043b\u0438 \u0438\u043c\u0430\u0442\u0435 \u043d\u0435\u043a\u0435?"
       ],
       [
-        "You'll be tired after every lesson",
-        "Du kommer att vara tr\u00f6tt efter varje lektion"
+        "We'll be giving out free",
+        "\u0414\u0430\u045b\u0435\u043c\u043e \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u043e"
       ],
       [
-        "They'll have written twelve lessons",
-        "De kommer att ha skrivit tolv lektioner"
+        "We'll take americanos and bagels",
+        "\u0423\u0437\u0435\u045b\u0435\u043c\u043e \u0430\u043c\u0435\u0440\u0438\u0446\u0430\u043d\u043e\u0441 \u0438 \u0431\u0430\u0433\u0435\u043b\u0441"
       ],
       [
-        "We'll recognise different French accents",
-        "Vi kommer att k\u00e4nna igen olika franska accenter"
+        "We'll be enjoying our coffee soon",
+        "\u0423\u0441\u043a\u043e\u0440\u043e \u045b\u0435\u043c\u043e \u0443\u0436\u0438\u0432\u0430\u0442\u0438 \u0443 \u043a\u0430\u0444\u0438"
       ],
       [
-        "You'll have finished by next month",
-        "Du kommer att vara klar n\u00e4sta m\u00e5nad"
+        "I've been needing coffee all afternoon",
+        "\u0422\u0440\u0435\u0431\u0430\u043b\u0430 \u043c\u0438 \u0458\u0435 \u043a\u0430\u0444\u0430 \u0446\u0435\u043b\u043e \u043f\u043e\u043f\u043e\u0434\u043d\u0435"
       ],
       [
-        "We'll start working on our first lesson",
-        "Vi b\u00f6rjar jobba p\u00e5 v\u00e5r f\u00f6rsta lektion"
+        "They'll be bringing your drinks to go",
+        "\u041e\u043d\u0438 \u045b\u0435 \u0432\u0430\u043c \u0434\u043e\u043d\u0435\u0442\u0438 \u043f\u0438\u045b\u0435"
       ],
       [
-        "Have you heard?",
-        "Har du h\u00f6rt?"
+        "Alex, I've been needing an americano all afternoon.",
+        "\u0410\u043b\u0435\u043a, \u0442\u0440\u0435\u0431\u0430\u043e \u043c\u0438 \u0458\u0435 \u0430\u043c\u0435\u0440\u0438\u0446\u0430\u043d\u043e \u0446\u0435\u043b\u043e \u043f\u043e\u043f\u043e\u0434\u043d\u0435."
       ],
       [
-        "Our teacher has announced a brilliant language competition!",
-        "V\u00e5r l\u00e4rare har utlyst en lysande spr\u00e5kt\u00e4vling!"
+        "I know!",
+        "\u0417\u043d\u0430\u043c!"
       ],
       [
-        "No, I haven't heard yet.",
-        "Nej, jag har inte h\u00f6rt \u00e4nnu."
+        "We'll be drinking our coffee soon.",
+        "\u0423\u0441\u043a\u043e\u0440\u043e \u045b\u0435\u043c\u043e \u043f\u0438\u0442\u0438 \u043a\u0430\u0444\u0443."
       ],
       [
-        "What's the idea?",
-        "Vad \u00e4r tanken?"
+        "I'll have a black coffee with oat milk.",
+        "\u041f\u043e\u043f\u0438\u045b\u0443 \u0446\u0440\u043d\u0443 \u043a\u0430\u0444\u0443 \u0441\u0430 \u043e\u0432\u0441\u0435\u043d\u0438\u043c \u043c\u043b\u0435\u043a\u043e\u043c."
       ],
       [
-        "It's a programme to make us work harder.",
-        "Det \u00e4r ett program f\u00f6r att f\u00e5 oss att arbeta h\u00e5rdare."
+        "Look!",
+        "\u041f\u043e\u0433\u043b\u0435\u0434\u0430\u0458!"
       ],
       [
-        "We'll have written twelve lessons by next month.",
-        "Vi kommer att ha skrivit tolv lektioner till n\u00e4sta m\u00e5nad."
+        "A staff member is coming.",
+        "\u0414\u043e\u043b\u0430\u0437\u0438 \u0447\u043b\u0430\u043d \u043e\u0441\u043e\u0431\u0459\u0430."
       ],
       [
-        "Twelve?",
-        "Tolv?"
+        "Maybe they'll give us good news.",
+        "\u041c\u043e\u0436\u0434\u0430 \u045b\u0435 \u043d\u0430\u043c \u0434\u0430\u0442\u0438 \u0434\u043e\u0431\u0440\u0435 \u0432\u0435\u0441\u0442\u0438."
       ],
       [
-        "That's much!",
-        "Det \u00e4r mycket!"
+        "Hello!",
+        "\u0417\u0434\u0440\u0430\u0432\u043e!"
       ],
       [
-        "I'm tense already.",
-        "Jag \u00e4r redan sp\u00e4nd."
+        "We'll be bringing your drinks to go if you like.",
+        "\u041f\u043e\u043d\u0435\u045b\u0435\u043c\u043e \u0432\u0430\u043c \u043f\u0438\u045b\u0435 \u0430\u043a\u043e \u0436\u0435\u043b\u0438\u0442\u0435."
       ],
       [
-        "When does it start?",
-        "N\u00e4r b\u00f6rjar det?"
+        "Have you wanted anything else?",
+        "\u0414\u0430 \u043b\u0438 \u0441\u0442\u0435 \u0445\u0442\u0435\u043b\u0438 \u0458\u043e\u0448 \u043d\u0435\u0448\u0442\u043e?"
       ],
       [
-        "At six o'clock tomorrow.",
-        "Klockan sex imorgon."
+        "That's great!",
+        "\u0422\u043e \u0458\u0435 \u0441\u0458\u0430\u0458\u043d\u043e!"
       ],
       [
-        "We'll probably be tired after every lesson.",
-        "Vi kommer nog att vara tr\u00f6tta efter varje lektion."
+        "I've been wanting a bagel too.",
+        "\u0418 \u0458\u0430 \u0441\u0430\u043c \u0436\u0435\u043b\u0435\u043e \u043f\u0435\u0446\u0438\u0432\u043e."
       ],
       [
-        "Although it's difficult, I think it's a brilliant idea to improve our French.",
-        "\u00c4ven om det \u00e4r sv\u00e5rt tycker jag att det \u00e4r en lysande id\u00e9 att f\u00f6rb\u00e4ttra v\u00e5r franska."
+        "Do you have any?",
+        "\u0414\u0430 \u043b\u0438 \u0438\u043c\u0430\u0442\u0435 \u043d\u0435\u043a\u0435?"
       ],
       [
-        "Yes, and by the time we finish, we'll have recognised different French accents.",
-        "Ja, och n\u00e4r vi \u00e4r klara kommer vi att ha k\u00e4nt igen olika franska accenter."
+        "Yes, we do.",
+        "\u0414\u0430."
       ],
       [
-        "Well, let's have a cup of coffee now and start working on our first lesson.",
-        "N\u00e5v\u00e4l, l\u00e5t oss ta en kopp kaffe nu och b\u00f6rja jobba p\u00e5 v\u00e5r f\u00f6rsta lektion."
+        "By 3 PM, we'll be giving out free bagels with every coffee purchase.",
+        "\u0414\u043e 15:00 \u0434\u0435\u043b\u0438\u045b\u0435\u043c\u043e \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u0435 \u0452\u0435\u0432\u0440\u0435\u043a\u0435 \u0443\u0437 \u0441\u0432\u0430\u043a\u0443 \u043a\u0443\u043f\u043e\u0432\u0438\u043d\u0443 \u043a\u0430\u0444\u0435."
+      ],
+      [
+        "Perfect!",
+        "\u0421\u0430\u0432\u0440\u0448\u0435\u043d!"
+      ],
+      [
+        "We'll take two americanos and two bagels then.",
+        "\u041e\u043d\u0434\u0430 \u045b\u0435\u043c\u043e \u0443\u0437\u0435\u0442\u0438 \u0434\u0432\u0430 \u0430\u043c\u0435\u0440\u0438\u0446\u0430\u043d\u0430 \u0438 \u0434\u0432\u0430 \u0431\u0430\u0433\u0435\u043b\u0430."
+      ],
+      [
+        "Fantastic!",
+        "\u0424\u0430\u043d\u0442\u0430\u0441\u0442\u0438\u0447\u0430\u043d!"
+      ],
+      [
+        "We'll be enjoying our coffee and bagels soon after all.",
+        "\u0423\u0441\u043a\u043e\u0440\u043e \u045b\u0435\u043c\u043e \u0443\u0436\u0438\u0432\u0430\u0442\u0438 \u0443 \u043a\u0430\u0444\u0438 \u0438 \u043f\u0435\u0446\u0438\u0432\u0430\u043c\u0430."
       ]
     ]
   },
   "falling_action": {
-    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    had, wake, sit, wake, has, close, swim, shall, hurry, learn\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    important, hungry, before, Swedish, today, head, we, book, yesterday, tomorrow, meeting, not, was, person, in, fish, throat, university, about, since, many, or, evening, tooth, summer, film, I, and, everybody, father, green, person, when, course, entire, yourself, not, sibling, English, with, money, course, well, but, breakfast, evening, how, off, tonight, yesterday, coffee, but, girl, question, until, herself, if, I, bicycle, beautiful, university, out, already, outside, to, myself, important, clever, every, yesterday, out, breakfast, lot, then, mother, every, coffee, on, within, where, film, dinner, his, to, table, everybody, bicycle, father, me, well, who, herself, books, clever, lot, on, because, myself, nothing, tense\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Noun clauses, Simple sentences, Present Perfect Continuous\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex informs Sam about a newly announced language competition involving twelve intensive French lessons over the next month. Despite initial apprehension about the workload, both students recognize the potential benefits, including improved language skills and accent recognition. They decide to start preparing for the competition, beginning with a cup of coffee.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: falling_action: They prepare for the competition, supporting each other through difficulties.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 5 of these verbs:\n    want, take, ask, want, need, bring, order, pay, take, need\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    card, yes, tea, here, tasty, cream, coffee, vegan, no, bitter, smoothie, cheap, caf\u00c3\u00a9, cheese, caramel, mocha, fruit, cheap, afternoon, bagel, goodbye, no, without, mug, cup, please, cappuccino, money, customer, extra\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    verb_tenses - Past Perfect Continuous, verb_tenses - Future Perfect, verb_tenses - Future Perfect Continuous\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Sam and Alex are waiting for coffee at a caf\u00e9, with Sam craving an americano and Alex wanting a black coffee with oat milk. A staff member informs them that drinks will be available to go and that free bagels will be given with coffee purchases after 3 PM, leading Sam to order two americanos and two bagels for them both.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: falling_action: Alex and Sam accept the offer and finally get to enjoy their time at the caf\u00e9. They discuss their experience and the day's events.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for beginner language learners.\n    ",
     "dialogue": [
       {
         "speaker": "Alex",
-        "text": "How has your French course been since yesterday, Sam?"
+        "text": "By 3 PM, I will have been waiting for my coffee for an hour!"
       },
       {
         "speaker": "Sam",
-        "text": "I have been learning many important words, but my head hurts."
+        "text": "Yes, but the bagels will be free then. Do you want cream cheese?"
       },
       {
         "speaker": "Alex",
-        "text": "I understand. Shall we sit and have coffee?"
+        "text": "No, thanks. I need a vegan option. Can you ask for fruit?"
       },
       {
         "speaker": "Sam",
-        "text": "Yes, please. I'm hungry too. When is dinner?"
+        "text": "Sure. By the time we leave, I will have asked for vegan options and extra fruit."
       },
       {
         "speaker": "Alex",
-        "text": "Dinner is not until this evening. We can have breakfast now if you'd like."
+        "text": "Tasty! Will you have been needing anything else?"
       },
       {
         "speaker": "Sam",
-        "text": "That's a clever idea. I wake up hungry every morning."
+        "text": "No, just my coffee. It's cheap here in the afternoon."
       },
       {
         "speaker": "Alex",
-        "text": "Me too. Let's hurry to the university coffee shop before our next meeting."
+        "text": "Great! Let's pay and take our coffee in a cup to go."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Goodbye, caf\u00e9! The coffee here is never bitter."
       }
     ],
-    "recap": "Sam has been taking a French course and is feeling mentally exhausted. Alex suggests having coffee, and they decide to grab breakfast at the university coffee shop before their next meeting, as Sam is hungry and it's too early for dinner.",
-    "uncorrected_phrase_list": [
-      "my let",
-      "we sit",
-      "i wake",
-      "me too",
-      "my hurts",
-      "'s hurry",
-      "my hurts",
-      "dinner ?",
-      "you hurts",
-      "head hurts",
-      "yes please",
-      "hungry too",
-      "i understand",
-      "a clever idea",
-      "our next meeting",
-      "that 's a clever idea",
-      "i 'm hungry every morning",
-      "breakfast now if you hurts",
-      "the university coffee shop",
-      "dinner is not until this evening",
-      "we can have breakfast now if you 'd like",
-      "breakfast now hurry to the university coffee",
-      "your french course been since yesterday sam ?",
-      "we can have breakfast now hurry to the university",
-      "the university coffee shop before our next meeting",
-      "course been learning many important words but my let",
-      "how has your french course been since yesterday , sam ?",
-      "i have been learning many important words , but my head hurts .",
-      "i understand .",
-      "shall we sit and have coffee ?",
-      "yes , please .",
-      "i 'm hungry too .",
-      "when is dinner ?",
-      "dinner is not until this evening .",
-      "we can have breakfast now if you 'd like .",
-      "that 's a clever idea .",
-      "i wake up hungry every morning .",
-      "me too .",
-      "let 's hurry to the university coffee shop before our next meeting ."
-    ],
+    "recap": "Alex and Sam are waiting for coffee at a caf\u00e9, where bagels will be free after 3 PM. Sam offers to ask for vegan options and extra fruit for Alex, while they both plan to get coffee to go. They appreciate the caf\u00e9 for its cheap afternoon coffee and non-bitter taste.",
     "corrected_phrase_list": [
-      "We understand",
-      "You hurry",
-      "I'm hungry",
-      "They wake up",
-      "It's evening",
-      "We have coffee",
-      "You learn words",
-      "My head hurts",
-      "Dinner is now",
-      "We sit and learn",
-      "You wake up hungry",
-      "I have been learning",
-      "They hurry to breakfast",
-      "We understand your head hurts",
-      "You have been learning French",
-      "I wake up hungry every morning",
-      "We can have breakfast now",
-      "They hurry to the coffee shop",
-      "You understand my head hurts since yesterday",
-      "We have been learning many important words",
-      "How has your French course been since yesterday, Sam?",
-      "I have been learning many important words, but my head hurts.",
-      "I understand.",
-      "Shall we sit and have coffee?",
-      "Yes, please.",
-      "I'm hungry too.",
-      "When is dinner?",
-      "Dinner is not until this evening.",
-      "We can have breakfast now if you'd like.",
-      "That's a clever idea.",
-      "I wake up hungry every morning.",
-      "Me too.",
-      "Let's hurry to the university coffee shop before our next meeting."
+      "I wait",
+      "They need",
+      "You ask",
+      "We leave",
+      "It's cheap",
+      "Tasty fruit",
+      "Vegan options",
+      "Coffee to go",
+      "Never bitter",
+      "We will pay",
+      "You have been waiting",
+      "I need fruit options",
+      "They will be free then",
+      "Can you ask for vegan?",
+      "We take our coffee here",
+      "Will you have been needing coffee?",
+      "The bagels are free in the afternoon",
+      "By 3 PM, you will have asked",
+      "Let's take our bagels to go",
+      "Goodbye, cheap and tasty coffee!",
+      "By 3 PM, I will have been waiting for my coffee for an hour!",
+      "Yes, but the bagels will be free then.",
+      "Do you want cream cheese?",
+      "No, thanks.",
+      "I need a vegan option.",
+      "Can you ask for fruit?",
+      "Sure.",
+      "By the time we leave, I will have asked for vegan options and extra fruit.",
+      "Tasty!",
+      "Will you have been needing anything else?",
+      "No, just my coffee.",
+      "It's cheap here in the afternoon.",
+      "Great!",
+      "Let's pay and take our coffee in a cup to go.",
+      "Goodbye, caf\u00e9!",
+      "The coffee here is never bitter."
     ],
     "translated_dialogue": [
       {
         "speaker": "Alex",
-        "text": "Hur har din franskakurs varit sedan ig\u00e5r, Sam?"
+        "text": "\u0414\u043e 15 \u0447\u0430\u0441\u043e\u0432\u0430 \u0447\u0435\u043a\u0430\u045b\u0443 \u043a\u0430\u0444\u0443 \u0441\u0430\u0442 \u0432\u0440\u0435\u043c\u0435\u043d\u0430!"
       },
       {
         "speaker": "Sam",
-        "text": "Jag har l\u00e4rt mig m\u00e5nga viktiga ord, men jag f\u00e5r ont i huvudet."
+        "text": "\u0414\u0430, \u0430\u043b\u0438 \u0452\u0435\u0432\u0440\u0435\u0446\u0438 \u045b\u0435 \u0442\u0430\u0434\u0430 \u0431\u0438\u0442\u0438 \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u0438. \u0425\u043e\u045b\u0435\u0448 \u043a\u0440\u0435\u043c \u0441\u0438\u0440?"
       },
       {
         "speaker": "Alex",
-        "text": "Jag f\u00f6rst\u00e5r. Ska vi sitta och fika?"
+        "text": "\u041d\u0435 \u0445\u0432\u0430\u043b\u0430. \u0422\u0440\u0435\u0431\u0430 \u043c\u0438 \u0432\u0435\u0433\u0430\u043d\u0441\u043a\u0430 \u043e\u043f\u0446\u0438\u0458\u0430. \u041c\u043e\u0436\u0435\u0442\u0435 \u043b\u0438 \u0442\u0440\u0430\u0436\u0438\u0442\u0438 \u0432\u043e\u045b\u0435?"
       },
       {
         "speaker": "Sam",
-        "text": "Ja tack. Jag \u00e4r ocks\u00e5 hungrig. N\u00e4r \u00e4r det middag?"
+        "text": "\u041d\u0430\u0440\u0430\u0432\u043d\u043e. \u0414\u043e\u043a \u043e\u0434\u0435\u043c\u043e, \u0442\u0440\u0430\u0436\u0438\u045b\u0443 \u0432\u0435\u0433\u0430\u043d\u0441\u043a\u0435 \u043e\u043f\u0446\u0438\u0458\u0435 \u0438 \u0434\u043e\u0434\u0430\u0442\u043d\u043e \u0432\u043e\u045b\u0435."
       },
       {
         "speaker": "Alex",
-        "text": "Middag \u00e4r inte f\u00f6rr\u00e4n i kv\u00e4ll. Vi kan \u00e4ta frukost nu om du vill."
+        "text": "\u0422\u0430\u0441\u0442\u0438! \u0414\u0430 \u043b\u0438 \u0432\u0430\u043c \u0458\u0435 \u0442\u0440\u0435\u0431\u0430\u043b\u043e \u0458\u043e\u0448 \u043d\u0435\u0448\u0442\u043e?"
       },
       {
         "speaker": "Sam",
-        "text": "Det \u00e4r en smart id\u00e9. Jag vaknar hungrig varje morgon."
+        "text": "\u041d\u0435, \u0441\u0430\u043c\u043e \u043c\u043e\u0458\u0430 \u043a\u0430\u0444\u0430. \u041e\u0432\u0434\u0435 \u0458\u0435 \u043f\u043e\u043f\u043e\u0434\u043d\u0435 \u0458\u0435\u0444\u0442\u0438\u043d\u043e."
       },
       {
         "speaker": "Alex",
-        "text": "Jag med. L\u00e5t oss skynda till universitetskaf\u00e9et innan v\u00e5rt n\u00e4sta m\u00f6te."
+        "text": "\u0412\u0435\u043b\u0438\u043a\u0438! \u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u043f\u043b\u0430\u0442\u0438\u043c\u043e \u0438 \u0443\u0437\u043c\u0438\u043c\u043e \u043a\u0430\u0444\u0443 \u0443 \u0448\u043e\u0459\u0438\u0446\u0438 \u0434\u0430 \u0438\u0434\u0435\u043c\u043e."
+      },
+      {
+        "speaker": "Sam",
+        "text": "\u0417\u0431\u043e\u0433\u043e\u043c, \u043a\u0430\u0444\u0435! \u041a\u0430\u0444\u0430 \u043e\u0432\u0434\u0435 \u043d\u0438\u043a\u0430\u0434\u0430 \u043d\u0438\u0458\u0435 \u0433\u043e\u0440\u043a\u0430."
       }
     ],
     "translated_phrase_list": [
       [
-        "We understand",
-        "Vi f\u00f6rst\u00e5r"
+        "I wait",
+        "\u0458\u0430 \u0447\u0435\u043a\u0430\u043c"
       ],
       [
-        "You hurry",
-        "Skynda dig"
+        "They need",
+        "\u0418\u043c \u0458\u0435 \u043f\u043e\u0442\u0440\u0435\u0431\u043d\u043e"
       ],
       [
-        "I'm hungry",
-        "jag \u00e4r hungrig"
+        "You ask",
+        "\u041f\u0438\u0442\u0430\u0442\u0435"
       ],
       [
-        "They wake up",
-        "De vaknar"
+        "We leave",
+        "\u041e\u0441\u0442\u0430\u0432\u0459\u0430\u043c\u043e"
       ],
       [
-        "It's evening",
-        "Det \u00e4r kv\u00e4ll"
+        "It's cheap",
+        "\u0422\u043e \u0458\u0435 \u0458\u0435\u0444\u0442\u0438\u043d\u043e"
       ],
       [
-        "We have coffee",
-        "Vi fikar"
+        "Tasty fruit",
+        "\u0423\u043a\u0443\u0441\u043d\u043e \u0432\u043e\u045b\u0435"
       ],
       [
-        "You learn words",
-        "Du l\u00e4r dig ord"
+        "Vegan options",
+        "\u0412\u0435\u0433\u0430\u043d\u0441\u043a\u0435 \u043e\u043f\u0446\u0438\u0458\u0435"
       ],
       [
-        "My head hurts",
-        "Mitt huvud g\u00f6r ont"
+        "Coffee to go",
+        "\u041a\u0430\u0444\u0430 \u0437\u0430 \u043f\u043e\u043b\u0430\u0437\u0430\u043a"
       ],
       [
-        "Dinner is now",
-        "Middagen \u00e4r nu"
+        "Never bitter",
+        "\u041d\u0438\u043a\u0430\u0434 \u0433\u043e\u0440\u043a\u043e"
       ],
       [
-        "We sit and learn",
-        "Vi sitter och l\u00e4r oss"
+        "We will pay",
+        "\u041c\u0438 \u045b\u0435\u043c\u043e \u043f\u043b\u0430\u0442\u0438\u0442\u0438"
       ],
       [
-        "You wake up hungry",
-        "Du vaknar hungrig"
+        "You have been waiting",
+        "\u0427\u0435\u043a\u0430\u043b\u0438 \u0441\u0442\u0435"
       ],
       [
-        "I have been learning",
-        "Jag har l\u00e4rt mig"
+        "I need fruit options",
+        "\u0422\u0440\u0435\u0431\u0430\u0458\u0443 \u043c\u0438 \u0432\u043e\u045b\u043d\u0435 \u043e\u043f\u0446\u0438\u0458\u0435"
       ],
       [
-        "They hurry to breakfast",
-        "De skyndar till frukost"
+        "They will be free then",
+        "\u0422\u0430\u0434\u0430 \u045b\u0435 \u0431\u0438\u0442\u0438 \u0441\u043b\u043e\u0431\u043e\u0434\u043d\u0438"
       ],
       [
-        "We understand your head hurts",
-        "Vi f\u00f6rst\u00e5r att du g\u00f6r ont i huvudet"
+        "Can you ask for vegan?",
+        "\u041c\u043e\u0436\u0435\u0442\u0435 \u043b\u0438 \u0442\u0440\u0430\u0436\u0438\u0442\u0438 \u0432\u0435\u0433\u0430\u043d\u0441\u043a\u043e?"
       ],
       [
-        "You have been learning French",
-        "Du har l\u00e4rt dig franska"
+        "We take our coffee here",
+        "\u041e\u0432\u0434\u0435 \u043f\u0438\u0458\u0435\u043c\u043e \u043a\u0430\u0444\u0443"
       ],
       [
-        "I wake up hungry every morning",
-        "Jag vaknar hungrig varje morgon"
+        "Will you have been needing coffee?",
+        "\u0414\u0430 \u043b\u0438 \u0432\u0430\u043c \u0458\u0435 \u0442\u0440\u0435\u0431\u0430\u043b\u0430 \u043a\u0430\u0444\u0430?"
       ],
       [
-        "We can have breakfast now",
-        "Vi kan \u00e4ta frukost nu"
+        "The bagels are free in the afternoon",
+        "\u041f\u043e\u043f\u043e\u0434\u043d\u0435 \u0441\u0443 \u0452\u0435\u0432\u0440\u0435\u0446\u0438 \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u0438"
       ],
       [
-        "They hurry to the coffee shop",
-        "De skyndar till kaf\u00e9et"
+        "By 3 PM, you will have asked",
+        "\u0414\u043e 15 \u0447\u0430\u0441\u043e\u0432\u0430, \u043f\u0438\u0442\u0430\u045b\u0435\u0442\u0435"
       ],
       [
-        "You understand my head hurts since yesterday",
-        "Du f\u00f6rst\u00e5r att jag har ont i huvudet sedan ig\u00e5r"
+        "Let's take our bagels to go",
+        "\u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u043f\u043e\u043d\u0435\u0441\u0435\u043c\u043e \u043d\u0430\u0448\u0435 \u043f\u0435\u0446\u0438\u0432\u043e"
       ],
       [
-        "We have been learning many important words",
-        "Vi har l\u00e4rt oss m\u00e5nga viktiga ord"
+        "Goodbye, cheap and tasty coffee!",
+        "\u0417\u0431\u043e\u0433\u043e\u043c, \u0458\u0435\u0444\u0442\u0438\u043d\u0430 \u0438 \u0443\u043a\u0443\u0441\u043d\u0430 \u043a\u0430\u0444\u0430!"
       ],
       [
-        "How has your French course been since yesterday, Sam?",
-        "Hur har din franskakurs varit sedan ig\u00e5r, Sam?"
+        "By 3 PM, I will have been waiting for my coffee for an hour!",
+        "\u0414\u043e 15 \u0447\u0430\u0441\u043e\u0432\u0430 \u0447\u0435\u043a\u0430\u045b\u0443 \u043a\u0430\u0444\u0443 \u0441\u0430\u0442 \u0432\u0440\u0435\u043c\u0435\u043d\u0430!"
       ],
       [
-        "I have been learning many important words, but my head hurts.",
-        "Jag har l\u00e4rt mig m\u00e5nga viktiga ord, men jag f\u00e5r ont i huvudet."
+        "Yes, but the bagels will be free then.",
+        "\u0414\u0430, \u0430\u043b\u0438 \u0452\u0435\u0432\u0440\u0435\u0446\u0438 \u045b\u0435 \u0442\u0430\u0434\u0430 \u0431\u0438\u0442\u0438 \u0431\u0435\u0441\u043f\u043b\u0430\u0442\u043d\u0438."
       ],
       [
-        "I understand.",
-        "Jag f\u00f6rst\u00e5r."
+        "Do you want cream cheese?",
+        "\u0425\u043e\u045b\u0435\u0448 \u043a\u0440\u0435\u043c \u0441\u0438\u0440?"
       ],
       [
-        "Shall we sit and have coffee?",
-        "Ska vi sitta och fika?"
+        "No, thanks.",
+        "\u041d\u0435 \u0445\u0432\u0430\u043b\u0430."
       ],
       [
-        "Yes, please.",
-        "Ja tack."
+        "I need a vegan option.",
+        "\u0422\u0440\u0435\u0431\u0430 \u043c\u0438 \u0432\u0435\u0433\u0430\u043d\u0441\u043a\u0430 \u043e\u043f\u0446\u0438\u0458\u0430."
       ],
       [
-        "I'm hungry too.",
-        "Jag \u00e4r ocks\u00e5 hungrig."
+        "Can you ask for fruit?",
+        "\u041c\u043e\u0436\u0435\u0442\u0435 \u043b\u0438 \u0442\u0440\u0430\u0436\u0438\u0442\u0438 \u0432\u043e\u045b\u0435?"
       ],
       [
-        "When is dinner?",
-        "N\u00e4r \u00e4r det middag?"
+        "Sure.",
+        "\u041d\u0430\u0440\u0430\u0432\u043d\u043e."
       ],
       [
-        "Dinner is not until this evening.",
-        "Middag \u00e4r inte f\u00f6rr\u00e4n i kv\u00e4ll."
+        "By the time we leave, I will have asked for vegan options and extra fruit.",
+        "\u0414\u043e\u043a \u043e\u0434\u0435\u043c\u043e, \u0442\u0440\u0430\u0436\u0438\u045b\u0443 \u0432\u0435\u0433\u0430\u043d\u0441\u043a\u0435 \u043e\u043f\u0446\u0438\u0458\u0435 \u0438 \u0434\u043e\u0434\u0430\u0442\u043d\u043e \u0432\u043e\u045b\u0435."
       ],
       [
-        "We can have breakfast now if you'd like.",
-        "Vi kan \u00e4ta frukost nu om du vill."
+        "Tasty!",
+        "\u0422\u0430\u0441\u0442\u0438!"
       ],
       [
-        "That's a clever idea.",
-        "Det \u00e4r en smart id\u00e9."
+        "Will you have been needing anything else?",
+        "\u0414\u0430 \u043b\u0438 \u0432\u0430\u043c \u0458\u0435 \u0442\u0440\u0435\u0431\u0430\u043b\u043e \u0458\u043e\u0448 \u043d\u0435\u0448\u0442\u043e?"
       ],
       [
-        "I wake up hungry every morning.",
-        "Jag vaknar hungrig varje morgon."
+        "No, just my coffee.",
+        "\u041d\u0435, \u0441\u0430\u043c\u043e \u043c\u043e\u0458\u0430 \u043a\u0430\u0444\u0430."
       ],
       [
-        "Me too.",
-        "Jag med."
+        "It's cheap here in the afternoon.",
+        "\u041e\u0432\u0434\u0435 \u0458\u0435 \u043f\u043e\u043f\u043e\u0434\u043d\u0435 \u0458\u0435\u0444\u0442\u0438\u043d\u043e."
       ],
       [
-        "Let's hurry to the university coffee shop before our next meeting.",
-        "L\u00e5t oss skynda till universitetskaf\u00e9et innan v\u00e5rt n\u00e4sta m\u00f6te."
+        "Great!",
+        "\u0412\u0435\u043b\u0438\u043a\u0438!"
+      ],
+      [
+        "Let's pay and take our coffee in a cup to go.",
+        "\u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u043f\u043b\u0430\u0442\u0438\u043c\u043e \u0438 \u0443\u0437\u043c\u0435\u043c\u043e \u043d\u0430\u0448\u0443 \u043a\u0430\u0444\u0443 \u0443 \u0448\u043e\u0459\u0438\u0446\u0438 \u0434\u0430 \u0438\u0434\u0435\u043c\u043e."
+      ],
+      [
+        "Goodbye, caf\u00e9!",
+        "\u0417\u0431\u043e\u0433\u043e\u043c, \u043a\u0430\u0444\u0435!"
+      ],
+      [
+        "The coffee here is never bitter.",
+        "\u041a\u0430\u0444\u0430 \u043e\u0432\u0434\u0435 \u043d\u0438\u043a\u0430\u0434\u0430 \u043d\u0438\u0458\u0435 \u0433\u043e\u0440\u043a\u0430."
       ]
     ]
   },
   "resolution": {
-    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 3 of these verbs:\n    meet, stand, fall, go, speak, eat, play, hope, like, study\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    child, telephone, sorry, why, cinema, during, outside, tense, thanks, on, next, is, bicycle, am, Sweden, always, by, politics, I'm, theatre, person, no, well, lot, brilliant, football, how, in, him, by, was, often, mother, probably, politics, three, I, because, until, while, crown, present, yesterday, student, meeting, tonight, clever, problem, yourselves, cup, kettle, wife, angry, better, evening, not, telephone, radio, then, year, trip, today, different, dinner, when, sick, policeman, or, on, hard, month, back, long, day, his, time, person, wine, tea, are, easy, him, what, this, warm, during, lift, funny, tea, myself, important, she, yesterday, am, time, dining, money, from, question, door\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    Future Perfect Continuous, Present Perfect, Frequency\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Sam has been taking a French course and is feeling mentally exhausted. Alex suggests having coffee, and they decide to grab breakfast at the university coffee shop before their next meeting, as Sam is hungry and it's too early for dinner.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: resolution: They participate in the competition, growing closer as friends and more confident in their language skills.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for intermediate language learners.\n    ",
+    "dialogue_generation_prompt": "Create a brief dialogue for language learners using the following guidelines:\n    1. This is for language practice. Only use words from the lists provided below.\n    2. Pick from about 5 of these verbs:\n    take, give, pay, ask, want, ask, take, order, eat, need\n    You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).\n    3. Use at least 10 words from this vocabulary list:\n    bacon, to go, fruit, afternoon, sweet, egg, tea, thank you, sweet, water, caf\u00c3\u00a9, recommendation, caf\u00c3\u00a9, cake, espresso, vegetarian, waitress, butter, here, extra, black coffee, now, cookie, warm, jam, small, cake, oat milk, bill, sweet\n    4. Focus on these grammatical concepts (use each at least once, but no more than twice):\n    noun_forms - Singular, noun_forms - Plural, noun_forms - Countable\n    5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).\n    6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.\n    7. Recap from last episode: Alex and Sam are waiting for coffee at a caf\u00e9, where bagels will be free after 3 PM. Sam offers to ask for vegan options and extra fruit for Alex, while they both plan to get coffee to go. They appreciate the caf\u00e9 for its cheap afternoon coffee and non-bitter taste.. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.\n    8. Output the dialogue in JSON format with speakers clearly labeled. For example:\n    {\n        \"dialogue\": [\n        {\"speaker\": \"Alex\", \"text\": \"Hello! How are you today?\"},\n        {\"speaker\": \"Sam\", \"text\": \"I'm doing well, thanks for asking.\"}\n        ]\n    }\n    8. Current story phase and plan: resolution: As they prepare to leave, they reflect on their adventure and make plans for their next outing. They exit the caf\u00e9, feeling satisfied with their decision to stay.\n    9. Create dialogue for the current story plan.\n    Remember:\n    - Only use words from the provided lists.\n    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).\n    - Keep the language simple and appropriate for beginner language learners.\n    ",
     "dialogue": [
       {
         "speaker": "Alex",
-        "text": "How are you feeling, Sam? Better after our breakfast?"
+        "text": "Sam, can we ask for the bill now?"
       },
       {
         "speaker": "Sam",
-        "text": "Thanks, I'm feeling brilliant now. The tea was what I needed."
+        "text": "Sure. Waitress, can we pay, please?"
       },
       {
         "speaker": "Alex",
-        "text": "That's good. By this time tomorrow, we will have been speaking French for three hours in the competition!"
+        "text": "I want an espresso to go. And a small cake."
       },
       {
         "speaker": "Sam",
-        "text": "I know! I've been studying a lot. I often practice while I'm on my bicycle."
+        "text": "Good idea. I'll take a black coffee and two cookies."
       },
       {
         "speaker": "Alex",
-        "text": "That's clever! I hope we do well. What time is the meeting tonight?"
+        "text": "Do they have vegetarian cakes here?"
       },
       {
         "speaker": "Sam",
-        "text": "It's at 7. I'm probably going to eat dinner during the meeting."
+        "text": "Yes, and they're very sweet. The caf\u00c3\u00a9 has great recommendations."
       },
       {
         "speaker": "Alex",
-        "text": "No problem. I'll see you then!"
+        "text": "Thank you for the afternoon, Sam. This was nice."
       },
       {
         "speaker": "Sam",
-        "text": "See you! I'm going outside to study now."
+        "text": "You're welcome. Let's come back for tea and fruit next time!"
       }
     ],
-    "recap": "Alex and Sam are preparing for a French speaking competition tomorrow. They discuss their preparation strategies, including Sam's habit of practicing while cycling. They also confirm plans for a meeting at 7 PM, where Sam intends to eat dinner during the meeting.",
-    "uncorrected_phrase_list": [
-      "we do",
-      "i hope",
-      "i know",
-      "that see",
-      "i needed",
-      "what hope",
-      "no problem",
-      "it 's good",
-      "you feeling",
-      "that 's good",
-      "our breakfast ?",
-      "i 'm on my bicycle",
-      "i 'm feeling sam ?",
-      "the meeting tonight",
-      "tomorrow we do well",
-      "our have been studying a lot",
-      "brilliant now see you feeling",
-      "thanks i 've been studying a lot",
-      "time is the tea was what i 'll see",
-      "the tea was what i 've been studying",
-      "french for three hours in the meeting",
-      "this time is the tea was what i 'm going",
-      "time tomorrow we will have been speaking",
-      "i 've been speaking french for three hours",
-      "this time is the tea was what i often practice",
-      "i 'm going to eat dinner during the competition",
-      "french for three hours in the meeting tonight ?",
-      "how are you feeling , sam ?",
-      "better after our breakfast ?",
-      "thanks , i 'm feeling brilliant now .",
-      "the tea was what i needed .",
-      "that 's good .",
-      "by this time tomorrow , we will have been speaking french for three hours in the competition !",
-      "i know !",
-      "i 've been studying a lot .",
-      "i often practice while i 'm on my bicycle .",
-      "that 's clever !",
-      "i hope we do well .",
-      "what time is the meeting tonight ?",
-      "it 's at 7 .",
-      "i 'm probably going to eat dinner during the meeting .",
-      "no problem .",
-      "i 'll see you then !",
-      "see you !",
-      "i 'm going outside to study now ."
-    ],
+    "recap": "Alex and Sam are finishing up at a caf\u00e9 and asking for the bill. They decide to order some additional items to go, including coffee and desserts, with Alex inquiring about vegetarian options. The conversation ends on a positive note, with both expressing enjoyment of their time together and plans to return in the future.",
     "corrected_phrase_list": [
-      "I'm feeling",
-      "We're speaking",
-      "You're studying",
-      "They're eating",
-      "I hope",
-      "You know",
-      "We practice",
-      "It's clever",
-      "I'll see you",
-      "You're going outside",
-      "We're feeling brilliant now",
-      "I'm eating during the meeting",
-      "You've been studying a lot",
-      "They often practice while cycling",
-      "We hope we do well",
-      "I'm probably going to eat dinner",
-      "You're going outside to study now",
-      "We will have been speaking French",
-      "I've been studying while on my bicycle",
-      "By this time tomorrow, you'll be competing",
-      "How are you feeling, Sam?",
-      "Better after our breakfast?",
-      "Thanks, I'm feeling brilliant now.",
-      "The tea was what I needed.",
-      "That's good.",
-      "By this time tomorrow, we will have been speaking French for three hours in the competition!",
-      "I know!",
-      "I've been studying a lot.",
-      "I often practice while I'm on my bicycle.",
-      "That's clever!",
-      "I hope we do well.",
-      "What time is the meeting tonight?",
-      "It's at 7.",
-      "I'm probably going to eat dinner during the meeting.",
-      "No problem.",
-      "I'll see you then!",
-      "See you!",
-      "I'm going outside to study now."
+      "We ask",
+      "They pay",
+      "I want",
+      "You take",
+      "Good idea",
+      "Very sweet",
+      "This was nice",
+      "Can we pay?",
+      "I want cookies",
+      "They have cakes",
+      "The caf\u00e9 has recommendations",
+      "Let's come back",
+      "We want espresso to go",
+      "You take black coffee",
+      "Do they have vegetarian?",
+      "Thank you for the afternoon",
+      "Can we ask for the bill?",
+      "We want coffee and cake",
+      "They have great recommendations here",
+      "Let's come back for fruit next time",
+      "Sam, can we ask for the bill now?",
+      "Sure.",
+      "Waitress, can we pay, please?",
+      "I want an espresso to go.",
+      "And a small cake.",
+      "Good idea.",
+      "I'll take a black coffee and two cookies.",
+      "Do they have vegetarian cakes here?",
+      "Yes, and they're very sweet.",
+      "The caf\u00c3\u00a9 has great recommendations.",
+      "Thank you for the afternoon, Sam.",
+      "This was nice.",
+      "You're welcome.",
+      "Let's come back for tea and fruit next time!"
     ],
     "translated_dialogue": [
       {
         "speaker": "Alex",
-        "text": "Hur m\u00e5r du, Sam? B\u00e4ttre efter v\u00e5r frukost?"
+        "text": "\u0421\u0430\u043c, \u043c\u043e\u0436\u0435\u043c\u043e \u043b\u0438 \u0441\u0430\u0434\u0430 \u0442\u0440\u0430\u0436\u0438\u0442\u0438 \u0440\u0430\u0447\u0443\u043d?"
       },
       {
         "speaker": "Sam",
-        "text": "Tack, jag k\u00e4nner mig briljant nu. Teet var vad jag beh\u00f6vde."
+        "text": "\u041d\u0430\u0440\u0430\u0432\u043d\u043e. \u041a\u043e\u043d\u043e\u0431\u0430\u0440\u0438\u0446\u0435, \u043c\u043e\u0436\u0435\u043c\u043e \u043b\u0438 \u0434\u0430 \u043f\u043b\u0430\u0442\u0438\u043c\u043e, \u043c\u043e\u043b\u0438\u043c?"
       },
       {
         "speaker": "Alex",
-        "text": "Det \u00e4r bra. Vid den h\u00e4r tiden imorgon kommer vi att ha pratat franska i tre timmar i t\u00e4vlingen!"
+        "text": "\u0416\u0435\u043b\u0438\u043c \u0435\u0441\u043f\u0440\u0435\u0441\u043e. \u0418 \u043c\u0430\u043b\u0430 \u0442\u043e\u0440\u0442\u0430."
       },
       {
         "speaker": "Sam",
-        "text": "Jag vet! Jag har pluggat mycket. Jag tr\u00e4nar ofta n\u00e4r jag sitter p\u00e5 cykeln."
+        "text": "\u0414\u043e\u0431\u0440\u0430 \u0438\u0434\u0435\u0458\u0430. \u0423\u0437\u0435\u045b\u0443 \u0446\u0440\u043d\u0443 \u043a\u0430\u0444\u0443 \u0438 \u0434\u0432\u0430 \u043a\u043e\u043b\u0430\u0447\u0438\u045b\u0430."
       },
       {
         "speaker": "Alex",
-        "text": "Det \u00e4r smart! Jag hoppas att vi klarar oss bra. Vilken tid \u00e4r m\u00f6tet ikv\u00e4ll?"
+        "text": "\u0418\u043c\u0430\u0458\u0443 \u043b\u0438 \u043e\u0432\u0434\u0435 \u0432\u0435\u0433\u0435\u0442\u0430\u0440\u0438\u0458\u0430\u043d\u0441\u043a\u0435 \u043a\u043e\u043b\u0430\u0447\u0435?"
       },
       {
         "speaker": "Sam",
-        "text": "Klockan \u00e4r 7. Jag ska nog \u00e4ta middag under m\u00f6tet."
+        "text": "\u0414\u0430, \u0438 \u0432\u0435\u043e\u043c\u0430 \u0441\u0443 \u0441\u043b\u0430\u0442\u043a\u0438. \u041a\u0430\u0444\u0435 \u0438\u043c\u0430 \u043e\u0434\u043b\u0438\u0447\u043d\u0435 \u043f\u0440\u0435\u043f\u043e\u0440\u0443\u043a\u0435."
       },
       {
         "speaker": "Alex",
-        "text": "Inga problem. Vi ses d\u00e5!"
+        "text": "\u0425\u0432\u0430\u043b\u0430 \u0442\u0438 \u0437\u0430 \u043f\u043e\u043f\u043e\u0434\u043d\u0435, \u0421\u0430\u043c. \u041e\u0432\u043e \u0458\u0435 \u0431\u0438\u043b\u043e \u043b\u0435\u043f\u043e."
       },
       {
         "speaker": "Sam",
-        "text": "Vi ses! Jag ska ut och plugga nu."
+        "text": "\u041d\u0435\u043c\u0430 \u043d\u0430 \u0447\u0435\u043c\u0443. \u0412\u0440\u0430\u0442\u0438\u043c\u043e \u0441\u0435 \u0441\u043b\u0435\u0434\u0435\u045b\u0438 \u043f\u0443\u0442 \u043d\u0430 \u0447\u0430\u0458 \u0438 \u0432\u043e\u045b\u0435!"
       }
     ],
     "translated_phrase_list": [
       [
-        "I'm feeling",
-        "Jag k\u00e4nner mig"
+        "We ask",
+        "\u041c\u0438 \u043f\u0438\u0442\u0430\u043c\u043e"
       ],
       [
-        "We're speaking",
-        "Vi pratar"
+        "They pay",
+        "\u041f\u043b\u0430\u045b\u0430\u0458\u0443"
       ],
       [
-        "You're studying",
-        "Du studerar"
+        "I want",
+        "\u0458\u0430 \u0436\u0435\u043b\u0438\u043c"
       ],
       [
-        "They're eating",
-        "De \u00e4ter"
+        "You take",
+        "\u0423\u0437\u043c\u0435\u0442\u0435"
       ],
       [
-        "I hope",
-        "jag hoppas"
+        "Good idea",
+        "\u0414\u043e\u0431\u0440\u0430 \u0438\u0434\u0435\u0458\u0430"
       ],
       [
-        "You know",
-        "Du vet"
+        "Very sweet",
+        "\u0412\u0440\u043b\u043e \u0441\u043b\u0430\u0442\u043a\u043e"
       ],
       [
-        "We practice",
-        "Vi tr\u00e4nar"
+        "This was nice",
+        "\u041e\u0432\u043e \u0458\u0435 \u0431\u0438\u043b\u043e \u043b\u0435\u043f\u043e"
       ],
       [
-        "It's clever",
-        "Det \u00e4r smart"
+        "Can we pay?",
+        "\u041c\u043e\u0436\u0435\u043c\u043e \u043b\u0438 \u043f\u043b\u0430\u0442\u0438\u0442\u0438?"
       ],
       [
-        "I'll see you",
-        "Vi ses"
+        "I want cookies",
+        "\u0416\u0435\u043b\u0438\u043c \u043a\u043e\u043b\u0430\u0447\u0438\u045b\u0435"
       ],
       [
-        "You're going outside",
-        "Du g\u00e5r ut"
+        "They have cakes",
+        "\u0418\u043c\u0430\u0458\u0443 \u043a\u043e\u043b\u0430\u0447\u0435"
       ],
       [
-        "We're feeling brilliant now",
-        "Vi k\u00e4nner oss lysande nu"
+        "The caf\u00e9 has recommendations",
+        "\u041a\u0430\u0444\u0435 \u0438\u043c\u0430 \u043f\u0440\u0435\u043f\u043e\u0440\u0443\u043a\u0435"
       ],
       [
-        "I'm eating during the meeting",
-        "Jag \u00e4ter under m\u00f6tet"
+        "Let's come back",
+        "\u0425\u0430\u0458\u0434\u0435 \u0434\u0430 \u0441\u0435 \u0432\u0440\u0430\u0442\u0438\u043c\u043e"
       ],
       [
-        "You've been studying a lot",
-        "Du har pluggat mycket"
+        "We want espresso to go",
+        "\u0416\u0435\u043b\u0438\u043c\u043e \u0434\u0430 \u0438\u0434\u0435 \u0435\u0441\u043f\u0440\u0435\u0441\u043e"
       ],
       [
-        "They often practice while cycling",
-        "De tr\u00e4nar ofta medan de cyklar"
+        "You take black coffee",
+        "\u0423\u0437\u043c\u0438 \u0446\u0440\u043d\u0443 \u043a\u0430\u0444\u0443"
       ],
       [
-        "We hope we do well",
-        "Vi hoppas att vi klarar oss bra"
+        "Do they have vegetarian?",
+        "\u0414\u0430 \u043b\u0438 \u0438\u043c\u0430\u0458\u0443 \u0432\u0435\u0433\u0435\u0442\u0430\u0440\u0438\u0458\u0430\u043d\u0446\u0435?"
       ],
       [
-        "I'm probably going to eat dinner",
-        "Jag ska nog \u00e4ta middag"
+        "Thank you for the afternoon",
+        "\u0425\u0432\u0430\u043b\u0430 \u0432\u0430\u043c \u0437\u0430 \u043f\u043e\u043f\u043e\u0434\u043d\u0435"
       ],
       [
-        "You're going outside to study now",
-        "Du ska ut och studera nu"
+        "Can we ask for the bill?",
+        "\u041c\u043e\u0436\u0435\u043c\u043e \u043b\u0438 \u0442\u0440\u0430\u0436\u0438\u0442\u0438 \u0440\u0430\u0447\u0443\u043d?"
       ],
       [
-        "We will have been speaking French",
-        "Vi kommer att ha pratat franska"
+        "We want coffee and cake",
+        "\u0425\u043e\u045b\u0435\u043c\u043e \u043a\u0430\u0444\u0443 \u0438 \u0442\u043e\u0440\u0442\u0443"
       ],
       [
-        "I've been studying while on my bicycle",
-        "Jag har pluggat medan jag cyklade"
+        "They have great recommendations here",
+        "\u041e\u0432\u0434\u0435 \u0438\u043c\u0430\u0458\u0443 \u043e\u0434\u043b\u0438\u0447\u043d\u0435 \u043f\u0440\u0435\u043f\u043e\u0440\u0443\u043a\u0435"
       ],
       [
-        "By this time tomorrow, you'll be competing",
-        "Vid den h\u00e4r tiden imorgon kommer du att t\u00e4vla"
+        "Let's come back for fruit next time",
+        "\u0412\u0440\u0430\u0442\u0438\u043c\u043e \u0441\u0435 \u043f\u043e \u0432\u043e\u045b\u0435 \u0441\u043b\u0435\u0434\u0435\u045b\u0438 \u043f\u0443\u0442"
       ],
       [
-        "How are you feeling, Sam?",
-        "Hur m\u00e5r du, Sam?"
+        "Sam, can we ask for the bill now?",
+        "\u0421\u0430\u043c, \u043c\u043e\u0436\u0435\u043c\u043e \u043b\u0438 \u0441\u0430\u0434\u0430 \u0442\u0440\u0430\u0436\u0438\u0442\u0438 \u0440\u0430\u0447\u0443\u043d?"
       ],
       [
-        "Better after our breakfast?",
-        "B\u00e4ttre efter v\u00e5r frukost?"
+        "Sure.",
+        "\u041d\u0430\u0440\u0430\u0432\u043d\u043e."
       ],
       [
-        "Thanks, I'm feeling brilliant now.",
-        "Tack, jag k\u00e4nner mig briljant nu."
+        "Waitress, can we pay, please?",
+        "\u041a\u043e\u043d\u043e\u0431\u0430\u0440\u0438\u0446\u0435, \u043c\u043e\u0436\u0435\u043c\u043e \u043b\u0438 \u0434\u0430 \u043f\u043b\u0430\u0442\u0438\u043c\u043e, \u043c\u043e\u043b\u0438\u043c?"
       ],
       [
-        "The tea was what I needed.",
-        "Teet var vad jag beh\u00f6vde."
+        "I want an espresso to go.",
+        "\u0416\u0435\u043b\u0438\u043c \u0435\u0441\u043f\u0440\u0435\u0441\u043e."
       ],
       [
-        "That's good.",
-        "Det \u00e4r bra."
+        "And a small cake.",
+        "\u0418 \u043c\u0430\u043b\u0430 \u0442\u043e\u0440\u0442\u0430."
       ],
       [
-        "By this time tomorrow, we will have been speaking French for three hours in the competition!",
-        "Vid den h\u00e4r tiden imorgon kommer vi att ha pratat franska i tre timmar i t\u00e4vlingen!"
+        "Good idea.",
+        "\u0414\u043e\u0431\u0440\u0430 \u0438\u0434\u0435\u0458\u0430."
       ],
       [
-        "I know!",
-        "Jag vet!"
+        "I'll take a black coffee and two cookies.",
+        "\u0423\u0437\u0435\u045b\u0443 \u0446\u0440\u043d\u0443 \u043a\u0430\u0444\u0443 \u0438 \u0434\u0432\u0430 \u043a\u043e\u043b\u0430\u0447\u0438\u045b\u0430."
       ],
       [
-        "I've been studying a lot.",
-        "Jag har pluggat mycket."
+        "Do they have vegetarian cakes here?",
+        "\u0418\u043c\u0430\u0458\u0443 \u043b\u0438 \u043e\u0432\u0434\u0435 \u0432\u0435\u0433\u0435\u0442\u0430\u0440\u0438\u0458\u0430\u043d\u0441\u043a\u0435 \u043a\u043e\u043b\u0430\u0447\u0435?"
       ],
       [
-        "I often practice while I'm on my bicycle.",
-        "Jag tr\u00e4nar ofta n\u00e4r jag sitter p\u00e5 cykeln."
+        "Yes, and they're very sweet.",
+        "\u0414\u0430, \u0438 \u0432\u0435\u043e\u043c\u0430 \u0441\u0443 \u0441\u043b\u0430\u0442\u043a\u0438."
       ],
       [
-        "That's clever!",
-        "Det \u00e4r smart!"
+        "The caf\u00c3\u00a9 has great recommendations.",
+        "\u041a\u0430\u0444\u0435 \u0438\u043c\u0430 \u043e\u0434\u043b\u0438\u0447\u043d\u0435 \u043f\u0440\u0435\u043f\u043e\u0440\u0443\u043a\u0435."
       ],
       [
-        "I hope we do well.",
-        "Jag hoppas att vi klarar oss bra."
+        "Thank you for the afternoon, Sam.",
+        "\u0425\u0432\u0430\u043b\u0430 \u0442\u0438 \u0437\u0430 \u043f\u043e\u043f\u043e\u0434\u043d\u0435, \u0421\u0430\u043c."
       ],
       [
-        "What time is the meeting tonight?",
-        "Vilken tid \u00e4r m\u00f6tet ikv\u00e4ll?"
+        "This was nice.",
+        "\u041e\u0432\u043e \u0458\u0435 \u0431\u0438\u043b\u043e \u043b\u0435\u043f\u043e."
       ],
       [
-        "It's at 7.",
-        "Klockan \u00e4r 7."
+        "You're welcome.",
+        "\u041d\u0435\u043c\u0430 \u043d\u0430 \u0447\u0435\u043c\u0443."
       ],
       [
-        "I'm probably going to eat dinner during the meeting.",
-        "Jag ska nog \u00e4ta middag under m\u00f6tet."
-      ],
-      [
-        "No problem.",
-        "Inga problem."
-      ],
-      [
-        "I'll see you then!",
-        "Vi ses d\u00e5!"
-      ],
-      [
-        "See you!",
-        "Vi ses!"
-      ],
-      [
-        "I'm going outside to study now.",
-        "Jag ska ut och plugga nu."
+        "Let's come back for tea and fruit next time!",
+        "\u0412\u0440\u0430\u0442\u0438\u043c\u043e \u0441\u0435 \u0441\u043b\u0435\u0434\u0435\u045b\u0438 \u043f\u0443\u0442 \u043d\u0430 \u0447\u0430\u0458 \u0438 \u0432\u043e\u045b\u0435!"
       ]
     ]
   }
