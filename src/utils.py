@@ -88,17 +88,31 @@ def extract_json_from_llm_response(response):
         return None
 
 
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib import colors
+from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+
 def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
-    """Creates a PDF booklet with english and target language phrases and dialogue arranged in the order they
-    appears in the story"""
+    # Register a Unicode font that supports Serbian characters
+
+    font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
+    pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
+
     doc = SimpleDocTemplate(output_filename, pagesize=letter)
     elements = []
 
     styles = getSampleStyleSheet()
     title_style = styles["Heading1"]
     title_style.alignment = 1  # Center alignment
+    title_style.fontName = "DejaVuSans"
     subtitle_style = styles["Heading2"]
     subtitle_style.alignment = 1  # Center alignment
+    subtitle_style.fontName = "DejaVuSans"
 
     # Create a custom style for table cells
     cell_style = ParagraphStyle(
@@ -107,6 +121,7 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
         fontSize=10,
         leading=12,
         alignment=TA_LEFT,
+        fontName="DejaVuSans",
     )
 
     elements.append(Paragraph("Comprehensive Story Translation", title_style))
@@ -133,7 +148,7 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
                         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
                         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                         ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                        ("FONTNAME", (0, 0), (-1, -1), "DejaVuSans"),
                         ("FONTSIZE", (0, 0), (-1, 0), 14),
                         ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                         ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
@@ -168,7 +183,7 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
                         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
                         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                         ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                        ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                        ("FONTNAME", (0, 0), (-1, -1), "DejaVuSans"),
                         ("FONTSIZE", (0, 0), (-1, 0), 14),
                         ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                         ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
