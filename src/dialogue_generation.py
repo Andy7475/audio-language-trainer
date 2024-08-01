@@ -22,8 +22,8 @@ load_dotenv()  # so we can use environment variables for various global settings
 
 GRAMMAR_USAGE_PATH = "../data/grammar_concepts_usage.json"
 VOCAB_USAGE_PATH = "../data/vocab_usage.json"
-STORY_PLAN_PATH = "../data/story_plan.json"
-RECAP_PATH = "../data/story_recap.json"
+STORY_PLAN_PATH = "../outputs/story_plan.json"
+RECAP_PATH = "../outputs/story_recap.json"
 
 
 def generate_story_plan(story_guide: str = None, test=True) -> dict:
@@ -231,7 +231,8 @@ def ensure_spacy_model(model_name="en_core_web_md"):
 
 def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
     """For a given Engish dialogue, extracts the vocab used as the lemmas, the reason is so the
-    vocab_usage.json can be updated with usage information."""
+    vocab_usage.json can be updated with usage information. Returns of the form (lemma, POS) e.g. ("go", "VERB")
+    """
     # Load the English language model
     ensure_spacy_model()
     nlp = spacy.load("en_core_web_md")

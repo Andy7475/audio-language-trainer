@@ -9,6 +9,8 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from src.config_loader import config
@@ -86,15 +88,6 @@ def extract_json_from_llm_response(response):
     else:
         print("No JSON-like structure found in the response")
         return None
-
-
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_LEFT
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
 def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
