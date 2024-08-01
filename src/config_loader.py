@@ -105,22 +105,13 @@ class ConfigLoader:
             )
 
         # Get all available voices
-        voices = tts_client.list_voices().voices
+        voices = tts_client.list_voices(language_code=language_code).voices
 
-        # Filter voices for the given language code
-        language_voices = [
-            v
-            for v in voices
-            if any(lc.startswith(language_code) for lc in v.language_codes)
-        ]
-
-        if not language_voices:
+        if not voices:
             raise ValueError(f"No voices found for language code '{language_code}'")
 
         # Determine the best language code
-        available_codes = set(
-            sum((list(v.language_codes) for v in language_voices), [])
-        )
+        available_codes = set(sum((list(v.language_codes) for v in voices), []))
         if preferred_country_code:
             preferred_full_code = f"{language_code}-{preferred_country_code.upper()}"
             if preferred_full_code in available_codes:
@@ -145,6 +136,11 @@ class ConfigLoader:
             # Filter voices by gender
             gender_voices = [v for v in voices if v.ssml_gender == gender]
 
+            if (
+                len(gender_voices) == 0
+            ):  # it means there is no gender voice available for that gender
+                gender_voices = voices
+
             # Prefer voices matching the best_language_code
             matching_voices = [
                 v for v in gender_voices if best_language_code in v.language_codes
@@ -167,22 +163,22 @@ class ConfigLoader:
                     return typed_voices[0]
 
             # If no preferred voice types found, return the first available voice
-            return voices_to_choose[0] if voices_to_choose else None
+            if not voices_to_choose:
+                raise ValueError(
+                    f"No voice found for within select_best_voice function and gender: {gender}, within this voice list: {voices}"
+                )
+            return voices_to_choose[0]
 
-        best_male_voice = select_best_voice(
-            language_voices, texttospeech.SsmlVoiceGender.MALE
-        )
+        best_male_voice = select_best_voice(voices, texttospeech.SsmlVoiceGender.MALE)
         best_female_voice = select_best_voice(
-            language_voices, texttospeech.SsmlVoiceGender.FEMALE
+            voices, texttospeech.SsmlVoiceGender.FEMALE
         )
 
         return {
             "language_code": best_language_code,
-            "male_voice": best_male_voice.name if best_male_voice else None,
-            "female_voice": best_female_voice.name if best_female_voice else None,
+            "male_voice": (best_male_voice.name if best_male_voice else None),
+            "female_voice": (best_female_voice.name if best_female_voice else None),
         }
-
-
 
     def __getattr__(self, name):
         self._check_reload()
@@ -192,7 +188,9 @@ class ConfigLoader:
         """Returns the voice models to use"""
         if not self.english_voice_models:
             self.english_voice_models = self._get_optimal_voice_models(
-                "en", self.config.COUNTRY_CODE_ENGLISH, self.config.USE_CHEAP_VOICE_MODELS
+                "en",
+                self.config.COUNTRY_CODE_ENGLISH,
+                self.config.USE_CHEAP_VOICE_MODELS,
             )
         if not self.target_language_voice_models:
             self.target_language_voice_models = self._get_optimal_voice_models(
@@ -201,6 +199,7 @@ class ConfigLoader:
                 self.config.USE_CHEAP_VOICE_MODELS,
             )
         return self.english_voice_models, self.target_language_voice_models
+
 
 config = ConfigLoader()
 

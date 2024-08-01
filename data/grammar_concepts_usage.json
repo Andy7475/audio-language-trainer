@@ -2,79 +2,79 @@
   "verb_tenses": {
     "Simple Present": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I drink coffee"
     },
     "Present Continuous": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I am drinking coffee"
     },
     "Simple Past": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I drank coffee"
     },
     "Past Continuous": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I was drinking coffee"
     },
     "Present Perfect": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I have drunk coffee"
     },
     "Past Perfect": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I had drunk coffee"
     },
     "Simple Future": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I will drink coffee"
     },
     "Future Continuous": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I will be drinking coffee"
     },
     "Present Perfect Continuous": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I have been drinking coffee"
     },
     "Past Perfect Continuous": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I had been drinking coffee"
     },
     "Future Perfect": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I will have drunk coffee"
     },
     "Future Perfect Continuous": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I will have been drinking coffee"
     }
   },
   "noun_forms": {
     "Singular": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "coffee"
     },
     "Plural": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "coffees"
     },
     "Countable": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "cups of coffee"
     },
     "Uncountable": {
