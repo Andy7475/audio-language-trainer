@@ -79,34 +79,34 @@
     },
     "Uncountable": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "coffee"
     }
   },
   "pronouns": {
     "Personal": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I drink coffee"
     },
     "Possessive": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "my coffee"
     },
     "Reflexive": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "I made myself coffee"
     },
     "Demonstrative": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "this coffee, that coffee"
     },
     "Relative": {
       "use": true,
-      "times_seen": 0,
+      "times_seen": 1,
       "example": "The coffee which I bought is delicious"
     },
     "Indefinite": {

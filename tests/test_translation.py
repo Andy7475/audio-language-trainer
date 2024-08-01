@@ -19,25 +19,34 @@ def test_translate_from_english(mock_translate_client):
 
     # Test with default target language
     result = translate_from_english("Hello world")
-    assert result == "Hola mundo"
+    assert result == ["Hola mundo"]
     mock_client.translate.assert_called_with(
         "Hello world", target_language=config.TARGET_LANGUAGE, source_language="en"
     )
 
     # Test with specific target language
     result = translate_from_english("Hello world", target_language="fr")
-    assert (
-        result == "Hola mundo"
-    )  # We're using the same mock, so the result is the same
+    assert result == [
+        "Hola mundo"
+    ]  # We're using the same mock, so the result is the same
     mock_client.translate.assert_called_with(
         "Hello world", target_language="fr", source_language="en"
     )
 
 
+def mock_func_tranlsate_from_english(text):
+    if isinstance(text, list):
+        return [f"Translated: {item}" for item in text]
+    else:
+        return [f"Translated: {text}"]
+
+
 @patch("src.translation.translate_from_english")
 def test_translate_dialogue(mock_translate_from_english):
     # Setup
-    mock_translate_from_english.side_effect = lambda text: f"Translated: {text}"
+    mock_translate_from_english.side_effect = (
+        lambda text: mock_func_tranlsate_from_english(text)
+    )
 
     dialogue = [
         {"speaker": "Alice", "text": "Hello"},
@@ -53,13 +62,15 @@ def test_translate_dialogue(mock_translate_from_english):
         {"speaker": "Bob", "text": "Translated: How are you?"},
     ]
     assert result == expected_result
-    assert mock_translate_from_english.call_count == 2
+    assert mock_translate_from_english.call_count == 1
 
 
 @patch("src.translation.translate_from_english")
 def test_translate_dialogue_deep_copy(mock_translate_from_english):
     # Setup
-    mock_translate_from_english.side_effect = lambda text: f"Translated: {text}"
+    mock_translate_from_english.side_effect = (
+        lambda text: mock_func_tranlsate_from_english(text)
+    )
 
     original_dialogue = [
         {"speaker": "Alice", "text": "Hello"},
@@ -95,7 +106,9 @@ def test_translate_dialogue_deep_copy(mock_translate_from_english):
 @patch("src.translation.translate_from_english")
 def test_translate_phrases(mock_translate_from_english):
     # Setup
-    mock_translate_from_english.side_effect = lambda text: f"Translated: {text}"
+    mock_translate_from_english.side_effect = (
+        lambda text: mock_func_tranlsate_from_english(text)
+    )
 
     phrases = ["Hello", "How are you?"]
 
@@ -108,4 +121,4 @@ def test_translate_phrases(mock_translate_from_english):
         ("How are you?", "Translated: How are you?"),
     ]
     assert result == expected_result
-    assert mock_translate_from_english.call_count == 2
+    assert mock_translate_from_english.call_count == 1
