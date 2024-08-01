@@ -29,7 +29,6 @@ def setup_ffmpeg():
         print("Please check the installation directory.")
 
 
-# Call this function at the start of your script
 setup_ffmpeg()
 
 
@@ -250,7 +249,7 @@ def generate_audio_from_dialogue(
     It will do the audio in the target language so assumes the dialogue is translated.
 
     :param dialogue: List of dictionaries containing 'speaker' and 'text' keys, already translated
-    :return: Combined AudioSegment of the entire dialogue in the target language
+    :return: List of AudioSegments of the entire dialogue in the target language
     """
     audio_segments = []
 
