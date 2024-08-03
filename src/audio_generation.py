@@ -3,7 +3,7 @@ import os
 import sys
 import uuid
 from typing import Dict, List, Optional, Tuple
-
+import asyncio
 import IPython.display as ipd
 import librosa
 import numpy as np
@@ -30,6 +30,104 @@ def setup_ffmpeg():
 
 
 setup_ffmpeg()
+
+
+async def async_text_to_speech(
+    text: str,
+    language_code: str = None,
+    voice_name: str = None,
+    speaking_rate: float = 1.0,
+) -> AudioSegment:
+    client = texttospeech.TextToSpeechClient()
+
+    if language_code is None:
+        language_code = config.english_voice_models["language_code"]
+    if voice_name is None:
+        voice_name = config.english_voice_models["male_voice"]
+
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=language_code, name=voice_name
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
+    )
+
+    loop = asyncio.get_event_loop()
+    response = await loop.run_in_executor(
+        None,
+        lambda: client.synthesize_speech(
+            input=synthesis_input, voice=voice, audio_config=audio_config
+        ),
+    )
+
+    audio_segment = AudioSegment.from_mp3(io.BytesIO(response.audio_content))
+    return audio_segment
+
+
+async def async_generate_translated_phrase_audio(
+    translated_phrase: tuple[str, str],
+    english_voice_models: dict = None,
+    target_voice_models: dict = None,
+) -> AudioSegment:
+    if english_voice_models is None:
+        english_voice_models = config.english_voice_models
+    if target_voice_models is None:
+        target_voice_models = config.target_language_voice_models
+
+    english_audio_task = asyncio.create_task(
+        async_text_to_speech(
+            text=translated_phrase[0],
+            language_code=english_voice_models["language_code"],
+            voice_name=english_voice_models["male_voice"],
+            speaking_rate=0.9,
+        )
+    )
+
+    target_audio_slow_task = asyncio.create_task(
+        async_text_to_speech(
+            text=translated_phrase[1],
+            language_code=target_voice_models["language_code"],
+            voice_name=target_voice_models["female_voice"],
+            speaking_rate=config.SPEAKING_RATE_SLOW,
+        )
+    )
+
+    target_audio_fast_task = asyncio.create_task(
+        async_text_to_speech(
+            text=translated_phrase[1],
+            language_code=target_voice_models["language_code"],
+            voice_name=target_voice_models["female_voice"],
+            speaking_rate=1.0,
+        )
+    )
+
+    english_audio, target_audio_slow, target_audio_fast = await asyncio.gather(
+        english_audio_task, target_audio_slow_task, target_audio_fast_task
+    )
+
+    THINKING_GAP = AudioSegment.silent(duration=config.THINKING_GAP_MS)
+
+    phrase_audio = join_audio_segments(
+        [
+            english_audio,
+            THINKING_GAP,
+            target_audio_fast,
+            target_audio_slow,
+        ],
+        gap_ms=500,
+    )
+    return phrase_audio
+
+
+async def async_process_phrases(phrases, max_concurrency=10):
+    semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def limited_task(phrase):
+        async with semaphore:
+            return await async_generate_translated_phrase_audio(phrase)
+
+    return await asyncio.gather(*[limited_task(phrase) for phrase in phrases])
 
 
 def text_to_speech(
