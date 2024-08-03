@@ -22,33 +22,36 @@ load_dotenv()  # so we can use environment variables for various global settings
 
 GRAMMAR_USAGE_PATH = "../data/grammar_concepts_usage.json"
 VOCAB_USAGE_PATH = "../data/vocab_usage.json"
-STORY_PLAN_PATH = "../data/story_plan.json"
-RECAP_PATH = "../data/story_recap.json"
+STORY_PLAN_PATH = "../outputs/story_plan.json"
+RECAP_PATH = "../outputs/story_recap.json"
 
 
-def generate_story_plan(story_guide: str = None, test=True) -> dict:
+def generate_story_plan(
+    story_guide: str, verb_list: List[str], vocab_list: List[str], test=True
+) -> dict:
     """This function generates an outline story following the story_structure written below.
     When we are creating dialgoue, we will feed the story_plan into the function a bit at a time for subsequent dialogues
     so there is some continuity.
 
     returns: a JSON story plan, but it also saves it to STORY_PLAN_PATH"""
+
     story_structure = [
-        "Exposition: Introduce the main characters (Alex and Sam) and setting",
-        "Rising_Action: Present a challenge or conflict",
-        "Climax: The turning point where the conflict reaches its peak",
-        "Falling_Action: Events following the climax",
-        "Resolution: The conclusion of the story",
+        "exposition: Introduce the main characters (Alex and Sam) and setting",
+        "rising_action: Present a challenge or conflict",
+        "climax: The turning point where the conflict reaches its peak",
+        "falling_action: Events following the climax",
+        "resolution: The conclusion of the story",
     ]
 
-    prompt = f"""
-    Create a brief story plan (using {story_guide} as a guide) for a language learning dialogue series. The story should be simple enough for beginners to follow but interesting enough to maintain engagement. Use the following structure:
-
-    {' '.join(story_structure)}
-
-    Keep each part of the story plan to 1-2 sentences. The entire plan should be no more than 200 words. You should keep it relatively vague as you do not yet know what vocabulary will be available to use.
-    Output the story plan as a JSON object with keys for each part of the story structure.
-
-    """
+    prompt = (
+        f"""Create a brief story plan (story guide: {story_guide}) for a language learning dialogue series."""
+        """The story should be simple enough for beginners to follow but interesting enough to maintain engagement."""
+        """Use the following structure:\n"""
+        f"""{' '.join(story_structure)}\n"""
+        """Keep each part of the story plan to 1-2 sentences. The entire plan should be no more than 200 words.\n"""
+        f"""You should consider the following verbs and vocab list to write the plan: verbs: ({", ".join(verb_list)}), vocab:({", ".join(vocab_list)}).\n"""
+        """Output the story plan as a JSON object with keys for each part of the story structure."""
+    )
 
     # Here, you would send this prompt to your LLM and get the response
     # For this example, I'll provide a placeholder response
@@ -98,23 +101,15 @@ def generate_dialogue_prompt(
     story_part: str,
     story_part_outline: str,
     last_recap: str,
-    verb_count=10,
+    verb_usage_str: str,
+    vocab_usage_str: str,
     verb_use_count=3,
-    vocab_count=30,
     vocab_use_count=10,
     grammar_concept_count=10,
     grammar_use_count=3,
 ):
     # Load the JSON files
     grammar_concepts = load_json(GRAMMAR_USAGE_PATH)
-
-    # Select verbs
-    verbs = get_least_used_words("verbs", verb_count)
-    verbs_str = ", ".join(verbs)
-
-    # Select vocabulary
-    vocab = get_least_used_words("vocab", vocab_count)
-    vocab_str = ", ".join(vocab)
 
     # Select grammar concepts
     selected_concepts = select_grammar_concepts(grammar_concepts, grammar_concept_count)
@@ -125,29 +120,30 @@ def generate_dialogue_prompt(
 
     # Generate the prompt
     prompt = f"""Create a brief dialogue for language learners using the following guidelines:
-    1. This is for language practice. Only use words from the lists provided below.
+    1. This is for language practice. Only use words from the lists provided below. Preferentially use words that haven't been used as much (with a smaller number)
     2. Pick from about {verb_use_count} of these verbs:
-    {verbs_str}
+    {verb_usage_str}
     You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).
-    3. Use at least {vocab_use_count} words from this vocabulary list:
-    {vocab_str}
+    3. Use at least {vocab_use_count} words from this vocabulary list, again picking words with smaller numbers by preference:
+    {vocab_usage_str}
     4. Focus on these grammatical concepts (use each at least once, but no more than twice):
     {', '.join(used_concepts)}
     5. Create a conversation with 6-8 lines of dialogue total (about 20-30 seconds when spoken).
     6. The characters are Alex and Sam. Maintain their personalities and relationship from previous dialogues.
     7. Recap from last episode: {last_recap}. You can (if necessary) reuse vocab words from the recap to maintain continuity, but prioritise the vocab list provided.
-    8. Output the dialogue in JSON format with speakers clearly labeled. For example:
+    8. Output the dialogue in JSON format with Sam and Alex clearly labeled as 'speaker'. For example:
     {{
         "dialogue": [
         {{"speaker": "Alex", "text": "Hello! How are you today?"}},
         {{"speaker": "Sam", "text": "I'm doing well, thanks for asking."}}
         ]
     }}
-    8. Current story phase and plan: {story_part}: {story_part_outline}
-    9. Create dialogue for the current story plan.
+    9. Do not give speaking parts to other characters. Just use Alex and Sam.
+    10. Current story phase and plan: {story_part}: {story_part_outline}
+    11. Create dialogue for the current story plan.
     Remember:
-    - Only use words from the provided lists.
-    - Balance practicing the specified concepts and vocabulary (about 60%) with advancing the storyline (about 40%).
+    - Only use words from the provided lists. If necessary for grammatical sense, you can use additional, simple words.
+    - Balance practicing the specified concepts and vocabulary (about 45%) with advancing the storyline (about 55%).
     - Keep the language simple and appropriate for beginner language learners.
     """
     return prompt
@@ -205,6 +201,31 @@ def get_least_used_words(category, count):
     return selected_words
 
 
+def add_usage_to_words(word_list: List[str], category: str) -> str:
+    """adds the number of times that words has been used to the word_list - getting
+    this data from the vocab_usage file"""
+    # Load the current usage
+    with open(VOCAB_USAGE_PATH, "r") as f:
+        vocab_usage = json.load(f)
+
+    # Check if the category exists in vocab_usage
+    if category not in vocab_usage:
+        raise ValueError(f"Category '{category}' not found in vocabulary usage data.")
+
+    # Add usage count to each word
+    word_usage = [(word, vocab_usage[category].get(word, 0)) for word in word_list]
+
+    # Sort by usage count (least used first)
+    word_usage.sort(key=lambda x: x[1])
+
+    # Format as a string
+    formatted_string = (
+        "{" + ", ".join(f"'{word}': {count}" for word, count in word_usage) + "}"
+    )
+
+    return formatted_string
+
+
 def generate_dialogue(dialogue_prompt: str):
     """
     Extract dialogue from an LLM response.
@@ -231,7 +252,8 @@ def ensure_spacy_model(model_name="en_core_web_md"):
 
 def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
     """For a given Engish dialogue, extracts the vocab used as the lemmas, the reason is so the
-    vocab_usage.json can be updated with usage information."""
+    vocab_usage.json can be updated with usage information. Returns of the form (lemma, POS) e.g. ("go", "VERB")
+    """
     # Load the English language model
     ensure_spacy_model()
     nlp = spacy.load("en_core_web_md")
