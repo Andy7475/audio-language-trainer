@@ -2,7 +2,7 @@ import json
 import unittest
 from typing import Dict, List, Set, Tuple
 from unittest.mock import mock_open, patch, ANY
-
+from src.dialogue_generation import add_usage_to_words, VOCAB_USAGE_PATH
 import pytest
 
 from src.dialogue_generation import (
@@ -264,3 +264,47 @@ def test_update_vocab_usage_permission_error():
     with patch("builtins.open", side_effect=PermissionError):
         with pytest.raises(PermissionError):
             update_vocab_usage(used_words)
+
+
+## add_usage_to_words test
+
+
+@pytest.fixture
+def mock_vocab_usage():
+    return {
+        "verbs": {"run": 2, "jump": 1, "swim": 3},
+        "vocab": {"apple": 1, "banana": 2, "cherry": 0},
+    }
+
+
+def test_add_usage_to_words_verbs(mock_vocab_usage):
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        result = add_usage_to_words(["run", "jump", "swim"], "verbs")
+    assert result == "{'jump': 1, 'run': 2, 'swim': 3}"
+
+
+def test_add_usage_to_words_vocab(mock_vocab_usage):
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        result = add_usage_to_words(["apple", "banana", "cherry"], "vocab")
+    assert result == "{'cherry': 0, 'apple': 1, 'banana': 2}"
+
+
+def test_add_usage_to_words_missing_word(mock_vocab_usage):
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        result = add_usage_to_words(["run", "jump", "fly"], "verbs")
+    assert result == "{'fly': 0, 'jump': 1, 'run': 2}"
+
+
+def test_add_usage_to_words_invalid_category(mock_vocab_usage):
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        with pytest.raises(ValueError) as excinfo:
+            add_usage_to_words(["word"], "adjectives")
+    assert "Category 'adjectives' not found in vocabulary usage data" in str(
+        excinfo.value
+    )
+
+
+def test_add_usage_to_words_empty_list(mock_vocab_usage):
+    with patch("builtins.open", mock_open(read_data=json.dumps(mock_vocab_usage))):
+        result = add_usage_to_words([], "verbs")
+    assert result == "{}"
