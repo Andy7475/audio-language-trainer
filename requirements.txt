@@ -20,3 +20,5 @@ soundfile                       #for speeding up dialogue
 ipykernel                       #for jupyter notebook
 pydantic
 ipycytoscape                    #for language graph plotting for diagnosis
+moviepy
+ffmpeg-python
