@@ -14,8 +14,6 @@ from dotenv import load_dotenv
 import json
 import subprocess
 
-load_dotenv()
-
 
 def create_lesson_video(
     audio_text_pairs: List[Tuple[AudioSegment, str]], output_filename: str
