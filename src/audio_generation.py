@@ -1,15 +1,17 @@
+import asyncio
 import io
 import os
 import sys
 import uuid
 from typing import Dict, List, Optional, Tuple
-import asyncio
+
 import IPython.display as ipd
 import librosa
 import numpy as np
 import soundfile as sf
 from google.cloud import texttospeech
 from google.cloud import translate_v2 as translate
+from mutagen.mp4 import MP4
 from pydub import AudioSegment
 from tqdm import tqdm
 
@@ -117,7 +119,7 @@ async def async_generate_translated_phrase_audio(
         ],
         gap_ms=500,
     )
-    return phrase_audio
+    return [english_audio, target_audio_fast, target_audio_slow]
 
 
 async def async_process_phrases(phrases, max_concurrency=10):
@@ -377,3 +379,49 @@ def generate_audio_from_dialogue(
         audio_segments.append(target_audio_normal)
 
     return audio_segments
+
+
+def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file):
+    # Ensure the output directory exists
+    output_dir = "../outputs/"
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Prepare the full output path
+    full_output_path = os.path.join(output_dir, output_file)
+
+    # Concatenate audio segments
+    combined_audio = AudioSegment.empty()
+    current_time = 0
+    timed_lyrics = []
+
+    for segment, phrase in zip(audio_segments, phrases):
+        # Add to the combined audio
+        combined_audio += segment
+
+        # Calculate timestamp
+        minutes, seconds = divmod(current_time / 1000, 60)
+        timestamp = f"[{int(minutes):02d}:{seconds:05.2f}]"
+
+        # Add to timed lyrics
+        timed_lyrics.append(f"{timestamp}{phrase}")
+
+        # Update current time
+        current_time += len(segment)
+
+    # Export combined audio to M4A
+    temp_m4a = full_output_path + "_temp"
+    combined_audio.export(temp_m4a, format="ipod")
+
+    # Add lyrics to the M4A file
+    audio = MP4(temp_m4a)
+
+    # Join all lyrics into a single string
+    lyrics_text = "\n".join(timed_lyrics)
+
+    # Add lyrics using the standard lyrics tag
+    audio["\xa9lyr"] = lyrics_text
+
+    audio.save()
+
+    # Rename the temp file to the desired output name
+    os.replace(temp_m4a, full_output_path)
