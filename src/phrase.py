@@ -38,7 +38,7 @@ def generate_practice_phrases_from_dialogue(
     phrases = get_text_from_dialogue(dialogue)
 
     llm_prompt = f"""
-    I will provide you with a list of dialogue phrases. Your task is to create 15-20 new phrases based on this dialogue, this is to support language learning
+    I will provide you with a list of dialogue phrases. Your task is to create 20-30 new phrases based on this dialogue, this is to support language learning
      where we learn new ways of rearranging the vocabulary to create a wider range of phrases.
     To help yourself, first list the verbs, tenses and other vocab within the phrases this will help you adhere to the following rules:
     1. Use only the vocabulary, verbs, grammatical structures, and tenses present in the original dialogue.
