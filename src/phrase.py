@@ -38,14 +38,16 @@ def generate_practice_phrases_from_dialogue(
     phrases = get_text_from_dialogue(dialogue)
 
     llm_prompt = f"""
-    I will provide you with a list of dialogue phrases. Your task is to create 15-20 new phrases based on this dialogue, following these strict rules:
-
+    I will provide you with a list of dialogue phrases. Your task is to create 20-30 new phrases based on this dialogue, this is to support language learning
+     where we learn new ways of rearranging the vocabulary to create a wider range of phrases.
+    To help yourself, first list the verbs, tenses and other vocab within the phrases this will help you adhere to the following rules:
     1. Use only the vocabulary, verbs, grammatical structures, and tenses present in the original dialogue.
-    2. Do not introduce any new words, tenses, or grammatical concepts not present in the original.
-    3. Change pronouns, verbs to accommodate new pronounds (e.g. they are to I am etc) rearrange words, and create shorter or simplified versions of the original phrases.
-    4. Start with simple, short phrases (2-3 words) and gradually move to more complex ones (5-8 words). If the original dialogue has very long sentences then increase the length of the complex examples you give to match.
-    5. Ensure that each new phrase is grammatically correct and makes sense on its own.
-    6. Do not use any direct quotes from the original dialogue.
+    2. Ensure every verb and noun is used in a short phrase (2 - 4 words).
+    3. Do not introduce any new words, tenses, or grammatical concepts not present in the original.
+    4. You can change pronouns for more practice with verbs (e.g. 'they are' to 'I am' etc), rearrange words, and create shorter or simplified versions of the original phrases.
+    5. Start with simple, short phrases (2-4 words) and gradually move to more complex ones (5-8 words). If the original dialogue has very long sentences then increase the length of the complex examples you give to match.
+    6. Ensure that each new phrase is grammatically correct and makes sense on its own.
+    7. Do not use any direct quotes from the original dialogue (as we will practice this later).
     7. Be creative in mixing elements from different parts of the dialogue.
 
     Here's a short example to illustrate the task:
@@ -74,7 +76,7 @@ def generate_practice_phrases_from_dialogue(
     Now, here's the dialogue for you to work with:
     {phrases}
 
-    Please provide your output as a JSON object with a single key "new_phrases" whose value is an array of the new phrases. Start with simpler phrases and progress to more complex variations. Remember to stick strictly to the vocabulary and grammatical structures present in the original dialogue, while avoiding direct quotes. Your response should be valid JSON that can be parsed programmatically.
+    Please include in your output a JSON object with a single key "new_phrases" whose value is an array of the new phrases. 
     """
 
     llm_response = anthropic_generate(llm_prompt)
@@ -84,19 +86,3 @@ def generate_practice_phrases_from_dialogue(
     original_sentences = get_sentences_from_text(phrases)
 
     return new_phrases + original_sentences
-
-
-def correct_phrases(phrases: List[str]) -> List[str]:
-    """Uses an LLM to correct the phrases"""
-
-    phrase_correct_prompt = f"""Given this list of phrases, 
-    which are for language learning (so small parts of sentences are OK) please correct them slightly if they need it. 
-    Maybe adjusting the grammar slightly or adding a word or two to make it more sensible phrase.
-    The majority will probably not need any adjustment. Do not add any words not already present in the list. Return the modified list as a single element in JSON. {{\"corrected_phrases\" : [\"phrase one\", \"phrase two\", ...]}}.
-    Phrases: {phrases} """
-
-    response = anthropic_generate(
-        phrase_correct_prompt, model=config.ANTHROPIC_SMALL_MODEL_NAME
-    )
-    corrected_phrases = extract_json_from_llm_response(response)
-    return corrected_phrases["corrected_phrases"]
