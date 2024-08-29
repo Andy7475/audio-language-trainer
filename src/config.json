@@ -7,5 +7,9 @@
     "ANTHROPIC_SMALL_MODEL_NAME":"claude-3-haiku@20240307",
     "ANTHROPIC_REGION":"europe-west1",
     "THINKING_GAP_MS":3000,
-    "SPEAKING_RATE_SLOW":0.5
+    "SPEAKING_RATE_SLOW":0.5,
+    "GCS_BUCKET":"andy7475-audio-language-trainer",
+    "PROJECT_NUMBER":307643465852,
+    "TTS_REGION":"us-central1",
+    "MAX_TTS_REQUESTS_PER_MINUTE":100
 }
