@@ -243,172 +243,172 @@
     },
     "Passive voice": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Coffee is drunk by me"
     }
   },
   "mood": {
     "Indicative": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I drink coffee"
     },
     "Imperative": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Drink your coffee!"
     },
     "Subjunctive": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "If I were you, I would drink coffee"
     }
   },
   "conditionals": {
     "Zero conditional": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "If you heat water, it boils"
     },
     "First conditional": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "If it rains, I'll have coffee inside"
     },
     "Second conditional": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "If I had coffee, I would drink it"
     },
     "Third conditional": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "If I had known you were coming, I would have made coffee"
     },
     "Mixed conditionals": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "If I liked coffee, I would have ordered some"
     }
   },
   "reported_speech": {
     "Direct speech": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "\"I love coffee,\" she said"
     },
     "Indirect speech": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "She said that she loved coffee"
     }
   },
   "questions": {
     "Yes/No questions": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Do you like coffee?"
     },
     "Wh- questions": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Where did you buy this coffee?"
     },
     "Tag questions": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "You like coffee, don't you?"
     }
   },
   "negation": {
     "Simple negation": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I don't like coffee"
     },
     "Double negation": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I don't never drink coffee"
     }
   },
   "modals": {
     "Ability": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I can make good coffee"
     },
     "Permission": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "May I have some coffee?"
     },
     "Obligation": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "You must try this coffee"
     },
     "Possibility": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "It might be too late for coffee"
     }
   },
   "quantifiers": {
     "Quantifiers": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Much coffee, many cups, a lot of beans, few sips, little cream, some sugar, any milk"
     }
   },
   "articles": {
     "Definite article": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "the coffee"
     },
     "Indefinite articles": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "a coffee, an espresso"
     },
     "Zero article": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Coffee is popular"
     }
   },
   "conjunctions": {
     "Coordinating": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I like coffee and tea"
     },
     "Subordinating": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I drink coffee because I like it"
     },
     "Correlative": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Either you drink coffee or you don't"
     }
   },
   "prepositions": {
     "Time prepositions": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "before coffee, after lunch"
     },
     "Place prepositions": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "at the cafe, in the mug"
     },
     "Direction prepositions": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "into the cup, through the filter"
     }
   }

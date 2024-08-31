@@ -20,8 +20,6 @@ from src.utils import (
 
 load_dotenv()  # so we can use environment variables for various global settings
 
-GRAMMAR_USAGE_PATH = "../data/grammar_concepts_usage.json"
-VOCAB_USAGE_PATH = "../data/vocab_usage.json"
 STORY_PLAN_PATH = "../outputs/"
 
 
@@ -113,7 +111,7 @@ def generate_dialogue_prompt(
     grammar_use_count=3,
 ):
     # Load the JSON files
-    grammar_concepts = load_json(GRAMMAR_USAGE_PATH)
+    grammar_concepts = load_json(config.GRAMMAR_USAGE_PATH)
 
     # Select grammar concepts
     selected_concepts = select_grammar_concepts(grammar_concepts, grammar_concept_count)
@@ -182,13 +180,13 @@ def update_grammar_concept_usage(
         if category in grammar_concepts and concept in grammar_concepts[category]:
             grammar_concepts[category][concept]["times_seen"] += 1
 
-    with open(GRAMMAR_USAGE_PATH, "w") as f:
+    with open(config.GRAMMAR_USAGE_PATH, "w") as f:
         json.dump(grammar_concepts, f, indent=2)
 
 
 def get_least_used_words(category, count):
     # Load the current usage
-    with open(VOCAB_USAGE_PATH, "r") as f:
+    with open(config.VOCAB_USAGE_PATH, "r") as f:
         vocab_usage = json.load(f)
 
     # Calculate weights (inverse of usage count + 1 to avoid division by zero)
@@ -223,7 +221,7 @@ def update_vocab_usage(used_words: Set[Tuple[str, str]]):
     No return statement"""
     # Load the current usage
 
-    vocab_usage = load_json(VOCAB_USAGE_PATH)
+    vocab_usage = load_json(config.VOCAB_USAGE_PATH)
     print(used_words)
     # Update the usage count for each used word
     for word, pos in used_words:
@@ -239,7 +237,7 @@ def update_vocab_usage(used_words: Set[Tuple[str, str]]):
                 vocab_usage["vocab"][word] = 1
 
     # Save the updated usage dictionary
-    save_json(vocab_usage, VOCAB_USAGE_PATH)
+    save_json(vocab_usage, config.VOCAB_USAGE_PATH)
 
 
 def add_usage_to_words(word_list: List[str], category: str) -> str:
@@ -247,7 +245,7 @@ def add_usage_to_words(word_list: List[str], category: str) -> str:
     this data from the vocab_usage file - this can then be issued as string into the prompt
     """
     # Load the current usage
-    with open(VOCAB_USAGE_PATH, "r") as f:
+    with open(config.VOCAB_USAGE_PATH, "r") as f:
         vocab_usage = json.load(f)
 
     # make word_list all lower case

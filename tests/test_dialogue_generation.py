@@ -2,11 +2,10 @@ import json
 import unittest
 from typing import Dict, List, Set, Tuple
 from unittest.mock import mock_open, patch, ANY
-from src.dialogue_generation import add_usage_to_words, VOCAB_USAGE_PATH
+from src.dialogue_generation import add_usage_to_words
 import pytest
 
 from src.dialogue_generation import (
-    GRAMMAR_USAGE_PATH,
     generate_dialogue_prompt,
     get_vocab_from_dialogue,
     select_grammar_concepts,
@@ -60,7 +59,7 @@ def test_update_grammar_concept_usage(mock_grammar_concepts):
     assert mock_grammar_concepts["noun_forms"]["Plural"]["times_seen"] == 4
     assert mock_grammar_concepts["verb_tenses"]["Present Continuous"]["times_seen"] == 1
 
-    mock_file.assert_called_once_with(GRAMMAR_USAGE_PATH, "w")
+    mock_file.assert_called_once_with(config.GRAMMAR_USAGE_PATH, "w")
     mock_json_dump.assert_called_once_with(mock_grammar_concepts, ANY, indent=2)
 
 
@@ -94,7 +93,7 @@ def test_generate_dialogue_prompt(
     assert "Exposition: Introduce the characters" in prompt
     assert "Last time, Alex and Sam met at the library." in prompt
 
-    mock_load_json.assert_called_once_with(GRAMMAR_USAGE_PATH)
+    mock_load_json.assert_called_once_with(config.GRAMMAR_USAGE_PATH)
     mock_select_concepts.assert_called_once_with({"mock": "grammar_concepts"}, 2)
     mock_update_usage.assert_called_once_with(
         {"mock": "grammar_concepts"},
@@ -308,7 +307,8 @@ def test_add_usage_to_words_empty_list(mock_vocab_usage):
 import pytest
 from unittest.mock import patch, mock_open, call
 import json
-from src.dialogue_generation import get_least_used_words, VOCAB_USAGE_PATH
+from src.dialogue_generation import get_least_used_words
+from src.config_loader import config
 
 
 @pytest.mark.parametrize(
@@ -397,7 +397,7 @@ def test_update_vocab_usage_with_aux_and_verb():
             update_vocab_usage(words_with_pos)
 
             # Check if the file was opened for writing
-            mock_file.assert_called_with(VOCAB_USAGE_PATH, "w")
+            mock_file.assert_called_with(config.config.VOCAB_USAGE_PATH, "w")
 
             # Check if json.dump was called with the correct updated vocab_usage
             mock_json_dump.assert_called_once()

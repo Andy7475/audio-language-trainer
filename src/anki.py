@@ -6,7 +6,8 @@ from typing import Dict, List
 
 
 def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name: str):
-    # Create output directory
+    """Once you have a completely populated stort_data_dict then we can export the phrases and audio
+    as an Anki deck to support listening, speaking and reading practice"""  # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
     # Create a model for each card type
