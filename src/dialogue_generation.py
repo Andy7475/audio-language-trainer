@@ -202,15 +202,56 @@ def get_least_used_words(category, count):
     # Perform weighted random sampling
     selected_words = random.choices(words, weights=normalized_weights, k=count)
 
+    # now we should update that they have been used once (to prevent instances of words remaining at 0)
+    # for any mismatch in the lemmma or the vocab list
+    if category == "verbs":
+        pos = "VERB"
+    else:
+        pos = "vocab"
+
+    words_with_pos = [(word, pos) for word in selected_words]
+    update_vocab_usage(words_with_pos)
+
     return selected_words
+
+
+def update_vocab_usage(used_words: Set[Tuple[str, str]]):
+    """Taking a list of (word, word_type) e.g. ('can', 'verbs') we update the vocab_usage
+    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
+    lessons. words that haven't been used have a higher chance of being sampled.
+
+    No return statement"""
+    # Load the current usage
+
+    vocab_usage = load_json(VOCAB_USAGE_PATH)
+    print(used_words)
+    # Update the usage count for each used word
+    for word, pos in used_words:
+        if pos in ["VERB", "AUX"]:
+            if word in vocab_usage["verbs"]:
+                vocab_usage["verbs"][word] += 1
+            else:
+                vocab_usage["verbs"][word] = 1
+        else:
+            if word in vocab_usage["vocab"]:
+                vocab_usage["vocab"][word] += 1
+            else:
+                vocab_usage["vocab"][word] = 1
+
+    # Save the updated usage dictionary
+    save_json(vocab_usage, VOCAB_USAGE_PATH)
 
 
 def add_usage_to_words(word_list: List[str], category: str) -> str:
     """adds the number of times that words has been used to the word_list - getting
-    this data from the vocab_usage file"""
+    this data from the vocab_usage file - this can then be issued as string into the prompt
+    """
     # Load the current usage
     with open(VOCAB_USAGE_PATH, "r") as f:
         vocab_usage = json.load(f)
+
+    # make word_list all lower case
+    word_list = [word.lower() for word in word_list]
 
     # Check if the category exists in vocab_usage
     if category not in vocab_usage:
@@ -255,53 +296,26 @@ def ensure_spacy_model(model_name="en_core_web_md"):
 
 
 def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
-    """For a given Engish dialogue, extracts the vocab used as the lemmas, the reason is so the
-    vocab_usage.json can be updated with usage information. Returns of the form (lemma, POS) e.g. ("go", "VERB")
     """
-    # Load the English language model
+    For a given English dialogue, extracts the vocab used as the lemmas.
+    Returns a set of tuples of the form (lemma, POS) e.g. ("go", "VERB")
+    Excludes punctuation, persons identified by spaCy, and the names 'sam' and 'alex'.
+    """
     ensure_spacy_model()
     nlp = spacy.load("en_core_web_md")
 
-    # Initialize an empty set to store unique (lemma, pos) pairs
     vocab_set = set()
+    excluded_names = {"sam", "alex"}
 
-    # Iterate through each utterance in the dialogue
     for utterance in dialogue:
-        # Process the text with spaCy
         doc = nlp(utterance["text"])
 
-        # Iterate through each token in the processed document
         for token in doc:
-            # Skip punctuation
-            if token.pos_ != "PUNCT":
-                # Add the lemma and its POS tag to the set
+            if (
+                token.pos_ != "PUNCT"
+                and token.ent_type_ != "PERSON"
+                and token.text.lower() not in excluded_names
+            ):
                 vocab_set.add((token.lemma_.lower(), token.pos_))
 
     return vocab_set
-
-
-def update_vocab_usage(used_words: Set[Tuple[str, str]]):
-    """Taking a list of (word, POS) e.g. ('can', 'VERB') we update the vocab_usage
-    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
-    lessons. words that haven't been used have a higher chance of being sampled.
-
-    No return statement"""
-    # Load the current usage
-
-    vocab_usage = load_json(VOCAB_USAGE_PATH)
-
-    # Update the usage count for each used word
-    for word, pos in used_words:
-        if pos == "VERB":
-            if word in vocab_usage["verbs"]:
-                vocab_usage["verbs"][word] += 1
-            else:
-                vocab_usage["verbs"][word] = 1
-        else:
-            if word in vocab_usage["vocab"]:
-                vocab_usage["vocab"][word] += 1
-            else:
-                vocab_usage["vocab"][word] = 1
-
-    # Save the updated usage dictionary
-    save_json(vocab_usage, VOCAB_USAGE_PATH)
