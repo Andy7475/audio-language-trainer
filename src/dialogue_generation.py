@@ -22,12 +22,15 @@ load_dotenv()  # so we can use environment variables for various global settings
 
 GRAMMAR_USAGE_PATH = "../data/grammar_concepts_usage.json"
 VOCAB_USAGE_PATH = "../data/vocab_usage.json"
-STORY_PLAN_PATH = "../outputs/story_plan.json"
-RECAP_PATH = "../outputs/story_recap.json"
+STORY_PLAN_PATH = "../outputs/"
 
 
 def generate_story_plan(
-    story_guide: str, verb_list: List[str], vocab_list: List[str], test=True
+    story_guide: str,
+    verb_list: List[str],
+    vocab_list: List[str],
+    story_name: str,
+    test=True,
 ) -> dict:
     """This function generates an outline story following the story_structure written below.
     When we are creating dialgoue, we will feed the story_plan into the function a bit at a time for subsequent dialogues
@@ -71,7 +74,8 @@ def generate_story_plan(
     # Normalize keys to lowercase
     story_plan = {k.lower(): v for k, v in story_plan.items()}
 
-    save_json(story_plan, STORY_PLAN_PATH)
+    story_name = story_name.replace(" ", "_")
+    save_json(story_plan, STORY_PLAN_PATH + "story_plan_" + story_name + ".json")
     return story_plan
 
 
@@ -120,7 +124,7 @@ def generate_dialogue_prompt(
 
     # Generate the prompt
     prompt = f"""Create a brief dialogue for language learners using the following guidelines:
-    1. This is for language practice. Only use words from the lists provided below. Preferentially use words that haven't been used as much (with a smaller number)
+    1. This is for language practice. Prioritze words from the lists provided below, but add additional words if required for the story. Preferentially use words that haven't been used as much (with a smaller number)
     2. Pick from about {verb_use_count} of these verbs:
     {verb_usage_str}
     You can use other verbs if required to make the tenses work (e.g., auxiliary verbs).
@@ -142,7 +146,7 @@ def generate_dialogue_prompt(
     10. Current story phase and plan: {story_part}: {story_part_outline}
     11. Create dialogue for the current story plan.
     Remember:
-    - Only use words from the provided lists. If necessary for grammatical sense, you can use additional, simple words.
+    - While you should prioritse words from the provided lists, you can use additional words if required for the story.
     - Balance practicing the specified concepts and vocabulary (about 45%) with advancing the storyline (about 55%).
     - Keep the language simple and appropriate for beginner language learners.
     """
