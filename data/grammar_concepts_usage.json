@@ -162,83 +162,83 @@
     },
     "Compound sentences": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I like coffee, but I don't like tea."
     },
     "Complex sentences": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Although I like coffee, I try to limit my intake."
     },
     "Compound-complex sentences": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I like coffee, and I drink it often, but when I have too much, I get jittery."
     }
   },
   "clauses": {
     "Independent clauses": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I drink coffee"
     },
     "Dependent clauses": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "because I like coffee"
     },
     "Relative clauses": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "The coffee that I bought is delicious"
     },
     "Noun clauses": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "What I want is a cup of coffee"
     },
     "Adverbial clauses": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "When I wake up, I drink coffee"
     }
   },
   "phrases": {
     "Noun phrases": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "hot coffee"
     },
     "Verb phrases": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "is brewing coffee"
     },
     "Prepositional phrases": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "in the coffee shop"
     },
     "Gerund phrases": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Drinking coffee is my morning ritual"
     },
     "Infinitive phrases": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "to drink coffee"
     },
     "Participial phrases": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Sipping coffee, I read the newspaper"
     }
   },
   "voice": {
     "Active voice": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I drink coffee"
     },
     "Passive voice": {
