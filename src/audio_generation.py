@@ -186,55 +186,6 @@ def text_to_speech(
     return audio_segment
 
 
-def generate_translated_phrase_audio(
-    translated_phrase: tuple[str, str],
-    english_voice_models: dict = None,
-    target_voice_models: dict = None,
-) -> AudioSegment:
-    """Creates an english, thinking pause, slow target, fast target audio segment"""
-
-    # Use config values if parameters are not provided
-    if english_voice_models is None:
-        english_voice_models = config.english_voice_models
-    if target_voice_models is None:
-        target_voice_models = config.target_language_voice_models
-
-    english_audio = text_to_speech(
-        text=translated_phrase[0],
-        language_code=english_voice_models["language_code"],
-        voice_name=english_voice_models["male_voice"],
-        speaking_rate=0.9,
-    )
-
-    target_audio_slow = text_to_speech(
-        text=translated_phrase[1],
-        language_code=target_voice_models["language_code"],
-        voice_name=target_voice_models["female_voice"],
-        speaking_rate=config.SPEAKING_RATE_SLOW,
-    )
-
-    target_audio_fast = text_to_speech(
-        text=translated_phrase[1],
-        language_code=target_voice_models["language_code"],
-        voice_name=target_voice_models["female_voice"],
-        speaking_rate=1.0,
-    )
-
-    THINKING_GAP = AudioSegment.silent(duration=config.THINKING_GAP_MS)
-
-    phrase_audio = join_audio_segments(
-        [
-            english_audio,
-            THINKING_GAP,
-            target_audio_fast,
-            target_audio_slow,
-            # target_audio_fast,
-        ],
-        gap_ms=500,  # GAP AT END
-    )
-    return phrase_audio
-
-
 def export_audio(final_audio: AudioSegment, filename: str = None) -> str:
     """
     Saves the final_audio AudioSegment as an MP3 file.

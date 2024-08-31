@@ -1,23 +1,22 @@
-python-dotenv
+altair
+anthropic                      #for querying the Anthropic models hosted on Google Cloud
+genanki
 google-auth
-google-cloud-core
 google-cloud-aiplatform
+google-cloud-core
 google-cloud-texttospeech
 google-cloud-translate
-pydub
-networkx
-spacy
-pandas
-numpy
-matplotlib
-altair
-requests
-anthropic                      #for querying the Anthropic models hosted on Google Cloud
-pytest
-pysnooper
-librosa                         #for speeding up dialogue
-soundfile                       #for speeding up dialogue
 ipykernel                       #for jupyter notebook
-pydantic
-ipycytoscape                    #for language graph plotting for diagnosis
+librosa                         #for speeding up dialogue
+matplotlib
 mutagen
+numpy
+pandas
+pydantic
+pydub
+pysnooper
+pytest
+python-dotenv
+requests
+soundfile                       #for speeding up dialogue
+spacy
