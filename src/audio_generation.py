@@ -1,15 +1,18 @@
 import asyncio
 import io
+import multiprocessing
 import os
 import sys
+import time
 import uuid
+from functools import partial
 from typing import Dict, List, Optional, Tuple
 
 import IPython.display as ipd
 import librosa
 import numpy as np
 import soundfile as sf
-from google.cloud import texttospeech
+from google.cloud import storage, texttospeech, texttospeech_v1
 from google.cloud import translate_v2 as translate
 from mutagen.mp4 import MP4
 from pydub import AudioSegment
@@ -17,6 +20,10 @@ from tqdm import tqdm
 
 from src.config_loader import config
 from src.translation import translate_from_english
+
+# Rate limiting parameters
+REQUEST_INTERVAL = 60 / config.MAX_TTS_REQUESTS_PER_MINUTE
+last_request_time = 0
 
 
 def setup_ffmpeg():
@@ -32,6 +39,76 @@ def setup_ffmpeg():
 
 
 setup_ffmpeg()
+
+
+def text_to_speech_worker(
+    text: str, language_code: str, voice_name: str, speaking_rate: float
+) -> bytes:
+    client = texttospeech.TextToSpeechClient()
+    synthesis_input = texttospeech.SynthesisInput(text=text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=language_code, name=voice_name
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
+    )
+    response = client.synthesize_speech(
+        input=synthesis_input, voice=voice, audio_config=audio_config
+    )
+    return response.audio_content
+
+
+def text_to_speech_multiprocessing(
+    texts: List[str],
+    language_codes: List[str],
+    voice_names: List[str],
+    speaking_rates: List[float],
+) -> List[AudioSegment]:
+    with multiprocessing.Pool() as pool:
+        audio_contents = pool.starmap(
+            text_to_speech_worker,
+            zip(texts, language_codes, voice_names, speaking_rates),
+        )
+
+    return [AudioSegment.from_mp3(io.BytesIO(content)) for content in audio_contents]
+
+
+async def async_generate_translated_phrase_audio(
+    translated_phrase: tuple[str, str],
+    english_voice_models: dict = None,
+    target_voice_models: dict = None,
+) -> List[AudioSegment]:
+    if english_voice_models is None:
+        english_voice_models = config.english_voice_models
+    if target_voice_models is None:
+        target_voice_models = config.target_language_voice_models
+
+    texts = [translated_phrase[0], translated_phrase[1], translated_phrase[1]]
+    language_codes = [
+        english_voice_models["language_code"],
+        target_voice_models["language_code"],
+        target_voice_models["language_code"],
+    ]
+    voice_names = [
+        english_voice_models["male_voice"],
+        target_voice_models["female_voice"],
+        target_voice_models["female_voice"],
+    ]
+    speaking_rates = [0.9, config.SPEAKING_RATE_SLOW, 1.0]
+
+    loop = asyncio.get_event_loop()
+    audio_segments = await loop.run_in_executor(
+        None,
+        partial(
+            text_to_speech_multiprocessing,
+            texts,
+            language_codes,
+            voice_names,
+            speaking_rates,
+        ),
+    )
+
+    return audio_segments
 
 
 async def async_text_to_speech(
@@ -67,62 +144,7 @@ async def async_text_to_speech(
     return audio_segment
 
 
-async def async_generate_translated_phrase_audio(
-    translated_phrase: tuple[str, str],
-    english_voice_models: dict = None,
-    target_voice_models: dict = None,
-) -> AudioSegment:
-    if english_voice_models is None:
-        english_voice_models = config.english_voice_models
-    if target_voice_models is None:
-        target_voice_models = config.target_language_voice_models
-
-    english_audio_task = asyncio.create_task(
-        async_text_to_speech(
-            text=translated_phrase[0],
-            language_code=english_voice_models["language_code"],
-            voice_name=english_voice_models["male_voice"],
-            speaking_rate=0.9,
-        )
-    )
-
-    target_audio_slow_task = asyncio.create_task(
-        async_text_to_speech(
-            text=translated_phrase[1],
-            language_code=target_voice_models["language_code"],
-            voice_name=target_voice_models["female_voice"],
-            speaking_rate=config.SPEAKING_RATE_SLOW,
-        )
-    )
-
-    target_audio_fast_task = asyncio.create_task(
-        async_text_to_speech(
-            text=translated_phrase[1],
-            language_code=target_voice_models["language_code"],
-            voice_name=target_voice_models["female_voice"],
-            speaking_rate=1.0,
-        )
-    )
-
-    english_audio, target_audio_slow, target_audio_fast = await asyncio.gather(
-        english_audio_task, target_audio_slow_task, target_audio_fast_task
-    )
-
-    THINKING_GAP = AudioSegment.silent(duration=config.THINKING_GAP_MS)
-
-    phrase_audio = join_audio_segments(
-        [
-            english_audio,
-            THINKING_GAP,
-            target_audio_fast,
-            target_audio_slow,
-        ],
-        gap_ms=500,
-    )
-    return [english_audio, target_audio_fast, target_audio_slow]
-
-
-async def async_process_phrases(phrases, max_concurrency=10):
+async def async_process_phrases(phrases, max_concurrency=30):
     semaphore = asyncio.Semaphore(max_concurrency)
 
     async def limited_task(phrase):
@@ -169,7 +191,7 @@ def generate_translated_phrase_audio(
     english_voice_models: dict = None,
     target_voice_models: dict = None,
 ) -> AudioSegment:
-    """Creates and english, thinking pause, slow target, fast target audio segment"""
+    """Creates an english, thinking pause, slow target, fast target audio segment"""
 
     # Use config values if parameters are not provided
     if english_voice_models is None:
@@ -344,41 +366,26 @@ def generate_normal_and_fast_audio(
 def generate_audio_from_dialogue(
     dialogue: List[Dict[str, str]], in_target_language=True
 ) -> List[AudioSegment]:
-    """
-    Generate audio from a dialogue in the target language, using different voices for each speaker.
-    It will do the audio in the target language so assumes the dialogue is translated.
-
-    :param dialogue: List of dictionaries containing 'speaker' and 'text' keys, already translated
-    :return: List of AudioSegments of the entire dialogue in the target language
-    """
-    audio_segments = []
-
-    # Get voice models from config
     if in_target_language:
         voice_models = config.target_language_voice_models
     else:
         voice_models = config.english_voice_models
 
-    for utterance in tqdm(dialogue):
-        speaker = utterance["speaker"]
-        text = utterance["text"]
-
-        # Choose voice based on speaker
-        if speaker == "Sam":
-            target_voice = voice_models["male_voice"]
-        else:  # 'Alex' or any other speaker
-            target_voice = voice_models["female_voice"]
-
-        # Generate audio for translated text (normal and slow speed)
-        target_audio_normal = text_to_speech(
-            text=text,
-            language_code=voice_models["language_code"],
-            voice_name=target_voice,
+    texts = [utterance["text"] for utterance in dialogue]
+    language_codes = [voice_models["language_code"]] * len(dialogue)
+    voice_names = [
+        (
+            voice_models["male_voice"]
+            if utterance["speaker"] == "Sam"
+            else voice_models["female_voice"]
         )
+        for utterance in dialogue
+    ]
+    speaking_rates = [1.0] * len(dialogue)
 
-        audio_segments.append(target_audio_normal)
-
-    return audio_segments
+    return text_to_speech_multiprocessing(
+        texts, language_codes, voice_names, speaking_rates
+    )
 
 
 def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file):
@@ -425,3 +432,160 @@ def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file):
 
     # Rename the temp file to the desired output name
     os.replace(temp_m4a, full_output_path)
+
+
+async def async_text_to_speech_v2(
+    text: str,
+    language_code: str = None,
+    voice_name: str = None,
+    speaking_rate: float = 1.0,
+) -> AudioSegment:
+    global last_request_time
+
+    # Implement rate limiting
+    current_time = time.time()
+    time_since_last_request = current_time - last_request_time
+    if time_since_last_request < REQUEST_INTERVAL:
+        await asyncio.sleep(REQUEST_INTERVAL - time_since_last_request)
+
+    last_request_time = time.time()
+
+    client = texttospeech_v1.TextToSpeechLongAudioSynthesizeAsyncClient()
+
+    if language_code is None:
+        language_code = config.english_voice_models["language_code"]
+    if voice_name is None:
+        voice_name = config.english_voice_models["male_voice"]
+
+    file_uuid = uuid.uuid4()
+    gcs_filename = f"temp_audio_{file_uuid}.wav"
+    gcs_uri = f"gs://{config.GCS_BUCKET}/{gcs_filename}"
+
+    input_text = texttospeech_v1.SynthesisInput(text=text)
+    voice = texttospeech_v1.VoiceSelectionParams(
+        language_code=language_code, name=voice_name
+    )
+    audio_config = texttospeech_v1.AudioConfig(
+        audio_encoding=texttospeech_v1.AudioEncoding.LINEAR16,
+        speaking_rate=speaking_rate,
+    )
+
+    parent = f"projects/{config.PROJECT_NUMBER}/locations/{config.TTS_REGION}"
+
+    request = texttospeech_v1.SynthesizeLongAudioRequest(
+        parent=parent,
+        input=input_text,
+        voice=voice,
+        audio_config=audio_config,
+        output_gcs_uri=gcs_uri,
+    )
+
+    # Make the request
+    operation = client.synthesize_long_audio(request=request)
+
+    response = (await operation).result()
+
+    # Handle the response
+    print(response)
+
+    print(f"Waiting for {text}...")
+
+    # Wait for the operation to complete
+    while not operation.done():
+        await asyncio.sleep(5)
+        print(f"Still waiting for {text}...")
+
+    print(f"TTS operation completed for {text}")
+
+    # Download the file from GCS
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(config.GCS_BUCKET)
+    blob = bucket.blob(gcs_filename)
+
+    max_attempts = 12  # 1 minute maximum wait time
+    attempt = 0
+    while attempt < max_attempts:
+        print(f"Checking GCS for {text} - attempt {attempt + 1}")
+        if await asyncio.to_thread(blob.exists):
+            print(f"File for {text} found in GCS.")
+            break
+        await asyncio.sleep(5)  # Wait for 5 seconds before checking again
+        attempt += 1
+
+    if attempt == max_attempts:
+        raise TimeoutError(f"Timeout waiting for file {gcs_filename} to appear in GCS.")
+
+    # Download the file from GCS
+    audio_content = await asyncio.to_thread(blob.download_as_bytes)
+
+    print(f"Audio content downloaded for {text}")
+
+    # Delete the temporary file from GCS
+    await asyncio.to_thread(blob.delete)
+
+    # Convert to AudioSegment (pydub can handle WAV files)
+    audio_segment = AudioSegment.from_wav(io.BytesIO(audio_content))
+    return audio_segment
+
+
+async def async_generate_translated_phrase_audio_v2(
+    translated_phrase: Tuple[str, str],
+    english_voice_models: dict = None,
+    target_voice_models: dict = None,
+) -> List[AudioSegment]:
+    if english_voice_models is None:
+        english_voice_models = config.english_voice_models
+    if target_voice_models is None:
+        target_voice_models = config.target_language_voice_models
+
+    tasks = [
+        async_text_to_speech_v2(
+            translated_phrase[0],
+            english_voice_models["language_code"],
+            english_voice_models["male_voice"],
+            0.9,
+        ),
+        async_text_to_speech_v2(
+            translated_phrase[1],
+            target_voice_models["language_code"],
+            target_voice_models["female_voice"],
+            config.SPEAKING_RATE_SLOW,
+        ),
+        async_text_to_speech_v2(
+            translated_phrase[1],
+            target_voice_models["language_code"],
+            target_voice_models["female_voice"],
+            1.0,
+        ),
+    ]
+
+    return await asyncio.gather(*tasks)
+
+
+async def async_process_phrases_v2(phrases, max_concurrency=25):
+    semaphore = asyncio.Semaphore(max_concurrency)
+
+    async def limited_task(phrase):
+        async with semaphore:
+            return await async_generate_translated_phrase_audio_v2(phrase)
+
+    return await asyncio.gather(*[limited_task(phrase) for phrase in phrases])
+
+
+# Helper functions for GCS operations
+async def download_from_gcs(bucket_name: str, file_name: str) -> bytes:
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, blob.download_as_bytes)
+
+
+async def delete_from_gcs(bucket_name: str, file_name: str):
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_name)
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, blob.delete)

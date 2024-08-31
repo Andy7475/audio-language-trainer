@@ -79,85 +79,85 @@
     },
     "Uncountable": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "coffee"
     }
   },
   "pronouns": {
     "Personal": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I drink coffee"
     },
     "Possessive": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "my coffee"
     },
     "Reflexive": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I made myself coffee"
     },
     "Demonstrative": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "this coffee, that coffee"
     },
     "Relative": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "The coffee which I bought is delicious"
     },
     "Indefinite": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "Someone spilled coffee"
     }
   },
   "adjective_forms": {
     "Comparative": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "stronger coffee"
     },
     "Superlative": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "the strongest coffee"
     }
   },
   "adverb_types": {
     "Manner": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I carefully sipped the coffee"
     },
     "Place": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I drink coffee here"
     },
     "Time": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I'll have coffee later"
     },
     "Frequency": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I often drink coffee"
     },
     "Degree": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I really like coffee"
     }
   },
   "sentence_structures": {
     "Simple sentences": {
       "use": true,
-      "times_seen": 1,
+      "times_seen": 2,
       "example": "I like coffee."
     },
     "Compound sentences": {
