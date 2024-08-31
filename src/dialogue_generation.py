@@ -213,7 +213,7 @@ def get_least_used_words(category, count):
     return selected_words
 
 
-def update_vocab_usage(used_words: Set[Tuple[str, str]]):
+def update_vocab_usage(used_words: Set[Tuple[str, str]], update_amount: int = 1):
     """Taking a list of (word, word_type) e.g. ('can', 'verbs') we update the vocab_usage
     list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
     lessons. words that haven't been used have a higher chance of being sampled.
@@ -227,14 +227,14 @@ def update_vocab_usage(used_words: Set[Tuple[str, str]]):
     for word, pos in used_words:
         if pos in ["VERB", "AUX"]:
             if word in vocab_usage["verbs"]:
-                vocab_usage["verbs"][word] += 1
+                vocab_usage["verbs"][word] += update_amount
             else:
-                vocab_usage["verbs"][word] = 1
+                vocab_usage["verbs"][word] = update_amount
         else:
             if word in vocab_usage["vocab"]:
-                vocab_usage["vocab"][word] += 1
+                vocab_usage["vocab"][word] += update_amount
             else:
-                vocab_usage["vocab"][word] = 1
+                vocab_usage["vocab"][word] = update_amount
 
     # Save the updated usage dictionary
     save_json(vocab_usage, config.VOCAB_USAGE_PATH)

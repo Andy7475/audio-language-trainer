@@ -1,8 +1,152 @@
-from random import shuffle
-import genanki
+import csv
+import io
 import os
 import uuid
-from typing import Dict, List
+from random import shuffle
+from typing import Dict, List, Tuple
+
+import genanki
+import spacy
+from google.cloud import texttospeech
+from pydub import AudioSegment
+
+from src.audio_generation import async_process_phrases
+from src.config_loader import config
+from src.dialogue_generation import update_vocab_usage
+
+
+def inspect_anki_deck(filename: str):
+    separator = "\t"  # Default separator
+
+    with open(filename, "r", encoding="utf-8") as f:
+        # Process header information
+        for line in f:
+            if line.startswith("#"):
+                if line.startswith("#separator:"):
+                    separator = line.split(":")[1].strip()
+                    if separator == "tab":
+                        separator = "\t"
+                print(f"Header: {line.strip()}")
+            else:
+                break  # Exit loop when we reach the data
+
+        # Create a CSV reader with the determined separator
+        reader = csv.reader(f, delimiter=separator)
+
+        # Read the first data row
+        first_row = next(reader)
+
+        print("\nField inspection:")
+        for i, field in enumerate(first_row):
+            # Truncate long fields for display
+            display_field = field[:50] + "..." if len(field) > 50 else field
+            print(f"{i}: {display_field}")
+
+        print(f"\nTotal number of fields: {len(first_row)}")
+
+
+def import_anki_deck(
+    file_path: str, english_field_index: int, target_field_index: int
+) -> Tuple[List[str], List[str], List[Dict]]:
+    """inspect the deck first to select the correct field_index values (inspect_anki_deck)
+    Then we will get back a list of english_phrases and translated_phrases that we can feed into
+    process_anki_deck function to generate the audio"""
+    english_phrases = []
+    target_phrases = []
+    all_fields = []
+    headers = []
+    separator = "\t"  # Default separator
+
+    with open(file_path, "r", encoding="utf-8") as f:
+        # Process header information
+        for line in f:
+            if line.startswith("#"):
+                if line.startswith("#separator:"):
+                    separator = line.split(":")[1].strip()
+                    if separator == "tab":
+                        separator = "\t"
+                # Process other header information if needed
+            else:
+                break  # Exit loop when we reach the data
+
+        # Create a CSV reader with the determined separator
+        reader = csv.reader(f, delimiter=separator)
+
+        # Infer the number of columns from the first data row
+        first_row = next(reader)
+        num_columns = len(first_row)
+        headers = [f"Field_{i}" for i in range(num_columns)]
+
+        # Process the first row and continue with the rest
+        process_row(
+            first_row,
+            english_field_index,
+            target_field_index,
+            english_phrases,
+            target_phrases,
+            all_fields,
+            headers,
+        )
+
+        for row in reader:
+            process_row(
+                row,
+                english_field_index,
+                target_field_index,
+                english_phrases,
+                target_phrases,
+                all_fields,
+                headers,
+            )
+
+    return english_phrases, target_phrases, all_fields
+
+
+def process_row(
+    row: List[str],
+    english_field_index: int,
+    target_field_index: int,
+    english_phrases: List[str],
+    target_phrases: List[str],
+    all_fields: List[Dict],
+    headers: List[str],
+):
+    english_phrases.append(row[english_field_index])
+    target_phrases.append(row[target_field_index])
+    all_fields.append(dict(zip(headers, row)))
+
+
+async def process_anki_phrases(
+    english_phrases: List[str], translated_phrases: List[str], update_amount: int = 0
+):
+    """This will return a dictionary similar to the story_data_dict format that will have
+    the english and translated phrases and the audio, so we can re-use export_to_anki
+    function on that dictionary to create a deck (now with audio) and mixed up with reading,
+    listening, writing etc"""
+    # Remove duplicates while maintaining order
+    unique_pairs = list(dict.fromkeys(zip(english_phrases, translated_phrases)))
+
+    # Create a dictionary in the format similar to story_data_dict
+    processed_dict = {"anki_import": {"translated_phrase_list": unique_pairs}}
+
+    # Generate audio for the phrases
+    audio_segments = await async_process_phrases(unique_pairs)
+    processed_dict["anki_import"]["translated_phrase_list_audio"] = audio_segments
+
+    # Process vocabulary
+    nlp = spacy.load("en_core_web_sm")
+    vocab_to_update = set()
+
+    for english_phrase, _ in unique_pairs:
+        doc = nlp(english_phrase)
+        for token in doc:
+            if token.pos_ != "PUNCT":
+                vocab_to_update.add((token.lemma_.lower(), token.pos_))
+
+    # Update vocabulary usage
+    update_vocab_usage(vocab_to_update, update_amount)
+
+    return processed_dict
 
 
 def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name: str):
@@ -106,10 +250,26 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             notes.extend([listening_note, reading_note, speaking_note])
             # Add notes to the deck
 
+    def sort_key(note):
+        # Find the English field based on the note's model
+        if note.model == listening_model:
+            english_field_index = 2
+        elif note.model == reading_model:
+            english_field_index = 1
+        elif note.model == speaking_model:
+            english_field_index = 0
+        else:
+            return 0  # Default case, should not happen
+
+        # Count words in the English phrase
+        return len(note.fields[english_field_index].split())
+
     # shuffle the notes
     shuffle(notes)
+    notes.sort(key=sort_key)
     for note in notes:
         deck.add_note(note)
+
     # Create a package with all decks
     # package = genanki.Package(list(decks.values()))
     package = genanki.Package(deck)
@@ -120,3 +280,14 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
     package.write_to_file(output_filename)
 
     print(f"Anki deck exported to {output_filename}")
+
+    # Clean up temporary MP3 files
+    for media_file in media_files:
+        file_path = os.path.join(output_dir, media_file)
+        try:
+            os.remove(file_path)
+            print(f"Deleted temporary file: {file_path}")
+        except OSError as e:
+            print(f"Error deleting file {file_path}: {e}")
+
+    print("Cleanup of temporary MP3 files completed.")
