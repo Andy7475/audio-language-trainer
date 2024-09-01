@@ -10,8 +10,9 @@ from src.dialogue_generation import (
     get_vocab_from_dialogue,
     select_grammar_concepts,
     update_grammar_concept_usage,
-    update_vocab_usage,
 )
+
+from src.utils import update_vocab_usage
 
 
 @pytest.fixture

@@ -116,39 +116,6 @@ def process_row(
     all_fields.append(dict(zip(headers, row)))
 
 
-async def process_anki_phrases(
-    english_phrases: List[str], translated_phrases: List[str], update_amount: int = 0
-):
-    """This will return a dictionary similar to the story_data_dict format that will have
-    the english and translated phrases and the audio, so we can re-use export_to_anki
-    function on that dictionary to create a deck (now with audio) and mixed up with reading,
-    listening, writing etc"""
-    # Remove duplicates while maintaining order
-    unique_pairs = list(dict.fromkeys(zip(english_phrases, translated_phrases)))
-
-    # Create a dictionary in the format similar to story_data_dict
-    processed_dict = {"anki_import": {"translated_phrase_list": unique_pairs}}
-
-    # Generate audio for the phrases
-    audio_segments = await async_process_phrases(unique_pairs)
-    processed_dict["anki_import"]["translated_phrase_list_audio"] = audio_segments
-
-    # Process vocabulary
-    nlp = spacy.load("en_core_web_sm")
-    vocab_to_update = set()
-
-    for english_phrase, _ in unique_pairs:
-        doc = nlp(english_phrase)
-        for token in doc:
-            if token.pos_ != "PUNCT":
-                vocab_to_update.add((token.lemma_.lower(), token.pos_))
-
-    # Update vocabulary usage
-    update_vocab_usage(vocab_to_update, update_amount)
-
-    return processed_dict
-
-
 def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name: str):
     """Once you have a completely populated stort_data_dict then we can export the phrases and audio
     as an Anki deck to support listening, speaking and reading practice"""  # Create output directory
@@ -219,19 +186,22 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             data["translated_phrase_list"], data["translated_phrase_list_audio"]
         ):
             # Generate unique filenames for audio
-            target_audio_slow = f"{uuid.uuid4()}.mp3"
+            # target_audio_slow = f"{uuid.uuid4()}.mp3"
             target_audio_normal = f"{uuid.uuid4()}.mp3"
 
             # Export audio segments
-            audio_segments[1].export(
-                os.path.join(output_dir, target_audio_slow), format="mp3"
-            )
-            audio_segments[2].export(
+            if isinstance(audio_segments, AudioSegment):
+                target_normal_audio_segment = audio_segments
+            elif isinstance(audio_segments, List):
+                target_normal_audio_segment = audio_segments[2]
+            else:
+                raise Exception(f"Expecting a List or AudioSegment in {audio_segments}")
+            target_normal_audio_segment.export(
                 os.path.join(output_dir, target_audio_normal), format="mp3"
             )
 
             # Add to media files list
-            media_files.extend([target_audio_slow, target_audio_normal])
+            media_files.extend([target_audio_normal])
 
             # Create notes for each card type
             listening_note = genanki.Note(

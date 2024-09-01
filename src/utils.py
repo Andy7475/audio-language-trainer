@@ -2,6 +2,9 @@ import json
 import os
 import re
 from collections import defaultdict
+import subprocess
+import sys
+from typing import List, Set, Tuple
 
 from anthropic import AnthropicVertex
 from dotenv import load_dotenv
@@ -12,12 +15,71 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+import spacy
 
 from src.config_loader import config
 
 load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
+
+
+def ensure_spacy_model(model_name="en_core_web_md"):
+    try:
+        spacy.load(model_name)
+    except OSError:
+        print(f"Downloading spaCy model {model_name}...")
+        subprocess.check_call([sys.executable, "-m", "spacy", "download", model_name])
+
+
+def extract_vocab_and_pos(english_phrases: List[str]) -> List[Tuple[str, str]]:
+    """Returns the (lemma and POS) for feeding into update_vocab_usage, as a list."""
+    # Process vocabulary
+    ensure_spacy_model()
+    nlp = spacy.load("en_core_web_md")
+
+    vocab_set = set()
+    excluded_names = {"sam", "alex"}
+
+    for phrase in english_phrases:
+        doc = nlp(phrase)
+
+        for token in doc:
+            if (
+                token.pos_ != "PUNCT"
+                and token.ent_type_ != "PERSON"
+                and token.text.lower() not in excluded_names
+            ):
+                vocab_set.add((token.lemma_.lower(), token.pos_))
+
+    return vocab_set
+
+
+def update_vocab_usage(used_words: Set[Tuple[str, str]], update_amount: int = 1):
+    """Taking a list of (word, word_type) e.g. ('can', 'verbs') we update the vocab_usage
+    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
+    lessons. words that haven't been used have a higher chance of being sampled.
+
+    No return statement"""
+    # Load the current usage
+
+    vocab_usage = load_json(config.VOCAB_USAGE_PATH)
+    print(used_words)
+    # Update the usage count for each used word
+    for word, pos in used_words:
+        if pos in ["VERB", "AUX"]:
+            if word in vocab_usage["verbs"]:
+                vocab_usage["verbs"][word] += update_amount
+            else:
+                vocab_usage["verbs"][word] = update_amount
+        else:
+            if word in vocab_usage["vocab"]:
+                vocab_usage["vocab"][word] += update_amount
+            else:
+                vocab_usage["vocab"][word] = update_amount
+
+    # Save the updated usage dictionary
+    save_json(vocab_usage, config.VOCAB_USAGE_PATH)
 
 
 def convert_defaultdict(d):

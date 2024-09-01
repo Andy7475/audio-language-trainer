@@ -8,7 +8,6 @@
     "ANTHROPIC_REGION":"europe-west1",
     "THINKING_GAP_MS":3000,
     "SPEAKING_RATE_SLOW":0.5,
-    "GCS_BUCKET":"andy7475-audio-language-trainer",
     "PROJECT_NUMBER":307643465852,
     "TTS_REGION":"us-central1",
     "MAX_TTS_REQUESTS_PER_MINUTE":100,

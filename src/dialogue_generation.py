@@ -14,8 +14,10 @@ from src.config_loader import config
 from src.utils import (
     anthropic_generate,
     extract_json_from_llm_response,
+    extract_vocab_and_pos,
     load_json,
     save_json,
+    update_vocab_usage,
 )
 
 load_dotenv()  # so we can use environment variables for various global settings
@@ -213,33 +215,6 @@ def get_least_used_words(category, count):
     return selected_words
 
 
-def update_vocab_usage(used_words: Set[Tuple[str, str]], update_amount: int = 1):
-    """Taking a list of (word, word_type) e.g. ('can', 'verbs') we update the vocab_usage
-    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
-    lessons. words that haven't been used have a higher chance of being sampled.
-
-    No return statement"""
-    # Load the current usage
-
-    vocab_usage = load_json(config.VOCAB_USAGE_PATH)
-    print(used_words)
-    # Update the usage count for each used word
-    for word, pos in used_words:
-        if pos in ["VERB", "AUX"]:
-            if word in vocab_usage["verbs"]:
-                vocab_usage["verbs"][word] += update_amount
-            else:
-                vocab_usage["verbs"][word] = update_amount
-        else:
-            if word in vocab_usage["vocab"]:
-                vocab_usage["vocab"][word] += update_amount
-            else:
-                vocab_usage["vocab"][word] = update_amount
-
-    # Save the updated usage dictionary
-    save_json(vocab_usage, config.VOCAB_USAGE_PATH)
-
-
 def add_usage_to_words(word_list: List[str], category: str) -> str:
     """adds the number of times that words has been used to the word_list - getting
     this data from the vocab_usage file - this can then be issued as string into the prompt
@@ -285,35 +260,15 @@ def generate_dialogue(dialogue_prompt: str):
         return None
 
 
-def ensure_spacy_model(model_name="en_core_web_md"):
-    try:
-        spacy.load(model_name)
-    except OSError:
-        print(f"Downloading spaCy model {model_name}...")
-        subprocess.check_call([sys.executable, "-m", "spacy", "download", model_name])
-
-
 def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
     """
     For a given English dialogue, extracts the vocab used as the lemmas.
     Returns a set of tuples of the form (lemma, POS) e.g. ("go", "VERB")
     Excludes punctuation, persons identified by spaCy, and the names 'sam' and 'alex'.
     """
-    ensure_spacy_model()
-    nlp = spacy.load("en_core_web_md")
 
-    vocab_set = set()
-    excluded_names = {"sam", "alex"}
-
+    english_phrases = []
     for utterance in dialogue:
-        doc = nlp(utterance["text"])
+        english_phrases.append(utterance["text"])
 
-        for token in doc:
-            if (
-                token.pos_ != "PUNCT"
-                and token.ent_type_ != "PERSON"
-                and token.text.lower() not in excluded_names
-            ):
-                vocab_set.add((token.lemma_.lower(), token.pos_))
-
-    return vocab_set
+    return extract_vocab_and_pos(english_phrases)
