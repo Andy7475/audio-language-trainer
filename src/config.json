@@ -8,8 +8,11 @@
     "ANTHROPIC_REGION":"europe-west1",
     "THINKING_GAP_MS":3000,
     "SPEAKING_RATE_SLOW":0.5,
-    "GCS_BUCKET":"andy7475-audio-language-trainer",
     "PROJECT_NUMBER":307643465852,
     "TTS_REGION":"us-central1",
-    "MAX_TTS_REQUESTS_PER_MINUTE":100
+    "MAX_TTS_REQUESTS_PER_MINUTE":100,
+    "GRAMMAR_USAGE_PATH":"../data/grammar_concepts_usage.json",
+    "VOCAB_USAGE_PATH":"../data/vocab_usage.json",
+    "VOCAB_LIST":"../data/known_vocab_list.json",
+    "GRAMMAR_CONCEPTS":"../data/grammar_concepts.json"
 }
