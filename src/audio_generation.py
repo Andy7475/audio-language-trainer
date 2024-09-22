@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 import io
 import multiprocessing
 import os
@@ -298,8 +299,7 @@ def generate_audio_from_dialogue(
         texts, language_codes, voice_names, speaking_rates
     )
 
-
-def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file):
+def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file, album_name, track_title, track_number, total_tracks=6):
     # Ensure the output directory exists
     output_dir = "../outputs/"
     os.makedirs(output_dir, exist_ok=True)
@@ -330,16 +330,22 @@ def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file):
     temp_m4a = full_output_path + "_temp"
     combined_audio.export(temp_m4a, format="ipod")
 
-    # Add lyrics to the M4A file
+    # Add metadata to the M4A file
     audio = MP4(temp_m4a)
 
     # Join all lyrics into a single string
     lyrics_text = "\n".join(timed_lyrics)
 
-    # Add lyrics using the standard lyrics tag
-    audio["\xa9lyr"] = lyrics_text
+    # Add metadata
+    audio['\xa9nam'] = track_title  # Track Title
+    audio['\xa9alb'] = album_name   # Album Name
+    audio['trkn'] = [(track_number, total_tracks)]  # Track Number
+    audio['\xa9day'] = str(datetime.now().year)  # Year
+    audio['aART'] = 'Audio Language Trainer'  # Album Artist
+    audio['\xa9lyr'] = lyrics_text  # Lyrics
 
     audio.save()
 
     # Rename the temp file to the desired output name
     os.replace(temp_m4a, full_output_path)
+
