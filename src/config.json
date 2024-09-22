@@ -9,6 +9,7 @@
     "THINKING_GAP_MS":3000,
     "SPEAKING_RATE_SLOW":0.5,
     "PROJECT_NUMBER":307643465852,
+    "PROJECT_ID":"swedish-course",
     "TTS_REGION":"us-central1",
     "MAX_TTS_REQUESTS_PER_MINUTE":100,
     "GRAMMAR_USAGE_PATH":"../data/grammar_concepts_usage.json",
