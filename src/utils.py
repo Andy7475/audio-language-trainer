@@ -16,13 +16,34 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 import spacy
-
+import pycountry
 from src.config_loader import config
 
 load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 
+
+
+def get_language_name(language_code: str) -> str:
+    try:
+        return pycountry.languages.get(alpha_2=language_code).name
+    except AttributeError:
+        # If the language code is not found, return the code itself
+        return language_code.capitalize()
+    
+def generate_wiktionary_links(phrase: str, language_name: str) -> str:
+    words = phrase.split()
+    links = []
+    for word in words:
+        # Remove any punctuation from the word
+        clean_word = ''.join(char for char in word if char.isalnum())
+        if clean_word:
+            link = f'<a href="https://en.wiktionary.org/wiki/{clean_word}#{language_name}">{word}</a>'
+            links.append(link)
+        else:
+            links.append(word)
+    return ' '.join(links)
 
 def ensure_spacy_model(model_name="en_core_web_md"):
     try:
