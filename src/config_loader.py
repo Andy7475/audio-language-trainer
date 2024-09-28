@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import os
 import time
 from typing import Dict, Optional, List
+import pycountry
 
 # Assume these imports are available
 
@@ -16,6 +17,15 @@ class ConfigLoader:
         self.english_voice_models = {}
         self.target_language_voice_models = {}
         self._load_config()
+
+    def get_language_name(self) -> str:
+        language_name = pycountry.languages.get(alpha_2=self.config.TARGET_LANGUAGE)
+        if language_name:
+            return language_name.name.capitalize()
+        else:
+            raise AttributeError(
+                "Invalid TARGET_LANGUAGE code in config, use an Alpha-2 like 'en'"
+            )
 
     def _find_config_file(self, config_file):
         search_paths = [
@@ -46,6 +56,7 @@ class ConfigLoader:
             self.config = SimpleNamespace(**config_dict)
             self._last_load_time = time.time()
             self._file_modified_time = os.path.getmtime(self.config_file)
+            self.language_name = self.get_language_name()
             print(f"Successfully loaded config from: {self.config_file}")
             self._update_voice_models()
         except Exception as e:
@@ -199,13 +210,6 @@ class ConfigLoader:
                 self.config.USE_CHEAP_VOICE_MODELS,
             )
         return self.english_voice_models, self.target_language_voice_models
-
-
-config = ConfigLoader()
-
-print("Config loader initialized.")
-print(f"Config file location: {config.config_file}")
-print(f"Current working directory: {os.getcwd()}")
 
 
 config = ConfigLoader()

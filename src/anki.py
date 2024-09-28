@@ -6,13 +6,46 @@ from random import shuffle
 from typing import Dict, List, Tuple
 
 import genanki
+import requests
 import spacy
+from bs4 import BeautifulSoup
 from google.cloud import texttospeech
 from pydub import AudioSegment
 
 from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
+
+
+def generate_wiktionary_links(
+    phrase: str, language_name: str = config.language_name
+) -> str:
+    words = phrase.split()
+    links = []
+
+    for word in words:
+        clean_word = "".join(char for char in word if char.isalnum())
+        if clean_word:
+            url = f"https://en.wiktionary.org/wiki/{clean_word.lower()}"
+            try:
+                response = requests.get(url)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    language_section = soup.find("h2", {"id": language_name})
+
+                    if language_section:
+                        link = f'<a href="{url}#{language_name}">{word}</a>'
+                        links.append(link)
+                    else:
+                        links.append(word)
+                else:
+                    links.append(word)
+            except requests.RequestException:
+                links.append(word)
+        else:
+            links.append(word)
+
+    return " ".join(links)
 
 
 def inspect_anki_deck(filename: str):
