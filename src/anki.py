@@ -150,11 +150,53 @@ def process_row(
 
 
 def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name: str):
-    """Once you have a completely populated stort_data_dict then we can export the phrases and audio
-    as an Anki deck to support listening, speaking and reading practice"""  # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
-    # Create a model for each card type
+    # Common CSS for all card types
+    common_css = """
+    .card {
+        font-family: Arial, sans-serif;
+        font-size: 20px;
+        text-align: center;
+        color: black;
+        background-color: white;
+    }
+
+    .target-text {
+        font-size: 24px;
+        margin: 20px 0;
+    }
+    .english-text {
+        font-size: 22px;
+        color: #ffffff;
+        margin: 15px 0;
+        font-weight: bold;
+    }
+    .wiktionary-links {
+        margin-top: 20px;
+    }
+    .replay-button svg {
+  width: 60px;
+  height: 60px;
+}
+.replay-button svg circle {
+  fill: #4CAF50;
+}
+.replay-button svg path {
+  fill: white;
+  stroke: none;
+}
+    .wiktionary-links a {
+        display: inline-block;
+        margin: 5px;
+        padding: 10px 15px;
+        background-color: #f0f0f0;
+        border-radius: 5px;
+        text-decoration: none;
+        color: #333;
+    }
+    """
+
     listening_model = genanki.Model(
         1607392319,
         "Listening Practice",
@@ -162,14 +204,26 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             {"name": "TargetAudio"},
             {"name": "TargetText"},
             {"name": "EnglishText"},
+            {"name": "WiktionaryLinks"},  # New field for Wiktionary links
         ],
         templates=[
             {
                 "name": "Listening Card",
-                "qfmt": "{{TargetAudio}}",
-                "afmt": '{{FrontSide}}<hr id="answer">{{TargetText}}<br>{{EnglishText}}',
+                "qfmt": """
+                {{TargetAudio}}
+                """,
+                "afmt": """
+                {{FrontSide}}
+                <hr id="answer">
+                <div class="target-text">{{TargetText}}</div>
+                <div class="english-text">{{EnglishText}}</div>
+                <div class="wiktionary-links">
+                {{WiktionaryLinks}}
+                </div>
+                """,
             },
         ],
+        css=common_css,
     )
 
     reading_model = genanki.Model(
@@ -179,14 +233,26 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             {"name": "TargetText"},
             {"name": "EnglishText"},
             {"name": "TargetAudio"},
+            {"name": "WiktionaryLinks"},  # New field for Wiktionary links
         ],
         templates=[
             {
                 "name": "Reading Card",
-                "qfmt": "{{TargetText}}",
-                "afmt": '{{FrontSide}}<hr id="answer">{{EnglishText}}<br>{{TargetAudio}}',
+                "qfmt": """
+                <div class="target-text">{{TargetText}}</div>
+                """,
+                "afmt": """
+                {{FrontSide}}
+                <hr id="answer">
+                <div class="english-text">{{EnglishText}}</div>
+                {{TargetAudio}}
+                <div class="wiktionary-links">
+                {{WiktionaryLinks}}
+                </div>
+                """,
             },
         ],
+        css=common_css,
     )
 
     speaking_model = genanki.Model(
@@ -196,58 +262,85 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             {"name": "EnglishText"},
             {"name": "TargetText"},
             {"name": "TargetAudio"},
+            {"name": "WiktionaryLinks"},  # New field for Wiktionary links
         ],
         templates=[
             {
                 "name": "Speaking Card",
-                "qfmt": "{{EnglishText}}",
-                "afmt": '{{FrontSide}}<hr id="answer">{{TargetText}}<br>{{TargetAudio}}',
+                "qfmt": """
+                <div class="english-text">{{EnglishText}}</div>
+                """,
+                "afmt": """
+                {{FrontSide}}
+                <hr id="answer">
+                <div class="target-text">{{TargetText}}</div>
+                {{TargetAudio}}
+                <div class="wiktionary-links">
+                {{WiktionaryLinks}}
+                </div>
+                """,
             },
         ],
+        css=common_css,
     )
 
-    # Create a deck for each story part
-    # decks = {}
     media_files = []
     notes = []
     deck_id = uuid.uuid4().int & (1 << 31) - 1
     deck = genanki.Deck(deck_id, f"{story_name} - phrases")
 
     for _, data in story_data_dict.items():
-
         for (english, target), audio_segments in zip(
             data["translated_phrase_list"], data["translated_phrase_list_audio"]
         ):
-            # Generate unique filenames for audio
-            # target_audio_slow = f"{uuid.uuid4()}.mp3"
+            # Generate unique filename for audio
             target_audio_normal = f"{uuid.uuid4()}.mp3"
 
-            # Export audio segments
+            # Export audio segment
             if isinstance(audio_segments, AudioSegment):
                 target_normal_audio_segment = audio_segments
-            elif isinstance(audio_segments, List):
+            elif isinstance(audio_segments, List) and len(audio_segments) > 2:
                 target_normal_audio_segment = audio_segments[2]
             else:
-                raise Exception(f"Expecting a List or AudioSegment in {audio_segments}")
+                raise Exception(f"Unexpected audio format: {audio_segments}")
+
             target_normal_audio_segment.export(
                 os.path.join(output_dir, target_audio_normal), format="mp3"
             )
 
             # Add to media files list
-            media_files.extend([target_audio_normal])
+            media_files.append(target_audio_normal)
+
+            # Generate Wiktionary links
+            wiktionary_links = generate_wiktionary_links(target, config.language_name)
 
             # Create notes for each card type
             listening_note = genanki.Note(
                 model=listening_model,
-                fields=[f"[sound:{target_audio_normal}]", target, english],
+                fields=[
+                    f"[sound:{target_audio_normal}]",
+                    target,
+                    english,
+                    wiktionary_links,
+                ],
             )
             reading_note = genanki.Note(
                 model=reading_model,
-                fields=[target, english, f"[sound:{target_audio_normal}]"],
+                fields=[
+                    target,
+                    english,
+                    f"[sound:{target_audio_normal}]",
+                    wiktionary_links,
+                ],
             )
             speaking_note = genanki.Note(
                 model=speaking_model,
-                fields=[english, target, f"[sound:{target_audio_normal}]"],
+                fields=[
+                    english,
+                    target,
+                    f"[sound:{target_audio_normal}]",
+                    wiktionary_links,
+                ],
             )
 
             notes.extend([listening_note, reading_note, speaking_note])

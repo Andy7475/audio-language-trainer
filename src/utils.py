@@ -23,6 +23,62 @@ load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 
+from typing import Dict, List, Tuple
+from pydub import AudioSegment
+
+
+def create_test_story_dict(
+    story_data_dict: Dict[str, Dict], story_parts: int = 2, phrases: int = 2
+) -> Dict[str, Dict]:
+    """
+    Create a smaller version of the story_data_dict for testing purposes.
+
+    Args:
+    story_data_dict (Dict[str, Dict]): The original story data dictionary.
+    story_parts (int): Number of story parts to include in the test dictionary.
+    phrases (int): Number of phrases to include in each story part.
+
+    Returns:
+    Dict[str, Dict]: A smaller version of the story data dictionary for testing.
+    """
+    test_dict = {}
+
+    for i, (part_key, part_data) in enumerate(story_data_dict.items()):
+        if i >= story_parts:
+            break
+
+        test_dict[part_key] = {
+            "translated_phrase_list": [],
+            "translated_phrase_list_audio": [],
+        }
+
+        for j in range(min(phrases, len(part_data["translated_phrase_list"]))):
+            test_dict[part_key]["translated_phrase_list"].append(
+                part_data["translated_phrase_list"][j]
+            )
+
+            # Check if audio data exists and is in the correct format
+            if j < len(part_data["translated_phrase_list_audio"]):
+                audio_data = part_data["translated_phrase_list_audio"][j]
+                if isinstance(audio_data, AudioSegment):
+                    test_dict[part_key]["translated_phrase_list_audio"].append(
+                        audio_data
+                    )
+                elif (
+                    isinstance(audio_data, list)
+                    and len(audio_data) > 0
+                    and isinstance(audio_data[0], AudioSegment)
+                ):
+                    test_dict[part_key]["translated_phrase_list_audio"].append(
+                        audio_data[0]
+                    )
+                else:
+                    print(
+                        f"Warning: Unexpected audio data format in part {part_key}, phrase {j}"
+                    )
+
+    return test_dict
+
 
 def ensure_spacy_model(model_name="en_core_web_md"):
     try:
