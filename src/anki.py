@@ -163,9 +163,31 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
     }
 
     .target-text {
-        font-size: 24px;
-        margin: 20px 0;
-    }
+  font-size: 28px;
+  margin: 20px 0;
+  font-weight: bold;
+  cursor: pointer;
+  position: relative;
+}
+
+.target-text::after {
+  content: 'Copied!';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4CAF50;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.target-text.copied::after {
+  opacity: 1;
+}
     .english-text {
         font-size: 22px;
         margin: 15px 0;
@@ -196,6 +218,22 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
     }
     """
 
+    card_back = """
+        <script>
+        function copyText(element) {
+        var textToCopy = element.textContent;
+        navigator.clipboard.writeText(textToCopy).then(function() {
+            element.classList.add('copied');
+            setTimeout(function() {
+            element.classList.remove('copied');
+            }, 1000);
+        }).catch(function(err) {
+            console.error('Failed to copy text: ', err);
+        });
+        }
+        </script>
+        """
+
     listening_model = genanki.Model(
         1607392319,
         "Listening Practice",
@@ -203,23 +241,22 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             {"name": "TargetAudio"},
             {"name": "TargetText"},
             {"name": "EnglishText"},
-            {"name": "WiktionaryLinks"},  # New field for Wiktionary links
+            {"name": "WiktionaryLinks"},
         ],
         templates=[
             {
                 "name": "Listening Card",
-                "qfmt": """
-                {{TargetAudio}}
-                """,
-                "afmt": """
-                {{FrontSide}}
-                <hr id="answer">
-                <div class="target-text">{{TargetText}}</div>
-                <div class="english-text">{{EnglishText}}</div>
-                <div class="wiktionary-links">
-                {{WiktionaryLinks}}
-                </div>
-                """,
+                "qfmt": "{{TargetAudio}}",
+                "afmt": f"""
+            {{{{FrontSide}}}}
+            <hr id="answer">
+            <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
+            <div class="english-text">{{{{EnglishText}}}}</div>
+            <div class="wiktionary-links">
+            {{{{WiktionaryLinks}}}}
+            </div>
+            {card_back}
+            """,
             },
         ],
         css=common_css,
@@ -232,22 +269,23 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             {"name": "TargetText"},
             {"name": "EnglishText"},
             {"name": "TargetAudio"},
-            {"name": "WiktionaryLinks"},  # New field for Wiktionary links
+            {"name": "WiktionaryLinks"},
         ],
         templates=[
             {
                 "name": "Reading Card",
                 "qfmt": """
-                <div class="target-text">{{TargetText}}</div>
+                <div class="target-text" onclick="copyText(this)">{{TargetText}}</div>
                 """,
-                "afmt": """
-                {{FrontSide}}
+                "afmt": f"""
+                {{{{FrontSide}}}}
                 <hr id="answer">
-                <div class="english-text">{{EnglishText}}</div>
-                {{TargetAudio}}
+                <div class="english-text">{{{{EnglishText}}}}</div>
+                {{{{TargetAudio}}}}
                 <div class="wiktionary-links">
-                {{WiktionaryLinks}}
+                {{{{WiktionaryLinks}}}}
                 </div>
+                {card_back}
                 """,
             },
         ],
@@ -261,7 +299,7 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             {"name": "EnglishText"},
             {"name": "TargetText"},
             {"name": "TargetAudio"},
-            {"name": "WiktionaryLinks"},  # New field for Wiktionary links
+            {"name": "WiktionaryLinks"},
         ],
         templates=[
             {
@@ -269,14 +307,15 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
                 "qfmt": """
                 <div class="english-text">{{EnglishText}}</div>
                 """,
-                "afmt": """
-                {{FrontSide}}
+                "afmt": f"""
+                {{{{FrontSide}}}}
                 <hr id="answer">
-                <div class="target-text">{{TargetText}}</div>
-                {{TargetAudio}}
+                <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
+                {{{{TargetAudio}}}}
                 <div class="wiktionary-links">
-                {{WiktionaryLinks}}
+                {{{{WiktionaryLinks}}}}
                 </div>
+                {card_back}
                 """,
             },
         ],
