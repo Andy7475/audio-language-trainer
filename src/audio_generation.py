@@ -14,7 +14,7 @@ import librosa
 import numpy as np
 import soundfile as sf
 from google.cloud import texttospeech, texttospeech_v1
-from mutagen.mp4 import MP4
+from mutagen.mp4 import MP4, MP4Cover
 from pydub import AudioSegment
 
 from src.config_loader import config
@@ -299,7 +299,17 @@ def generate_audio_from_dialogue(
         texts, language_codes, voice_names, speaking_rates
     )
 
-def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file, album_name, track_title, track_number, total_tracks=6):
+
+def create_m4a_with_timed_lyrics(
+    audio_segments,
+    phrases,
+    output_file,
+    album_name,
+    track_title,
+    track_number,
+    total_tracks=6,
+    image_data=None,
+):
     # Ensure the output directory exists
     output_dir = "../outputs/"
     os.makedirs(output_dir, exist_ok=True)
@@ -337,17 +347,19 @@ def create_m4a_with_timed_lyrics(audio_segments, phrases, output_file, album_nam
     lyrics_text = "\n".join(timed_lyrics)
 
     # Add metadata
-    audio['\xa9nam'] = track_title  # Track Title
-    audio['\xa9alb'] = album_name   # Album Name
-    audio['trkn'] = [(track_number, total_tracks)]  # Track Number
-    audio['\xa9day'] = str(datetime.now().year)  # Year
-    audio['aART'] = 'Audio Language Trainer'  # Album Artist
-    audio['\xa9lyr'] = lyrics_text  # Lyrics
-    audio['\xa9gen'] = 'Education'  # Genre set to Education
-    audio['pcst'] = True  # Podcast flag set to True
+    audio["\xa9nam"] = track_title  # Track Title
+    audio["\xa9alb"] = album_name  # Album Name
+    audio["trkn"] = [(track_number, total_tracks)]  # Track Number
+    audio["\xa9day"] = str(datetime.now().year)  # Year
+    audio["aART"] = "Audio Language Trainer"  # Album Artist
+    audio["\xa9lyr"] = lyrics_text  # Lyrics
+    audio["\xa9gen"] = "Education"  # Genre set to Education
+    audio["pcst"] = True  # Podcast flag set to True
+
+    if image_data:
+        audio["covr"] = [MP4Cover(image_data, imageformat=MP4Cover.FORMAT_JPEG)]
 
     audio.save()
 
     # Rename the temp file to the desired output name
     os.replace(temp_m4a, full_output_path)
-
