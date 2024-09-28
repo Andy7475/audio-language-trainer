@@ -20,3 +20,5 @@ python-dotenv
 requests
 soundfile                       #for speeding up dialogue
 spacy
+pycountry
+beautifulsoup4
