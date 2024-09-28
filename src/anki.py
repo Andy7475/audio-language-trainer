@@ -168,7 +168,6 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
     }
     .english-text {
         font-size: 22px;
-        color: #ffffff;
         margin: 15px 0;
         font-weight: bold;
     }

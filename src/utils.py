@@ -67,10 +67,10 @@ def create_test_story_dict(
                 elif (
                     isinstance(audio_data, list)
                     and len(audio_data) > 0
-                    and isinstance(audio_data[0], AudioSegment)
+                    and isinstance(audio_data[2], AudioSegment)
                 ):
                     test_dict[part_key]["translated_phrase_list_audio"].append(
-                        audio_data[0]
+                        audio_data[2]
                     )
                 else:
                     print(
