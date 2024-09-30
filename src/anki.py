@@ -15,6 +15,7 @@ from pydub import AudioSegment
 from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
+from src.utils import language_to_int
 
 
 def generate_wiktionary_links(
@@ -234,12 +235,12 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
         </script>
         """
 
-    listening_model = genanki.Model(
-        1607392319,
-        "Listening Practice",
+    language_practice_model = genanki.Model(
+        1607392310,
+        "Language Practice",
         fields=[
+            {"name": "TargetText"},  # top field is the sort field
             {"name": "TargetAudio"},
-            {"name": "TargetText"},
             {"name": "EnglishText"},
             {"name": "WiktionaryLinks"},
         ],
@@ -258,20 +259,6 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             {card_back}
             """,
             },
-        ],
-        css=common_css,
-    )
-
-    reading_model = genanki.Model(
-        1607392320,
-        "Reading Practice",
-        fields=[
-            {"name": "TargetText"},
-            {"name": "EnglishText"},
-            {"name": "TargetAudio"},
-            {"name": "WiktionaryLinks"},
-        ],
-        templates=[
             {
                 "name": "Reading Card",
                 "qfmt": """
@@ -288,20 +275,6 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
                 {card_back}
                 """,
             },
-        ],
-        css=common_css,
-    )
-
-    speaking_model = genanki.Model(
-        1607392321,
-        "Speaking Practice",
-        fields=[
-            {"name": "EnglishText"},
-            {"name": "TargetText"},
-            {"name": "TargetAudio"},
-            {"name": "WiktionaryLinks"},
-        ],
-        templates=[
             {
                 "name": "Speaking Card",
                 "qfmt": """
@@ -324,8 +297,8 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
 
     media_files = []
     notes = []
-    deck_id = uuid.uuid4().int & (1 << 31) - 1
-    deck = genanki.Deck(deck_id, f"{story_name} - phrases")
+    deck_id = language_to_int(config.language_name)
+    deck = genanki.Deck(deck_id, f"{config.language_name} - phrases")
 
     for _, data in story_data_dict.items():
         for (english, target), audio_segments in zip(
@@ -353,47 +326,23 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
             wiktionary_links = generate_wiktionary_links(target, config.language_name)
 
             # Create notes for each card type
-            listening_note = genanki.Note(
-                model=listening_model,
+            note = genanki.Note(
+                model=language_practice_model,
                 fields=[
-                    f"[sound:{target_audio_normal}]",
                     target,
+                    f"[sound:{target_audio_normal}]",
                     english,
                     wiktionary_links,
                 ],
-            )
-            reading_note = genanki.Note(
-                model=reading_model,
-                fields=[
-                    target,
-                    english,
-                    f"[sound:{target_audio_normal}]",
-                    wiktionary_links,
-                ],
-            )
-            speaking_note = genanki.Note(
-                model=speaking_model,
-                fields=[
-                    english,
-                    target,
-                    f"[sound:{target_audio_normal}]",
-                    wiktionary_links,
-                ],
+                guid=language_to_int(target),
             )
 
-            notes.extend([listening_note, reading_note, speaking_note])
+            notes.append(note)
             # Add notes to the deck
 
     def sort_key(note):
         # Find the English field based on the note's model
-        if note.model == listening_model:
-            english_field_index = 2
-        elif note.model == reading_model:
-            english_field_index = 1
-        elif note.model == speaking_model:
-            english_field_index = 0
-        else:
-            return 0  # Default case, should not happen
+        return 2  # english is the 2nd field (0 index)
 
         # Count words in the English phrase
         return len(note.fields[english_field_index].split())

@@ -28,6 +28,26 @@ load_dotenv()  # so we can use environment variables for various global settings
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 
 
+def language_to_int(language_name: str, max_value: int = 1000000) -> int:
+    """
+    Convert a language name to a consistent integer value.
+
+    :param language_name: The name of the language
+    :param max_value: The maximum value for the generated integer (default: 1,000,000)
+    :return: An integer representation of the language name
+    """
+    # Normalize the input
+    normalized_name = language_name.lower().strip()
+
+    # Use Python's built-in hash function
+    hash_value = hash(normalized_name)
+
+    # Ensure the value is positive and within the desired range
+    positive_hash = abs(hash_value) % max_value
+
+    return positive_hash
+
+
 def generate_story_image(story_plan):
     """
     Generate an image for a story using Google Cloud Vertex AI's Image Generation API.
