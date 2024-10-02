@@ -15,7 +15,7 @@ from pydub import AudioSegment
 from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
-from src.utils import language_to_int
+from src.utils import string_to_large_int
 
 
 def generate_wiktionary_links(
@@ -297,7 +297,7 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
 
     media_files = []
     notes = []
-    deck_id = language_to_int(config.language_name)
+    deck_id = string_to_large_int(config.language_name)
     deck = genanki.Deck(deck_id, f"{config.language_name} - phrases")
 
     for _, data in story_data_dict.items():
@@ -334,7 +334,7 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
                     english,
                     wiktionary_links,
                 ],
-                guid=language_to_int(target),
+                guid=string_to_large_int(target),
             )
 
             notes.append(note)
