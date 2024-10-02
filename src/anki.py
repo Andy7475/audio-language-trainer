@@ -1,6 +1,7 @@
 import csv
 import io
 import os
+import urllib.parse
 import uuid
 from random import shuffle
 from typing import Dict, List, Tuple
@@ -22,22 +23,30 @@ def generate_wiktionary_links(
     phrase: str, language_name: str = config.language_name
 ) -> str:
     words = phrase.split()
-    links = []
+    links: List[str] = []
 
     for word in words:
         clean_word = "".join(char for char in word if char.isalnum())
         if clean_word:
-            url = f"https://en.wiktionary.org/wiki/{clean_word.lower()}"
+            # Lowercase the word for URL and search, but keep original for display
+            lowercase_word = clean_word.lower()
+            # URL encode the lowercase word to handle non-ASCII characters
+            encoded_word = urllib.parse.quote(lowercase_word)
+            url = f"https://en.wiktionary.org/wiki/{encoded_word}"
             try:
                 response = requests.get(url)
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.content, "html.parser")
+                    # Look for the language section using h2 tag
                     language_section = soup.find("h2", {"id": language_name})
 
                     if language_section:
+                        # If found, create a link with the anchor to the specific language section
+                        # Use the original word (with original capitalization) for display
                         link = f'<a href="{url}#{language_name}">{word}</a>'
                         links.append(link)
                     else:
+                        # If not found, just add the original word without a link
                         links.append(word)
                 else:
                     links.append(word)
