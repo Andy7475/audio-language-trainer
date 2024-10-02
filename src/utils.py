@@ -22,30 +22,27 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 from vertexai.preview.vision_models import ImageGenerationModel
 import pycountry
 from src.config_loader import config
+import numpy as np
+import hashlib
 
 load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 
 
-def language_to_int(language_name: str, max_value: int = 1000000) -> int:
-    """
-    Convert a language name to a consistent integer value.
-
-    :param language_name: The name of the language
-    :param max_value: The maximum value for the generated integer (default: 1,000,000)
-    :return: An integer representation of the language name
-    """
-    # Normalize the input
-    normalized_name = language_name.lower().strip()
-
-    # Use Python's built-in hash function
-    hash_value = hash(normalized_name)
-
-    # Ensure the value is positive and within the desired range
-    positive_hash = abs(hash_value) % max_value
-
-    return positive_hash
+def string_to_large_int(s: str) -> int:
+    # Encode the string to bytes
+    encoded = s.encode("utf-8")
+    # Create a SHA-256 hash
+    hash_object = hashlib.sha256(encoded)
+    # Get the hexadecimal representation
+    hex_dig = hash_object.hexdigest()
+    # Take the first 16 characters (64 bits) of the hex string
+    truncated_hex = hex_dig[:16]
+    # Convert hex to integer
+    large_int = int(truncated_hex, 16)
+    # Ensure the value is positive and within SQLite's signed 64-bit integer range
+    return large_int & 0x7FFFFFFFFFFFFFFF
 
 
 def generate_story_image(story_plan):
