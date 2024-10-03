@@ -23,7 +23,10 @@ from src.dialogue_generation import get_least_used_words, add_usage_to_words
 
 
 def create_story_plan_and_dialogue(
-    story_name: str, n_verbs: int = 10, n_vocab: int = 30
+    story_name: str,
+    n_verbs: int = 10,
+    n_vocab: int = 30,
+    output_dir: str = "../outputs",
 ) -> Dict:
     """Given a brief story name and a verb and vocab count, will return a dictionary
     containing the plan for the story and dialogue"""
@@ -37,6 +40,7 @@ def create_story_plan_and_dialogue(
         story_guide=story_name,
         verb_list=verbs_for_story,
         vocab_list=vocab_for_story,
+        output_dir=output_dir,
         test=False,
         story_name=story_name,
     )

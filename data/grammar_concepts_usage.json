@@ -2,79 +2,79 @@
   "verb_tenses": {
     "Simple Present": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I drink coffee"
     },
     "Present Continuous": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I am drinking coffee"
     },
     "Simple Past": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I drank coffee"
     },
     "Past Continuous": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I was drinking coffee"
     },
     "Present Perfect": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I have drunk coffee"
     },
     "Past Perfect": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I had drunk coffee"
     },
     "Simple Future": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I will drink coffee"
     },
     "Future Continuous": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I will be drinking coffee"
     },
     "Present Perfect Continuous": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I have been drinking coffee"
     },
     "Past Perfect Continuous": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I had been drinking coffee"
     },
     "Future Perfect": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I will have drunk coffee"
     },
     "Future Perfect Continuous": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "I will have been drinking coffee"
     }
   },
   "noun_forms": {
     "Singular": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "coffee"
     },
     "Plural": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "coffees"
     },
     "Countable": {
       "use": true,
-      "times_seen": 3,
+      "times_seen": 4,
       "example": "cups of coffee"
     },
     "Uncountable": {
@@ -328,87 +328,87 @@
     },
     "Double negation": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "I don't never drink coffee"
     }
   },
   "modals": {
     "Ability": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "I can make good coffee"
     },
     "Permission": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "May I have some coffee?"
     },
     "Obligation": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "You must try this coffee"
     },
     "Possibility": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "It might be too late for coffee"
     }
   },
   "quantifiers": {
     "Quantifiers": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "Much coffee, many cups, a lot of beans, few sips, little cream, some sugar, any milk"
     }
   },
   "articles": {
     "Definite article": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "the coffee"
     },
     "Indefinite articles": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "a coffee, an espresso"
     },
     "Zero article": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "Coffee is popular"
     }
   },
   "conjunctions": {
     "Coordinating": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "I like coffee and tea"
     },
     "Subordinating": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "I drink coffee because I like it"
     },
     "Correlative": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "Either you drink coffee or you don't"
     }
   },
   "prepositions": {
     "Time prepositions": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "before coffee, after lunch"
     },
     "Place prepositions": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "at the cafe, in the mug"
     },
     "Direction prepositions": {
       "use": true,
-      "times_seen": 2,
+      "times_seen": 3,
       "example": "into the cup, through the filter"
     }
   }

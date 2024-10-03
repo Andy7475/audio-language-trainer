@@ -22,14 +22,13 @@ from src.utils import (
 
 load_dotenv()  # so we can use environment variables for various global settings
 
-STORY_PLAN_PATH = "../outputs/"
-
 
 def generate_story_plan(
     story_guide: str,
     verb_list: List[str],
     vocab_list: List[str],
     story_name: str,
+    output_dir: str,
     test=True,
 ) -> dict:
     """This function generates an outline story following the story_structure written below.
@@ -75,7 +74,10 @@ def generate_story_plan(
     story_plan = {k.lower(): v for k, v in story_plan.items()}
 
     story_name = story_name.replace(" ", "_")
-    save_json(story_plan, STORY_PLAN_PATH + "story_plan_" + story_name + ".json")
+    save_json(
+        story_plan,
+        os.path.join(output_dir, "story_plan_" + story_name + ".json"),
+    )
     return story_plan
 
 
