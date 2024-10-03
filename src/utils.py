@@ -183,7 +183,6 @@ def update_vocab_usage(used_words: Set[Tuple[str, str]], update_amount: int = 1)
     # Load the current usage
 
     vocab_usage = load_json(config.VOCAB_USAGE_PATH)
-    print(used_words)
     # Update the usage count for each used word
     for word, pos in used_words:
         if pos in ["VERB", "AUX"]:
