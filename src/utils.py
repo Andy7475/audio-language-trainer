@@ -137,24 +137,8 @@ def create_test_story_dict(
             )
 
             # Check if audio data exists and is in the correct format
-            if j < len(part_data["translated_phrase_list_audio"]):
-                audio_data = part_data["translated_phrase_list_audio"][j]
-                if isinstance(audio_data, AudioSegment):
-                    test_dict[part_key]["translated_phrase_list_audio"].append(
-                        audio_data
-                    )
-                elif (
-                    isinstance(audio_data, list)
-                    and len(audio_data) > 0
-                    and isinstance(audio_data[2], AudioSegment)
-                ):
-                    test_dict[part_key]["translated_phrase_list_audio"].append(
-                        audio_data[2]
-                    )
-                else:
-                    print(
-                        f"Warning: Unexpected audio data format in part {part_key}, phrase {j}"
-                    )
+            audio_data = part_data["translated_phrase_list_audio"][j]
+            test_dict[part_key]["translated_phrase_list_audio"].append(audio_data)
 
     return test_dict
 
