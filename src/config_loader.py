@@ -28,26 +28,15 @@ class ConfigLoader:
             )
 
     def _find_config_file(self, config_file):
-        search_paths = [
-            os.getcwd(),  # Current working directory
-            os.path.dirname(os.path.abspath(__file__)),  # Directory of this script
-            os.path.dirname(
-                os.path.dirname(os.path.abspath(__file__))
-            ),  # Parent directory
-        ]
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        full_path = os.path.join(script_dir, config_file)
 
-        print(f"Searching for {config_file}...")
-        for path in search_paths:
-            full_path = os.path.join(path, config_file)
-            print(f"Checking: {full_path}")
-            if os.path.isfile(full_path):
-                print(f"Found config file at: {full_path}")
-                return full_path
-
-        print(f"Could not find {config_file}. Searched in:")
-        for path in search_paths:
-            print(f"  - {path}")
-        raise FileNotFoundError(f"Could not find {config_file}")
+        if os.path.isfile(full_path):
+            print(f"Found config file at: {full_path}")
+            return full_path
+        else:
+            print(f"Could not find {config_file} in {script_dir}")
+            raise FileNotFoundError(f"Could not find {config_file}")
 
     def _load_config(self):
         try:
@@ -57,6 +46,9 @@ class ConfigLoader:
             self._last_load_time = time.time()
             self._file_modified_time = os.path.getmtime(self.config_file)
             self.language_name = self.get_language_name()
+            print(
+                f"Language name: {self.language_name} determined from code {self.config.TARGET_LANGUAGE}"
+            )
             print(f"Successfully loaded config from: {self.config_file}")
             self._update_voice_models()
         except Exception as e:
@@ -213,7 +205,3 @@ class ConfigLoader:
 
 
 config = ConfigLoader()
-
-print("Config loader initialized.")
-print(f"Config file location: {config.config_file}")
-print(f"Current working directory: {os.getcwd()}")
