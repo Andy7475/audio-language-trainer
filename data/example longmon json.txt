@@ -1,0 +1,256 @@
+  {
+    "word": "acceptable",
+    "word_classes": [
+      "adj"
+    ],
+    "frequencies": [
+      "S3",
+      "W3"
+    ]
+  },
+  {
+    "word": "access",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S2",
+      "W1"
+    ]
+  },
+  {
+    "word": "accident",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S2",
+      "W2"
+    ]
+  },
+  {
+    "word": "accommodation",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S2",
+      "W2"
+    ]
+  },
+  {
+    "word": "accompany",
+    "word_classes": [
+      "v"
+    ],
+    "frequencies": [
+      "W2"
+    ]
+  },
+  {
+    "word": "according to",
+    "word_classes": [
+      "prep"
+    ],
+    "frequencies": [
+      "S2",
+      "W1"
+    ]
+  },
+  {
+    "word": "account",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S1",
+      "W1"
+    ]
+  },
+  {
+    "word": "account",
+    "word_classes": [
+      "v"
+    ],
+    "frequencies": [
+      "S3",
+      "W2"
+    ]
+  },
+  {
+    "word": "accurate",
+    "word_classes": [
+      "adj"
+    ],
+    "frequencies": [
+      "S2",
+      "W3"
+    ]
+  },
+  {
+    "word": "accuse",
+    "word_classes": [
+      "v"
+    ],
+    "frequencies": [
+      "W3"
+    ]
+  },
+  {
+    "word": "achieve",
+    "word_classes": [
+      "v"
+    ],
+    "frequencies": [
+      "S2",
+      "W1"
+    ]
+  },
+  {
+    "word": "achievement",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S3",
+      "W2"
+    ]
+  },
+  {
+    "word": "acid",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "W3"
+    ]
+  },
+  {
+    "word": "acknowledge",
+    "word_classes": [
+      "v"
+    ],
+    "frequencies": [
+      "S3",
+      "W3"
+    ]
+  },
+  {
+    "word": "acquire",
+    "word_classes": [
+      "v"
+    ],
+    "frequencies": [
+      "W2"
+    ]
+  },
+  {
+    "word": "across",
+    "word_classes": [
+      "adv",
+      "prep"
+    ],
+    "frequencies": [
+      "S1",
+      "W1"
+    ]
+  },
+  {
+    "word": "act",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S1",
+      "W1"
+    ]
+  },
+  {
+    "word": "act",
+    "word_classes": [
+      "v"
+    ],
+    "frequencies": [
+      "S2",
+      "W1"
+    ]
+  },
+  {
+    "word": "action",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S1",
+      "W1"
+    ]
+  },
+  {
+    "word": "active",
+    "word_classes": [
+      "adj"
+    ],
+    "frequencies": [
+      "S2",
+      "W2"
+    ]
+  },
+  {
+    "word": "activist",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S3"
+    ]
+  },
+  {
+    "word": "activity",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S2",
+      "W1"
+    ]
+  },
+  {
+    "word": "actor",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "W3"
+    ]
+  },
+  {
+    "word": "actual",
+    "word_classes": [
+      "adj"
+    ],
+    "frequencies": [
+      "S1",
+      "W2"
+    ]
+  },
+  {
+    "word": "actually",
+    "word_classes": [
+      "adv"
+    ],
+    "frequencies": [
+      "S1",
+      "W1"
+    ]
+  },
+  {
+    "word": "ad",
+    "word_classes": [
+      "n"
+    ],
+    "frequencies": [
+      "S3",
+      "W3"
+    ]
+  },
+  

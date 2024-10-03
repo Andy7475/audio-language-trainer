@@ -5,6 +5,63 @@ from src.dialogue_generation import anthropic_generate, extract_json_from_llm_re
 from typing import Dict, List
 from src.config_loader import config
 
+import json
+import random
+from typing import List, Dict, Tuple
+from collections import defaultdict
+
+
+def load_longman_data(file_path: str) -> List[Dict]:
+    with open(file_path, "r") as file:
+        return json.load(file)
+
+
+def filter_s1_words(data: List[Dict]) -> Dict[str, List[str]]:
+    s1_words = defaultdict(list)
+    for entry in data:
+        if "S1" in entry.get("frequencies", []):
+            for word_class in entry.get("word_classes", []):
+                s1_words[word_class].append(entry["word"])
+    return dict(s1_words)
+
+
+def generate_phrases_with_llm(
+    word_list: List[str], num_phrases: int = 100
+) -> List[str]:
+
+    prompt = f"""
+    Task: Generate {num_phrases} unique English phrases using words from the provided list. Each phrase should be 6-9 words long and use a variety of verb tenses.
+
+    Word List: {', '.join(word_list)}
+
+    Requirements:
+    1. Use only words from the provided list, common articles (a, an, the), and basic prepositions (we, you, they etc).
+    2. Vary the verb tenses (present, past, future) across the phrases.
+    3. Create meaningful and diverse phrases that could be useful for language learners.
+    4. Ensure you use each word at least once
+
+    Please return your response in the following JSON format:
+    {{
+        "phrases": [
+            "Phrase 1",
+            "Phrase 2",
+            ...
+        ]
+    }}
+    """
+
+    llm_response = anthropic_generate(prompt)
+    # result = extract_json_from_llm_response(llm_response)
+
+    return llm_response
+
+
+def update_word_usage(data: List[Dict], used_words: List[str]) -> List[Dict]:
+    for entry in data:
+        if entry["word"] in used_words:
+            entry["used"] = True
+    return data
+
 
 def get_text_from_dialogue(dialogue: List[Dict[str, str]]) -> List[str]:
     """ignoring the speaker, just gets all the utterances from a dialogue and puts
