@@ -287,6 +287,8 @@ def extract_json_from_llm_response(response):
 def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
     # Register a Unicode font that supports Serbian characters
 
+    FONT_NAME = "Roboto"
+
     font_path = os.path.join(os.path.dirname(__file__), "DejaVuSans.ttf")
     pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
 
@@ -296,10 +298,10 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
     styles = getSampleStyleSheet()
     title_style = styles["Heading1"]
     title_style.alignment = 1  # Center alignment
-    title_style.fontName = "DejaVuSans"
+    title_style.fontName = FONT_NAME
     subtitle_style = styles["Heading2"]
     subtitle_style.alignment = 1  # Center alignment
-    subtitle_style.fontName = "DejaVuSans"
+    subtitle_style.fontName = FONT_NAME
 
     # Create a custom style for table cells
     cell_style = ParagraphStyle(
@@ -308,7 +310,7 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
         fontSize=10,
         leading=12,
         alignment=TA_LEFT,
-        fontName="DejaVuSans",
+        fontName=FONT_NAME,
     )
 
     elements.append(Paragraph("Comprehensive Story Translation", title_style))
@@ -335,7 +337,7 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
                         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
                         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                         ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                        ("FONTNAME", (0, 0), (-1, -1), "DejaVuSans"),
+                        ("FONTNAME", (0, 0), (-1, -1), FONT_NAME),
                         ("FONTSIZE", (0, 0), (-1, 0), 14),
                         ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                         ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
@@ -370,7 +372,7 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
                         ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
                         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
                         ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                        ("FONTNAME", (0, 0), (-1, -1), "DejaVuSans"),
+                        ("FONTNAME", (0, 0), (-1, -1), FONT_NAME),
                         ("FONTSIZE", (0, 0), (-1, 0), 14),
                         ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
                         ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
