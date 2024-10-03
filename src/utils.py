@@ -220,7 +220,7 @@ def load_json(file_path):
 def save_json(data, file_path):
     with open(file_path, "w") as file:
         json.dump(data, file, indent=2)
-    print(f"Data saved to {file_path}")
+    # print(f"Data saved to {file_path}")
 
 
 def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:
