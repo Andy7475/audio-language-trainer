@@ -47,6 +47,97 @@ def string_to_large_int(s: str) -> int:
     return large_int & 0x7FFFFFFFFFFFFFFF
 
 
+def create_image_generation_prompt(phrase):
+    """
+    Create a specific image generation prompt based on a language learning phrase.
+
+    :param phrase: The language learning phrase to visualize
+    :return: A specific prompt for image generation
+    """
+    llm_prompt = f"""
+    Given the following phrase for language learners: "{phrase}"
+    
+    Create a specific, detailed prompt for generating an image that will help learners remember this phrase.
+    Focus on key nouns, verbs, or concepts that can be visually represented.
+    The image should be memorable and directly related to the meaning of the phrase.
+    
+    Your prompt should:
+    1. Identify 1-3 key elements from the phrase to visualize.
+    2. Describe these elements in vivid, visual detail.
+    3. Suggest a simple scene or composition that incorporates these elements.
+    4. Include any relevant colors, emotions, or atmosphere that would enhance memory retention.
+    5. Ensure the image concept is clear and easily understandable at a glance.
+    
+    Provide only the image generation prompt, without any explanations or additional text.
+    """
+
+    # Use the anthropic_generate function to get the LLM's response
+    image_prompt = anthropic_generate(llm_prompt)
+
+    # Add some standard instructions to ensure consistency in style and format
+    final_prompt = f"""
+    Create a vivid, memorable image for language learners based on the following description:
+    
+    {image_prompt}
+    
+    The image should be:
+    - Colorful and engaging
+    - Styled like a modern, slightly stylized illustration (not photorealistic)
+    - Suitable for display on a mobile phone screen (square 1:1 aspect ratio)
+    - Clear and easily understandable at a glance
+    """
+
+    return final_prompt
+
+
+def generate_language_learning_image(phrase):
+    """
+    Generate an image for language learning using Google Cloud Vertex AI's Image Generation API.
+
+    :param phrase: A string containing the phrase to visualize
+    :return: Image data as bytes
+    """
+    # Initialize Vertex AI
+    vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
+
+    # Initialize the Image Generation model
+    # imagegeneration@006
+    # "imagen-3.0-generate-001"
+    # imagen-3.0-fast-generate-001
+    generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
+
+    prompt = create_image_generation_prompt(phrase)
+    print(f"our image gen prompt is {prompt}")
+
+    # Generate the image
+    images = generation_model.generate_images(
+        prompt=prompt,
+        number_of_images=1,
+        aspect_ratio="1:1",
+        # negative_prompt="text or letters",
+    )
+
+    # Get the first (and only) generated image
+    generated_image = images[0]
+
+    # Get the image bytes directly
+    image_data = generated_image._image_bytes
+
+    # Convert the image to PIL Image for potential resizing
+    image = Image.open(io.BytesIO(image_data))
+
+    # Resize the image if it's not 500x500
+    if image.size != (500, 500):
+        image = image.resize((500, 500))
+
+        # If we resized, convert the resized image back to bytes
+        img_byte_arr = io.BytesIO()
+        image.save(img_byte_arr, format="JPEG")
+        image_data = img_byte_arr.getvalue()
+
+    return image_data
+
+
 def generate_story_image(story_plan):
     """
     Generate an image for a story using Google Cloud Vertex AI's Image Generation API.
@@ -107,7 +198,10 @@ from pydub import AudioSegment
 
 
 def create_test_story_dict(
-    story_data_dict: Dict[str, Dict], story_parts: int = 2, phrases: int = 2
+    story_data_dict: Dict[str, Dict],
+    story_parts: int = 2,
+    phrases: int = 2,
+    from_index: int = 0,
 ) -> Dict[str, Dict]:
     """
     Create a smaller version of the story_data_dict for testing purposes.
@@ -131,14 +225,20 @@ def create_test_story_dict(
             "translated_phrase_list_audio": [],
         }
 
-        for j in range(min(phrases, len(part_data["translated_phrase_list"]))):
+        for j in range(
+            from_index,
+            min(phrases + from_index, len(part_data["translated_phrase_list"])),
+        ):
             test_dict[part_key]["translated_phrase_list"].append(
                 part_data["translated_phrase_list"][j]
             )
 
             # Check if audio data exists and is in the correct format
-            audio_data = part_data["translated_phrase_list_audio"][j]
-            test_dict[part_key]["translated_phrase_list_audio"].append(audio_data)
+            try:
+                audio_data = part_data["translated_phrase_list_audio"][j]
+                test_dict[part_key]["translated_phrase_list_audio"].append(audio_data)
+            except KeyError:
+                pass
 
     return test_dict
 
@@ -172,6 +272,69 @@ def extract_vocab_and_pos(english_phrases: List[str]) -> List[Tuple[str, str]]:
                 vocab_set.add((token.lemma_.lower(), token.pos_))
 
     return vocab_set
+
+
+def extract_substring_matches(
+    new_phrases: List[str], target_phrases: Set[str]
+) -> Set[str]:
+    # Convert all new phrases to lowercase
+    lowercase_phrases = [phrase.lower() for phrase in new_phrases]
+
+    # Convert all target phrases to lowercase
+    lowercase_targets = [target.lower() for target in target_phrases]
+
+    # Initialize a set to store matched substrings
+    matched_substrings = set()
+
+    # Check each target phrase against each new phrase
+    for target in lowercase_targets:
+        # Create a regex pattern that matches the target as a whole word or phrase
+        pattern = r"\b" + re.escape(target) + r"\b"
+        for phrase in lowercase_phrases:
+            if re.search(pattern, phrase):
+                matched_substrings.add(target)
+                break  # Move to the next target once a match is found
+
+    return matched_substrings
+
+
+def extract_spacy_lowercase_words(new_phrases: List[str]) -> Set[str]:
+    # Ensure the spaCy model is loaded
+    nlp = spacy.load("en_core_web_sm")
+
+    # Initialize an empty set to store unique lowercase words
+    lowercase_words = set()
+
+    # Process each phrase with spaCy
+    for phrase in new_phrases:
+        doc = nlp(phrase)
+
+        # Add the lowercase version of each token's text to the set
+        lowercase_words.update(token.text.lower() for token in doc)
+
+    return lowercase_words
+
+
+def get_verb_and_vocab_lists(used_words: Set[Tuple[str, str]]) -> Dict[str, List[str]]:
+    """
+    Separate the input set of (word, POS) tuples into verb and vocabulary lists.
+
+    Args:
+    used_words (Set[Tuple[str, str]]): A set of tuples containing (word, POS)
+
+    Returns:
+    Dict[str, List[str]]: A dictionary with 'verbs' and 'vocab' lists
+    """
+    verb_list = []
+    vocab_list = []
+
+    for word, pos in used_words:
+        if pos in ["VERB", "AUX"]:
+            verb_list.append(word)
+        else:
+            vocab_list.append(word)
+
+    return {"verbs": verb_list, "vocab": vocab_list}
 
 
 def update_vocab_usage(used_words: Set[Tuple[str, str]], update_amount: int = 1):

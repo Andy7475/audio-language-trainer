@@ -26,19 +26,22 @@ def filter_s1_words(data: List[Dict]) -> Dict[str, List[str]]:
 
 
 def generate_phrases_with_llm(
-    word_list: List[str], num_phrases: int = 100
+    verb_list: List[str], vocab_list: List[str], num_phrases: int = 100
 ) -> List[str]:
-
     prompt = f"""
-    Task: Generate {num_phrases} unique English phrases using words from the provided list. Each phrase should be 6-9 words long and use a variety of verb tenses.
+    Task: Generate {num_phrases} unique English phrases using words from the provided verb and vocabulary lists. Each phrase should be 6-9 words long and use one or two verbs (no more) per phrase.
 
-    Word List: {', '.join(word_list)}
+    Verb List: {', '.join(verb_list)}
+    Vocabulary List: {', '.join(vocab_list)}
 
     Requirements:
-    1. Use only words from the provided list, common articles (a, an, the), and basic prepositions (we, you, they etc).
-    2. Vary the verb tenses (present, past, future) across the phrases.
-    3. Create meaningful and diverse phrases that could be useful for language learners.
-    4. Ensure you use each word at least once
+    1. Use only words from the provided lists, common articles (a, an, the), basic prepositions, and common pronouns (I, we, you, they, etc.).
+    2. Each phrase must contain one or two verbs from the verb list.
+    3. Vary the verb tenses (present, past, future) across the phrases.
+    4. Use 4-7 words from the vocabulary list in each phrase.
+    5. Create meaningful and diverse phrases that could be useful for language learners.
+    6. Ensure you use each verb and vocabulary word at least once across all phrases.
+    7. Make the phrases memorable by creating interesting or slightly humorous scenarios.
 
     Please return your response in the following JSON format:
     {{
@@ -50,9 +53,38 @@ def generate_phrases_with_llm(
     }}
     """
 
-    llm_response = anthropic_generate(prompt)
-    # result = extract_json_from_llm_response(llm_response)
+    # Here you would call your LLM with the prompt
+    llm_response = anthropic_generate(prompt, max_tokens=5000)
+    return llm_response
 
+
+def generate_minimal_phrases_with_llm(word_list: List[str]) -> List[str]:
+    prompt = f"""
+    Task: Create the minimum number of English phrases necessary to use all the words from the provided list at least once. Each phrase should be 6-9 words long.
+
+    Word List: {', '.join(word_list)}
+
+    Requirements:
+    1. Use all words from the provided list at least once across all phrases.
+    2. Create the minimum number of phrases possible while meeting requirement 1.
+    3. Each phrase must be 6-9 words long.
+    4. You may use additional common words (articles, prepositions, pronouns, basic verbs) that a beginner language learner would know to complete phrases.
+    5. Prioritize exhausting the provided word list over creating a large number of phrases.
+    6. Create meaningful and diverse phrases that could be useful for language learners.
+    7. Make the phrases memorable by creating interesting or slightly humorous scenarios when possible.
+
+    Please return your response in the following JSON format:
+    {{
+        "phrases": [
+            "Phrase 1",
+            "Phrase 2",
+            ...
+        ]
+    }}
+    """
+
+    # Here you would call your LLM with the prompt
+    llm_response = anthropic_generate(prompt, max_tokens=5000)
     return llm_response
 
 

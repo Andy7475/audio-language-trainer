@@ -159,7 +159,12 @@ def process_row(
     all_fields.append(dict(zip(headers, row)))
 
 
-def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name: str):
+def export_to_anki(
+    story_data_dict: Dict[str, Dict],
+    output_dir: str,
+    story_name: str,
+    deck_name: str = None,
+):
     os.makedirs(output_dir, exist_ok=True)
 
     # Common CSS for all card types
@@ -325,8 +330,12 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
 
     media_files = []
     notes = []
-    deck_id = string_to_large_int(config.language_name)
-    deck = genanki.Deck(deck_id, f"{config.language_name} - phrases")
+    if deck_name is None:
+        deck_id = string_to_large_int(config.language_name)
+        deck_name = f"{config.language_name} - phrases"
+    else:
+        deck_id = string_to_large_int(deck_name)
+    deck = genanki.Deck(deck_id, deck_name)
 
     for _, data in story_data_dict.items():
         for (english, target), audio_segments in zip(

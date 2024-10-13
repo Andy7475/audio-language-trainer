@@ -94,13 +94,14 @@ def add_translations(story_data_dict):
 
     for story_part in story_data_dict:
         print(f"Beginning translation for {story_part}")
-        dialogue = story_data_dict[story_part]["dialogue"]
-        translated_dialogue = translate_dialogue(dialogue)
-        print(f"Translated dialogue")
+        if "dialogue" in story_data_dict[story_part]:
+            dialogue = story_data_dict[story_part]["dialogue"]
+            translated_dialogue = translate_dialogue(dialogue)
+            print(f"Translated dialogue")
+            story_data_dict[story_part]["translated_dialogue"] = translated_dialogue
         corrected_phrase_list = story_data_dict[story_part]["corrected_phrase_list"]
         translated_phrase_list = translate_phrases(corrected_phrase_list)
 
-        story_data_dict[story_part]["translated_dialogue"] = translated_dialogue
         story_data_dict[story_part]["translated_phrase_list"] = translated_phrase_list
 
         print(f"Translated phrases\n")
@@ -112,21 +113,22 @@ async def add_audio(story_data_dict):
     """Adds text-to-speech for english and target language for all dialogue and
     practice phrases"""
     for story_part in story_data_dict:
-        print(f"Beginning text-to-speech for {story_part}")
-        translated_dialogue_audio_segments = generate_audio_from_dialogue(
-            story_data_dict[story_part]["translated_dialogue"]
-        )
-        story_data_dict[story_part][
-            "translated_dialogue_audio"
-        ] = translated_dialogue_audio_segments
-        normal_translated_clip, fast_translated_clips = generate_normal_and_fast_audio(
-            translated_dialogue_audio_segments
-        )
-        story_data_dict[story_part][
-            "translated_dialogue_audio_fast"
-        ] = fast_translated_clips
+        if "translated_dialogue" in story_data_dict[story_part]:
+            print(f"Beginning text-to-speech for {story_part}")
+            translated_dialogue_audio_segments = generate_audio_from_dialogue(
+                story_data_dict[story_part]["translated_dialogue"]
+            )
+            story_data_dict[story_part][
+                "translated_dialogue_audio"
+            ] = translated_dialogue_audio_segments
+            normal_translated_clip, fast_translated_clips = (
+                generate_normal_and_fast_audio(translated_dialogue_audio_segments)
+            )
+            story_data_dict[story_part][
+                "translated_dialogue_audio_fast"
+            ] = fast_translated_clips
 
-        print(f"Text-to-speech for dialogue done")
+            print(f"Text-to-speech for dialogue done")
         # now do phrases asynchronoulsy (still unsure if Google API allows this, not getting huge speed up)
         translated_phrases = story_data_dict[story_part]["translated_phrase_list"]
         tranlsated_phrases_audio = await async_process_phrases(translated_phrases)
