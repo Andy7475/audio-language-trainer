@@ -245,60 +245,79 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
         """
 
     language_practice_model = genanki.Model(
-        1607392310,
+        1607392312,
         "Language Practice",
         fields=[
-            {"name": "TargetText"},  # top field is the sort field
+            {"name": "TargetText"},
             {"name": "TargetAudio"},
+            {"name": "TargetAudioSlow"},  # New field for slow audio
             {"name": "EnglishText"},
             {"name": "WiktionaryLinks"},
         ],
+        # ... (rest of the model definition)
         templates=[
             {
                 "name": "Listening Card",
-                "qfmt": "{{TargetAudio}}",
-                "afmt": f"""
-            {{{{FrontSide}}}}
-            <hr id="answer">
-            <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-            <div class="english-text">{{{{EnglishText}}}}</div>
-            <div class="wiktionary-links">
-            {{{{WiktionaryLinks}}}}
+                "qfmt": f"""<div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+            <div>
+                Normal speed:
+                <br>
+                {{{{TargetAudio}}}}
             </div>
-            {card_back}
-            """,
+            <div>
+                Slow speed:
+                <br>
+                {{{{TargetAudioSlow}}}}
+            </div>
+        </div>""",
+                "afmt": f"""
+        <hr id="answer">
+        <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
+        <div class="english-text">{{{{EnglishText}}}}</div>
+        <div>
+            Normal speed: {{{{TargetAudio}}}}
+        </div>
+        <div class="wiktionary-links">
+        {{{{WiktionaryLinks}}}}
+        </div>
+        {card_back}
+        """,
             },
             {
                 "name": "Reading Card",
                 "qfmt": """
-                <div class="target-text" onclick="copyText(this)">{{TargetText}}</div>
-                """,
+        <div class="target-text" onclick="copyText(this)">{{TargetText}}</div>
+        """,
                 "afmt": f"""
-                {{{{FrontSide}}}}
-                <hr id="answer">
-                <div class="english-text">{{{{EnglishText}}}}</div>
-                {{{{TargetAudio}}}}
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+        {{{{FrontSide}}}}
+        <hr id="answer">
+        <div class="english-text">{{{{EnglishText}}}}</div>
+        <div>
+            {{{{TargetAudio}}}}
+        </div>
+        <div class="wiktionary-links">
+        {{{{WiktionaryLinks}}}}
+        </div>
+        {card_back}
+        """,
             },
             {
                 "name": "Speaking Card",
                 "qfmt": """
-                <div class="english-text">{{EnglishText}}</div>
-                """,
+        <div class="english-text">{{EnglishText}}</div>
+        """,
                 "afmt": f"""
-                {{{{FrontSide}}}}
-                <hr id="answer">
-                <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-                {{{{TargetAudio}}}}
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+        {{{{FrontSide}}}}
+        <hr id="answer">
+        <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
+        <div>
+            {{{{TargetAudio}}}}
+        </div>
+        <div class="wiktionary-links">
+        {{{{WiktionaryLinks}}}}
+        </div>
+        {card_back}
+        """,
             },
         ],
         css=common_css,
@@ -315,21 +334,27 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
         ):
             # Generate unique filename for audio
             target_audio_normal = f"{uuid.uuid4()}.mp3"
+            target_audio_slow = f"{uuid.uuid4()}.mp3"
 
             # Export audio segment
             if isinstance(audio_segments, AudioSegment):
                 target_normal_audio_segment = audio_segments
+                target_slow_audio_segment = audio_segments
             elif isinstance(audio_segments, List) and len(audio_segments) > 2:
                 target_normal_audio_segment = audio_segments[2]
+                target_slow_audio_segment = audio_segments[1]
             else:
                 raise Exception(f"Unexpected audio format: {audio_segments}")
 
             target_normal_audio_segment.export(
                 os.path.join(output_dir, target_audio_normal), format="mp3"
             )
+            target_slow_audio_segment.export(
+                os.path.join(output_dir, target_audio_slow), format="mp3"
+            )
 
             # Add to media files list
-            media_files.append(target_audio_normal)
+            media_files.extend([target_audio_normal, target_audio_slow])
 
             # Generate Wiktionary links
             wiktionary_links = generate_wiktionary_links(target, config.language_name)
@@ -340,6 +365,7 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
                 fields=[
                     target,
                     f"[sound:{target_audio_normal}]",
+                    f"[sound:{target_audio_slow}]",
                     english,
                     wiktionary_links,
                 ],
