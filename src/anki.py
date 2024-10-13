@@ -413,7 +413,7 @@ def export_to_anki(
         file_path = os.path.join(output_dir, media_file)
         try:
             os.remove(file_path)
-            print(f"Deleted temporary file: {file_path}")
+            # print(f"Deleted temporary file: {file_path}")
         except OSError as e:
             print(f"Error deleting file {file_path}: {e}")
 
