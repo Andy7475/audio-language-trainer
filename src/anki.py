@@ -13,10 +13,49 @@ from bs4 import BeautifulSoup
 from google.cloud import texttospeech
 from pydub import AudioSegment
 
+from src.anki import export_to_anki
 from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
-from src.utils import string_to_large_int
+from src.generate import add_audio, add_translations
+from src.utils import create_test_story_dict, string_to_large_int
+
+
+async def create_anki_deck_from_english_phrase_list(
+    phrase_list: List[str],
+    deck_name: str,
+    anki_filename_prefix: str,
+    batch_size: int = 50,
+    output_dir="../outputs/longman",
+):
+    """Takes a list of english phrases and does: 1) translation 2) text to speech 3) export to Anki deck.
+    To avoid overloading the text-to-speech APIs it will batch up the phrases into smaller decks (*.apkg), but these will all have the same 'deck_id'
+    and so when you import them into Anki they will merge into the same deck. The decks will be called {anki_filename_prefix}_{from_index}.apkg
+    """
+
+    phrase_dict = {
+        "anki": {"corrected_phrase_list": phrase_list}
+    }  # this format is because it's the same as our story_dictionary
+    translated_phrases_dict = add_translations(
+        phrase_dict
+    )  # this already batches so can pass entire list
+
+    # we will now create slices of the main phrase dictionary using a 'from_index' and batch_size
+    for from_index in range(0, len(phrase_list), batch_size):
+        partial_dict = create_test_story_dict(
+            translated_phrases_dict,
+            story_parts=1,
+            phrases=batch_size,
+            from_index=from_index,
+        )
+        translated_phrases_dict_audio = await add_audio(partial_dict)
+
+        export_to_anki(
+            translated_phrases_dict_audio,
+            output_dir,
+            f"{anki_filename_prefix}_{from_index}",
+            deck_name=deck_name,
+        )
 
 
 def generate_wiktionary_links(
@@ -159,7 +198,12 @@ def process_row(
     all_fields.append(dict(zip(headers, row)))
 
 
-def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name: str):
+def export_to_anki(
+    story_data_dict: Dict[str, Dict],
+    output_dir: str,
+    story_name: str,
+    deck_name: str = None,
+):
     os.makedirs(output_dir, exist_ok=True)
 
     # Common CSS for all card types
@@ -325,8 +369,12 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
 
     media_files = []
     notes = []
-    deck_id = string_to_large_int(config.language_name)
-    deck = genanki.Deck(deck_id, f"{config.language_name} - phrases")
+    if deck_name is None:
+        deck_id = string_to_large_int(config.language_name)
+        deck_name = f"{config.language_name} - phrases"
+    else:
+        deck_id = string_to_large_int(deck_name)
+    deck = genanki.Deck(deck_id, deck_name)
 
     for _, data in story_data_dict.items():
         for (english, target), audio_segments in zip(
@@ -404,7 +452,7 @@ def export_to_anki(story_data_dict: Dict[str, Dict], output_dir: str, story_name
         file_path = os.path.join(output_dir, media_file)
         try:
             os.remove(file_path)
-            print(f"Deleted temporary file: {file_path}")
+            # print(f"Deleted temporary file: {file_path}")
         except OSError as e:
             print(f"Error deleting file {file_path}: {e}")
 
