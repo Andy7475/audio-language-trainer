@@ -6,7 +6,7 @@ import re
 import subprocess
 import sys
 from collections import defaultdict
-from typing import List, Set, Tuple
+from typing import List, Literal, Set, Tuple
 
 import numpy as np
 import pycountry
@@ -24,7 +24,10 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from vertexai.preview.vision_models import ImageGenerationModel
-
+from typing import Dict, List, Tuple
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
+from pydub import AudioSegment
 from src.config_loader import config
 
 load_dotenv()  # so we can use environment variables for various global settings
@@ -190,11 +193,6 @@ def generate_story_image(story_plan):
         image_data = img_byte_arr.getvalue()
 
     return image_data
-
-
-from typing import Dict, List, Tuple
-
-from pydub import AudioSegment
 
 
 def create_test_story_dict(
@@ -374,6 +372,37 @@ def save_defaultdict(d, filepath):
     save_json(normal_dict, filepath)
 
 
+def filter_longman_words(
+    data: List[Dict], category: Literal["S1", "S2", "S3", "W1", "W2", "W3"]
+) -> Dict[str, List[str]]:
+    """This will only work with the specific format of longman data in a nested JSON structure from: https://github.com/healthypackrat/longman-communication-3000.
+    S1 means part of the first 1000 vocab list for speech, W3 means part of the 3000 words (i.e. the third '1000' chunk) for writing
+    """
+    s1_words = defaultdict(list)
+    for entry in data:
+        if category in entry.get("frequencies", []):
+            for word_class in entry.get("word_classes", []):
+                s1_words[word_class].append(entry["word"])
+    return dict(s1_words)
+
+
+def get_longman_verb_vocab_dict(
+    longman_file_path, category: Literal["S1", "S2", "S3", "W1", "W2", "W3"]
+) -> Dict[str, List[str]]:
+    """Returns a vocabulary dict with keys 'verbs' and 'vocab' for verbs and all other parts-of-speech. This is now in the
+    same format as the known_vocab_list.json as used in the rest of the code."""
+    data = load_json(longman_file_path)
+    category_words = filter_longman_words(data, category=category)
+    words_dict = defaultdict(list)
+    for pos in category_words.keys():
+        if pos in ["v", "auxillary"]:
+            words_dict["verbs"].extend([word.lower() for word in category_words[pos]])
+        else:
+            words_dict["vocab"].extend([word.lower() for word in category_words[pos]])
+
+    return words_dict
+
+
 def load_json(file_path):
     with open(file_path, "r") as file:
         return json.load(file)
@@ -465,10 +494,6 @@ def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
 
     # Build the document
     doc.build(elements)
-
-
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 
 
 # Language to font mapping

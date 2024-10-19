@@ -1,28 +1,123 @@
+import json
 import os
+import random
+from collections import defaultdict
+from typing import Dict, List, Literal, Set, Tuple
+
 import requests
 import spacy
-from src.dialogue_generation import anthropic_generate, extract_json_from_llm_response
-from typing import Dict, List
+
 from src.config_loader import config
-
-import json
-import random
-from typing import List, Dict, Tuple
-from collections import defaultdict
-
-
-def load_longman_data(file_path: str) -> List[Dict]:
-    with open(file_path, "r") as file:
-        return json.load(file)
+from src.dialogue_generation import anthropic_generate, extract_json_from_llm_response
+from src.utils import (
+    extract_spacy_lowercase_words,
+    extract_substring_matches,
+    extract_vocab_and_pos,
+    get_verb_and_vocab_lists,
+)
 
 
-def filter_s1_words(data: List[Dict]) -> Dict[str, List[str]]:
-    s1_words = defaultdict(list)
-    for entry in data:
-        if "S1" in entry.get("frequencies", []):
-            for word_class in entry.get("word_classes", []):
-                s1_words[word_class].append(entry["word"])
-    return dict(s1_words)
+def generate_phrases_from_vocab_dict(
+    vocab_dict: Dict[str, List[str]], max_iterations: int = 10
+) -> List[str]:
+    """This takes a dict with keys 'verbs' and 'vocab'  and constructs phrases using them, iterating through until all words are exhausted.
+    Desgined for Longman Communication vocab lists with a verb : vocab ratio of about 1:4 and 1000 words tends to generate around 850 phrases in
+    a range of tenses. A list of english phrases are returned."""
+
+    verb_list_set = set(vocab_dict["verbs"])
+    vocab_list_set = set(vocab_dict["vocab"])
+
+    LONGMAN_PHRASES = []
+    all_verbs_used = set()
+    iteration_count = 0
+
+    while (len(vocab_list_set) >= 5) and iteration_count < max_iterations:
+        iteration_count += 1
+
+        if len(vocab_list_set) < 150:
+            # Switch to minimal phrase generation and use any verbs
+            response = generate_minimal_phrases_with_llm(list(vocab_list_set))
+            new_phrases = extract_json_from_llm_response(response)["phrases"]
+            vocab_used = extract_vocab_and_pos(new_phrases)
+            words_used = get_verb_and_vocab_lists(vocab_used)
+            verb_list_set.difference_update(words_used["verbs"])
+            vocab_list_set.difference_update(words_used["vocab"])
+
+            # match on text as well
+            all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
+            verb_list_set.difference_update(all_lowercase_words)
+            vocab_list_set.difference_update(all_lowercase_words)
+
+            # match on substring - to account for 'words' in the longman dictionary that are > 1 words like 'aware of'
+            substring_matches = extract_substring_matches(new_phrases, vocab_list_set)
+            vocab_list_set.difference_update(substring_matches)
+
+            LONGMAN_PHRASES.extend(new_phrases)
+
+            print(f"Iteration {iteration_count}/{max_iterations}")
+            print(f"Generated {len(new_phrases)} phrases - with minimal phrase prompt")
+            print(
+                f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left"
+            )
+            continue
+        else:
+            if len(verb_list_set) < 10:
+                num_phrases = min(len(vocab_list_set), 100)  # Focus on exhausting vocab
+                verb_list_set.update(all_verbs_used)  # Reintroduce all used verbs
+            elif len(verb_list_set) < 50 and len(vocab_list_set) > 100:
+                num_phrases = min(
+                    len(verb_list_set) * 2, 100
+                )  # Ensure we use all verbs
+            else:
+                num_phrases = 100
+
+        verb_sample_size = min(75, len(verb_list_set))
+        vocab_sample_size = min(75 * 3, len(vocab_list_set))
+
+        verb_list_for_prompt = random.sample(list(verb_list_set), k=verb_sample_size)
+        vocab_list_for_prompt = random.sample(list(vocab_list_set), k=vocab_sample_size)
+
+        response = generate_phrases_with_llm(
+            verb_list=verb_list_for_prompt,
+            vocab_list=vocab_list_for_prompt,
+            num_phrases=num_phrases,
+        )
+
+        new_phrases = extract_json_from_llm_response(response)["phrases"]
+        LONGMAN_PHRASES.extend(new_phrases)
+
+        # we now pull out the POS and words used in the phrases we just generated and split them back into
+        # a dictionary with keys 'verbs' and 'vocab'
+        vocab_pos_used = extract_vocab_and_pos(new_phrases)
+        words_used = get_verb_and_vocab_lists(vocab_pos_used)
+
+        # print(f"{len(words_used['vocab'])} vocab words extracted in total")
+        # overlap = len(set(words_used['vocab']).intersection(vocab_list_set))
+        # print(f"{overlap} words are found in the vocab_list_set")
+
+        verb_list_set.difference_update(words_used["verbs"])
+        vocab_list_set.difference_update(words_used["vocab"])
+
+        # match on exact word text as well as sometimes the word in the longman dictionary is not a 'lemma' as generated by spacy
+        all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
+        vocab_list_set.difference_update(all_lowercase_words)
+
+        all_verbs_used.update(words_used["verbs"])
+
+        print(f"Iteration {iteration_count}/{max_iterations}")
+        print(f"Generated {len(new_phrases)} phrases")
+        print(
+            f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left"
+        )
+
+    if iteration_count == max_iterations:
+        print(
+            f"Reached maximum number of iterations ({max_iterations}). Stopping phrase generation."
+        )
+    else:
+        print("All words have been used. Phrase generation complete.")
+
+    return LONGMAN_PHRASES
 
 
 def generate_phrases_with_llm(
@@ -38,7 +133,7 @@ def generate_phrases_with_llm(
     1. Use only words from the provided lists, common articles (a, an, the), basic prepositions, and common pronouns (I, we, you, they, etc.).
     2. Each phrase must contain one or two verbs from the verb list.
     3. Vary the verb tenses (present, past, future) across the phrases.
-    4. Use 4-7 words from the vocabulary list in each phrase.
+    4. Use 4-7 words from the vocabulary list in each phrase, but ensure each output is a complete sentence or phrase (so you may extend the length if needed)
     5. Create meaningful and diverse phrases that could be useful for language learners.
     6. Ensure you use each verb and vocabulary word at least once across all phrases.
     7. Make the phrases memorable by creating interesting or slightly humorous scenarios.
@@ -67,7 +162,7 @@ def generate_minimal_phrases_with_llm(word_list: List[str]) -> List[str]:
     Requirements:
     1. Use all words from the provided list at least once across all phrases.
     2. Create the minimum number of phrases possible while meeting requirement 1.
-    3. Each phrase must be 6-9 words long.
+    3. Each phrase must be 6-9 words long, but ensure each output is a complete sentence or phrase (so you may extend the length if needed).
     4. You may use additional common words (articles, prepositions, pronouns, basic verbs) that a beginner language learner would know to complete phrases.
     5. Prioritize exhausting the provided word list over creating a large number of phrases.
     6. Create meaningful and diverse phrases that could be useful for language learners.
