@@ -22,3 +22,4 @@ soundfile                       #for speeding up dialogue
 spacy
 pycountry
 beautifulsoup4
+ipykernel
