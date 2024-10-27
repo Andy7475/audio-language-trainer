@@ -93,24 +93,15 @@ def create_image_generation_prompt(phrase):
     return final_prompt
 
 
-def generate_language_learning_image(phrase):
-    """
-    Generate an image for language learning using Google Cloud Vertex AI's Image Generation API.
+def generate_image_imagen(prompt, model: str = "imagen-3.0-generate-001"):
 
-    :param phrase: A string containing the phrase to visualize
-    :return: Image data as bytes
-    """
-    # Initialize Vertex AI
     vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
 
     # Initialize the Image Generation model
     # imagegeneration@006
     # "imagen-3.0-generate-001"
     # imagen-3.0-fast-generate-001
-    generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
-
-    prompt = create_image_generation_prompt(phrase)
-    print(f"our image gen prompt is {prompt}")
+    generation_model = ImageGenerationModel.from_pretrained(model)
 
     # Generate the image
     images = generation_model.generate_images(
@@ -121,61 +112,10 @@ def generate_language_learning_image(phrase):
     )
 
     # Get the first (and only) generated image
-    generated_image = images[0]
-
-    # Get the image bytes directly
-    image_data = generated_image._image_bytes
-
-    # Convert the image to PIL Image for potential resizing
-    image = Image.open(io.BytesIO(image_data))
-
-    # Resize the image if it's not 500x500
-    if image.size != (500, 500):
-        image = image.resize((500, 500))
-
-        # If we resized, convert the resized image back to bytes
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format="JPEG")
-        image_data = img_byte_arr.getvalue()
-
-    return image_data
+    return images[0]
 
 
-def generate_story_image(story_plan):
-    """
-    Generate an image for a story using Google Cloud Vertex AI's Image Generation API.
-
-    :param story_plan: A string containing the story plan
-    :param project_id: Your Google Cloud project ID
-    :param location: The location of your Vertex AI endpoint
-    :return: Image data as bytes
-    """
-    # Initialize Vertex AI
-    vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
-
-    # Initialize the Image Generation model
-    generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
-
-    # Craft the prompt
-    prompt = f"""
-    Create a colorful, engaging image for a language learning story. 
-    The image should be suitable as album art for an educational audio file.
-    The story is about: {story_plan}
-    The image should be family-friendly and appropriate for all ages.
-    The style should be hand-painted (not a photo). It should not contain any people.
-    """
-
-    # Generate the image
-    images = generation_model.generate_images(
-        prompt=prompt,
-        number_of_images=1,
-        aspect_ratio="1:1",
-        # safety_filter_level="block_some",
-        person_generation="don't allow",
-    )
-
-    # Get the first (and only) generated image
-    generated_image = images[0]
+def resize_image(generated_image, height=500, width=500):
 
     # Get the image bytes directly
     image_data = generated_image._image_bytes
