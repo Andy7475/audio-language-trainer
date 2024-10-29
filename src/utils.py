@@ -35,6 +35,85 @@ load_dotenv()  # so we can use environment variables for various global settings
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 
 
+def add_images_to_phrases(
+    phrases: List[str],
+    output_dir: str,
+    image_format: str = "png",
+    imagen_model: Literal[
+        "imagen-3.0-fast-generate-001", "imagen-3.0-generate-001"
+    ] = "imagen-3.0-generate-001",
+    anthropic_model=config.ANTHROPIC_SMALL_MODEL_NAME,
+) -> Dict:
+    """
+    Process a list of phrases to create a dictionary with prompts and image paths.
+
+    Args:
+        phrases: List of English phrases
+        output_dir: Directory where images will be saved
+        generate_image_prompt: Function that takes a phrase and returns a prompt
+        generate_image: Function that takes a prompt and returns image data
+        image_format: Image file format (default: 'png')
+
+    Returns:
+        Dictionary containing phrases, prompts, and image paths
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Initialize results dictionary
+    results = {}
+
+    for phrase in phrases:
+        # Create a clean filename from the phrase
+        clean_name = clean_filename(phrase)
+
+        # Generate image filename
+        image_filename = f"{clean_name}.{image_format}"
+        image_path = os.path.join(output_dir, image_filename)
+
+        # Generate prompt for the phrase
+        prompt = create_image_generation_prompt(phrase, anthropic_model)
+
+        # Generate and save the image
+        try:
+            generated_image = generate_image_imagen(prompt, imagen_model)
+            # Extract image bytes from Vertex AI GeneratedImage object
+            image_data = generated_image._image_bytes
+            # Save image to file
+            with open(image_path, "wb") as f:
+                f.write(image_data)
+
+            # Store results in dictionary
+            results[clean_name] = {
+                "phrase": phrase,
+                "prompt": prompt,
+                "image_path": image_path,
+            }
+
+            print(f"Successfully processed: {phrase}")
+
+        except Exception as e:
+            print(f"Error processing phrase '{phrase}': {str(e)}")
+            continue
+
+    return results
+
+
+def clean_filename(phrase: str) -> str:
+    """Convert a phrase to a clean filename-safe string."""
+    # Convert to lowercase
+    clean = phrase.lower()
+    # Replace any non-alphanumeric characters (except spaces) with empty string
+    clean = re.sub(r"[^a-z0-9\s]", "", clean)
+    # Replace spaces with underscores
+    clean = clean.replace(" ", "_")
+    # Remove any double underscores
+    clean = re.sub(r"_+", "_", clean)
+    # Trim any leading/trailing underscores
+    clean = clean.strip("_")
+    return clean
+
+
 def string_to_large_int(s: str) -> int:
     # Encode the string to bytes
     encoded = s.encode("utf-8")
@@ -50,13 +129,14 @@ def string_to_large_int(s: str) -> int:
     return large_int & 0x7FFFFFFFFFFFFFFF
 
 
-def create_image_generation_prompt(phrase):
+def create_image_generation_prompt(phrase, anthropic_model: str = None):
     """
     Create a specific image generation prompt based on a language learning phrase.
 
     :param phrase: The language learning phrase to visualize
     :return: A specific prompt for image generation
     """
+
     llm_prompt = f"""
     Given the following phrase for language learners: "{phrase}"
     
@@ -65,35 +145,32 @@ def create_image_generation_prompt(phrase):
     The image should be memorable and directly related to the meaning of the phrase.
     
     Your prompt should:
-    1. Identify 1-3 key elements from the phrase to visualize.
-    2. Describe these elements in vivid, visual detail.
-    3. Suggest a simple scene or composition that incorporates these elements.
-    4. Include any relevant colors, emotions, or atmosphere that would enhance memory retention.
-    5. Ensure the image concept is clear and easily understandable at a glance.
+    1. Ensure you consider every element from the phrase to visualize.
+    2. Suggest a simple scene or composition that incorporates these elements. You can use your imagination to make it more memorable
+    3. Include any relevant emotions, or atmosphere that would enhance memory retention.
+    4. Limit your output to 1 - 2 sentences. Do not add details of the image style, this will be added later.
     
     Provide only the image generation prompt, without any explanations or additional text.
+
+    Example phrase: "The bride watched the sunset from the balcony"
+    Example Output: "A bride on a balcony, looking at sunset over the horizon, tropical island, villa"
     """
+
+    base_style = "a children's book illustration, Axel Scheffler style, thick brushstrokes, colored pencil texture, expressive characters, bold outlines, textured shading, earthy color palette"
 
     # Use the anthropic_generate function to get the LLM's response
-    image_prompt = anthropic_generate(llm_prompt)
+    image_prompt = anthropic_generate(llm_prompt, model=anthropic_model)
+    image_prompt.strip('".')
 
-    # Add some standard instructions to ensure consistency in style and format
-    final_prompt = f"""
-    Create a vivid, memorable image for language learners based on the following description:
-    
-    {image_prompt}
-    
-    The image should be:
-    - Colorful and engaging
-    - Styled like a modern, slightly stylized illustration (not photorealistic)
-    - Suitable for display on a mobile phone screen (square 1:1 aspect ratio)
-    - Clear and easily understandable at a glance
-    """
-
-    return final_prompt
+    return image_prompt + f" in the style of {base_style}"
 
 
-def generate_image_imagen(prompt, model: str = "imagen-3.0-generate-001"):
+def generate_image_imagen(
+    prompt,
+    model: Literal[
+        "imagen-3.0-fast-generate-001", "imagen-3.0-generate-001"
+    ] = "imagen-3.0-generate-001",
+):
 
     vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
 
