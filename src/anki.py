@@ -13,7 +13,6 @@ from bs4 import BeautifulSoup
 from google.cloud import texttospeech
 from pydub import AudioSegment
 
-from src.anki import export_to_anki
 from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
