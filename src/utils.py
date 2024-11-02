@@ -6,7 +6,7 @@ import re
 import subprocess
 import sys
 from collections import defaultdict
-from typing import List, Literal, Set, Tuple
+from typing import Any, List, Literal, Set, Tuple
 
 import numpy as np
 import pycountry
@@ -33,6 +33,64 @@ from src.config_loader import config
 load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
+
+
+def test_image_reading(image_path):
+    """
+    Test reading and basic image properties from a path
+
+    Args:
+        image_path: Path to the image file
+
+    Returns:
+        Tuple of (width, height) if successful
+    """
+    try:
+        # Open image in binary mode, not text mode
+        with Image.open(image_path) as img:
+            print(f"Successfully opened image from: {image_path}")
+            print(f"Image size: {img.size}")
+            print(f"Image mode: {img.mode}")
+            return img.size
+    except FileNotFoundError:
+        print(f"Image file not found at: {image_path}")
+    except Exception as e:
+        print(f"Error reading image: {str(e)}")
+
+
+def add_image_paths(story_dict: Dict[str, Any], image_dir: str) -> Dict[str, Any]:
+    """
+    Add image paths to the story dictionary based on the English phrases.
+
+    Args:
+        story_dict: Dictionary containing story data with corrected_phrase_list
+        image_dir: Directory containing the images
+
+    Returns:
+        Updated dictionary with image_path added for each story part
+    """
+
+    # Create a copy of the dictionary to avoid modifying the original
+    updated_dict = story_dict.copy()
+
+    for story_part, data in updated_dict.items():
+        if "corrected_phrase_list" in data:
+            # Initialize image_path list for this story part
+            data["image_path"] = []
+
+            for phrase in data["corrected_phrase_list"]:
+                # Generate the expected image filename
+                clean_name = clean_filename(phrase)
+                image_filename = f"{clean_name}.png"
+                full_path = os.path.join(image_dir, image_filename)
+
+                # Check if the image exists
+                if os.path.exists(full_path):
+                    data["image_path"].append(full_path)
+                else:
+                    data["image_path"].append(None)
+
+    return updated_dict
 
 
 def add_images_to_phrases(
