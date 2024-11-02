@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 from collections import defaultdict
+import time
 from typing import Any, List, Literal, Set, Tuple
 
 import numpy as np
@@ -24,6 +25,10 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from vertexai.preview.vision_models import ImageGenerationModel
+from vertexai.preview.vision_models import (
+    ImageGenerationModel,
+)
+from vertexai.generative_models import HarmCategory, SafetySetting
 from typing import Dict, List, Tuple
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
@@ -100,7 +105,7 @@ def add_images_to_phrases(
     imagen_model: Literal[
         "imagen-3.0-fast-generate-001", "imagen-3.0-generate-001"
     ] = "imagen-3.0-generate-001",
-    anthropic_model=config.ANTHROPIC_SMALL_MODEL_NAME,
+    anthropic_model=config.ANTHROPIC_MODEL_NAME,
 ) -> Dict:
     """
     Process a list of phrases to create a dictionary with prompts and image paths.
@@ -129,6 +134,14 @@ def add_images_to_phrases(
         image_filename = f"{clean_name}.{image_format}"
         image_path = os.path.join(output_dir, image_filename)
 
+        if os.path.exists(image_path):
+            print(f"Warning: Image already exists for '{phrase}', skipping generation")
+            results[clean_name] = {
+                "phrase": phrase,
+                "prompt": None,
+                "image_path": image_path,
+            }
+            continue
         # Generate prompt for the phrase
         prompt = create_image_generation_prompt(phrase, anthropic_model)
 
@@ -224,30 +237,94 @@ def create_image_generation_prompt(phrase, anthropic_model: str = None):
 
 
 def generate_image_imagen(
-    prompt,
+    prompt: str,
     model: Literal[
         "imagen-3.0-fast-generate-001", "imagen-3.0-generate-001"
     ] = "imagen-3.0-generate-001",
-):
+    max_attempts: int = 3,
+    initial_delay: float = 10.0,
+    delay_multiplier: float = 2.0,
+) -> ImageGenerationModel:
+    """
+    Generate an image using the Vertex AI Imagen model with retry logic.
 
+    Args:
+        prompt: The text prompt to generate the image from
+        model: The Imagen model to use
+        max_attempts: Maximum number of retry attempts
+        initial_delay: Initial delay in seconds between retries
+        delay_multiplier: Factor to multiply delay by after each attempt
+
+    Returns:
+        Generated image from the model
+
+    Raises:
+        Exception: If image generation fails after all retry attempts
+    """
     vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
-
-    # Initialize the Image Generation model
-    # imagegeneration@006
-    # "imagen-3.0-generate-001"
-    # imagen-3.0-fast-generate-001
     generation_model = ImageGenerationModel.from_pretrained(model)
 
-    # Generate the image
-    images = generation_model.generate_images(
-        prompt=prompt,
-        number_of_images=1,
-        aspect_ratio="1:1",
-        # negative_prompt="text or letters",
-    )
+    safety_settings = [
+        SafetySetting(
+            category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        ),
+        SafetySetting(
+            category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        ),
+        SafetySetting(
+            category=HarmCategory.HARM_CATEGORY_HARASSMENT,
+            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        ),
+        SafetySetting(
+            category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
+        ),
+    ]
 
-    # Get the first (and only) generated image
-    return images[0]
+    current_delay = initial_delay
+
+    for attempt in range(max_attempts):
+        try:
+            # Generate the image
+            images = generation_model.generate_images(
+                prompt=prompt,
+                number_of_images=1,
+                aspect_ratio="1:1",
+                person_generation="allow_adult",
+                # safety_filter_level="block_fewest",
+            )
+
+            if len(images.images) > 0:
+                if (
+                    attempt < max_attempts - 1
+                ):  # Don't delay on the last successful attempt
+                    print(
+                        f"Generation successful, waiting {current_delay}s before next request..."
+                    )
+                    time.sleep(current_delay)
+                return images[0]
+            else:
+                raise KeyError(
+                    f"No image generated using {model} with prompt: {prompt}"
+                )
+
+        except Exception as e:
+            if attempt < max_attempts - 1:  # Don't wait if this was the last attempt
+                print(f"Attempt {attempt + 1} failed: {str(e)}")
+                print(f"Waiting {current_delay}s before retry...")
+                time.sleep(current_delay)
+                current_delay *= delay_multiplier  # Increase delay for next attempt
+            else:
+                # If this was the last attempt, raise the exception
+                raise Exception(
+                    f"Image generation failed after {max_attempts} attempts. "
+                    f"Last error: {str(e)}"
+                )
+
+    # This should never be reached due to the exception in the last iteration
+    raise Exception("Unexpected end of retry loop")
 
 
 def resize_image(generated_image, height=500, width=500):

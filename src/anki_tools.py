@@ -1,7 +1,9 @@
+from collections import defaultdict
 import csv
 import io
 import json
 import os
+import re
 import shutil
 import sqlite3
 import tempfile
@@ -20,6 +22,7 @@ from pydub import AudioSegment
 
 from anki.collection import Collection
 from anki.models import NotetypeDict
+from tqdm import tqdm
 from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
@@ -28,13 +31,94 @@ from src.utils import clean_filename, create_test_story_dict, string_to_large_in
 import pysnooper
 
 
+@pysnooper.snoop(output="snoop.txt")
+def convert_anki_to_story_dict(collection_path: str, deck_name: str) -> Dict[str, Dict]:
+    """
+    Read an Anki deck and convert it to the story_data_dict format used by export_anki_with_images
+
+    Args:
+        collection_path: Path to the .anki2 collection file
+        deck_name: Name of the deck to convert
+
+    Returns:
+        Dictionary in the story_data_dict format with phrases and audio
+    """
+    story_data_dict = defaultdict(lambda: defaultdict(list))
+
+    # Create a temporary directory for media files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with AnkiCollectionReader(collection_path) as reader:
+            # Get the media files mapping
+            media_dir = reader.get_media_dir()
+
+            # Get notes from the deck
+            notes = reader.get_notes_for_deck(deck_name)
+
+            # Process each note
+            phrase_list = []
+            audio_segments = []
+
+            for note in tqdm(notes):
+                # Extract fields from note
+                fields = note["fields"]
+
+                # Get target and English text
+                target_text = fields.get("TargetText", "").strip()
+                english_text = fields.get("EnglishText", "").strip()
+
+                if not target_text or not english_text:
+                    continue
+
+                # Extract audio filenames from the audio field
+                target_audio = fields.get("TargetAudio", "")
+                target_audio_slow = fields.get("TargetAudioSlow", "")
+
+                # Extract sound filenames using regex
+                audio_pattern = r"\[sound:(.*?)\]"
+                normal_audio_match = re.search(audio_pattern, target_audio)
+                slow_audio_match = re.search(audio_pattern, target_audio_slow)
+
+                if normal_audio_match and slow_audio_match:
+                    normal_audio_file = normal_audio_match.group(1)
+                    slow_audio_file = slow_audio_match.group(1)
+
+                    # Get the full paths for the audio files
+                    normal_audio_path = os.path.join(media_dir, normal_audio_file)
+                    slow_audio_path = os.path.join(media_dir, slow_audio_file)
+
+                    # Load audio segments if files exist
+                    try:
+                        normal_segment = AudioSegment.from_file(normal_audio_path)
+                        slow_segment = AudioSegment.from_file(slow_audio_path)
+
+                        # Add phrase and audio to lists
+                        phrase_list.append((english_text, target_text))
+                        audio_segments.append([None, slow_segment, normal_segment])
+
+                    except Exception as e:
+                        print(f"Error loading audio for note {note['id']}: {str(e)}")
+                        continue
+
+            # Add all phrases and audio to the story dict under a single part
+            if phrase_list and audio_segments:
+                story_data_dict["part_1"]["translated_phrase_list"] = phrase_list
+                story_data_dict["part_1"][
+                    "translated_phrase_list_audio"
+                ] = audio_segments
+
+    return dict(story_data_dict)
+
+
+def extract_audio_filename(field_value: str) -> str:
+    """Extract the audio filename from an Anki field value containing [sound:] tags"""
+    match = re.search(r"\[sound:(.*?)\]", field_value)
+    if match:
+        return match.group(1)
+    return None
+
+
 class AnkiCollectionReader:
     def __init__(self, collection_path: str):
-        """Initialize connection to an Anki collection using the official anki package
-
-        Args:
-            collection_path: Path to the .anki2 collection file
-        """
         self.collection_path = collection_path
         if not os.path.exists(self.collection_path):
             raise FileNotFoundError(
@@ -43,18 +127,15 @@ class AnkiCollectionReader:
         self.col: Optional[Collection] = None
 
     def connect(self):
-        """Connect to the Anki collection"""
         self.col = Collection(self.collection_path)
         return self
 
     def close(self):
-        """Close the collection connection"""
         if self.col:
             self.col.close()
             self.col = None
 
     def get_deck_names(self) -> Dict[int, str]:
-        """Get all deck names and their IDs"""
         if not self.col:
             raise RuntimeError("Not connected to collection")
 
@@ -64,30 +145,16 @@ class AnkiCollectionReader:
         return decks
 
     def get_notes_for_deck(self, deck_name: str) -> List[Dict[str, Any]]:
-        """Get all notes for a specific deck
-
-        Args:
-            deck_name: Name of the deck to get notes from
-
-        Returns:
-            List of dictionaries containing note data
-        """
         if not self.col:
             raise RuntimeError("Not connected to collection")
 
-        # Get deck ID
+        # Get deck dictionary
         deck = self.col.decks.by_name(deck_name)
         if not deck:
             raise ValueError(f"Deck '{deck_name}' not found")
 
-        # Find cards in deck
-        card_ids = self.col.find_cards(f"deck:{deck_name}")
-
         # Get unique note IDs from cards
-        note_ids = set()
-        for card_id in card_ids:
-            card = self.col.get_card(card_id)
-            note_ids.add(card.nid)
+        note_ids = self.col.find_notes(f"did:{deck['id']}")
 
         # Get note data
         notes = []
@@ -107,26 +174,46 @@ class AnkiCollectionReader:
 
         return notes
 
-    def get_media_files(self) -> Dict[str, str]:
-        """Get the media files mapping"""
+    def get_media_dir(self) -> str:
+        """Get the path to the media directory"""
         if not self.col:
             raise RuntimeError("Not connected to collection")
 
-        media_dir = os.path.dirname(self.collection_path)
-        media_file = os.path.join(media_dir, "media")
-        if os.path.exists(media_file):
-            with open(media_file, "r") as f:
-                return json.load(f)
-        return {}
+        return os.path.join(os.path.dirname(self.collection_path), "collection.media")
+
+    def list_media_files(self) -> List[str]:
+        """List all files in the media directory"""
+        media_dir = self.get_media_dir()
+        if os.path.exists(media_dir):
+            return [f for f in os.listdir(media_dir) if not f.startswith("_")]
+        return []
 
     def __enter__(self):
-        """Context manager entry"""
         self.connect()
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit"""
         self.close()
+
+
+def print_deck_info(collection_path: str):
+    with AnkiCollectionReader(collection_path) as reader:
+        # Print all decks
+        print("\nAvailable decks:")
+        print("-" * 50)
+        for deck_id, deck_name in reader.get_deck_names().items():
+            print(f"Deck ID: {deck_id}")
+            print(f"Deck Name: {deck_name}")
+            print("-" * 50)
+
+        # Print media info
+        print("\nMedia directory:", reader.get_media_dir())
+        media_files = reader.list_media_files()
+        print(f"Number of media files: {len(media_files)}")
+        if media_files:
+            print("\nFirst few media files:")
+            for file in media_files[:5]:
+                print(f"- {file}")
 
 
 def print_deck_contents(collection_path: str, deck_name: str):
