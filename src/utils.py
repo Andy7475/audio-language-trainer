@@ -1,3 +1,4 @@
+import base64
 import hashlib
 import io
 import json
@@ -5,9 +6,9 @@ import os
 import re
 import subprocess
 import sys
-from collections import defaultdict
 import time
-from typing import Any, List, Literal, Set, Tuple
+from collections import defaultdict
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 
 import numpy as np
 import pycountry
@@ -17,23 +18,20 @@ import vertexai
 from anthropic import AnthropicVertex
 from dotenv import load_dotenv
 from PIL import Image
+from pydub import AudioSegment
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from vertexai.preview.vision_models import ImageGenerationModel
-from vertexai.preview.vision_models import (
-    ImageGenerationModel,
-)
 from vertexai.generative_models import HarmCategory, SafetySetting
-from typing import Dict, List, Tuple
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-from pydub import AudioSegment
+from vertexai.preview.vision_models import ImageGenerationModel
+from tqdm import tqdm
 from src.config_loader import config
+
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -126,7 +124,7 @@ def add_images_to_phrases(
     # Initialize results dictionary
     results = {}
 
-    for phrase in phrases:
+    for phrase in tqdm(phrases):
         # Create a clean filename from the phrase
         clean_name = clean_filename(phrase)
 
@@ -147,12 +145,13 @@ def add_images_to_phrases(
 
         # Generate and save the image
         try:
-            generated_image = generate_image_imagen(prompt, imagen_model)
+            image_bytes = generate_image_stability(
+                prompt=prompt, style_preset="comic-book"
+            )
             # Extract image bytes from Vertex AI GeneratedImage object
-            image_data = generated_image._image_bytes
+            image = Image.open(io.BytesIO(image_bytes))
             # Save image to file
-            with open(image_path, "wb") as f:
-                f.write(image_data)
+            image.save(image_path)
 
             # Store results in dictionary
             results[clean_name] = {
@@ -227,13 +226,106 @@ def create_image_generation_prompt(phrase, anthropic_model: str = None):
     Example Output: "A bride on a balcony, looking at sunset over the horizon, tropical island, villa"
     """
 
-    base_style = "a children's book illustration, Axel Scheffler style, thick brushstrokes, colored pencil texture, expressive characters, bold outlines, textured shading, earthy color palette"
+    base_style = "a children's book illustration, Axel Scheffler style, thick brushstrokes, colored pencil texture, expressive characters, bold outlines, textured shading, pastel color palette"
 
     # Use the anthropic_generate function to get the LLM's response
     image_prompt = anthropic_generate(llm_prompt, model=anthropic_model)
     image_prompt.strip('".')
 
     return image_prompt + f" in the style of {base_style}"
+
+
+def generate_image_stability(
+    prompt: str,
+    negative_prompt: str = "",
+    style_preset: Optional[
+        Literal[
+            "3d-model",
+            "analog-film",
+            "anime",
+            "cinematic",
+            "comic-book",
+            "digital-art",
+            "enhance",
+            "fantasy-art",
+            "isometric",
+            "line-art",
+            "low-poly",
+            "modeling-compound",
+            "neon-punk",
+            "origami",
+            "photographic",
+            "pixel-art",
+            "tile-texture",
+        ]
+    ] = None,
+    endpoint=config.STABILITY_ENDPOINT,
+) -> Optional[bytes]:
+    """
+    Generate an image using Stability AI's core model API.
+
+    Args:
+        prompt (str): Text description of the desired image
+        negative_prompt (str): Text description of what to avoid in the image
+        style_preset (str, optional): Style preset to use for image generation
+
+    Returns:
+        bytes: Generated image data, or None if generation fails
+
+    Raises:
+        ValueError: If API key is missing
+        Warning: If content is filtered (NSFW)
+        requests.RequestException: If the API request fails
+    """
+    api_key = os.getenv("STABILITY_API_KEY")
+    if not api_key:
+        raise ValueError("STABILITY_API_KEY environment variable not set")
+
+    # Prepare headers
+    headers = {"Accept": "image/*", "Authorization": f"Bearer {api_key}"}
+
+    # Prepare form data
+    files = {
+        "prompt": (None, prompt),
+    }
+
+    # Add optional parameters if provided
+    if negative_prompt:
+        files["negative_prompt"] = (None, negative_prompt)
+
+    if style_preset:
+        files["style_preset"] = (None, style_preset)
+
+    try:
+        # Make the API request
+        response = requests.post(
+            endpoint,
+            headers=headers,
+            files=files,
+        )
+
+        # Check if request was successful
+        if response.status_code != 200:
+            print(f"Error: {response.status_code} - {response.content}")
+            return None
+
+        # Check for content filtering
+        finish_reason = response.headers.get("finish-reason")
+        if finish_reason == "CONTENT_FILTERED":
+            raise Warning("Generation failed NSFW classifier")
+
+        # Return the raw image content
+        return response.content
+
+    except requests.RequestException as e:
+        print(f"Request failed: {str(e)}")
+        return None
+    except Warning as w:
+        print(f"Content filtered: {str(w)}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error: {str(e)}")
+        return None
 
 
 def generate_image_imagen(
@@ -264,25 +356,6 @@ def generate_image_imagen(
     vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
     generation_model = ImageGenerationModel.from_pretrained(model)
 
-    safety_settings = [
-        SafetySetting(
-            category=HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        ),
-        SafetySetting(
-            category=HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        ),
-        SafetySetting(
-            category=HarmCategory.HARM_CATEGORY_HARASSMENT,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        ),
-        SafetySetting(
-            category=HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
-            threshold=SafetySetting.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-        ),
-    ]
-
     current_delay = initial_delay
 
     for attempt in range(max_attempts):
@@ -292,7 +365,7 @@ def generate_image_imagen(
                 prompt=prompt,
                 number_of_images=1,
                 aspect_ratio="1:1",
-                person_generation="allow_adult",
+                # person_generation="allow_adult",
                 # safety_filter_level="block_fewest",
             )
 

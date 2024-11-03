@@ -6,6 +6,7 @@
     "ANTHROPIC_MODEL_NAME":"claude-3-5-sonnet@20240620",
     "ANTHROPIC_SMALL_MODEL_NAME":"claude-3-haiku@20240307",
     "ANTHROPIC_REGION":"europe-west1",
+    "STABILITY_ENDPOINT":"https://api.stability.ai/v2beta/stable-image/generate/core",
     "THINKING_GAP_MS":3000,
     "SPEAKING_RATE_SLOW":0.5,
     "PROJECT_NUMBER":307643465852,
