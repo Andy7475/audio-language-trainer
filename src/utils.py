@@ -38,6 +38,32 @@ load_dotenv()  # so we can use environment variables for various global settings
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 
 
+def send_generation_request_stability(
+    host,
+    params,
+):
+    headers = {"Accept": "image/*", "Authorization": f"Bearer {os.getenv("STABILITY_API_KEY")}"}
+
+    # Encode parameters
+    files = {}
+    image = params.pop("image", None)
+    mask = params.pop("mask", None)
+    if image is not None and image != "":
+        files["image"] = open(image, "rb")
+    if mask is not None and mask != "":
+        files["mask"] = open(mask, "rb")
+    if len(files) == 0:
+        files["none"] = ""
+
+    # Send request
+    print(f"Sending REST request to {host}...")
+    response = requests.post(host, headers=headers, files=files, data=params)
+    if not response.ok:
+        raise Exception(f"HTTP {response.status_code}: {response.text}")
+
+    return response
+
+
 def test_image_reading(image_path):
     """
     Test reading and basic image properties from a path
