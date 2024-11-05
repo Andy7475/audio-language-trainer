@@ -27,7 +27,12 @@ from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
-from src.utils import clean_filename, create_test_story_dict, string_to_large_int
+from src.utils import (
+    add_image_paths,
+    clean_filename,
+    create_test_story_dict,
+    string_to_large_int,
+)
 import pysnooper
 
 
@@ -258,6 +263,7 @@ async def create_anki_deck_from_english_phrase_list(
     anki_filename_prefix: str,
     batch_size: int = 50,
     output_dir="../outputs/longman",
+    image_dir: str = None,
 ):
     """Takes a list of english phrases and does: 1) translation 2) text to speech 3) export to Anki deck.
     To avoid overloading the text-to-speech APIs it will batch up the phrases into smaller decks (*.apkg), but these will all have the same 'deck_id'
@@ -281,12 +287,23 @@ async def create_anki_deck_from_english_phrase_list(
         )
         translated_phrases_dict_audio = await add_audio(partial_dict)
 
-        export_to_anki(
-            translated_phrases_dict_audio,
-            output_dir,
-            f"{anki_filename_prefix}_{from_index}",
-            deck_name=deck_name,
-        )
+        if image_dir:
+            translated_phrases_dict_audio = add_image_paths(
+                translated_phrases_dict_audio, image_dir
+            )
+            export_to_anki_with_images(
+                translated_phrases_dict_audio,
+                output_dir,
+                f"{anki_filename_prefix}_{from_index}",
+                deck_name=deck_name,
+            )
+        else:
+            export_to_anki(
+                translated_phrases_dict_audio,
+                output_dir,
+                f"{anki_filename_prefix}_{from_index}",
+                deck_name=deck_name,
+            )
 
 
 def generate_wiktionary_links(
@@ -598,7 +615,8 @@ def export_to_anki_with_images(
     deck_name: str = None,
 ):
     """
-    Export story data to an Anki deck, including images for each card.
+    Export story data to an Anki deck, including images for each card. Use add_image_paths
+    with story_data_dict first to get image data.
     """
     os.makedirs(output_dir, exist_ok=True)
 

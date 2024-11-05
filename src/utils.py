@@ -36,13 +36,14 @@ from src.config_loader import config
 load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
+STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
 
 def send_generation_request_stability(
     host,
     params,
 ):
-    headers = {"Accept": "image/*", "Authorization": f"Bearer {os.getenv("STABILITY_API_KEY")}"}
+    headers = {"Accept": "image/*", "Authorization": f"Bearer {STABILITY_API_KEY}"}
 
     # Encode parameters
     files = {}
@@ -171,11 +172,13 @@ def add_images_to_phrases(
 
         # Generate and save the image
         try:
-            image_bytes = generate_image_stability(
-                prompt=prompt, style_preset="comic-book"
-            )
-            # Extract image bytes from Vertex AI GeneratedImage object
-            image = Image.open(io.BytesIO(image_bytes))
+            image = generate_image_imagen(prompt)
+            if image is None:
+                image = generate_image_stability(prompt, style_preset="comic-book")
+
+            if image is None:
+                print("Both image generation attempts failed, skipping")
+                continue
             # Save image to file
             image.save(image_path)
 
@@ -186,7 +189,9 @@ def add_images_to_phrases(
                 "image_path": image_path,
             }
 
-            print(f"Successfully processed: {phrase}")
+            print(f"Successfully processed: {phrase}. Now sleeping.")
+            for sec in tqdm(range(45)):
+                time.sleep(1)
 
         except Exception as e:
             print(f"Error processing phrase '{phrase}': {str(e)}")
@@ -286,7 +291,7 @@ def generate_image_stability(
         ]
     ] = None,
     endpoint=config.STABILITY_ENDPOINT,
-) -> Optional[bytes]:
+) -> Optional[Image.Image]:
     """
     Generate an image using Stability AI's core model API.
 
@@ -303,12 +308,11 @@ def generate_image_stability(
         Warning: If content is filtered (NSFW)
         requests.RequestException: If the API request fails
     """
-    api_key = os.getenv("STABILITY_API_KEY")
-    if not api_key:
+    if not STABILITY_API_KEY:
         raise ValueError("STABILITY_API_KEY environment variable not set")
 
     # Prepare headers
-    headers = {"Accept": "image/*", "Authorization": f"Bearer {api_key}"}
+    headers = {"Accept": "image/*", "Authorization": f"Bearer {STABILITY_API_KEY}"}
 
     # Prepare form data
     files = {
@@ -341,7 +345,7 @@ def generate_image_stability(
             raise Warning("Generation failed NSFW classifier")
 
         # Return the raw image content
-        return response.content
+        return Image.open(io.BytesIO(response.content))
 
     except requests.RequestException as e:
         print(f"Request failed: {str(e)}")
@@ -359,10 +363,7 @@ def generate_image_imagen(
     model: Literal[
         "imagen-3.0-fast-generate-001", "imagen-3.0-generate-001"
     ] = "imagen-3.0-generate-001",
-    max_attempts: int = 3,
-    initial_delay: float = 10.0,
-    delay_multiplier: float = 2.0,
-) -> ImageGenerationModel:
+) -> Optional[Image.Image]:
     """
     Generate an image using the Vertex AI Imagen model with retry logic.
 
@@ -374,7 +375,7 @@ def generate_image_imagen(
         delay_multiplier: Factor to multiply delay by after each attempt
 
     Returns:
-        Generated image from the model
+        Generated image bytes from the model
 
     Raises:
         Exception: If image generation fails after all retry attempts
@@ -382,48 +383,26 @@ def generate_image_imagen(
     vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
     generation_model = ImageGenerationModel.from_pretrained(model)
 
-    current_delay = initial_delay
+    try:
+        # Generate the image
+        images = generation_model.generate_images(
+            prompt=prompt,
+            number_of_images=1,
+            aspect_ratio="1:1",
+            # person_generation="allow_adult",
+            # safety_filter_level="block_fewest",
+        )
 
-    for attempt in range(max_attempts):
-        try:
-            # Generate the image
-            images = generation_model.generate_images(
-                prompt=prompt,
-                number_of_images=1,
-                aspect_ratio="1:1",
-                # person_generation="allow_adult",
-                # safety_filter_level="block_fewest",
-            )
+        if len(images.images) > 0:
 
-            if len(images.images) > 0:
-                if (
-                    attempt < max_attempts - 1
-                ):  # Don't delay on the last successful attempt
-                    print(
-                        f"Generation successful, waiting {current_delay}s before next request..."
-                    )
-                    time.sleep(current_delay)
-                return images[0]
-            else:
-                raise KeyError(
-                    f"No image generated using {model} with prompt: {prompt}"
-                )
+            return Image.open(io.BytesIO(images.images[0]._image_bytes))
+        else:
+            print(f"No image generated using {model} with prompt: {prompt}")
+            return None
 
-        except Exception as e:
-            if attempt < max_attempts - 1:  # Don't wait if this was the last attempt
-                print(f"Attempt {attempt + 1} failed: {str(e)}")
-                print(f"Waiting {current_delay}s before retry...")
-                time.sleep(current_delay)
-                current_delay *= delay_multiplier  # Increase delay for next attempt
-            else:
-                # If this was the last attempt, raise the exception
-                raise Exception(
-                    f"Image generation failed after {max_attempts} attempts. "
-                    f"Last error: {str(e)}"
-                )
-
-    # This should never be reached due to the exception in the last iteration
-    raise Exception("Unexpected end of retry loop")
+    except Exception as e:
+        print(f"Imagen generation failed with error {e}")
+        return None
 
 
 def resize_image(generated_image, height=500, width=500):
