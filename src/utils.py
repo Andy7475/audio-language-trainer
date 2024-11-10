@@ -174,7 +174,7 @@ def add_images_to_phrases(
         try:
             image = generate_image_imagen(prompt)
             if image is None:
-                image = generate_image_stability(prompt, style_preset="comic-book")
+                image = generate_image_deepai(prompt)
 
             if image is None:
                 print("Both image generation attempts failed, skipping")
@@ -190,8 +190,10 @@ def add_images_to_phrases(
             }
 
             print(f"Successfully processed: {phrase}. Now sleeping.")
-            for sec in tqdm(range(45)):
+            pbar = tqdm(range(45), desc="Sleeping", ncols=75, colour="blue")
+            for sec in pbar:
                 time.sleep(1)
+                pbar.refresh()
 
         except Exception as e:
             print(f"Error processing phrase '{phrase}': {str(e)}")
@@ -264,6 +266,89 @@ def create_image_generation_prompt(phrase, anthropic_model: str = None):
     image_prompt.strip('".')
 
     return image_prompt + f" in the style of {base_style}"
+
+
+import os
+import requests
+from PIL import Image
+from typing import Literal, Optional, Union
+from io import BytesIO
+
+
+def generate_image_deepai(
+    prompt: str,
+    width: Union[str, int] = "512",
+    height: Union[str, int] = "512",
+    model: Literal["standard", "hd"] = "hd",
+    negative_prompt: Optional[str] = None,
+) -> Image.Image:
+    """
+    Generate an image using DeepAI's text2img API and return it as a PIL Image object.
+
+    Args:
+        prompt (str): The text prompt to generate the image from
+        width (Union[str, int]): Image width (128-1536, default 512)
+        height (Union[str, int]): Image height (128-1536, default 512)
+        model (str): Model version ("standard" or "hd")
+        negative_prompt (Optional[str]): Text describing what to remove from the image
+
+    Returns:
+        PIL.Image.Image: The generated image as a PIL Image object
+
+    Raises:
+        Exception: If there's an error in image generation or processing
+        EnvironmentError: If DEEPAI_API_KEY environment variable is not set
+    """
+    # Get API key from environment variable
+    api_key = os.getenv("DEEPAI_API_KEY")
+    if not api_key:
+        raise EnvironmentError("DEEPAI_API_KEY environment variable not set")
+
+    try:
+        # Convert width and height to strings if they're integers
+        width = str(width)
+        height = str(height)
+
+        # Prepare the API request data
+        data = {
+            "text": prompt,
+            "width": width,
+            "height": height,
+            "image_generator_version": model,
+        }
+
+        # Add negative prompt if provided
+        if negative_prompt:
+            data["negative_prompt"] = negative_prompt
+
+        # Make the API request
+        response = requests.post(
+            "https://api.deepai.org/api/text2img",
+            data=data,
+            headers={"api-key": api_key},
+        )
+
+        # Check if the request was successful
+        response.raise_for_status()
+
+        # Get the URL of the generated image from the response
+        result = response.json()
+        if "output_url" not in result:
+            raise Exception(f"Unexpected API response: {result}")
+
+        # Download the image from the URL
+        image_response = requests.get(result["output_url"])
+        image_response.raise_for_status()
+
+        # Convert to PIL Image
+        image = Image.open(BytesIO(image_response.content))
+
+        return image
+
+    except requests.exceptions.RequestException as e:
+        raise Exception(f"Error making request to DeepAI API: {str(e)}")
+    except Exception as e:
+        raise Exception(f"Error generating image with DeepAI: {str(e)}")
 
 
 def generate_image_stability(
