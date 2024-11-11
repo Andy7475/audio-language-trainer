@@ -8,7 +8,8 @@ import subprocess
 import sys
 import time
 from collections import defaultdict
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple
+from io import BytesIO
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
 
 import numpy as np
 import pycountry
@@ -27,11 +28,11 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from tqdm import tqdm
 from vertexai.generative_models import HarmCategory, SafetySetting
 from vertexai.preview.vision_models import ImageGenerationModel
-from tqdm import tqdm
-from src.config_loader import config
 
+from src.config_loader import config
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -266,13 +267,6 @@ def create_image_generation_prompt(phrase, anthropic_model: str = None):
     image_prompt.strip('".')
 
     return image_prompt + f" in the style of {base_style}"
-
-
-import os
-import requests
-from PIL import Image
-from typing import Literal, Optional, Union
-from io import BytesIO
 
 
 def generate_image_deepai(

@@ -104,11 +104,13 @@ def convert_anki_to_story_dict(collection_path: str, deck_name: str) -> Dict[str
                         continue
 
             # Add all phrases and audio to the story dict under a single part
+            english_phrases = [english for (english, target) in phrase_list]
             if phrase_list and audio_segments:
                 story_data_dict["part_1"]["translated_phrase_list"] = phrase_list
                 story_data_dict["part_1"][
                     "translated_phrase_list_audio"
                 ] = audio_segments
+                story_data_dict["part_1"]["corrected_phrase_list"] = english_phrases
 
     return dict(story_data_dict)
 
@@ -616,6 +618,10 @@ def export_to_anki_with_images(
     """
     Export story data to an Anki deck, including images for each card. Use add_image_paths
     with story_data_dict first to get image data.
+
+    The story_name is used as a prefix for the anki file only
+    if you want these merged with other decks, ensure the deck_name matches exactly
+    as this is used to generate the deck id.
     """
     os.makedirs(output_dir, exist_ok=True)
 
@@ -751,8 +757,9 @@ def export_to_anki_with_images(
         )  # Default to None if missing
 
         # Zip all three lists together
-        for (english, target), audio_segment, image_path in zip(
-            phrase_pairs, audio_segments, image_paths
+        for (english, target), audio_segment, image_path in tqdm(
+            zip(phrase_pairs, audio_segments, image_paths),
+            desc="generating image and sound files",
         ):
             # Handle image if it exists
             image_filename = None
@@ -812,7 +819,7 @@ def export_to_anki_with_images(
     )  # Sort by English text length
 
     # Add notes to deck
-    for note in notes:
+    for note in tqdm(notes, desc="adding notes to deck"):
         deck.add_note(note)
 
     # Create and save the package
@@ -823,7 +830,7 @@ def export_to_anki_with_images(
     print(f"Anki deck exported to {output_filename}")
 
     # Clean up temporary files
-    for media_file in media_files:
+    for media_file in tqdm(media_files, desc="deleting temp files"):
         file_path = os.path.join(output_dir, media_file)
         try:
             os.remove(file_path)
