@@ -1,0 +1,49 @@
+Source path:... y:\Python Scripts\audio-language-trainer\src\utils.py
+Starting var:.. story_dict = {'anki': {'translated_phrase_list': [('The drive...nt.AudioSegment object at 0x0000020333C71350>]]}}
+Starting var:.. image_dir = '../data/longman_phrase_images'
+09:55:50.218876 call        96 def add_image_paths(story_dict: Dict[str, Any], image_dir: str) -> Dict[str, Any]:
+09:55:50.220877 line       112     updated_dict = copy.deepcopy(story_dict)
+New var:....... updated_dict = {'anki': {'translated_phrase_list': [('The drive...nt.AudioSegment object at 0x0000020333C9C890>]]}}
+09:55:50.220877 line       114     for story_part, data in tqdm(updated_dict.items(), desc="Processing story parts"):
+New var:....... story_part = 'anki'
+New var:....... data = {'translated_phrase_list': [('The driver will fa...ent.AudioSegment object at 0x0000020333C9C890>]]}
+09:55:50.223876 line       116         data["image_path"] = []
+Modified var:.. updated_dict = {'anki': {'translated_phrase_list': [('The drive...ject at 0x0000020333C9C890>]], 'image_path': []}}
+Modified var:.. data = {'translated_phrase_list': [('The driver will fa...bject at 0x0000020333C9C890>]], 'image_path': []}
+09:55:50.225877 line       119         phrase_list = data.get("translated_phrase_list", [])
+New var:....... phrase_list = [('The driver will face terrible traffic on holi... 'Gutun garrantzitsua azkar irakurri behar dut')]
+09:55:50.226877 line       121         for eng_phrase, _ in tqdm(
+09:55:50.226877 line       122             phrase_list, desc=f"Adding image paths for {story_part}", leave=False
+09:55:50.227877 line       121         for eng_phrase, _ in tqdm(
+New var:....... eng_phrase = 'The driver will face terrible traffic on holiday'
+New var:....... _ = 'Gidariak trafiko izugarria izango du oporretan'
+09:55:50.230878 line       125             clean_name = clean_filename(eng_phrase)
+New var:....... clean_name = 'the_driver_will_face_terrible_traffic_on_holiday'
+09:55:50.232879 line       126             image_filename = f"{clean_name}.png"
+New var:....... image_filename = 'the_driver_will_face_terrible_traffic_on_holiday.png'
+09:55:50.232879 line       127             full_path = os.path.join(image_dir, image_filename)
+New var:....... full_path = '../data/longman_phrase_images\\the_driver_will_face_terrible_traffic_on_holiday.png'
+09:55:50.233876 line       130             if os.path.isfile(full_path) and os.access(full_path, os.R_OK):
+09:55:50.234877 line       131                 data["image_path"].append(full_path)
+Modified var:.. updated_dict = {'anki': {'translated_phrase_list': [('The drive...ver_will_face_terrible_traffic_on_holiday.png']}}
+Modified var:.. data = {'translated_phrase_list': [('The driver will fa...iver_will_face_terrible_traffic_on_holiday.png']}
+09:55:50.234877 line       121         for eng_phrase, _ in tqdm(
+Modified var:.. eng_phrase = 'I need to read the important letter quickly'
+Modified var:.. _ = 'Gutun garrantzitsua azkar irakurri behar dut'
+09:55:50.235888 line       125             clean_name = clean_filename(eng_phrase)
+Modified var:.. clean_name = 'i_need_to_read_the_important_letter_quickly'
+09:55:50.235888 line       126             image_filename = f"{clean_name}.png"
+Modified var:.. image_filename = 'i_need_to_read_the_important_letter_quickly.png'
+09:55:50.236886 line       127             full_path = os.path.join(image_dir, image_filename)
+Modified var:.. full_path = '../data/longman_phrase_images\\i_need_to_read_the_important_letter_quickly.png'
+09:55:50.236886 line       130             if os.path.isfile(full_path) and os.access(full_path, os.R_OK):
+09:55:50.237875 line       131                 data["image_path"].append(full_path)
+Modified var:.. updated_dict = {'anki': {'translated_phrase_list': [('The drive...need_to_read_the_important_letter_quickly.png']}}
+Modified var:.. data = {'translated_phrase_list': [('The driver will fa..._need_to_read_the_important_letter_quickly.png']}
+09:55:50.237875 line       121         for eng_phrase, _ in tqdm(
+09:55:50.240876 line       137         if len(data["image_path"]) != len(phrase_list):
+09:55:50.241877 line       114     for story_part, data in tqdm(updated_dict.items(), desc="Processing story parts"):
+09:55:50.242876 line       143     return updated_dict
+09:55:50.243876 return     143     return updated_dict
+Return value:.. {'anki': {'translated_phrase_list': [('The drive...need_to_read_the_important_letter_quickly.png']}}
+Elapsed time: 00:00:00.026000

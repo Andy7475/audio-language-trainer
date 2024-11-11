@@ -1,5 +1,9 @@
+accelerate
 altair
 anthropic                      #for querying the Anthropic models hosted on Google Cloud
+beautifulsoup4
+diffusers
+diffusers
 genanki
 google-auth
 google-cloud-aiplatform
@@ -7,18 +11,20 @@ google-cloud-core
 google-cloud-texttospeech
 google-cloud-translate
 ipykernel                       #for jupyter notebook
+ipywidgets
 librosa                         #for speeding up dialogue
 matplotlib
 mutagen
 numpy
 pandas
+pycountry
 pydantic
 pydub
 pysnooper
 pytest
 python-dotenv
 requests
+reportlab
 soundfile                       #for speeding up dialogue
 spacy
-pycountry
-beautifulsoup4
+transformers
