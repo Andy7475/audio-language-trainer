@@ -10,7 +10,7 @@ import time
 from collections import defaultdict
 from io import BytesIO
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
-
+import copy
 import numpy as np
 import pycountry
 import requests
@@ -94,32 +94,47 @@ def add_image_paths(story_dict: Dict[str, Any], image_dir: str) -> Dict[str, Any
     Add image paths to the story dictionary based on the English phrases.
 
     Args:
-        story_dict: Dictionary containing story data with corrected_phrase_list
+        story_dict: Dictionary containing story data with translated_phrase_list
         image_dir: Directory containing the images
 
     Returns:
         Updated dictionary with image_path added for each story part
+
+    Note:
+        For each story part, expects translated_phrase_list to be a list of tuples
+        where each tuple is (english_text, target_text)
     """
+    # Create a deep copy of the dictionary to avoid modifying nested structures
+    updated_dict = copy.deepcopy(story_dict)
 
-    # Create a copy of the dictionary to avoid modifying the original
-    updated_dict = story_dict.copy()
+    for story_part, data in tqdm(updated_dict.items(), desc="Processing story parts"):
+        # Initialize image_path list for this story part
+        data["image_path"] = []
 
-    for story_part, data in updated_dict.items():
-        if "corrected_phrase_list" in data:
-            # Initialize image_path list for this story part
-            data["image_path"] = []
+        # Get the phrases from translated_phrase_list
+        phrase_list = data.get("translated_phrase_list", [])
 
-            for phrase in data["corrected_phrase_list"]:
-                # Generate the expected image filename
-                clean_name = clean_filename(phrase)
-                image_filename = f"{clean_name}.png"
-                full_path = os.path.join(image_dir, image_filename)
+        for eng_phrase, _ in tqdm(
+            phrase_list, desc=f"Adding image paths for {story_part}", leave=False
+        ):
+            # Generate the expected image filename from English phrase
+            clean_name = clean_filename(eng_phrase)
+            image_filename = f"{clean_name}.png"
+            full_path = os.path.join(image_dir, image_filename)
 
-                # Check if the image exists
-                if os.path.exists(full_path):
-                    data["image_path"].append(full_path)
-                else:
-                    data["image_path"].append(None)
+            # Check if the image exists and is readable
+            if os.path.isfile(full_path) and os.access(full_path, os.R_OK):
+                data["image_path"].append(full_path)
+            else:
+                print(f"Warning: Image not found or not readable: {full_path}")
+                data["image_path"].append(None)
+
+        # Verify lengths match
+        if len(data["image_path"]) != len(phrase_list):
+            raise ValueError(
+                f"Mismatch in {story_part}: {len(data['image_path'])} images "
+                f"vs {len(phrase_list)} phrases"
+            )
 
     return updated_dict
 
