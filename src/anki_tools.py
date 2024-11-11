@@ -36,7 +36,6 @@ from src.utils import (
 import pysnooper
 
 
-@pysnooper.snoop(output="snoop.txt")
 def convert_anki_to_story_dict(collection_path: str, deck_name: str) -> Dict[str, Dict]:
     """
     Read an Anki deck and convert it to the story_data_dict format used by export_anki_with_images
