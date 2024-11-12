@@ -1,5 +1,6 @@
 accelerate
 altair
+anki
 anthropic                      #for querying the Anthropic models hosted on Google Cloud
 beautifulsoup4
 diffusers
@@ -23,8 +24,8 @@ pydub
 pysnooper
 pytest
 python-dotenv
-requests
 reportlab
+requests
 soundfile                       #for speeding up dialogue
 spacy
 transformers

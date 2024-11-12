@@ -23,6 +23,8 @@ from src.audio_generation import create_m4a_with_timed_lyrics
 from src.dialogue_generation import get_least_used_words, add_usage_to_words
 from tqdm import tqdm
 
+from src.utils import ensure_spacy_model
+
 
 def create_story_plan_and_dialogue(
     story_name: str,
@@ -82,6 +84,7 @@ def create_story_plan_and_dialogue(
 def add_practice_phrases(story_data_dict):
     """Takes the longer dialgoue and breaks it up into smaller practice phrases.
     Modifies the input dictionary and returns it"""
+    ensure_spacy_model()
     for story_part in tqdm(story_data_dict, desc="generating practice phrases"):
         dialogue = story_data_dict[story_part]["dialogue"]
         story_data_dict[story_part]["corrected_phrase_list"] = (
