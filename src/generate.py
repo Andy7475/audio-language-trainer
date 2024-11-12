@@ -1,4 +1,5 @@
 from collections import defaultdict
+import time
 from typing import Dict
 from src.audio_generation import async_process_phrases, generate_audio_from_dialogue
 from pydub import AudioSegment
@@ -20,6 +21,7 @@ from src.phrase import generate_practice_phrases_from_dialogue
 from src.translation import translate_dialogue, translate_phrases
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.dialogue_generation import get_least_used_words, add_usage_to_words
+from tqdm import tqdm
 
 
 def create_story_plan_and_dialogue(
@@ -51,7 +53,7 @@ def create_story_plan_and_dialogue(
 
     story_data_dict = defaultdict(lambda: defaultdict(str))
     recap = "This is the beginning of the story."
-    for story_part in list(story_plan.keys()):
+    for story_part in tqdm(list(story_plan.keys()), desc="generating dialogue"):
         prompt = generate_dialogue_prompt(
             story_part=story_part,
             story_part_outline=story_plan[story_part],
@@ -63,11 +65,13 @@ def create_story_plan_and_dialogue(
             grammar_concept_count=5,
             grammar_use_count=3,
         )
+        time.sleep(config.LLM_SLEEP_SECONDS)
         dialogue = generate_dialogue(prompt)
         vocab_used = get_vocab_from_dialogue(dialogue)
         update_vocab_usage(vocab_used)
         verbs_for_story_usage = add_usage_to_words(verbs_for_story, "verbs")
         vocab_for_story_usage = add_usage_to_words(vocab_for_story, "vocab")
+        time.sleep(config.LLM_SLEEP_SECONDS)
         recap = generate_recap(dialogue, test=False)
         story_data_dict[story_part]["dialogue_generation_prompt"] = prompt
         story_data_dict[story_part]["dialogue"] = dialogue
@@ -78,7 +82,7 @@ def create_story_plan_and_dialogue(
 def add_practice_phrases(story_data_dict):
     """Takes the longer dialgoue and breaks it up into smaller practice phrases.
     Modifies the input dictionary and returns it"""
-    for story_part in story_data_dict:
+    for story_part in tqdm(story_data_dict, desc="generating practice phrases"):
         dialogue = story_data_dict[story_part]["dialogue"]
         story_data_dict[story_part]["corrected_phrase_list"] = (
             generate_practice_phrases_from_dialogue(dialogue)
@@ -92,7 +96,7 @@ def add_practice_phrases(story_data_dict):
 def add_translations(story_data_dict):
     """Translates all the phrases and dialogue to the target language"""
 
-    for story_part in story_data_dict:
+    for story_part in tqdm(story_data_dict, desc="adding translations"):
         print(f"Beginning translation for {story_part}")
         if "dialogue" in story_data_dict[story_part]:
             dialogue = story_data_dict[story_part]["dialogue"]
@@ -112,7 +116,7 @@ def add_translations(story_data_dict):
 async def add_audio(story_data_dict):
     """Adds text-to-speech for english and target language for all dialogue and
     practice phrases"""
-    for story_part in story_data_dict:
+    for story_part in tqdm(story_data_dict, desc="adding audio"):
         if "translated_dialogue" in story_data_dict[story_part]:
             print(f"Beginning text-to-speech for {story_part}")
             translated_dialogue_audio_segments = generate_audio_from_dialogue(
@@ -159,7 +163,7 @@ def create_album_files(story_data_dict, image_data, output_dir, story_name_clean
     ALBUM_NAME = story_name_clean.replace("_", " ")
     TRACK_NUMBER = 0
 
-    for story_part in story_data_dict:
+    for story_part in tqdm(story_data_dict, desc="creating album"):
         TRACK_NUMBER += 1  # so we don't start at 0
 
         audio_list = []
