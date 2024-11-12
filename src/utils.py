@@ -1,4 +1,5 @@
 import base64
+import copy
 import hashlib
 import io
 import json
@@ -10,7 +11,7 @@ import time
 from collections import defaultdict
 from io import BytesIO
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
-import copy
+
 import numpy as np
 import pycountry
 import requests
@@ -38,6 +39,277 @@ load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
+
+
+def find_file():
+    print(sys.path)
+    print(os.listdir())
+
+
+def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
+    """Convert an AudioSegment to a base64 encoded string."""
+    buffer = io.BytesIO()
+    audio_segment.export(buffer, format="mp3")
+    buffer.seek(0)
+    audio_bytes = buffer.read()
+    return base64.b64encode(audio_bytes).decode("utf-8")
+
+
+def prepare_story_data_for_html(story_data_dict: Dict) -> Dict:
+    """
+    Process the story data dictionary to include base64 encoded audio and prepare
+    it for use in the HTML template.
+    """
+    prepared_data = {}
+
+    for section_name, section_data in story_data_dict.items():
+        prepared_data[section_name] = {
+            "dialogue": section_data.get("dialogue", []),
+            "translated_dialogue": section_data.get("translated_dialogue", []),
+            "translated_phrase_list": section_data.get("translated_phrase_list", []),
+            "audio_data": {"phrases": [], "dialogue": []},
+        }
+
+        # Process phrase audio
+        if "translated_phrase_list_audio" in section_data:
+            for audio_segments in section_data["translated_phrase_list_audio"]:
+                # Assuming audio_segments is a list with [normal, slow] speeds
+                if isinstance(audio_segments, list) and len(audio_segments) > 2:
+                    normal_audio = convert_audio_to_base64(audio_segments[2])
+                    slow_audio = convert_audio_to_base64(audio_segments[1])
+                    prepared_data[section_name]["audio_data"]["phrases"].append(
+                        {"normal": normal_audio, "slow": slow_audio}
+                    )
+
+        # Process dialogue audio
+        if "translated_dialogue_audio" in section_data:
+            for audio_segment in section_data["translated_dialogue_audio"]:
+                audio_base64 = convert_audio_to_base64(audio_segment)
+                prepared_data[section_name]["audio_data"]["dialogue"].append(
+                    audio_base64
+                )
+
+    return prepared_data
+
+
+def create_html_story(
+    story_data_dict: Dict,
+    output_path: str,
+    title: Optional[str] = None,
+    language: str = "Japanese",
+) -> None:
+    """Create a standalone HTML file from the story data dictionary."""
+
+    # Process the story data and convert audio to base64
+    prepared_data = prepare_story_data_for_html(story_data_dict)
+
+    # Define the React component directly in the template
+    react_component = """
+    // Create the StoryViewer component
+    const StoryViewer = () => {
+        const [activeSection, setActiveSection] = React.useState(null);
+        const [showTranslation, setShowTranslation] = React.useState({});
+        const audioRef = React.useRef(null);
+
+        const createWiktionaryLinks = (text) => {
+            return text.split(' ').map((word, index) => {
+                const cleanWord = word.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+                if (cleanWord) {
+                    return React.createElement(React.Fragment, { key: index },
+                        React.createElement('a', {
+                            href: `https://en.wiktionary.org/wiki/${encodeURIComponent(cleanWord)}#${targetLanguage}`,
+                            target: '_blank',
+                            rel: 'noopener noreferrer',
+                            className: 'text-blue-600 hover:underline'
+                        }, word),
+                        ' '
+                    );
+                }
+                return word + ' ';
+            });
+        };
+
+        const playAudio = (audioData) => {
+            if (audioRef.current) {
+                audioRef.current.src = `data:audio/mp3;base64,${audioData}`;
+                audioRef.current.play();
+            }
+        };
+
+        const toggleTranslation = (index) => {
+            setShowTranslation(prev => ({
+                ...prev,
+                [index]: !prev[index]
+            }));
+        };
+
+        return React.createElement('div', { className: 'min-h-screen bg-gray-100' },
+            React.createElement('audio', { ref: audioRef, className: 'hidden' }),
+            
+            // Header
+            React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
+                React.createElement('h1', { className: 'text-xl font-bold' }, 'Language Learning Story')
+            ),
+            
+            // Main content
+            React.createElement('main', { className: 'max-w-4xl mx-auto p-4' },
+                Object.entries(storyData).map(([sectionName, section], sectionIndex) =>
+                    React.createElement('div', { 
+                        key: sectionName,
+                        className: 'mb-6 bg-white rounded-lg shadow-md'
+                    },
+                        // Section header
+                        React.createElement('button', {
+                            onClick: () => setActiveSection(activeSection === sectionIndex ? null : sectionIndex),
+                            className: 'w-full p-4 flex items-center justify-between text-left bg-gray-50 rounded-t-lg hover:bg-gray-100'
+                        },
+                            React.createElement('h2', { className: 'text-lg font-semibold capitalize' },
+                                sectionName.replace(/_/g, ' ')
+                            ),
+                            React.createElement('span', null, activeSection === sectionIndex ? '▼' : '▶')
+                        ),
+                        
+                        // Section content
+                        activeSection === sectionIndex && React.createElement('div', { className: 'p-4' },
+                            // Practice Phrases
+                            React.createElement('div', { className: 'mb-6' },
+                                React.createElement('h3', { className: 'text-lg font-semibold mb-4' }, 'Practice Phrases'),
+                                section.translated_phrase_list.map(([english, target], index) =>
+                                    React.createElement('div', { 
+                                        key: index,
+                                        className: 'mb-4 p-3 bg-gray-50 rounded-lg'
+                                    },
+                                        React.createElement('div', { className: 'flex items-center justify-between' },
+                                            React.createElement('div', { className: 'flex-grow' },
+                                                React.createElement('p', { className: 'text-lg font-medium' },
+                                                    createWiktionaryLinks(target)
+                                                ),
+                                                React.createElement('button', {
+                                                    onClick: () => toggleTranslation(index),
+                                                    className: 'text-sm text-blue-600 hover:underline mt-1'
+                                                }, `${showTranslation[index] ? 'Hide' : 'Show'} translation`),
+                                                showTranslation[index] && React.createElement('p', { className: 'mt-2 text-gray-600' },
+                                                    english
+                                                )
+                                            ),
+                                            section.audio_data?.phrases[index] && React.createElement('div', { className: 'flex gap-2' },
+                                                React.createElement('button', {
+                                                    onClick: () => playAudio(section.audio_data.phrases[index].normal),
+                                                    className: 'p-2 rounded-full hover:bg-gray-200',
+                                                    title: 'Play normal speed'
+                                                }, '▶'),
+                                                React.createElement('button', {
+                                                    onClick: () => playAudio(section.audio_data.phrases[index].slow),
+                                                    className: 'p-2 rounded-full hover:bg-gray-200',
+                                                    title: 'Play slow speed'
+                                                }, '🐢')
+                                            )
+                                        )
+                                    )
+                                )
+                            ),
+                            
+                            // Dialogue section (if there's any dialogue)
+                            section.translated_dialogue.length > 0 && React.createElement('div', null,
+                                React.createElement('h3', { className: 'text-lg font-semibold mb-4' }, 'Dialogue'),
+                                section.translated_dialogue.map((utterance, index) =>
+                                    React.createElement('div', { 
+                                        key: index,
+                                        className: 'mb-4 p-3 bg-gray-50 rounded-lg'
+                                    },
+                                        React.createElement('div', { className: 'flex items-center justify-between' },
+                                            React.createElement('div', { className: 'flex-grow' },
+                                                React.createElement('p', { className: 'text-sm text-gray-600 mb-1' },
+                                                    utterance.speaker
+                                                ),
+                                                React.createElement('p', { className: 'text-lg' },
+                                                    createWiktionaryLinks(utterance.text)
+                                                ),
+                                                React.createElement('p', { className: 'mt-2 text-gray-600' },
+                                                    section.dialogue[index].text
+                                                )
+                                            ),
+                                            section.audio_data?.dialogue[index] && React.createElement('button', {
+                                                onClick: () => playAudio(section.audio_data.dialogue[index]),
+                                                className: 'p-2 rounded-full hover:bg-gray-200'
+                                            }, '▶')
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            ),
+            
+            // Footer
+            React.createElement('footer', { className: 'bg-gray-800 text-white p-4 mt-8' },
+                React.createElement('div', { className: 'max-w-4xl mx-auto flex items-center justify-between' },
+                    React.createElement('p', { className: 'text-sm' }, 'Download the audio album for practice'),
+                    React.createElement('a', {
+                        href: '#',
+                        className: 'flex items-center gap-2 bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700',
+                        onClick: (e) => {
+                            e.preventDefault();
+                        }
+                    },
+                        React.createElement('span', null, '📚'),
+                        React.createElement('span', null, 'Get Album')
+                    )
+                )
+            )
+        );
+    };
+    """
+
+    # Define the HTML template
+    html_template = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{title}</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+        <style>
+            .audio-player {{
+                display: none;
+            }}
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script>
+            // Embed the story data
+            const storyData = {story_data};
+            const targetLanguage = "{language}";
+            
+            {react_component}
+            
+            // Render the app
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(React.createElement(StoryViewer));
+        </script>
+    </body>
+    </html>
+    """
+
+    # Format the HTML template
+    html_content = html_template.format(
+        title=title or "Language Learning Story",
+        story_data=json.dumps(prepared_data),
+        language=language,
+        react_component=react_component,
+    )
+
+    # Write the HTML file
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    print(f"HTML story created at: {output_path}")
 
 
 def generate_story_image(story_plan):
