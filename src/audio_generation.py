@@ -1,5 +1,6 @@
 import asyncio
 from datetime import datetime
+import html
 import io
 import multiprocessing
 import os
@@ -7,7 +8,7 @@ import sys
 import time
 import uuid
 from functools import partial
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import IPython.display as ipd
 import librosa
@@ -19,7 +20,53 @@ from pydub import AudioSegment
 
 from src.config_loader import config
 
+def clean_tts_text(text: str) -> str:
+    """
+    Clean and prepare text for TTS processing by:
+    1. Decoding HTML entities
+    2. Handling any special characters or formatting
+    
+    Args:
+        text: Input text that may contain HTML entities or special characters
+        
+    Returns:
+        Cleaned text ready for TTS processing
+    """
+    # Decode HTML entities (like &#39; to ')
+    cleaned_text = html.unescape(text)
+    
+    # Add any additional text cleaning steps here if needed
+    # For example, handling other special characters or formatting
+    
+    return cleaned_text
 
+def clean_translated_content(
+    content: Union[str, Tuple[str, str], List[Dict[str, str]]]
+) -> Union[str, Tuple[str, str], List[Dict[str, str]]]:
+    """
+    Clean translated content in various formats:
+    - Single string
+    - Tuple of (original, translated)
+    - List of dialogue dictionaries
+    
+    Args:
+        content: Translated content in various formats
+        
+    Returns:
+        Cleaned content in the same format as input
+    """
+    if isinstance(content, str):
+        return clean_tts_text(content)
+    elif isinstance(content, tuple):
+        return (content[0], clean_tts_text(content[1]))
+    elif isinstance(content, list) and all(isinstance(d, dict) for d in content):
+        return [
+            {**d, 'text': clean_tts_text(d['text'])}
+            for d in content
+        ]
+    else:
+        raise ValueError(f"Unsupported content format: {type(content)}")
+    
 def setup_ffmpeg():
     ffmpeg_path = r"C:\Program Files\ffmpeg-7.0-essentials_build\bin"
 
@@ -68,26 +115,47 @@ def text_to_speech_multiprocessing(
 
 
 async def async_generate_translated_phrase_audio(
-    translated_phrase: tuple[str, str],
-    english_voice_models: dict = None,
-    target_voice_models: dict = None,
+    translated_phrase: Tuple[str, str],
+    english_voice_models: Dict = None,
+    target_voice_models: Dict = None,
 ) -> List[AudioSegment]:
+    """
+    Generate audio for translated phrases, handling HTML entities and special characters.
+    
+    Args:
+        translated_phrase: Tuple of (original_text, translated_text)
+        english_voice_models: Configuration for English TTS voices
+        target_voice_models: Configuration for target language TTS voices
+        
+    Returns:
+        List of AudioSegment objects containing the generated audio
+    """
+    # Clean the translated text while preserving the original format
+    cleaned_phrase = clean_translated_content(translated_phrase)
+    
+    texts = [
+        cleaned_phrase[0],  # Original English text
+        cleaned_phrase[1],  # Translated text (slow)
+        cleaned_phrase[1]   # Translated text (normal)
+    ]
+    
     if english_voice_models is None:
         english_voice_models = config.english_voice_models
     if target_voice_models is None:
         target_voice_models = config.target_language_voice_models
 
-    texts = [translated_phrase[0], translated_phrase[1], translated_phrase[1]]
     language_codes = [
         english_voice_models["language_code"],
         target_voice_models["language_code"],
         target_voice_models["language_code"],
     ]
+    
     voice_names = [
         english_voice_models["male_voice"],
         target_voice_models["female_voice"],
         target_voice_models["female_voice"],
     ]
+    
     speaking_rates = [0.9, config.SPEAKING_RATE_SLOW, 1.0]
 
     loop = asyncio.get_event_loop()
@@ -276,24 +344,38 @@ def generate_normal_and_fast_audio(
 
 
 def generate_audio_from_dialogue(
-    dialogue: List[Dict[str, str]], in_target_language=True
+    dialogue: List[Dict[str, str]], 
+    in_target_language: bool = True
 ) -> List[AudioSegment]:
+    """
+    Generate audio from dialogue, handling HTML entities and special characters.
+    
+    Args:
+        dialogue: List of dialogue utterances
+        in_target_language: Whether to use target language voices
+        
+    Returns:
+        List of AudioSegment objects for each utterance
+    """
+    # Clean the dialogue text while preserving the format
+    cleaned_dialogue = clean_translated_content(dialogue)
+    
     if in_target_language:
         voice_models = config.target_language_voice_models
     else:
         voice_models = config.english_voice_models
 
-    texts = [utterance["text"] for utterance in dialogue]
-    language_codes = [voice_models["language_code"]] * len(dialogue)
+    texts = [utterance["text"] for utterance in cleaned_dialogue]
+    language_codes = [voice_models["language_code"]] * len(cleaned_dialogue)
     voice_names = [
         (
             voice_models["male_voice"]
             if utterance["speaker"] == "Sam"
             else voice_models["female_voice"]
         )
-        for utterance in dialogue
+        for utterance in cleaned_dialogue
     ]
-    speaking_rates = [1.0] * len(dialogue)
+    speaking_rates = [1.0] * len(cleaned_dialogue)
 
     return text_to_speech_multiprocessing(
         texts, language_codes, voice_names, speaking_rates
