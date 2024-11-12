@@ -19,7 +19,7 @@ import spacy
 from bs4 import BeautifulSoup
 from google.cloud import texttospeech
 from pydub import AudioSegment
-
+from PIL import Image
 from anki.collection import Collection
 from anki.models import NotetypeDict
 from tqdm import tqdm
@@ -305,6 +305,7 @@ async def create_anki_deck_from_english_phrase_list(
                 f"{anki_filename_prefix}_{from_index}",
                 deck_name=deck_name,
             )
+    return translated_phrases_dict_audio
 
 
 def generate_wiktionary_links(
@@ -761,6 +762,18 @@ def export_to_anki_with_images(
             zip(phrase_pairs, audio_segments, image_paths),
             desc="generating image and sound files",
         ):
+            image_filename = None
+            if image_path is not None:
+                try:
+                    image_filename = f"{uuid.uuid4()}.png"
+                    output_path = os.path.join(output_dir, image_filename)
+                    with Image.open(image_path) as img:
+                        img = img.resize((400, 400))  # Simple and direct!
+                        img.save(output_path, 'PNG', optimize=True)
+                    media_files.append(image_filename)
+                except Exception as e:
+                    print(f"Error copying image for {english}: {str(e)}")
+                    image_filename = None
             # Handle image if it exists
             image_filename = None
             if image_path is not None:
