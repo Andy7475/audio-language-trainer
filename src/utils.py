@@ -1,4 +1,5 @@
 import base64
+import copy
 import hashlib
 import io
 import json
@@ -10,7 +11,7 @@ import time
 from collections import defaultdict
 from io import BytesIO
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
-import copy
+
 import numpy as np
 import pycountry
 import requests
@@ -20,16 +21,7 @@ from anthropic import AnthropicVertex
 from dotenv import load_dotenv
 from PIL import Image
 from pydub import AudioSegment
-from reportlab.lib import colors
-from reportlab.lib.enums import TA_LEFT
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 from tqdm import tqdm
-from vertexai.generative_models import HarmCategory, SafetySetting
 from vertexai.preview.vision_models import ImageGenerationModel
 
 from src.config_loader import config
@@ -38,6 +30,131 @@ load_dotenv()  # so we can use environment variables for various global settings
 
 PROJECT_ID = os.getenv("GOOGLE_PROJECT_ID")
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
+
+
+def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
+    """Convert an AudioSegment to a base64 encoded string."""
+    buffer = io.BytesIO()
+    audio_segment.export(buffer, format="mp3")
+    buffer.seek(0)
+    audio_bytes = buffer.read()
+    return base64.b64encode(audio_bytes).decode("utf-8")
+
+
+def prepare_story_data_for_html(story_data_dict: Dict) -> Dict:
+    """Process the story data dictionary to include base64 encoded audio."""
+    prepared_data = {}
+
+    for section_name, section_data in story_data_dict.items():
+        prepared_data[section_name] = {
+            "dialogue": section_data.get("dialogue", []),
+            "translated_dialogue": section_data.get("translated_dialogue", []),
+            "translated_phrase_list": section_data.get("translated_phrase_list", []),
+            "audio_data": {"phrases": [], "dialogue": []},
+        }
+
+        # Process phrase audio
+        if "translated_phrase_list_audio" in section_data:
+            for audio_segments in section_data["translated_phrase_list_audio"]:
+                if isinstance(audio_segments, list) and len(audio_segments) > 2:
+                    normal_audio = convert_audio_to_base64(audio_segments[2])
+                    slow_audio = convert_audio_to_base64(audio_segments[1])
+                    prepared_data[section_name]["audio_data"]["phrases"].append(
+                        {"normal": normal_audio, "slow": slow_audio}
+                    )
+
+        # Process dialogue audio
+        if "translated_dialogue_audio" in section_data:
+            for audio_segment in section_data["translated_dialogue_audio"]:
+                audio_base64 = convert_audio_to_base64(audio_segment)
+                prepared_data[section_name]["audio_data"]["dialogue"].append(
+                    audio_base64
+                )
+
+    return prepared_data
+
+
+def create_html_story(
+    story_data_dict: Dict,
+    output_path: str,
+    component_path: str,
+    title: Optional[str] = None,
+    language: str = config.get_language_name(),
+) -> None:
+    """
+    Create a standalone HTML file from the story data dictionary.
+
+    Args:
+        story_data_dict: Dictionary containing story data, translations, and audio
+        output_path: Path where the HTML file should be saved
+        component_path: Path to the React component file
+        title: Optional title for the story
+        language: Target language name for Wiktionary links
+    """
+
+    # Process the story data and convert audio to base64
+    prepared_data = prepare_story_data_for_html(story_data_dict)
+
+    # Read the React component
+    with open(component_path, "r", encoding="utf-8") as f:
+        react_component = f.read()
+
+    # Convert the React component from JSX to pure JavaScript
+    # Note: In practice, you'd want to use a proper JSX transformer like Babel
+    # This is a simplified version that assumes the component is already in JS
+
+    html_template = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{title}</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+        <style>
+            .audio-player {{
+                display: none;
+            }}
+        </style>
+    </head>
+    <body>
+        <div id="root"></div>
+        <script>
+            // Embed the story data
+            const storyData = {story_data};
+            const targetLanguage = "{language}";
+            
+            {react_component}
+            
+            // Render the app
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(React.createElement(StoryViewer, {{ 
+                storyData: storyData,
+                targetLanguage: targetLanguage,
+                title: "{title}"
+            }}));
+        </script>
+    </body>
+    </html>
+    """
+
+    # Format the HTML template
+    html_content = html_template.format(
+        title=title or "Language Learning Story",
+        story_data=json.dumps(prepared_data),
+        language=language,
+        react_component=react_component,
+    )
+
+    # Write the HTML file
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    print(f"HTML story created at: {output_path}")
 
 
 def generate_story_image(story_plan):
@@ -812,218 +929,3 @@ def extract_json_from_llm_response(response):
     else:
         print("No JSON-like structure found in the response")
         return None
-
-
-def download_font(url, font_name):
-    response = requests.get(url)
-    if response.status_code == 200:
-        font_path = f"{font_name.replace(' ', '_')}.ttf"
-        font_path = os.path.join("../fonts", font_path)
-        with open(font_path, "wb") as f:
-            f.write(response.content)
-        return font_path
-    return None
-
-
-def create_pdf_booklet(story_data_dict, output_filename="pdf_booklet.pdf"):
-    # Font setup
-    font_name, font_path = setup_font(config.TARGET_LANGUAGE)
-
-    # Define styles
-    styles = define_styles(font_name)
-
-    # Create document
-    doc = SimpleDocTemplate(output_filename, pagesize=letter)
-    elements = []
-
-    # Add title
-    elements.append(Paragraph("Comprehensive Story Translation", styles["Title"]))
-    elements.append(Spacer(1, 12))
-
-    # Process story data
-    for story_part, data in story_data_dict.items():
-        elements.extend(process_story_part(story_part, data, styles))
-
-    # Build the document
-    doc.build(elements)
-
-
-# Language to font mapping
-LANGUAGE_FONT_MAP = {
-    "ja": {"name": "HeiseiMin-W3", "google": False},
-    "zh": {"name": "STSong-Light", "google": False},
-    "ko": {"name": "HYSMyeongJoStd-Medium", "google": False},
-    "ru": {"name": "DejaVuSerif", "google": False},
-    "sr": {"name": "DejaVuSerif", "google": False},
-    "en": {"name": "Roboto", "google": True},
-    "sv": {"name": "Roboto", "google": True},
-    # Add more languages as needed
-}
-
-
-def get_google_font(language_code):
-    # Map language codes to Google Font names
-
-    font_name = LANGUAGE_FONT_MAP.get(language_code, {"name": "Roboto"})[
-        "name"
-    ]  # Default to Roboto if language not found
-
-    # URL for Google Fonts API
-    api_url = f"https://fonts.googleapis.com/css?family={font_name.replace(' ', '+')}"
-
-    response = requests.get(api_url)
-    if response.status_code == 200:
-        # Extract the TTF URL from the CSS
-        for line in response.text.split("\n"):
-            if ".ttf" in line:
-                ttf_url = line.split("url(")[1].split(")")[0]
-                return font_name, ttf_url
-
-    return None, None
-
-
-def setup_font(target_language):
-    font_info = LANGUAGE_FONT_MAP.get(
-        target_language, {"name": "Helvetica", "google": False}
-    )
-    font_name = font_info["name"]
-
-    if font_info["google"]:
-        font_name, font_url = get_google_font(target_language)
-        if font_name and font_url:
-            font_path = download_font(font_url, font_name)
-            if font_path:
-                pdfmetrics.registerFont(TTFont(font_name, font_path))
-                print(f"Registered Google font: {font_name}")
-                return font_name, font_path
-    else:
-        if font_name != "Helvetica":
-            try:
-                pdfmetrics.registerFont(UnicodeCIDFont(font_name))
-            except KeyError:
-                pdfmetrics.registerFont(TTFont(font_name, "../fonts/DejaVuSans.ttf"))
-            except Exception(f"Some font error with {font_name}"):
-                font_name = "Helvetica"
-
-            print(f"Registered CID font: {font_name}")
-        else:
-            print("Using default font: Helvetica")
-
-    return font_name, None
-
-
-def define_styles(font_name):
-    styles = getSampleStyleSheet()
-
-    # Modify existing styles
-    styles["Title"].alignment = 1
-    styles["Title"].fontName = font_name
-
-    styles["Heading2"].alignment = 1
-    styles["Heading2"].fontName = font_name
-
-    styles.add(
-        ParagraphStyle(
-            name="Subtitle", parent=styles["Heading2"], alignment=1, fontName=font_name
-        )
-    )
-    # Add new styles
-    styles.add(
-        ParagraphStyle(
-            name="TableHeader",
-            parent=styles["Normal"],
-            fontSize=14,
-            fontName=font_name,
-            textColor=colors.whitesmoke,
-        )
-    )
-
-    styles.add(
-        ParagraphStyle(
-            name="TableCell",
-            parent=styles["Normal"],
-            fontSize=10,
-            leading=12,
-            alignment=TA_LEFT,
-            fontName=font_name,
-        )
-    )
-    return styles
-
-
-def process_story_part(story_part, data, styles):
-    elements = []
-    elements.append(Paragraph(story_part.capitalize(), styles["Subtitle"]))
-    elements.append(Spacer(1, 12))
-
-    if "translated_phrase_list" in data:
-        elements.extend(create_phrase_table(data["translated_phrase_list"], styles))
-
-    if "dialogue" in data and "translated_dialogue" in data:
-        elements.extend(
-            create_dialogue_table(data["dialogue"], data["translated_dialogue"], styles)
-        )
-
-    elements.append(Spacer(1, 24))
-    return elements
-
-
-def create_phrase_table(phrases, styles):
-    elements = []
-    elements.append(Paragraph("Translated Phrases", styles["Subtitle"]))
-
-    data = [["English", "Target Language"]]
-    for eng, target in phrases:
-        data.append(
-            [
-                Paragraph(eng, styles["TableCell"]),
-                Paragraph(target, styles["TableCell"]),
-            ]
-        )
-
-    table = Table(data, colWidths=[250, 250])
-    table.setStyle(create_table_style(styles["TableCell"].fontName))
-
-    elements.append(table)
-    elements.append(Spacer(1, 12))
-    return elements
-
-
-def create_dialogue_table(dialogue, translated_dialogue, styles):
-    elements = []
-    elements.append(Paragraph("Dialogue", styles["Subtitle"]))
-
-    data = [["English", "Target Language"]]
-    for eng, target in zip(dialogue, translated_dialogue):
-        data.append(
-            [
-                Paragraph("{}".format(eng["text"]), styles["TableCell"]),
-                Paragraph("{}".format(target["text"]), styles["TableCell"]),
-            ]
-        )
-
-    table = Table(data, colWidths=[250, 250])
-    table.setStyle(create_table_style(styles["TableCell"].fontName))
-
-    elements.append(table)
-    return elements
-
-
-def create_table_style(font_name):
-    return TableStyle(
-        [
-            ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-            ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-            ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-            ("FONTNAME", (0, 0), (-1, -1), font_name),
-            ("FONTSIZE", (0, 0), (-1, 0), 14),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 12),
-            ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
-            ("TEXTCOLOR", (0, 1), (-1, -1), colors.black),
-            ("FONTSIZE", (0, 1), (-1, -1), 10),
-            ("TOPPADDING", (0, 1), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 1), (-1, -1), 6),
-            ("GRID", (0, 0), (-1, -1), 1, colors.black),
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ]
-    )
