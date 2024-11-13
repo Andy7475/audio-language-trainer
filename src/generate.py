@@ -55,7 +55,7 @@ def create_story_plan_and_dialogue(
 
     story_data_dict = defaultdict(lambda: defaultdict(str))
     recap = "This is the beginning of the story."
-    for story_part in tqdm(list(story_plan.keys()), desc="generating dialogue"):
+    for story_part in list(story_plan.keys()):
         prompt = generate_dialogue_prompt(
             story_part=story_part,
             story_part_outline=story_plan[story_part],
@@ -67,13 +67,13 @@ def create_story_plan_and_dialogue(
             grammar_concept_count=5,
             grammar_use_count=3,
         )
-        time.sleep(config.LLM_SLEEP_SECONDS)
+
         dialogue = generate_dialogue(prompt)
         vocab_used = get_vocab_from_dialogue(dialogue)
         update_vocab_usage(vocab_used)
         verbs_for_story_usage = add_usage_to_words(verbs_for_story, "verbs")
         vocab_for_story_usage = add_usage_to_words(vocab_for_story, "vocab")
-        time.sleep(config.LLM_SLEEP_SECONDS)
+
         recap = generate_recap(dialogue, test=False)
         story_data_dict[story_part]["dialogue_generation_prompt"] = prompt
         story_data_dict[story_part]["dialogue"] = dialogue
@@ -85,7 +85,7 @@ def add_practice_phrases(story_data_dict):
     """Takes the longer dialgoue and breaks it up into smaller practice phrases.
     Modifies the input dictionary and returns it"""
     ensure_spacy_model()
-    for story_part in tqdm(story_data_dict, desc="generating practice phrases"):
+    for story_part in story_data_dict:
         dialogue = story_data_dict[story_part]["dialogue"]
         story_data_dict[story_part]["corrected_phrase_list"] = (
             generate_practice_phrases_from_dialogue(dialogue)

@@ -1,6 +1,7 @@
 import base64
 import copy
 import hashlib
+import inspect
 import io
 import json
 import os
@@ -883,10 +884,24 @@ def save_json(data, file_path):
     # print(f"Data saved to {file_path}")
 
 
+def get_caller_name():
+    """Method 1: Using inspect.stack()"""
+    # Get the frame 2 levels up (1 would be this function, 2 is the caller)
+    caller_frame = inspect.stack()[2]
+    return caller_frame.function
+
+
 def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:
     """given a prompt generates an LLM response. The default model is specified in the config file.
     Most likely the largest Anthropic model. The region paramater in the config will have to match where that model
     is available"""
+    print(
+        f"Function that called this one: {get_caller_name()}. Sleeping for 20 seconds"
+    )
+    pbar = tqdm(range(20), desc="Sleeping", ncols=75, colour="blue")
+    for sec in pbar:
+        time.sleep(1)
+        pbar.refresh()
     client = AnthropicVertex(region=config.ANTHROPIC_REGION, project_id=PROJECT_ID)
 
     if model is None:
