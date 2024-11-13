@@ -27,16 +27,26 @@ def generate_story_plan(
     story_guide: str,
     verb_list: List[str],
     vocab_list: List[str],
-    story_name: str,
     output_dir: str,
-    test=True,
+    story_name: str,
+    test=False,
 ) -> dict:
-    """This function generates an outline story following the story_structure written below.
-    When we are creating dialgoue, we will feed the story_plan into the function a bit at a time for subsequent dialogues
-    so there is some continuity.
+    """Generate an outline story following a standard story structure.
 
-    returns: a JSON story plan, but it also saves it to STORY_PLAN_PATH"""
+    Args:
+        story_guide: Brief description of the story
+        verb_list: List of verbs to incorporate
+        vocab_list: List of vocabulary words to incorporate
+        output_dir: Directory to save the story plan
+        story_name: Clean story name (already processed for file naming)
+        test: If True, returns test data instead of generating
 
+    Returns:
+        Dictionary containing the story plan
+
+    Raises:
+        Exception: If story plan generation fails
+    """
     story_structure = [
         "exposition: Introduce the main characters (Alex and Sam) and setting",
         "rising_action: Present a challenge or conflict",
@@ -55,29 +65,49 @@ def generate_story_plan(
         """Output the story plan as a JSON object with keys for each part of the story structure."""
     )
 
-    # Here, you would send this prompt to your LLM and get the response
-    # For this example, I'll provide a placeholder response
     if test:
         llm_response = """{
-            "Exposition": "Two friends, Alex and Sam, decide to learn a new language together.",
-            "Rising_Action": "They face challenges in their studies and personal lives that test their commitment.",
-            "Climax": "A language competition is announced, pushing them to their limits.",
-            "Falling_Action": "They prepare for the competition, supporting each other through difficulties.",
-            "Resolution": "They participate in the competition, growing closer as friends and more confident in their language skills."
+            "exposition": "Two friends, Alex and Sam, decide to learn a new language together.",
+            "rising_action": "They face challenges in their studies and personal lives that test their commitment.",
+            "climax": "A language competition is announced, pushing them to their limits.",
+            "falling_action": "They prepare for the competition, supporting each other through difficulties.",
+            "resolution": "They participate in the competition, growing closer as friends and more confident in their language skills."
         }"""
     else:
         llm_response = anthropic_generate(prompt)
-    # Extract the JSON part from the response
+
+    # Extract and validate the JSON part from the response
     story_plan = extract_json_from_llm_response(llm_response)
+    if not story_plan:
+        raise Exception("Failed to extract valid JSON from LLM response")
 
     # Normalize keys to lowercase
     story_plan = {k.lower(): v for k, v in story_plan.items()}
 
-    story_name = story_name.replace(" ", "_")
-    save_json(
-        story_plan,
-        os.path.join(output_dir, "story_plan_" + story_name + ".json"),
-    )
+    # Validate required story parts
+    required_parts = {
+        "exposition",
+        "rising_action",
+        "climax",
+        "falling_action",
+        "resolution",
+    }
+    if not all(part in story_plan for part in required_parts):
+        raise Exception(
+            f"Story plan missing required parts. Found: {list(story_plan.keys())}"
+        )
+
+    # Save the story plan
+    os.makedirs(output_dir, exist_ok=True)
+    story_plan_path = os.path.join(output_dir, f"story_plan_{story_name}.json")
+
+    try:
+        with open(story_plan_path, "w") as f:
+            json.dump(story_plan, f, indent=2)
+        print(f"Story plan saved to: {story_plan_path}")
+    except Exception as e:
+        print(f"Warning: Failed to save story plan: {e}")
+
     return story_plan
 
 
@@ -246,20 +276,97 @@ def add_usage_to_words(word_list: List[str], category: str) -> str:
     return formatted_string
 
 
-def generate_dialogue(dialogue_prompt: str):
-    """
-    Extract dialogue from an LLM response.
+def generate_complete_dialogue_prompt(
+    story_plan: Dict[str, str],
+    verbs_for_story_usage: str,
+    vocab_for_story_usage: str,
+    verb_use_count: int = 3,
+    vocab_use_count: int = 10,
+    grammar_concept_count: int = 10,
+    grammar_use_count: int = 3,
+) -> str:
+    """Generate a single prompt for creating dialogue for all story parts."""
+    # Load and select grammar concepts
+    grammar_concepts = load_json(config.GRAMMAR_USAGE_PATH)
+    selected_concepts = select_grammar_concepts(grammar_concepts, grammar_concept_count)
+    used_concepts = selected_concepts[:grammar_use_count]
+    update_grammar_concept_usage(grammar_concepts, used_concepts)
 
-    :param llm_response: String containing the LLM's response
-    :return: List of dialogue turns, or None if no valid dialogue is found
+    # Create story plan string
+    story_plan_str = "\n".join(
+        [f"{part}: {outline}" for part, outline in story_plan.items()]
+    )
+
+    # Create the example JSON structure with double curly braces
+    example_json = """
+    {
+        "exposition": {
+            "dialogue": [
+                {"speaker": "Alex", "text": "Hello! How are you today?"},
+                {"speaker": "Sam", "text": "I'm doing well, thanks for asking."}
+            ]
+        },
+        "rising_action": {
+            "dialogue": [
+                ...
+            ]
+        },
+        ...
+    }
     """
-    llm_response = anthropic_generate(dialogue_prompt)
+
+    prompt = f"""Create a complete multi-part dialogue for language learners following these guidelines:
+
+    1. Create separate dialogues for each part of this story plan:
+    {story_plan_str}
+
+    2. For each story part, create dialogue using:
+    - About {verb_use_count} verbs from: {verbs_for_story_usage}
+    - At least {vocab_use_count} words from: {vocab_for_story_usage}
+    Prioritize words with lower usage numbers.
+
+    3. Each part should incorporate these grammatical concepts:
+    {', '.join(used_concepts)}
+
+    4. For each story part:
+    - Create 6-8 lines of dialogue (20-30 seconds spoken)
+    - Use only Alex and Sam as speakers
+    - Keep language simple and appropriate for beginners
+    - Ensure natural flow between story parts
+
+    5. Output format should be a JSON object with story parts as keys:
+    {example_json}
+
+    Remember:
+    - Each part should advance the story while practicing vocabulary
+    - Balance concept practice (45%) with story progression (55%)
+    - Maintain consistent personalities for Alex and Sam
+    - Keep the story cohesive across all parts
+    - You can use additional words if needed, but prioritize the provided lists
+
+    Generate the complete dialogue for all parts in a single JSON response."""
+
+    return prompt
+
+
+def generate_dialogue(dialogue_prompt: str) -> Dict:
+    """Extract dialogue from an LLM response.
+    Returns a dictionary with story parts as keys and dialogue lists as values.
+    """
+    llm_response = anthropic_generate(dialogue_prompt, max_tokens=4000)
     extracted_json = extract_json_from_llm_response(llm_response)
-    if extracted_json and "dialogue" in extracted_json:
-        return extracted_json["dialogue"]
-    else:
+
+    if not extracted_json:
         print("No valid dialogue found in the response")
         return None
+
+    # Verify the structure of the extracted JSON
+    for part, content in extracted_json.items():
+        if not isinstance(content, dict) or "dialogue" not in content:
+            print(f"Invalid dialogue structure in part: {part}")
+            return None
+
+    return extracted_json
 
 
 def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
