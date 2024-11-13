@@ -1,10 +1,16 @@
 from collections import defaultdict
+import json
+import os
 import time
 from typing import Dict
 from src.audio_generation import async_process_phrases, generate_audio_from_dialogue
 from pydub import AudioSegment
 from src.config_loader import config
-from src.dialogue_generation import get_vocab_from_dialogue, update_vocab_usage
+from src.dialogue_generation import (
+    generate_complete_dialogue_prompt,
+    get_vocab_from_dialogue,
+    update_vocab_usage,
+)
 from src.dialogue_generation import (
     generate_story_plan,
     generate_dialogue_prompt,
@@ -24,8 +30,10 @@ from src.dialogue_generation import get_least_used_words, add_usage_to_words
 from tqdm import tqdm
 
 from src.utils import ensure_spacy_model
+import pysnooper
 
 
+@pysnooper.snoop(depth=2, output="../outputs/test/snoop.txt")
 def create_story_plan_and_dialogue(
     story_name: str,
     n_verbs: int = 10,
@@ -33,51 +41,99 @@ def create_story_plan_and_dialogue(
     output_dir: str = "../outputs",
 ) -> Dict:
     """Given a brief story name and a verb and vocab count, will return a dictionary
-    containing the plan for the story and dialogue"""
+    containing the plan for the story and dialogue.
+
+    Args:
+        story_name: Name of the story, used for file naming and story generation
+        n_verbs: Number of verbs to include
+        n_vocab: Number of vocabulary words to include
+        output_dir: Directory for saving story plan
+
+    Returns:
+        Dictionary containing story plan and dialogue
+
+    Raises:
+        FileNotFoundError: If story plan file cannot be created/found
+        Exception: If story plan creation fails
+    """
+    # Clean story name for file naming
+    story_name_clean = story_name.lower().replace(" ", "_")
+    story_plan_path = os.path.join(output_dir, f"story_plan_{story_name_clean}.json")
     verbs_for_story = get_least_used_words("verbs", n_verbs)
     vocab_for_story = get_least_used_words("vocab", n_vocab)
 
     verbs_for_story_usage = add_usage_to_words(verbs_for_story, "verbs")
     vocab_for_story_usage = add_usage_to_words(vocab_for_story, "vocab")
 
-    story_plan = generate_story_plan(
-        story_guide=story_name,
-        verb_list=verbs_for_story,
-        vocab_list=vocab_for_story,
-        output_dir=output_dir,
-        test=False,
-        story_name=story_name,
+    # Check if story plan already exists
+    try:
+        if os.path.exists(story_plan_path):
+            print(f"Loading existing story plan from: {story_plan_path}")
+            with open(story_plan_path, "r") as f:
+                story_plan = json.load(f)
+        else:
+            print(f"Generating new story plan to: {story_plan_path}")
+            story_plan = generate_story_plan(
+                story_guide=story_name,
+                verb_list=verbs_for_story,
+                vocab_list=vocab_for_story,
+                output_dir=output_dir,
+                test=False,
+                story_name=story_name_clean,  # Use cleaned name for consistency
+            )
+
+        if not story_plan:
+            raise Exception("Story plan is empty after generation/loading")
+
+        # Validate story plan structure
+        required_parts = {
+            "exposition",
+            "rising_action",
+            "climax",
+            "falling_action",
+            "resolution",
+        }
+        if not all(part.lower() in story_plan for part in required_parts):
+            raise Exception(
+                f"Story plan missing required parts. Found: {list(story_plan.keys())}"
+            )
+
+        print(f"Story plan validated: {str(story_plan)[:100]}...")
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"Failed to access story plan file: {e}")
+    except json.JSONDecodeError as e:
+        raise Exception(f"Invalid JSON in story plan file: {e}")
+    except Exception as e:
+        raise Exception(f"Error processing story plan: {e}")
+
+    # Generate complete dialogue for all story parts in one call
+    dialogue_prompt = generate_complete_dialogue_prompt(
+        story_plan=story_plan,
+        verbs_for_story_usage=verbs_for_story_usage,
+        vocab_for_story_usage=vocab_for_story_usage,
+        verb_use_count=5,
+        vocab_use_count=10,
+        grammar_concept_count=5,
+        grammar_use_count=3,
     )
-    if story_plan:
-        print(f"Story plan created {str(story_plan)[:20]}")
-    else:
-        raise Exception("Creation of story plan failed")
 
+    complete_dialogue = generate_dialogue(dialogue_prompt)
+
+    # Extract vocab used across all dialogues
+    all_vocab_used = set()
     story_data_dict = defaultdict(lambda: defaultdict(str))
-    recap = "This is the beginning of the story."
-    for story_part in list(story_plan.keys()):
-        prompt = generate_dialogue_prompt(
-            story_part=story_part,
-            story_part_outline=story_plan[story_part],
-            last_recap=recap,
-            verb_usage_str=verbs_for_story_usage,
-            vocab_usage_str=vocab_for_story_usage,
-            verb_use_count=5,
-            vocab_use_count=10,
-            grammar_concept_count=5,
-            grammar_use_count=3,
-        )
 
-        dialogue = generate_dialogue(prompt)
+    # Organize dialogue into story_data_dict
+    for story_part, dialogue in complete_dialogue.items():
+        dialogue = dialogue.get("dialogue")
         vocab_used = get_vocab_from_dialogue(dialogue)
-        update_vocab_usage(vocab_used)
-        verbs_for_story_usage = add_usage_to_words(verbs_for_story, "verbs")
-        vocab_for_story_usage = add_usage_to_words(vocab_for_story, "vocab")
-
-        recap = generate_recap(dialogue, test=False)
-        story_data_dict[story_part]["dialogue_generation_prompt"] = prompt
+        all_vocab_used.update(vocab_used)
         story_data_dict[story_part]["dialogue"] = dialogue
-        story_data_dict[story_part]["recap"] = recap
+        story_data_dict[story_part]["dialogue_generation_prompt"] = dialogue_prompt
+
+    # Update vocab usage once for all dialogues
+    update_vocab_usage(all_vocab_used)
+
     return story_data_dict
 
 

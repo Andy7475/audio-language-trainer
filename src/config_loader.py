@@ -16,7 +16,17 @@ class ConfigLoader:
         self._file_modified_time = 0
         self.english_voice_models = {}
         self.target_language_voice_models = {}
+        self.time_api_last_called = 0  # New attribute for API rate limiting
+        self.API_DELAY_SECONDS = 20  # Configurable delay between API calls
         self._load_config()
+
+    def update_api_timestamp(self):
+        """Update the timestamp of the last API call"""
+        self.time_api_last_called = time.time()
+
+    def get_time_since_last_api_call(self):
+        """Get the number of seconds since the last API call"""
+        return time.time() - self.time_api_last_called
 
     def get_language_name(self) -> str:
         language_name = pycountry.languages.get(alpha_2=self.config.TARGET_LANGUAGE)

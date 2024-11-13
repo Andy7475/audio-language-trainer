@@ -891,6 +891,34 @@ def get_caller_name():
     return caller_frame.function
 
 
+def ok_to_query_api() -> bool:
+    """Check if enough time has passed since the last API call.
+    If not enough time has passed, wait for the remaining time.
+
+    Returns:
+        bool: True when it's ok to proceed with the API call
+    """
+    time_since_last_call = config.get_time_since_last_api_call()
+
+    if time_since_last_call >= config.API_DELAY_SECONDS:
+        config.update_api_timestamp()
+        return True
+
+    # Calculate how long we need to wait
+    wait_time = int(config.API_DELAY_SECONDS - time_since_last_call)
+
+    # Show progress bar for waiting time
+    pbar = tqdm(
+        range(wait_time), desc="Waiting for API cooldown", ncols=75, colour="blue"
+    )
+
+    for sec in pbar:
+        time.sleep(1)
+        pbar.refresh()
+
+    config.update_api_timestamp()
+    return True
+
 def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:
     """given a prompt generates an LLM response. The default model is specified in the config file.
     Most likely the largest Anthropic model. The region paramater in the config will have to match where that model
@@ -898,10 +926,8 @@ def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -
     print(
         f"Function that called this one: {get_caller_name()}. Sleeping for 20 seconds"
     )
-    pbar = tqdm(range(20), desc="Sleeping", ncols=75, colour="blue")
-    for sec in pbar:
-        time.sleep(1)
-        pbar.refresh()
+    ok_to_query_api()
+
     client = AnthropicVertex(region=config.ANTHROPIC_REGION, project_id=PROJECT_ID)
 
     if model is None:

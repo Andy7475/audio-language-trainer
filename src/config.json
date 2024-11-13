@@ -18,5 +18,5 @@
     "VOCAB_USAGE_PATH":"../data/1000_vocab_usage.json",
     "VOCAB_LIST":"../data/1000_vocab_list.json",
     "GRAMMAR_CONCEPTS":"../data/grammar_concepts.json",
-    "LLM_SLEEP_SECONDS":20
+    "API_DELAY_SECONDS":20
 }
