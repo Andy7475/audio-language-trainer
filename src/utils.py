@@ -919,11 +919,6 @@ def ok_to_query_api() -> bool:
     config.update_api_timestamp()
     return True
 
-
-from src.memory_monitor import log_memory_usage
-
-
-@log_memory_usage
 def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:
     """given a prompt generates an LLM response. The default model is specified in the config file.
     Most likely the largest Anthropic model. The region paramater in the config will have to match where that model
@@ -931,6 +926,7 @@ def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -
     print(
         f"Function that called this one: {get_caller_name()}. Sleeping for 20 seconds"
     )
+    ok_to_query_api()
 
     client = AnthropicVertex(region=config.ANTHROPIC_REGION, project_id=PROJECT_ID)
 

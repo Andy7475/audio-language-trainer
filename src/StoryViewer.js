@@ -2,11 +2,13 @@
 const StoryViewer = ({ storyData, targetLanguage, title }) => {
   const [activeSection, setActiveSection] = React.useState(null);
   const [showTranslation, setShowTranslation] = React.useState({});
+  const [activePhrases, setActivePhrases] = React.useState({});
+  const [activeDialogues, setActiveDialogues] = React.useState({});
   const audioRef = React.useRef(null);
 
   const createWiktionaryLinks = (text) => {
     return text.split(' ').map((word, index) => {
-      const cleanWord = word.toLowerCase().replace(/[^a-zA-Z0-9]/g, '');
+      const cleanWord = word.toLowerCase().replace(/[^\p{L}0-9]/gu, '');
       if (cleanWord) {
         return React.createElement(React.Fragment, { key: index },
           React.createElement('a', {
@@ -33,6 +35,20 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     setShowTranslation(prev => ({
       ...prev,
       [index]: !prev[index]
+    }));
+  };
+
+  const togglePhrases = (sectionIndex) => {
+    setActivePhrases(prev => ({
+      ...prev,
+      [sectionIndex]: !prev[sectionIndex]
+    }));
+  };
+
+  const toggleDialogue = (sectionIndex) => {
+    setActiveDialogues(prev => ({
+      ...prev,
+      [sectionIndex]: !prev[sectionIndex]
     }));
   };
 
@@ -68,8 +84,14 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
           activeSection === sectionIndex && React.createElement('div', { className: 'p-4' },
             // Practice Phrases
             React.createElement('div', { className: 'mb-6' },
-              React.createElement('h3', { className: 'text-lg font-semibold mb-4' }, 'Practice Phrases'),
-              section.translated_phrase_list.map(([english, target], index) =>
+              React.createElement('button', {
+                onClick: () => togglePhrases(sectionIndex),
+                className: 'w-full p-2 flex items-center justify-between text-left bg-gray-100 rounded-lg hover:bg-gray-200 mb-2'
+              },
+                React.createElement('h3', { className: 'text-lg font-semibold' }, 'Practice Phrases'),
+                React.createElement('span', null, activePhrases[sectionIndex] ? '▼' : '▶')
+              ),
+              activePhrases[sectionIndex] && section.translated_phrase_list.map(([english, target], index) =>
                 React.createElement('div', {
                   key: index,
                   className: 'mb-4 p-3 bg-gray-50 rounded-lg'
@@ -106,8 +128,14 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
 
             // Dialogue section
             section.translated_dialogue.length > 0 && React.createElement('div', null,
-              React.createElement('h3', { className: 'text-lg font-semibold mb-4' }, 'Dialogue'),
-              section.translated_dialogue.map((utterance, index) =>
+              React.createElement('button', {
+                onClick: () => toggleDialogue(sectionIndex),
+                className: 'w-full p-2 flex items-center justify-between text-left bg-gray-100 rounded-lg hover:bg-gray-200 mb-2'
+              },
+                React.createElement('h3', { className: 'text-lg font-semibold' }, 'Dialogue'),
+                React.createElement('span', null, activeDialogues[sectionIndex] ? '▼' : '▶')
+              ),
+              activeDialogues[sectionIndex] && section.translated_dialogue.map((utterance, index) =>
                 React.createElement('div', {
                   key: index,
                   className: 'mb-4 p-3 bg-gray-50 rounded-lg'
@@ -138,19 +166,19 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     ),
 
     // Footer
-React.createElement('footer', { className: 'bg-gray-800 text-white p-4 mt-8' },
-  React.createElement('div', { className: 'max-w-4xl mx-auto flex items-center justify-between' },
-    React.createElement('p', { className: 'text-sm' }, 'Audio Language Trainer'),
-    React.createElement('a', {
-      href: 'https://github.com/Andy7475/audio-language-trainer',
-      target: '_blank',
-      rel: 'noopener noreferrer',
-      className: 'flex items-center gap-2 bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors',
-    }, [
-      React.createElement('span', { className: 'text-lg' }, '🔗'),
-      'View on GitHub'
-    ])
-  )
-),
+    React.createElement('footer', { className: 'bg-gray-800 text-white p-4 mt-8' },
+      React.createElement('div', { className: 'max-w-4xl mx-auto flex items-center justify-between' },
+        React.createElement('p', { className: 'text-sm' }, 'Audio Language Trainer'),
+        React.createElement('a', {
+          href: 'https://github.com/Andy7475/audio-language-trainer',
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          className: 'flex items-center gap-2 bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors',
+        }, [
+          React.createElement('span', { className: 'text-lg' }, '🔗'),
+          'View on GitHub'
+        ])
+      )
+    ),
   );
 };
