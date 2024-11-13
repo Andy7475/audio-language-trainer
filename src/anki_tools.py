@@ -27,6 +27,7 @@ from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
+from src.translation import translate_from_english
 from src.utils import (
     add_image_paths,
     clean_filename,
@@ -258,6 +259,258 @@ def print_deck_contents(collection_path: str, deck_name: str):
         raise
 
 
+def export_to_anki_with_images_english(
+    english_phrases: List[str],
+    output_dir: str,
+    image_dir: str,
+    audio_dir: str,
+    story_name: str,
+    deck_name: str = None,
+):
+    """
+    Export English learning flashcards to an Anki deck, with images and audio.
+    This function assumes:
+    1. Images exist at output_dir/{clean_filename(phrase)}.png
+    2. Audio exists at output_dir/{clean_filename(phrase)}.mp3
+    3. Slow audio exists at output_dir/{clean_filename(phrase)}_slow.mp3
+
+    Args:
+        english_phrases: List of English phrases to create cards for
+        output_dir: Directory containing image and audio files
+        story_name: Name for the generated Anki deck file
+        deck_name: Optional custom deck name
+    """
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Define card styles and scripts
+    card_back = """
+        <script>
+        function copyText(element) {
+            var textToCopy = element.textContent;
+            navigator.clipboard.writeText(textToCopy).then(function() {
+                element.classList.add('copied');
+                setTimeout(function() {
+                    element.classList.remove('copied');
+                }, 1000);
+            }).catch(function(err) {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+        </script>
+        """
+
+    # Create model for English learning cards
+    english_learning_model = genanki.Model(
+        1607392314,  # New model ID to distinguish from original
+        "English Learning With Images",
+        fields=[
+            {"name": "EnglishText"},  # Swapped to primary position
+            {"name": "EnglishAudio"},  # Was TargetAudio
+            {"name": "EnglishAudioSlow"},  # Was TargetAudioSlow
+            {"name": "NativeText"},  # Was EnglishText
+            {"name": "WiktionaryLinks"},
+            {"name": "Picture"},
+        ],
+        templates=[
+            {
+                "name": "Listening Card",
+                "qfmt": f"""
+                <div class="picture-container">{{{{Picture}}}}</div>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+                    <div>
+                        Normal speed:
+                        <br>
+                        {{{{EnglishAudio}}}}
+                    </div>
+                    <div>
+                        Slow speed:
+                        <br>
+                        {{{{EnglishAudioSlow}}}}
+                    </div>
+                </div>""",
+                "afmt": f"""
+                <hr id="answer">
+                <div class="picture-container">{{{{Picture}}}}</div>
+                <div class="english-text" onclick="copyText(this)">{{{{EnglishText}}}}</div>
+                <div class="native-text">{{{{NativeText}}}}</div>
+                <div>
+                    Normal speed: {{{{EnglishAudio}}}}
+                </div>
+                <div class="wiktionary-links">
+                {{{{WiktionaryLinks}}}}
+                </div>
+                {card_back}
+                """,
+            },
+            {
+                "name": "Reading Card",
+                "qfmt": """
+                <div class="picture-container">{{Picture}}</div>
+                <div class="english-text" onclick="copyText(this)">{{EnglishText}}</div>
+                """,
+                "afmt": f"""
+                {{{{FrontSide}}}}
+                <hr id="answer">
+                <div class="native-text">{{{{NativeText}}}}</div>
+                <div>
+                    {{{{EnglishAudio}}}}
+                </div>
+                <div class="wiktionary-links">
+                {{{{WiktionaryLinks}}}}
+                </div>
+                {card_back}
+                """,
+            },
+            {
+                "name": "Speaking Card",
+                "qfmt": """
+                <div class="picture-container">{{Picture}}</div>
+                <div class="native-text">{{NativeText}}</div>
+                """,
+                "afmt": f"""
+                {{{{FrontSide}}}}
+                <hr id="answer">
+                <div class="english-text" onclick="copyText(this)">{{{{EnglishText}}}}</div>
+                <div>
+                    {{{{EnglishAudio}}}}
+                </div>
+                <div class="wiktionary-links">
+                {{{{WiktionaryLinks}}}}
+                </div>
+                {card_back}
+                """,
+            },
+        ],
+        css="""
+        .card {
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            text-align: center;
+            color: black;
+            background-color: white;
+        }
+        .english-text {
+            font-size: 28px;
+            margin: 20px 0;
+            font-weight: bold;
+            cursor: pointer;
+            position: relative;
+        }
+        .native-text {
+            font-size: 22px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        .picture-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .picture-container img {
+            max-width: 90%;
+            max-height: 300px;
+            object-fit: contain;
+        }
+        .wiktionary-links a {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #333;
+        }
+        """,
+    )
+
+    media_files = []
+    notes = []
+
+    # Set up deck name and ID
+    if deck_name is None:
+        deck_id = string_to_large_int("english_learning_" + config.language_name)
+        deck_name = f"English Learning - {config.language_name} speakers"
+    else:
+        deck_id = string_to_large_int(deck_name)
+    deck = genanki.Deck(deck_id, deck_name)
+
+    # Process each English phrase
+    for english_phrase in english_phrases:
+        # Generate filenames from separate directories
+        base_filename = clean_filename(english_phrase)
+        image_path = os.path.join(image_dir, f"{base_filename}.png")
+        audio_path = os.path.join(audio_dir, f"{base_filename}.mp3")
+        audio_slow_path = os.path.join(audio_dir, f"{base_filename}_slow.mp3")
+
+        # Skip if required files don't exist
+        if not all(
+            os.path.exists(p) for p in [image_path, audio_path, audio_slow_path]
+        ):
+            print(f"Skipping {english_phrase} - missing required files")
+            continue
+
+        # Generate unique filenames for the Anki package
+        image_filename = f"{uuid.uuid4()}.png"
+        audio_filename = f"{uuid.uuid4()}.mp3"
+        audio_slow_filename = f"{uuid.uuid4()}.mp3"
+
+        # Copy files to new locations with unique names
+        for src, dest in [
+            (image_path, os.path.join(output_dir, image_filename)),
+            (audio_path, os.path.join(output_dir, audio_filename)),
+            (audio_slow_path, os.path.join(output_dir, audio_slow_filename)),
+        ]:
+            shutil.copy2(src, dest)
+            media_files.append(dest.split(os.path.sep)[-1])
+
+        # Translate English phrase to native language
+        native_text = translate_from_english(english_phrase, config.TARGET_LANGUAGE)
+
+        # Generate Wiktionary links for the English phrase
+        wiktionary_links = generate_wiktionary_links(english_phrase, "English")
+
+        # Create note
+        note = genanki.Note(
+            model=english_learning_model,
+            fields=[
+                english_phrase,  # EnglishText
+                f"[sound:{audio_filename}]",  # EnglishAudio
+                f"[sound:{audio_slow_filename}]",  # EnglishAudioSlow
+                native_text[0],  # NativeText
+                wiktionary_links,  # WiktionaryLinks
+                f'<img src="{image_filename}">',  # Picture
+            ],
+            guid=string_to_large_int(english_phrase + "_english_learning"),
+        )
+        notes.append(note)
+
+    # Sort and shuffle notes
+    shuffle(notes)
+    notes.sort(
+        key=lambda note: len(note.fields[0].split())
+    )  # Sort by English text length
+
+    # Add notes to deck
+    for note in notes:
+        deck.add_note(note)
+
+    # Create and save the package
+    package = genanki.Package(deck)
+    package.media_files = [os.path.join(output_dir, file) for file in media_files]
+    output_filename = os.path.join(output_dir, f"{story_name}_english_anki_deck.apkg")
+    package.write_to_file(output_filename)
+    print(f"English learning Anki deck exported to {output_filename}")
+
+    # Clean up temporary files
+    for media_file in media_files:
+        file_path = os.path.join(output_dir, media_file)
+        try:
+            os.remove(file_path)
+        except OSError as e:
+            print(f"Error deleting file {file_path}: {e}")
+
+    print("Cleanup of temporary files completed.")
+
+
 async def create_anki_deck_from_english_phrase_list(
     phrase_list: List[str],
     deck_name: str,
@@ -306,6 +559,80 @@ async def create_anki_deck_from_english_phrase_list(
                 deck_name=deck_name,
             )
     return translated_phrases_dict_audio
+
+
+def generate_wiktionary_links_non_english(
+    phrase: str, native_language_code: str = "uk"
+) -> str:
+    """
+    Generate Wiktionary links for native speakers of other languages learning English.
+    Similar format to the original generate_wiktionary_links function.
+
+    Args:
+        phrase: The English phrase to generate links for
+        native_language_code: The two-letter language code (e.g., 'uk' for Ukrainian)
+
+    Returns:
+        HTML string with Wiktionary links in the native language
+    """
+    words = phrase.split()
+    links: List[str] = []
+
+    # Get translation of "English" in target language
+    try:
+        english_in_target = translate_from_english("English", native_language_code)
+        if isinstance(english_in_target, list):
+            english_in_target = english_in_target[0]
+        english_in_target = english_in_target.capitalize()
+    except Exception:
+        # Fallback to "English" if translation fails
+        english_in_target = "English"
+
+    for word in words:
+        clean_word = "".join(char for char in word if char.isalnum())
+        if clean_word:
+            # Lowercase the word for URL and search, but keep original for display
+            lowercase_word = clean_word.lower()
+            # URL encode the lowercase word to handle non-ASCII characters
+            encoded_word = urllib.parse.quote(lowercase_word)
+            # First try native language Wiktionary
+            native_url = (
+                f"https://{native_language_code}.wiktionary.org/wiki/{encoded_word}"
+            )
+            print(f"native url is: {native_url}")
+
+            try:
+                response = requests.get(native_url)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.content, "html.parser")
+                    # Look for the English section using h2 tag
+                    language_section = None
+                    for heading_level in range(1, 7):
+                        if soup.find(f"h{heading_level}", {"id": english_in_target}):
+                            language_section = True
+                            break
+
+                    if language_section:
+                        # If found, create a link with the anchor to the specific language section
+                        link = f'<a href="{native_url}#{english_in_target}">{word}</a>'
+                        links.append(link)
+                    else:
+                        # If not found in native Wiktionary, try English Wiktionary
+                        english_url = f"https://en.wiktionary.org/wiki/{encoded_word}"
+                        link = f'<a href="{english_url}#English">{word}</a>'
+                        links.append(link)
+                else:
+                    # If native Wiktionary fails, use English Wiktionary
+                    english_url = f"https://en.wiktionary.org/wiki/{encoded_word}"
+                    link = f'<a href="{english_url}#English">{word}</a>'
+                    links.append(link)
+            except requests.RequestException:
+                # If request fails, add without link
+                links.append(word)
+        else:
+            links.append(word)
+
+    return " ".join(links)
 
 
 def generate_wiktionary_links(
@@ -769,7 +1096,7 @@ def export_to_anki_with_images(
                     output_path = os.path.join(output_dir, image_filename)
                     with Image.open(image_path) as img:
                         img = img.resize((400, 400))  # Simple and direct!
-                        img.save(output_path, 'PNG', optimize=True)
+                        img.save(output_path, "PNG", optimize=True)
                     media_files.append(image_filename)
                 except Exception as e:
                     print(f"Error copying image for {english}: {str(e)}")
