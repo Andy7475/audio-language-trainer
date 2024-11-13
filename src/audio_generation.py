@@ -19,26 +19,30 @@ from mutagen.mp4 import MP4, MP4Cover
 from pydub import AudioSegment
 
 from src.config_loader import config
+from src.utils import clean_filename
+from tqdm import tqdm
+
 
 def clean_tts_text(text: str) -> str:
     """
     Clean and prepare text for TTS processing by:
     1. Decoding HTML entities
     2. Handling any special characters or formatting
-    
+
     Args:
         text: Input text that may contain HTML entities or special characters
-        
+
     Returns:
         Cleaned text ready for TTS processing
     """
     # Decode HTML entities (like &#39; to ')
     cleaned_text = html.unescape(text)
-    
+
     # Add any additional text cleaning steps here if needed
     # For example, handling other special characters or formatting
-    
+
     return cleaned_text
+
 
 def clean_translated_content(
     content: Union[str, Tuple[str, str], List[Dict[str, str]]]
@@ -48,10 +52,10 @@ def clean_translated_content(
     - Single string
     - Tuple of (original, translated)
     - List of dialogue dictionaries
-    
+
     Args:
         content: Translated content in various formats
-        
+
     Returns:
         Cleaned content in the same format as input
     """
@@ -60,13 +64,48 @@ def clean_translated_content(
     elif isinstance(content, tuple):
         return (content[0], clean_tts_text(content[1]))
     elif isinstance(content, list) and all(isinstance(d, dict) for d in content):
-        return [
-            {**d, 'text': clean_tts_text(d['text'])}
-            for d in content
-        ]
+        return [{**d, "text": clean_tts_text(d["text"])} for d in content]
     else:
         raise ValueError(f"Unsupported content format: {type(content)}")
-    
+
+
+def generate_phrase_audio_files(phrases: List[str], output_dir: str) -> None:
+    """
+    Generate slow and normal speed MP3 files for each phrase and save them to output_dir.
+
+    Args:
+        phrases: List of English phrases to convert to audio
+        output_dir: Directory where the MP3 files will be saved
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    for phrase in tqdm(phrases):
+        # Generate a clean filename for this phrase
+        base_filename = clean_filename(phrase)
+
+        if os.path.exists(os.path.join(output_dir, f"{base_filename}.mp3")):
+            # file already exists
+            print(f"{base_filename} exists, skipping")
+            continue
+
+        # Generate the audio for normal speed
+        normal_audio = text_to_speech(text=phrase, speaking_rate=1.0)
+
+        # Generate the audio for slow speed
+        slow_audio = text_to_speech(text=phrase, speaking_rate=0.6)
+
+        # Save the normal speed version
+        normal_filepath = os.path.join(output_dir, f"{base_filename}.mp3")
+        normal_audio.export(normal_filepath, format="mp3")
+
+        # Save the slow version
+        slow_filepath = os.path.join(output_dir, f"{base_filename}_slow.mp3")
+        slow_audio.export(slow_filepath, format="mp3")
+
+        print(f"Generated audio files for phrase: {phrase}")
+
+
 def setup_ffmpeg():
     ffmpeg_path = r"C:\Program Files\ffmpeg-7.0-essentials_build\bin"
 
@@ -121,24 +160,24 @@ async def async_generate_translated_phrase_audio(
 ) -> List[AudioSegment]:
     """
     Generate audio for translated phrases, handling HTML entities and special characters.
-    
+
     Args:
         translated_phrase: Tuple of (original_text, translated_text)
         english_voice_models: Configuration for English TTS voices
         target_voice_models: Configuration for target language TTS voices
-        
+
     Returns:
         List of AudioSegment objects containing the generated audio
     """
     # Clean the translated text while preserving the original format
     cleaned_phrase = clean_translated_content(translated_phrase)
-    
+
     texts = [
         cleaned_phrase[0],  # Original English text
         cleaned_phrase[1],  # Translated text (slow)
-        cleaned_phrase[1]   # Translated text (normal)
+        cleaned_phrase[1],  # Translated text (normal)
     ]
-    
+
     if english_voice_models is None:
         english_voice_models = config.english_voice_models
     if target_voice_models is None:
@@ -149,13 +188,13 @@ async def async_generate_translated_phrase_audio(
         target_voice_models["language_code"],
         target_voice_models["language_code"],
     ]
-    
+
     voice_names = [
         english_voice_models["male_voice"],
         target_voice_models["female_voice"],
         target_voice_models["female_voice"],
     ]
-    
+
     speaking_rates = [0.9, config.SPEAKING_RATE_SLOW, 1.0]
 
     loop = asyncio.get_event_loop()
@@ -344,22 +383,21 @@ def generate_normal_and_fast_audio(
 
 
 def generate_audio_from_dialogue(
-    dialogue: List[Dict[str, str]], 
-    in_target_language: bool = True
+    dialogue: List[Dict[str, str]], in_target_language: bool = True
 ) -> List[AudioSegment]:
     """
     Generate audio from dialogue, handling HTML entities and special characters.
-    
+
     Args:
         dialogue: List of dialogue utterances
         in_target_language: Whether to use target language voices
-        
+
     Returns:
         List of AudioSegment objects for each utterance
     """
     # Clean the dialogue text while preserving the format
     cleaned_dialogue = clean_translated_content(dialogue)
-    
+
     if in_target_language:
         voice_models = config.target_language_voice_models
     else:
