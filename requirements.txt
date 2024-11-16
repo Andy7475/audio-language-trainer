@@ -11,6 +11,7 @@ google-cloud-aiplatform
 google-cloud-core
 google-cloud-texttospeech
 google-cloud-translate
+google-cloud-language
 ipykernel                       #for jupyter notebook
 ipywidgets
 librosa                         #for speeding up dialogue

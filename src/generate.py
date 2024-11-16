@@ -1,36 +1,33 @@
-from collections import defaultdict
 import json
 import os
 import time
+from collections import defaultdict
 from typing import Dict
-from src.audio_generation import async_process_phrases, generate_audio_from_dialogue
+
+import pysnooper
 from pydub import AudioSegment
+from tqdm import tqdm
+
+from src.audio_generation import (  # async_process_phrases,
+    create_m4a_with_timed_lyrics,
+    generate_audio_from_dialogue,
+    generate_normal_and_fast_audio,
+    generate_translated_phrase_audio,
+)
 from src.config_loader import config
 from src.dialogue_generation import (
+    add_usage_to_words,
     generate_complete_dialogue_prompt,
+    generate_dialogue,
+    # generate_dialogue_prompt, generate_recap,
+    generate_story_plan,
+    get_least_used_words,
     get_vocab_from_dialogue,
     update_vocab_usage,
 )
-from src.dialogue_generation import (
-    generate_story_plan,
-    generate_dialogue_prompt,
-    generate_dialogue,
-    generate_recap,
-)
-from src.audio_generation import (
-    generate_audio_from_dialogue,
-    generate_normal_and_fast_audio,
-    async_process_phrases,
-)
 from src.phrase import generate_practice_phrases_from_dialogue
-
 from src.translation import translate_dialogue, translate_phrases
-from src.audio_generation import create_m4a_with_timed_lyrics
-from src.dialogue_generation import get_least_used_words, add_usage_to_words
-from tqdm import tqdm
-
 from src.utils import ensure_spacy_model
-import pysnooper
 
 
 @pysnooper.snoop(depth=2, output="../outputs/test/snoop.txt")
@@ -172,7 +169,7 @@ def add_translations(story_data_dict):
     return story_data_dict
 
 
-async def add_audio(story_data_dict):
+def add_audio(story_data_dict):
     """Adds text-to-speech for english and target language for all dialogue and
     practice phrases"""
     for story_part in tqdm(story_data_dict, desc="adding audio"):
@@ -194,10 +191,10 @@ async def add_audio(story_data_dict):
             print(f"Text-to-speech for dialogue done")
         # now do phrases asynchronoulsy (still unsure if Google API allows this, not getting huge speed up)
         translated_phrases = story_data_dict[story_part]["translated_phrase_list"]
-        tranlsated_phrases_audio = await async_process_phrases(translated_phrases)
+        translated_phrases_audio = generate_translated_phrase_audio(translated_phrases)
         story_data_dict[story_part][
             "translated_phrase_list_audio"
-        ] = tranlsated_phrases_audio
+        ] = translated_phrases_audio
         print(f"Text-to-speech for phrases done\n")
 
     return story_data_dict

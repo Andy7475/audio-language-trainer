@@ -1,4 +1,3 @@
-from collections import defaultdict
 import csv
 import io
 import json
@@ -10,31 +9,30 @@ import tempfile
 import urllib.parse
 import uuid
 import zipfile
+from collections import defaultdict
 from random import shuffle
 from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
+import pysnooper
 import requests
-import spacy
-from bs4 import BeautifulSoup
-from google.cloud import texttospeech
-from pydub import AudioSegment
-from PIL import Image
 from anki.collection import Collection
 from anki.models import NotetypeDict
+from bs4 import BeautifulSoup
+from PIL import Image
+from pydub import AudioSegment
 from tqdm import tqdm
-from src.audio_generation import async_process_phrases
+
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
-from src.translation import translate_from_english
+from src.translation import tokenize_text, translate_from_english
 from src.utils import (
     add_image_paths,
     clean_filename,
     create_test_story_dict,
     string_to_large_int,
 )
-import pysnooper
 
 
 def convert_anki_to_story_dict(collection_path: str, deck_name: str) -> Dict[str, Dict]:
@@ -511,7 +509,7 @@ def export_to_anki_with_images_english(
     print("Cleanup of temporary files completed.")
 
 
-async def create_anki_deck_from_english_phrase_list(
+def create_anki_deck_from_english_phrase_list(
     phrase_list: List[str],
     deck_name: str,
     anki_filename_prefix: str,
@@ -539,7 +537,7 @@ async def create_anki_deck_from_english_phrase_list(
             phrases=batch_size,
             from_index=from_index,
         )
-        translated_phrases_dict_audio = await add_audio(partial_dict)
+        translated_phrases_dict_audio = add_audio(partial_dict)
 
         if image_dir:
             translated_phrases_dict_audio = add_image_paths(
@@ -636,9 +634,11 @@ def generate_wiktionary_links_non_english(
 
 
 def generate_wiktionary_links(
-    phrase: str, language_name: str = config.language_name
+    phrase: str,
+    language_name: str = config.language_name,
+    language_code: str = config.TARGET_LANGUAGE,
 ) -> str:
-    words = phrase.split()
+    words = tokenize_text(text=phrase, language_code=language_code)
     links: List[str] = []
 
     for word in words:
