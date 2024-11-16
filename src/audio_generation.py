@@ -24,6 +24,65 @@ from src.utils import clean_filename
 from tqdm import tqdm
 
 
+def generate_translated_phrase_audio(
+    translated_phrases: List[Tuple[str, str]],
+    english_voice_models: Dict = None,
+    target_voice_models: Dict = None,
+) -> List[List[AudioSegment]]:
+    """
+    Generate audio for a list of translated phrases.
+
+    Args:
+        translated_phrases: List of tuples (original_text, translated_text)
+        english_voice_models: Configuration for English TTS voices
+        target_voice_models: Configuration for target language TTS voices
+
+    Returns:
+        List of AudioSegment lists, where each inner list contains:
+        [english_audio, target_slow_audio, target_normal_audio]
+    """
+    if english_voice_models is None:
+        english_voice_models = config.english_voice_models
+    if target_voice_models is None:
+        target_voice_models = config.target_language_voice_models
+
+    all_audio_segments = []
+
+    for eng_text, target_text in tqdm(translated_phrases, desc="Generating audio"):
+        # Clean the texts
+        cleaned_eng = clean_tts_text(eng_text)
+        cleaned_target = clean_tts_text(target_text)
+
+        # Generate English audio
+        english_audio = text_to_speech(
+            text=cleaned_eng,
+            language_code=english_voice_models["language_code"],
+            voice_name=english_voice_models["male_voice"],
+            speaking_rate=0.9,
+        )
+
+        # Generate slow target language audio with word breaks
+        target_slow = slow_text_to_speech(
+            text=cleaned_target,
+            language_code=target_voice_models["language_code"],
+            voice_name=target_voice_models["female_voice"],
+            speaking_rate=config.SPEAKING_RATE_SLOW,
+            word_break_ms=config.WORD_BREAK_MS,
+        )
+
+        # Generate normal target language audio
+        target_normal = text_to_speech(
+            text=cleaned_target,
+            language_code=target_voice_models["language_code"],
+            voice_name=target_voice_models["female_voice"],
+            speaking_rate=1.0,
+        )
+
+        all_audio_segments.append([english_audio, target_slow, target_normal])
+
+    return all_audio_segments
+
+
 def clean_tts_text(text: str) -> str:
     """
     Clean and prepare text for TTS processing by:
@@ -126,105 +185,105 @@ def setup_ffmpeg():
 setup_ffmpeg()
 
 
-def text_to_speech_worker(
-    text: str, language_code: str, voice_name: str, speaking_rate: float
-) -> bytes:
-    client = texttospeech.TextToSpeechClient()
-    synthesis_input = texttospeech.SynthesisInput(text=text)
-    voice = texttospeech.VoiceSelectionParams(
-        language_code=language_code, name=voice_name
-    )
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
-    )
-    response = client.synthesize_speech(
-        input=synthesis_input, voice=voice, audio_config=audio_config
-    )
-    return response.audio_content
+# def text_to_speech_worker(
+#     text: str, language_code: str, voice_name: str, speaking_rate: float
+# ) -> bytes:
+#     client = texttospeech.TextToSpeechClient()
+#     synthesis_input = texttospeech.SynthesisInput(text=text)
+#     voice = texttospeech.VoiceSelectionParams(
+#         language_code=language_code, name=voice_name
+#     )
+#     audio_config = texttospeech.AudioConfig(
+#         audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
+#     )
+#     response = client.synthesize_speech(
+#         input=synthesis_input, voice=voice, audio_config=audio_config
+#     )
+#     return response.audio_content
 
 
-def text_to_speech_multiprocessing(
-    texts: List[str],
-    language_codes: List[str],
-    voice_names: List[str],
-    speaking_rates: List[float],
-) -> List[AudioSegment]:
-    with multiprocessing.Pool() as pool:
-        audio_contents = pool.starmap(
-            text_to_speech_worker,
-            zip(texts, language_codes, voice_names, speaking_rates),
-        )
+# def text_to_speech_multiprocessing(
+#     texts: List[str],
+#     language_codes: List[str],
+#     voice_names: List[str],
+#     speaking_rates: List[float],
+# ) -> List[AudioSegment]:
+#     with multiprocessing.Pool() as pool:
+#         audio_contents = pool.starmap(
+#             text_to_speech_worker,
+#             zip(texts, language_codes, voice_names, speaking_rates),
+#         )
 
-    return [AudioSegment.from_mp3(io.BytesIO(content)) for content in audio_contents]
-
-
-async def async_generate_translated_phrase_audio(
-    translated_phrase: Tuple[str, str],
-    english_voice_models: Dict = None,
-    target_voice_models: Dict = None,
-) -> List[AudioSegment]:
-    """
-    Generate audio for translated phrases, handling HTML entities and special characters.
-
-    Args:
-        translated_phrase: Tuple of (original_text, translated_text)
-        english_voice_models: Configuration for English TTS voices
-        target_voice_models: Configuration for target language TTS voices
-
-    Returns:
-        List of AudioSegment objects containing the generated audio
-    """
-    # Clean the translated text while preserving the original format
-    cleaned_phrase = clean_translated_content(translated_phrase)
-
-    texts = [
-        cleaned_phrase[0],  # Original English text
-        cleaned_phrase[1],  # Translated text (slow)
-        cleaned_phrase[1],  # Translated text (normal)
-    ]
-
-    if english_voice_models is None:
-        english_voice_models = config.english_voice_models
-    if target_voice_models is None:
-        target_voice_models = config.target_language_voice_models
-
-    language_codes = [
-        english_voice_models["language_code"],
-        target_voice_models["language_code"],
-        target_voice_models["language_code"],
-    ]
-
-    voice_names = [
-        english_voice_models["male_voice"],
-        target_voice_models["female_voice"],
-        target_voice_models["female_voice"],
-    ]
-
-    speaking_rates = [0.9, config.SPEAKING_RATE_SLOW, 1.0]
-
-    loop = asyncio.get_event_loop()
-    audio_segments = await loop.run_in_executor(
-        None,
-        partial(
-            text_to_speech_multiprocessing,
-            texts,
-            language_codes,
-            voice_names,
-            speaking_rates,
-        ),
-    )
-
-    return audio_segments
+#     return [AudioSegment.from_mp3(io.BytesIO(content)) for content in audio_contents]
 
 
-async def async_process_phrases(phrases, max_concurrency=30):
-    semaphore = asyncio.Semaphore(max_concurrency)
+# async def async_generate_translated_phrase_audio(
+#     translated_phrase: Tuple[str, str],
+#     english_voice_models: Dict = None,
+#     target_voice_models: Dict = None,
+# ) -> List[AudioSegment]:
+#     """
+#     Generate audio for translated phrases, handling HTML entities and special characters.
 
-    async def limited_task(phrase):
-        async with semaphore:
-            return await async_generate_translated_phrase_audio(phrase)
+#     Args:
+#         translated_phrase: Tuple of (original_text, translated_text)
+#         english_voice_models: Configuration for English TTS voices
+#         target_voice_models: Configuration for target language TTS voices
 
-    return await asyncio.gather(*[limited_task(phrase) for phrase in phrases])
+#     Returns:
+#         List of AudioSegment objects containing the generated audio
+#     """
+#     # Clean the translated text while preserving the original format
+#     cleaned_phrase = clean_translated_content(translated_phrase)
+
+#     texts = [
+#         cleaned_phrase[0],  # Original English text
+#         cleaned_phrase[1],  # Translated text (slow)
+#         cleaned_phrase[1],  # Translated text (normal)
+#     ]
+
+#     if english_voice_models is None:
+#         english_voice_models = config.english_voice_models
+#     if target_voice_models is None:
+#         target_voice_models = config.target_language_voice_models
+
+#     language_codes = [
+#         english_voice_models["language_code"],
+#         target_voice_models["language_code"],
+#         target_voice_models["language_code"],
+#     ]
+
+#     voice_names = [
+#         english_voice_models["male_voice"],
+#         target_voice_models["female_voice"],
+#         target_voice_models["female_voice"],
+#     ]
+
+#     speaking_rates = [0.9, config.SPEAKING_RATE_SLOW, 1.0]
+
+#     loop = asyncio.get_event_loop()
+#     audio_segments = await loop.run_in_executor(
+#         None,
+#         partial(
+#             text_to_speech_multiprocessing,
+#             texts,
+#             language_codes,
+#             voice_names,
+#             speaking_rates,
+#         ),
+#     )
+
+#     return audio_segments
+
+
+# async def async_process_phrases(phrases, max_concurrency=30):
+#     semaphore = asyncio.Semaphore(max_concurrency)
+
+#     async def limited_task(phrase):
+#         async with semaphore:
+#             return await async_generate_translated_phrase_audio(phrase)
+
+#     return await asyncio.gather(*[limited_task(phrase) for phrase in phrases])
 
 
 def slow_text_to_speech(
@@ -453,7 +512,7 @@ def generate_audio_from_dialogue(
     dialogue: List[Dict[str, str]], in_target_language: bool = True
 ) -> List[AudioSegment]:
     """
-    Generate audio from dialogue, handling HTML entities and special characters.
+    Generate audio from dialogue using sequential processing.
 
     Args:
         dialogue: List of dialogue utterances
@@ -470,21 +529,65 @@ def generate_audio_from_dialogue(
     else:
         voice_models = config.english_voice_models
 
-    texts = [utterance["text"] for utterance in cleaned_dialogue]
-    language_codes = [voice_models["language_code"]] * len(cleaned_dialogue)
-    voice_names = [
-        (
+    audio_segments = []
+
+    for utterance in tqdm(cleaned_dialogue, desc="Generating dialogue audio"):
+        # Select voice based on speaker
+        voice_name = (
             voice_models["male_voice"]
             if utterance["speaker"] == "Sam"
             else voice_models["female_voice"]
         )
-        for utterance in cleaned_dialogue
-    ]
-    speaking_rates = [1.0] * len(cleaned_dialogue)
 
-    return text_to_speech_multiprocessing(
-        texts, language_codes, voice_names, speaking_rates
-    )
+        # Generate audio for this utterance
+        audio = text_to_speech(
+            text=utterance["text"],
+            language_code=voice_models["language_code"],
+            voice_name=voice_name,
+            speaking_rate=1.0,
+        )
+
+        audio_segments.append(audio)
+
+    return audio_segments
+
+
+# def generate_audio_from_dialogue(
+#     dialogue: List[Dict[str, str]], in_target_language: bool = True
+# ) -> List[AudioSegment]:
+#     """
+#     Generate audio from dialogue, handling HTML entities and special characters.
+
+#     Args:
+#         dialogue: List of dialogue utterances
+#         in_target_language: Whether to use target language voices
+
+#     Returns:
+#         List of AudioSegment objects for each utterance
+#     """
+#     # Clean the dialogue text while preserving the format
+#     cleaned_dialogue = clean_translated_content(dialogue)
+
+#     if in_target_language:
+#         voice_models = config.target_language_voice_models
+#     else:
+#         voice_models = config.english_voice_models
+
+#     texts = [utterance["text"] for utterance in cleaned_dialogue]
+#     language_codes = [voice_models["language_code"]] * len(cleaned_dialogue)
+#     voice_names = [
+#         (
+#             voice_models["male_voice"]
+#             if utterance["speaker"] == "Sam"
+#             else voice_models["female_voice"]
+#         )
+#         for utterance in cleaned_dialogue
+#     ]
+#     speaking_rates = [1.0] * len(cleaned_dialogue)
+
+#     return text_to_speech_multiprocessing(
+#         texts, language_codes, voice_names, speaking_rates
+#     )
 
 
 def create_m4a_with_timed_lyrics(

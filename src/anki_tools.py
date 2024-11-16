@@ -1,4 +1,3 @@
-from collections import defaultdict
 import csv
 import io
 import json
@@ -10,20 +9,20 @@ import tempfile
 import urllib.parse
 import uuid
 import zipfile
+from collections import defaultdict
 from random import shuffle
 from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
+import pysnooper
 import requests
-import spacy
-from bs4 import BeautifulSoup
-from google.cloud import texttospeech
-from pydub import AudioSegment
-from PIL import Image
 from anki.collection import Collection
 from anki.models import NotetypeDict
+from bs4 import BeautifulSoup
+from PIL import Image
+from pydub import AudioSegment
 from tqdm import tqdm
-from src.audio_generation import async_process_phrases
+
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
@@ -34,7 +33,6 @@ from src.utils import (
     create_test_story_dict,
     string_to_large_int,
 )
-import pysnooper
 
 
 def convert_anki_to_story_dict(collection_path: str, deck_name: str) -> Dict[str, Dict]:
