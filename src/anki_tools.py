@@ -27,7 +27,7 @@ from src.audio_generation import async_process_phrases
 from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
-from src.translation import translate_from_english
+from src.translation import tokenize_text, translate_from_english
 from src.utils import (
     add_image_paths,
     clean_filename,
@@ -636,9 +636,11 @@ def generate_wiktionary_links_non_english(
 
 
 def generate_wiktionary_links(
-    phrase: str, language_name: str = config.language_name
+    phrase: str,
+    language_name: str = config.language_name,
+    language_code: str = config.TARGET_LANGUAGE,
 ) -> str:
-    words = phrase.split()
+    words = tokenize_text(text=phrase, language_code=language_code)
     links: List[str] = []
 
     for word in words:
