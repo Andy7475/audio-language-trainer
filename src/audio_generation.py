@@ -19,6 +19,7 @@ from mutagen.mp4 import MP4, MP4Cover
 from pydub import AudioSegment
 
 from src.config_loader import config
+from src.translation import tokenize_text
 from src.utils import clean_filename
 from tqdm import tqdm
 
@@ -71,7 +72,7 @@ def clean_translated_content(
 
 def generate_phrase_audio_files(phrases: List[str], output_dir: str) -> None:
     """
-    Generate slow and normal speed MP3 files for each phrase and save them to output_dir.
+    Generate slow and normal English-only speed MP3 files for each phrase and save them to output_dir.
 
     Args:
         phrases: List of English phrases to convert to audio
@@ -93,7 +94,11 @@ def generate_phrase_audio_files(phrases: List[str], output_dir: str) -> None:
         normal_audio = text_to_speech(text=phrase, speaking_rate=1.0)
 
         # Generate the audio for slow speed
-        slow_audio = text_to_speech(text=phrase, speaking_rate=0.6)
+        slow_audio = slow_text_to_speech(
+            text=phrase,
+            language_code="en",
+            voice_name=config.english_voice_models["male"],
+        )
 
         # Save the normal speed version
         normal_filepath = os.path.join(output_dir, f"{base_filename}.mp3")
@@ -222,12 +227,74 @@ async def async_process_phrases(phrases, max_concurrency=30):
     return await asyncio.gather(*[limited_task(phrase) for phrase in phrases])
 
 
+def slow_text_to_speech(
+    text: str,
+    language_code: str = config.target_language_voice_models["language_code"],
+    voice_name: str = config.target_language_voice_models["male_voice"],
+    speaking_rate: float = config.SPEAKING_RATE_SLOW,
+    word_break_ms: int = config.WORD_BREAK_MS,
+) -> AudioSegment:
+    """
+    Generate slowed down text-to-speech audio with breaks between words using SSML.
+
+    Args:
+        text: Text to convert to speech
+        language_code: Language code for TTS (defaults to config's English voice)
+        voice_name: Name of voice to use (defaults to config's English male voice)
+        speaking_rate: Speaking rate (defaults to config.SPEAKING_RATE_SLOW)
+        word_break_time: Break time between words in ms (e.g. 250)
+
+    Returns:
+        AudioSegment containing the generated speech with word breaks
+    """
+    client = texttospeech.TextToSpeechClient()
+
+    word_break_time = str(word_break_ms) + "ms"
+    # Clean the text and tokenize it
+    cleaned_text = clean_tts_text(text)
+    tokens = tokenize_text(cleaned_text, language_code[:2])
+
+    # Create SSML with breaks between words
+    ssml_parts = ["<speak>"]
+
+    for i, token in enumerate(tokens):
+        ssml_parts.append(token)
+        # Add break after each token except the last one
+        if i < len(tokens) - 1:
+            ssml_parts.append(f'<break time="{word_break_time}"/>')
+
+    ssml_parts.append("</speak>")
+    ssml_text = " ".join(ssml_parts)
+
+    # Configure TTS request
+    synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
+
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=language_code, name=voice_name
+    )
+
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
+    )
+
+    # Generate the audio
+    response = client.synthesize_speech(
+        input=synthesis_input, voice=voice, audio_config=audio_config
+    )
+
+    # Convert to AudioSegment
+    audio_segment = AudioSegment.from_mp3(io.BytesIO(response.audio_content))
+
+    return audio_segment
+
+
 def text_to_speech(
     text: str,
     language_code: str = None,
     voice_name: str = None,
     speaking_rate: float = 1.0,
 ) -> AudioSegment:
+    """text to audio segment, defaults to english male voice"""
     client = texttospeech.TextToSpeechClient()
 
     # Use config values if parameters are not provided
