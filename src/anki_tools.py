@@ -509,7 +509,7 @@ def export_to_anki_with_images_english(
     print("Cleanup of temporary files completed.")
 
 
-async def create_anki_deck_from_english_phrase_list(
+def create_anki_deck_from_english_phrase_list(
     phrase_list: List[str],
     deck_name: str,
     anki_filename_prefix: str,
@@ -537,7 +537,7 @@ async def create_anki_deck_from_english_phrase_list(
             phrases=batch_size,
             from_index=from_index,
         )
-        translated_phrases_dict_audio = await add_audio(partial_dict)
+        translated_phrases_dict_audio = add_audio(partial_dict)
 
         if image_dir:
             translated_phrases_dict_audio = add_image_paths(

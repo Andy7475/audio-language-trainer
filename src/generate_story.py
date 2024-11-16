@@ -27,11 +27,8 @@ from src.generate import (
 from src.utils import save_defaultdict, generate_story_image, create_html_story
 from src.anki_tools import export_to_anki
 
-from memory_monitor import log_memory_usage
 
-
-@log_memory_usage
-async def generate_story(story_name: str):
+def generate_story(story_name: str):
     """
     Generate a complete language learning story with audio, images, and interactive elements.
 
@@ -73,7 +70,7 @@ async def generate_story(story_name: str):
 
         # Add audio (async operation)
         print("\nGenerating audio...")
-        story_data_dict = await add_audio(story_data_dict)
+        story_data_dict = add_audio(story_data_dict)
 
         # Save complete data as pickle
         pickle_path = output_dir / f"story_data_{story_name_clean}.pkl"
@@ -112,7 +109,7 @@ async def generate_story(story_name: str):
         raise
 
 
-async def main():
+def main():
     """Main entry point for the script."""
     if len(sys.argv) != 2:
         print("Usage: python generate_story.py 'story name'")
@@ -122,7 +119,7 @@ async def main():
     print(f"Generating story: {story_name}")
 
     try:
-        await generate_story(story_name)
+        generate_story(story_name)
     except Exception as e:
         print(f"Failed to generate story: {str(e)}")
         sys.exit(1)
