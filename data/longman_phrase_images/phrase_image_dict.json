@@ -2719,8 +2719,8 @@
     "prompt": "Two smiling friends in mid-air, arms outstretched, diving simultaneously into a sparkling blue pool on a sunny day. in the style of a children's book illustration, Axel Scheffler style, thick brushstrokes, colored pencil texture, expressive characters, bold outlines, textured shading, pastel color palette",
     "image_path": "../data/longman_phrase_images\\they_dove_into_the_pool_together.png"
   },
-  "mind_the_gap_between_the_train_and": {
-    "phrase": "Mind the gap between the train and",
+  "mind_the_gap_between_the_train_and_the_platform": {
+    "phrase": "Mind the gap between the train and the platform",
     "prompt": "A passenger nervously peering down at a wide, menacing gap between a subway platform and a train, with a glowing \"Mind the Gap\" warning sign prominently displayed. in the style of a children's book illustration, Axel Scheffler style, thick brushstrokes, colored pencil texture, expressive characters, bold outlines, textured shading, pastel color palette",
     "image_path": "../data/longman_phrase_images\\mind_the_gap_between_the_train_and.png"
   },
