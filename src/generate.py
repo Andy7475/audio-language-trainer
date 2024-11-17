@@ -27,10 +27,9 @@ from src.dialogue_generation import (
 )
 from src.phrase import generate_practice_phrases_from_dialogue
 from src.translation import translate_dialogue, translate_phrases
-from src.utils import ensure_spacy_model
 
 
-@pysnooper.snoop(depth=2, output="../outputs/test/snoop.txt")
+#@pysnooper.snoop(depth=2, output="../outputs/test/snoop.txt")
 def create_story_plan_and_dialogue(
     story_name: str,
     n_verbs: int = 10,
@@ -137,7 +136,6 @@ def create_story_plan_and_dialogue(
 def add_practice_phrases(story_data_dict):
     """Takes the longer dialgoue and breaks it up into smaller practice phrases.
     Modifies the input dictionary and returns it"""
-    ensure_spacy_model()
     for story_part in story_data_dict:
         dialogue = story_data_dict[story_part]["dialogue"]
         story_data_dict[story_part]["corrected_phrase_list"] = (
