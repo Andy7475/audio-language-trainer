@@ -1101,16 +1101,6 @@ def export_to_anki_with_images(
                 except Exception as e:
                     print(f"Error copying image for {english}: {str(e)}")
                     image_filename = None
-            # Handle image if it exists
-            image_filename = None
-            if image_path is not None:
-                try:
-                    image_filename = f"{uuid.uuid4()}.png"
-                    shutil.copy2(image_path, os.path.join(output_dir, image_filename))
-                    media_files.append(image_filename)
-                except Exception as e:
-                    print(f"Error copying image for {english}: {str(e)}")
-                    image_filename = None
 
             # Handle audio
             target_audio_normal = f"{uuid.uuid4()}.mp3"
