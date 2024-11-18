@@ -674,70 +674,11 @@ def generate_wiktionary_links(
     return " ".join(links)
 
 
-COMMON_CSS = """
-    .card {
-        font-family: Arial, sans-serif;
-        font-size: 20px;
-        text-align: center;
-        color: black;
-        background-color: white;
-    }
-
-    .target-text {
-  font-size: 28px;
-  margin: 20px 0;
-  font-weight: bold;
-  cursor: pointer;
-  position: relative;
-}
-
-.target-text::after {
-  content: 'Copied!';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 14px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.target-text.copied::after {
-  opacity: 1;
-}
-    .english-text {
-        font-size: 22px;
-        margin: 15px 0;
-        font-weight: bold;
-    }
-    .wiktionary-links {
-        margin-top: 20px;
-    }
-    .replay-button svg {
-  width: 60px;
-  height: 60px;
-}
-.replay-button svg circle {
-  fill: #4CAF50;
-}
-.replay-button svg path {
-  fill: white;
-  stroke: none;
-}
-    .wiktionary-links a {
-        display: inline-block;
-        margin: 5px;
-        padding: 10px 15px;
-        background-color: #f0f0f0;
-        border-radius: 5px;
-        text-decoration: none;
-        color: #333;
-    }
-    """
+def load_template(filename):
+    # print(os.listdir())
+    filename = os.path.join("..", "src", filename)
+    with open(filename, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def export_to_anki(
@@ -842,7 +783,7 @@ def export_to_anki(
         """,
             },
         ],
-        css=COMMON_CSS,
+        css=load_template("card_styles.css"),
     )
 
     media_files = []
@@ -953,23 +894,6 @@ def export_to_anki_with_images(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    card_back = """
-        <script>
-        function copyText(element) {
-            var textToCopy = element.textContent;
-            navigator.clipboard.writeText(textToCopy).then(function() {
-                element.classList.add('copied');
-                setTimeout(function() {
-                    element.classList.remove('copied');
-                }, 1000);
-            }).catch(function(err) {
-                console.error('Failed to copy text: ', err);
-            });
-        }
-        </script>
-        """
-
-    # (Card templates and styles remain the same...)
     language_practice_model = genanki.Model(
         1607392313,
         "Language Practice With Images",
@@ -984,85 +908,21 @@ def export_to_anki_with_images(
         templates=[
             {
                 "name": "Listening Card",
-                "qfmt": f"""
-                <div class="picture-container">{{{{Picture}}}}</div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                    <div>
-                        Normal speed:
-                        <br>
-                        {{{{TargetAudio}}}}
-                    </div>
-                    <div>
-                        Slow speed:
-                        <br>
-                        {{{{TargetAudioSlow}}}}
-                    </div>
-                </div>""",
-                "afmt": f"""
-                <hr id="answer">
-                <div class="picture-container">{{{{Picture}}}}</div>
-                <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-                <div class="english-text">{{{{EnglishText}}}}</div>
-                <div>
-                    Normal speed: {{{{TargetAudio}}}}
-                </div>
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+                "qfmt": load_template("listening_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
             },
             {
                 "name": "Reading Card",
-                "qfmt": """
-                <div class="picture-container">{{Picture}}</div>
-                <div class="target-text" onclick="copyText(this)">{{TargetText}}</div>
-                """,
-                "afmt": f"""
-                {{{{FrontSide}}}}
-                <hr id="answer">
-                <div class="english-text">{{{{EnglishText}}}}</div>
-                <div>
-                    {{{{TargetAudio}}}}
-                </div>
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+                "qfmt": load_template("reading_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
             },
             {
                 "name": "Speaking Card",
-                "qfmt": """
-                <div class="picture-container">{{Picture}}</div>
-                <div class="english-text">{{EnglishText}}</div>
-                """,
-                "afmt": f"""
-                {{{{FrontSide}}}}
-                <hr id="answer">
-                <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-                <div>
-                    {{{{TargetAudio}}}}
-                </div>
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+                "qfmt": load_template("speaking_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
             },
         ],
-        css=COMMON_CSS
-        + """
-        .picture-container {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .picture-container img {
-            max-width: 90%;
-            max-height: 300px;
-            object-fit: contain;
-        }
-        """,
+        css=load_template("card_styles.css"),
     )
 
     media_files = []

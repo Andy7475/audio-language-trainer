@@ -1,0 +1,44 @@
+<div class="card">
+    <hr id="answer">
+    <div class="picture-container">{{Picture}}</div>
+    <div class="target-text" onclick="copyText(this)">{{TargetText}}</div>
+    <div class="english-text">{{EnglishText}}</div>
+    
+    <div class="audio-controls">
+        <div class="audio-button-container">
+            <div class="audio-label">Normal speed:</div>
+            {{TargetAudio}}
+        </div>
+        <div class="audio-button-container">
+            <div class="audio-label">Slow speed:</div>
+            {{TargetAudioSlow}}
+        </div>
+    </div>
+    
+    <div class="wiktionary-links">{{WiktionaryLinks}}</div>
+</div>
+
+<script>
+// Audio playback functionality 
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.play-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const audioId = this.dataset.audio;
+            if (typeof pycmd !== 'undefined') {
+                pycmd('play:' + audioId);
+            }
+        });
+    });
+});
+
+// Copy text functionality
+function copyToClipboard(element) {
+    const text = element.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        element.classList.add('copied');
+        setTimeout(() => {
+            element.classList.remove('copied');
+        }, 1000);
+    });
+}
+</script>

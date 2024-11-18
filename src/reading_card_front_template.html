@@ -1,0 +1,59 @@
+<div class="card">
+    <div class="picture-container">
+        <div class="flip-container" id="imageFlip">
+            <div class="flip-front">
+                <button class="reveal-button">
+                    <svg class="reveal-icon" viewBox="0 0 24 24">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                    Reveal Image
+                </button>
+            </div>
+            <div class="flip-back">{{Picture}}</div>
+        </div>
+    </div>
+
+    <div class="target-text" onclick="copyToClipboard(this)">{{TargetText}}</div>
+</div>
+
+<script>
+// Image flip functionality
+const flipContainer = document.querySelector('.flip-container');
+if (flipContainer) {
+    flipContainer.addEventListener('click', function() {
+        this.classList.toggle('flipped');
+        const button = this.querySelector('.reveal-button');
+        if (button) {
+            button.innerHTML = `
+                <svg class="reveal-icon" viewBox="0 0 24 24">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                </svg>
+                ${this.classList.contains('flipped') ? 'Hide Image' : 'Reveal Image'}`;
+        }
+    });
+}
+
+// Audio playback functionality 
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.play-button').forEach(button => {
+        button.addEventListener('click', function() {
+            const audioId = this.dataset.audio;
+            if (typeof pycmd !== 'undefined') {
+                pycmd('play:' + audioId);
+            }
+        });
+    });
+});
+
+// Copy text functionality
+function copyToClipboard(element) {
+    const text = element.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        element.classList.add('copied');
+        setTimeout(() => {
+            element.classList.remove('copied');
+        }, 1000);
+    });
+}
+</script>
+
