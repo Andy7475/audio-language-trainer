@@ -9,7 +9,7 @@ import spacy
 
 from src.config_loader import config
 from src.dialogue_generation import anthropic_generate, extract_json_from_llm_response
-from src.utils import (
+from src.nlp import (
     extract_spacy_lowercase_words,
     extract_substring_matches,
     extract_vocab_and_pos,
