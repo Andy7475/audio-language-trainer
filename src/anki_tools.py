@@ -674,70 +674,11 @@ def generate_wiktionary_links(
     return " ".join(links)
 
 
-COMMON_CSS = """
-    .card {
-        font-family: Arial, sans-serif;
-        font-size: 20px;
-        text-align: center;
-        color: black;
-        background-color: white;
-    }
-
-    .target-text {
-  font-size: 28px;
-  margin: 20px 0;
-  font-weight: bold;
-  cursor: pointer;
-  position: relative;
-}
-
-.target-text::after {
-  content: 'Copied!';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #4CAF50;
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 14px;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.target-text.copied::after {
-  opacity: 1;
-}
-    .english-text {
-        font-size: 22px;
-        margin: 15px 0;
-        font-weight: bold;
-    }
-    .wiktionary-links {
-        margin-top: 20px;
-    }
-    .replay-button svg {
-  width: 60px;
-  height: 60px;
-}
-.replay-button svg circle {
-  fill: #4CAF50;
-}
-.replay-button svg path {
-  fill: white;
-  stroke: none;
-}
-    .wiktionary-links a {
-        display: inline-block;
-        margin: 5px;
-        padding: 10px 15px;
-        background-color: #f0f0f0;
-        border-radius: 5px;
-        text-decoration: none;
-        color: #333;
-    }
-    """
+def load_template(filename):
+    # print(os.listdir())
+    filename = os.path.join("..", "src", filename)
+    with open(filename, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 def export_to_anki(
@@ -842,7 +783,7 @@ def export_to_anki(
         """,
             },
         ],
-        css=COMMON_CSS,
+        css=load_template("card_styles.css"),
     )
 
     media_files = []
@@ -937,13 +878,6 @@ def export_to_anki(
     print("Cleanup of temporary MP3 files completed.")
 
 
-def load_template(filename):
-    # print(os.listdir())
-    filename = os.path.join("..", "src", filename)
-    with open(filename, "r", encoding="utf-8") as f:
-        return f.read()
-
-
 def export_to_anki_with_images(
     story_data_dict: Dict[str, Dict],
     output_dir: str,
@@ -988,7 +922,7 @@ def export_to_anki_with_images(
                 "afmt": load_template("card_back_template.html"),
             },
         ],
-        # css=get_common_styles(),
+        css=load_template("card_styles.css"),
     )
 
     media_files = []
