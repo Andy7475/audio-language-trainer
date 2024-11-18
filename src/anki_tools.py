@@ -937,6 +937,13 @@ def export_to_anki(
     print("Cleanup of temporary MP3 files completed.")
 
 
+def load_template(filename):
+    # print(os.listdir())
+    filename = os.path.join("..", "src", filename)
+    with open(filename, "r", encoding="utf-8") as f:
+        return f.read()
+
+
 def export_to_anki_with_images(
     story_data_dict: Dict[str, Dict],
     output_dir: str,
@@ -953,23 +960,6 @@ def export_to_anki_with_images(
     """
     os.makedirs(output_dir, exist_ok=True)
 
-    card_back = """
-        <script>
-        function copyText(element) {
-            var textToCopy = element.textContent;
-            navigator.clipboard.writeText(textToCopy).then(function() {
-                element.classList.add('copied');
-                setTimeout(function() {
-                    element.classList.remove('copied');
-                }, 1000);
-            }).catch(function(err) {
-                console.error('Failed to copy text: ', err);
-            });
-        }
-        </script>
-        """
-
-    # (Card templates and styles remain the same...)
     language_practice_model = genanki.Model(
         1607392313,
         "Language Practice With Images",
@@ -984,85 +974,21 @@ def export_to_anki_with_images(
         templates=[
             {
                 "name": "Listening Card",
-                "qfmt": f"""
-                <div class="picture-container">{{{{Picture}}}}</div>
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-                    <div>
-                        Normal speed:
-                        <br>
-                        {{{{TargetAudio}}}}
-                    </div>
-                    <div>
-                        Slow speed:
-                        <br>
-                        {{{{TargetAudioSlow}}}}
-                    </div>
-                </div>""",
-                "afmt": f"""
-                <hr id="answer">
-                <div class="picture-container">{{{{Picture}}}}</div>
-                <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-                <div class="english-text">{{{{EnglishText}}}}</div>
-                <div>
-                    Normal speed: {{{{TargetAudio}}}}
-                </div>
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+                "qfmt": load_template("listening_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
             },
             {
                 "name": "Reading Card",
-                "qfmt": """
-                <div class="picture-container">{{Picture}}</div>
-                <div class="target-text" onclick="copyText(this)">{{TargetText}}</div>
-                """,
-                "afmt": f"""
-                {{{{FrontSide}}}}
-                <hr id="answer">
-                <div class="english-text">{{{{EnglishText}}}}</div>
-                <div>
-                    {{{{TargetAudio}}}}
-                </div>
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+                "qfmt": load_template("reading_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
             },
             {
                 "name": "Speaking Card",
-                "qfmt": """
-                <div class="picture-container">{{Picture}}</div>
-                <div class="english-text">{{EnglishText}}</div>
-                """,
-                "afmt": f"""
-                {{{{FrontSide}}}}
-                <hr id="answer">
-                <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-                <div>
-                    {{{{TargetAudio}}}}
-                </div>
-                <div class="wiktionary-links">
-                {{{{WiktionaryLinks}}}}
-                </div>
-                {card_back}
-                """,
+                "qfmt": load_template("speaking_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
             },
         ],
-        css=COMMON_CSS
-        + """
-        .picture-container {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .picture-container img {
-            max-width: 90%;
-            max-height: 300px;
-            object-fit: contain;
-        }
-        """,
+        # css=get_common_styles(),
     )
 
     media_files = []
