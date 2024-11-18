@@ -14,11 +14,12 @@ from src.config_loader import config
 from src.utils import (
     anthropic_generate,
     extract_json_from_llm_response,
-    extract_vocab_and_pos,
     load_json,
     save_json,
     update_vocab_usage,
 )
+
+from src.nlp import extract_vocab_and_pos
 
 load_dotenv()  # so we can use environment variables for various global settings
 
