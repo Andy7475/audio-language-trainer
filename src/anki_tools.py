@@ -690,18 +690,18 @@ def get_learning_insights_prompt(english_phrase: str, target_phrase: str) -> str
     {config.language_name} Language Learning Insights.
     For the given English phrase: "{english_phrase}" and its translation: "{target_phrase}", create some language learning insights. Present your response in this structured format:
 
-# Alternative Translations
-Machine translation isn't perfect, suggest and discuss:
-- different translations for different contexts (and when this translation might be used, specifically)
+# Breakdown and Alternative Translations
+- insights from a literal translation
+- where / when / why would this translation be used over others
+- different translations for different contexts 
 - different formalities (e.g. tu / vous if French etc)
 - plural / singlaur alternatives (e.g. du, ni in Swedish)
 
 # Vocabulary Building
-- Expand compound words and discuss literal translations so I learn more vocab (Bonjour = bon + jour etc.)
-- Create clusters of related useful phrases and vocabulary:
+- Expand compound words or word-part origins so I learn more vocab (Bonjour = bon + jour etc.)
 - Common prefixes/suffixes patterns demonstrated
 - Related words sharing same roots/stems
-- Etymology and connections to other languages you might know
+- Etymology and connections to other languages
 - Common collocations
 - Synonyms and antonyms
 - Situational variations
@@ -740,6 +740,7 @@ These will be very language dependent (so some not relevant or you might need to
 Remember to:
 - Use clear, learner-friendly language
 - Provide plenty of examples
+- always provide an english translation for any {config.language_name} text
 - Use bullet points and clear formatting for readability, but add explanations so it's easy to understand
 - Link concepts together to show language patterns
 - Flag particularly useful or important points with 💡
