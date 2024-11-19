@@ -688,16 +688,20 @@ def get_learning_insights_prompt(english_phrase: str, target_phrase: str) -> str
 
     prompt = f"""
     {config.language_name} Language Learning Insights.
-    For the given English phrase: {english_phrase} and its translation: {target_phrase}, create a comprehensive language learning analysis. Present your response in this structured format:
+    For the given English phrase: "{english_phrase}" and its translation: "{target_phrase}", create some language learning insights. Present your response in this structured format:
 
 # Alternative Translations
-Machine translation isn't perfect, suggest:
-- different translations for different contexts (or when this translation might be used)
+Machine translation isn't perfect, suggest and discuss:
+- different translations for different contexts (and when this translation might be used, specifically)
 - different formalities (e.g. tu / vous if French etc)
 - plural / singlaur alternatives (e.g. du, ni in Swedish)
 
 # Vocabulary Building
-Create clusters of related useful phrases and vocabulary:
+- Expand compound words and discuss literal translations so I learn more vocab (Bonjour = bon + jour etc.)
+- Create clusters of related useful phrases and vocabulary:
+- Common prefixes/suffixes patterns demonstrated
+- Related words sharing same roots/stems
+- Etymology and connections to other languages you might know
 - Common collocations
 - Synonyms and antonyms
 - Situational variations
@@ -709,13 +713,6 @@ Concrete examples showing how to use this learning in other contexts:
 - Similar phrases using the same pattern
 - Common variations
 - When and how to use this in real conversations
-
-# Word Building
-Break down each significant word, showing:
-- Word components and their individual meanings (Bonjour = bon + jour etc.)
-- Related words sharing same roots/stems
-- Common prefixes/suffixes patterns demonstrated
-- Etymology and connections to other languages you might know
 
 # Memory Hooks
 - Mnemonics if helpful
@@ -732,7 +729,7 @@ These will be very language dependent (so some not relevant or you might need to
 - Similar phrases using the same pattern
 - Common mistakes to avoid
 
-# Cultural Corner
+# Cultural Corner (make this a commentary rather than bullets)
 - Formal vs informal usage
 - Cultural context and connotations
 - Regional variations
@@ -743,8 +740,7 @@ These will be very language dependent (so some not relevant or you might need to
 Remember to:
 - Use clear, learner-friendly language
 - Provide plenty of examples
-- Use bullet points and clear formatting for readability
-- Include literal translations where helpful
+- Use bullet points and clear formatting for readability, but add explanations so it's easy to understand
 - Link concepts together to show language patterns
 - Flag particularly useful or important points with 💡
 - Mark common pitfalls or important warnings with ⚠️
