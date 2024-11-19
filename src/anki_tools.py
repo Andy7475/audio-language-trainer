@@ -27,8 +27,8 @@ from src.config_loader import config
 from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
 from src.translation import tokenize_text, translate_from_english
+from src.images import add_image_paths
 from src.utils import (
-    add_image_paths,
     clean_filename,
     create_test_story_dict,
     string_to_large_int,
