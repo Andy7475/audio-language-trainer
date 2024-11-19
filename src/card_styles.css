@@ -53,6 +53,20 @@
     gap: 12px;
     margin: 20px auto;
 }
+.hide-button {
+    background: #e5e7eb;
+    color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin: 0 2px;
+    cursor: pointer;
+}
+
+.hide-button.revealed {
+    background: #dbeafe;
+    color: inherit;
+}
 
 .insights-button {
     display: flex;
