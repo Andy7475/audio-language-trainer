@@ -3,8 +3,8 @@
     font-family: Arial, sans-serif;
     font-size: 20px;
     text-align: center;
-    color: black;
-    background-color: white;
+    /*color: black;
+    background-color: white; */
     padding: 5px;
 }
 
@@ -25,6 +25,135 @@
     font-weight: bold;
     cursor: pointer;
     position: relative;
+}
+
+.target-text::after {
+    content: 'Copied!';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.target-text.copied::after {
+    opacity: 1;
+}
+
+.insights-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 20px auto;
+}
+
+.insights-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    text-decoration: none;
+}
+
+.insights-button:hover {
+    background-color: #1976D2;
+    transform: translateY(-1px);
+}
+
+.insights-button::after {
+    content: 'Copied! Opening Claude...';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #4CAF50;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s;
+    margin-top: 8px;
+}
+
+.insights-button.copied::after {
+    opacity: 1;
+}
+
+.insights-icon {
+    font-size: 20px;
+}
+
+.info-icon {
+    color: #666;
+    cursor: pointer;
+    font-size: 20px;
+    position: relative;
+    user-select: none;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.3s ease;
+}
+
+.info-icon:hover {
+    color: #2196F3;
+}
+
+.info-tooltip {
+    visibility: hidden;
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 8px 12px;
+    border-radius: 4px;
+    width: max-content;
+    max-width: 220px;
+    font-size: 14px;
+    margin-bottom: 8px;
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    z-index: 10;
+}
+
+.info-icon:focus .info-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Add arrow to tooltip */
+.info-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
 }
 
 .target-text::after {
@@ -67,7 +196,7 @@
 
 .audio-label {
     font-size: 14px;
-    color: #3b3636;
+    /* color: #3b3636; */
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -90,16 +219,6 @@
 
 .replay-button svg path {
     fill: white;
-}
-
-/* Night mode adjustments */
-.nightMode .audio-label {
-    color: #ddd;
-}
-
-/* Mobile adjustments */
-.mobile .audio-controls {
-    gap: 20px;
 }
 
 
@@ -157,7 +276,6 @@ transition: transform 0.6s;
 }
     
     
-
 .play-normal { background-color: #4CAF50; }
 .play-slow { background-color: #2196F3; }
 
@@ -190,17 +308,6 @@ transition: transform 0.6s;
     border-radius: 5px;
     text-decoration: none;
     color: #333;
-}
-
-/* Night mode support */
-.nightMode.card { 
-    background-color: #2f2f2f;
-    color: #ffffff;
-}
-
-.nightMode .wiktionary-links a {
-    background-color: #444;
-    color: #fff;
 }
 
 /* Mobile support */
