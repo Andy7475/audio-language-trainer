@@ -132,11 +132,16 @@ def generate_phrases_with_llm(
     Requirements:
     1. Use only words from the provided lists, common articles (a, an, the), basic prepositions, and common pronouns (I, we, you, they, etc.).
     2. Each phrase must contain one or two verbs from the verb list.
-    3. Vary the verb tenses (present, past, future) across the phrases.
-    4. Use 4-7 words from the vocabulary list in each phrase, but ensure each output is a complete sentence or phrase (so you may extend the length if needed)
-    5. Create meaningful and diverse phrases that could be useful for language learners.
-    6. Ensure you use each verb and vocabulary word at least once across all phrases.
-    7. Make the phrases memorable by creating interesting or slightly humorous scenarios.
+    3. Vary the verb tenses (present, past, future) across the phrases. Stick mainly to first and second person.
+    4. Vary the type of phrase:
+        - Imperative ("Don't be late...")
+        - Simple statements ("The traffic was terrible...")
+        - First-person expressions ("I enjoy...")
+        - Question ("Shall we...?", "Do you ...?", "Did they...?")
+    5. Make phrases active rather than passive, something you would commonly say rather than read.
+    6. Use 4-7 words from the vocabulary list in each phrase, but ensure each output is a complete sentence or phrase (so you may extend the length if needed)
+    7. Ensure you use each verb and vocabulary word at least once across all phrases.
+    8. Make the phrases memorable by creating interesting or slightly humorous scenarios.
 
     Please return your response in the following JSON format:
     {{
@@ -165,8 +170,14 @@ def generate_minimal_phrases_with_llm(word_list: List[str]) -> List[str]:
     3. Each phrase must be 6-9 words long, but ensure each output is a complete sentence or phrase (so you may extend the length if needed).
     4. You may use additional common words (articles, prepositions, pronouns, basic verbs) that a beginner language learner would know to complete phrases.
     5. Prioritize exhausting the provided word list over creating a large number of phrases.
-    6. Create meaningful and diverse phrases that could be useful for language learners.
-    7. Make the phrases memorable by creating interesting or slightly humorous scenarios when possible.
+    6. Vary the verb tenses (present, past, future) across the phrases. Stick mainly to first and second person.
+    7. Vary the type of phrase:
+        - Imperative ("Don't be late...")
+        - Simple statements ("The traffic was terrible...")
+        - First-person expressions ("I enjoy...")
+        - Question ("Shall we...?", "Do you ...?", "Did they...?")
+    8. Make phrases active rather than passive, something you would commonly say rather than read.
+    9. Make the phrases memorable by creating interesting or slightly humorous scenarios when possible.
 
     Please return your response in the following JSON format:
     {{
