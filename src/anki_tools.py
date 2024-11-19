@@ -681,6 +681,80 @@ def load_template(filename):
         return f.read()
 
 
+def get_learning_insights_prompt(english_phrase: str, target_phrase: str) -> str:
+    """Instructs an LLM to create useful notes about the current phrase. The intent is this will
+    be copied to the users's clipboard and then the app will re-direct them to an LLM where they
+    can paste it in to get more information"""
+
+    prompt = f"""
+    {config.language_name} Language Learning Insights.
+    For the given English phrase: {english_phrase} and its translation: {target_phrase}, create a comprehensive language learning analysis. Present your response in this structured format:
+
+# Alternative Translations
+Machine translation isn't perfect, suggest:
+- different translations for different contexts (or when this translation might be used)
+- different formalities (e.g. tu / vous if French etc)
+- plural / singlaur alternatives (e.g. du, ni in Swedish)
+
+# Vocabulary Building
+Create clusters of related useful phrases and vocabulary:
+- Common collocations
+- Synonyms and antonyms
+- Situational variations
+- Register variations (formal/informal/slang)
+- Idiomatic expressions using similar patterns
+
+# Practice Points
+Concrete examples showing how to use this learning in other contexts:
+- Similar phrases using the same pattern
+- Common variations
+- When and how to use this in real conversations
+
+# Word Building
+Break down each significant word, showing:
+- Word components and their individual meanings (Bonjour = bon + jour etc.)
+- Related words sharing same roots/stems
+- Common prefixes/suffixes patterns demonstrated
+- Etymology and connections to other languages you might know
+
+# Memory Hooks
+- Mnemonics if helpful
+- Connections to English or other languages
+- Visual associations
+- Memorable cultural connections
+
+# Grammar Patterns
+These will be very language dependent (so some not relevant or you might need to insert your own). Identify key structural patterns that learners can apply elsewhere:
+- Word order rules demonstrated
+- Conjugation/declension patterns
+- Case/gender/number agreement if relevant
+- Special constructions worth noting
+- Similar phrases using the same pattern
+- Common mistakes to avoid
+
+# Cultural Corner
+- Formal vs informal usage
+- Cultural context and connotations
+- Regional variations
+- Social situations where this phrase is commonly used
+- Any cultural faux pas to avoid
+- Historical/cultural background if relevant
+
+Remember to:
+- Use clear, learner-friendly language
+- Provide plenty of examples
+- Use bullet points and clear formatting for readability
+- Include literal translations where helpful
+- Link concepts together to show language patterns
+- Flag particularly useful or important points with 💡
+- Mark common pitfalls or important warnings with ⚠️
+- Use tables for comparing variations where appropriate
+
+Note: Not every section needs to be equally detailed - expand on the most relevant aspects for this particular phrase, but maintain the consistent structure for familiarity.
+"""
+    return prompt
+
+
 def export_to_anki(
     story_data_dict: Dict[str, Dict],
     output_dir: str,
@@ -895,7 +969,7 @@ def export_to_anki_with_images(
     os.makedirs(output_dir, exist_ok=True)
 
     language_practice_model = genanki.Model(
-        1607392313,
+        1607392313 + 121,
         "Language Practice With Images",
         fields=[
             {"name": "TargetText"},
@@ -904,6 +978,7 @@ def export_to_anki_with_images(
             {"name": "EnglishText"},
             {"name": "WiktionaryLinks"},
             {"name": "Picture"},
+            {"name": "InsightsPrompt"},
         ],
         templates=[
             {
@@ -987,6 +1062,7 @@ def export_to_anki_with_images(
             # Generate Wiktionary links
             wiktionary_links = generate_wiktionary_links(target, config.language_name)
 
+            prompt_text = get_learning_insights_prompt(english, target)
             # Create note
             note = genanki.Note(
                 model=language_practice_model,
@@ -997,6 +1073,7 @@ def export_to_anki_with_images(
                     english,
                     wiktionary_links,
                     f'<img src="{image_filename}">' if image_filename else "",
+                    prompt_text,
                 ],
                 guid=string_to_large_int(target + "image"),
             )
