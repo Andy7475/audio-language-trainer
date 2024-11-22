@@ -6,7 +6,6 @@
 
 <script>
 
-// Define the function
 function processText() {
     const container = document.getElementById('target-text-container');
     if (!container) return;
@@ -18,9 +17,12 @@ function processText() {
     const hasSpaces = text.includes(' ');
     
     if (hasSpaces) {
-        // Original word-based logic for spaced text
+        // Word-based logic for spaced text
         const words = text.split(/(\s+)/);
-        const actualWords = words.filter(word => /[a-zA-Z\u0080-\u024F]+/.test(word));
+        // Modified regex to include Arabic Unicode range (\u0600-\u06FF)
+        const actualWords = words.filter(word => 
+            /[a-zA-Z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u0080-\u024F]+/.test(word)
+        );
         
         if (actualWords.length > 0) {
             const randomWord = actualWords[Math.floor(Math.random() * actualWords.length)];
@@ -54,6 +56,13 @@ function processText() {
             container.innerHTML = html;
         }
     }
+}
+
+// Wait for document to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processText);
+} else {
+    processText();
 }
 
 // Wait for document to be ready
