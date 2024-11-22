@@ -138,6 +138,26 @@
     transition: opacity 0.3s, visibility 0.3s;
     z-index: 10;
 }
+.hide-button {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    margin: 0;
+    font-size: 28px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.hide-button:not(.revealed) {
+    color: transparent;
+    text-shadow: 0 0 8px rgba(0,0,0,0.5);
+}
+
+.hide-button.revealed {
+    color: inherit;
+    text-shadow: none;
+    font-size: inherit;
+}
 
 .info-icon:focus .info-tooltip {
     visibility: visible;
