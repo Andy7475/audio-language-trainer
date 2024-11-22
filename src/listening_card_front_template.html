@@ -53,16 +53,5 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-
-// Copy text functionality
-function copyToClipboard(element) {
-    const text = element.textContent;
-    navigator.clipboard.writeText(text).then(() => {
-        element.classList.add('copied');
-        setTimeout(() => {
-            element.classList.remove('copied');
-        }, 1000);
-    });
-}
 </script>
 
