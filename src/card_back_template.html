@@ -1,59 +1,79 @@
 <div class="card">     
-    <hr id="answer">     
-    <div class="picture-container">{{Picture}}</div>     
-    <div class="prompt-template" style="display: none;">{{InsightsPrompt}}</div>     
-    <div class="target-text" onclick="copyToClipboard(this)">{{TargetText}}</div>     
-    <div class="english-text">{{EnglishText}}</div>      
-    <div class="audio-controls">         
+  <hr id="answer">     
+  <div class="picture-container">{{Picture}}</div>     
+  <div class="prompt-template" style="display: none;">{{InsightsPrompt}}</div>     
+  <div class="target-text" onclick="copyToClipboard(this)">{{TargetText}}</div>     
+  <div class="english-text">{{EnglishText}}</div>      
+  <div class="audio-controls">         
       <div class="audio-button-container">             
-        <div class="audio-label">Normal speed:</div>             
-        {{TargetAudio}}         
+          <div class="audio-label">Normal speed:</div>             
+          {{TargetAudio}}         
       </div>         
       <div class="audio-button-container">             
-        <div class="audio-label">Slow speed:</div>             
-        {{TargetAudioSlow}}         
+          <div class="audio-label">Slow speed:</div>             
+          {{TargetAudioSlow}}         
       </div>     
-    </div>      
-    <div class="wiktionary-links">{{WiktionaryLinks}}</div>          
-    <!-- Insights Button Container -->     
-    <div class="insights-container">         
+  </div>      
+  <div class="wiktionary-links">{{WiktionaryLinks}}</div>          
+  <!-- Insights Button Container -->     
+  <div class="insights-container">
+      <button class="copy-button" onclick="copyInsightsTemplate()">
+          📋
+      </button>     
       <a href="https://claude.ai" target="_blank" class="insights-button" onclick="return copyPromptBeforeNavigate(event)">             
-        <span class="insights-icon">💡</span>             
-        Learning Insights         
+          <span class="insights-icon">💡</span>             
+          Learning Insights         
       </a>         
       <div class="info-icon" role="button" tabindex="0">ⓘ             
-        <span class="info-tooltip">This will open claude.ai and copy a prompt to your clipboard. You can paste (Ctrl/Cmd+V) when you arrive.</span>         
+          <span class="info-tooltip">This will open claude.ai and copy a prompt to your clipboard. You can paste (Ctrl/Cmd+V) when you arrive.</span>         
       </div>     
-    </div> 
-  </div>  
+  </div> 
+</div>  
+
+<script>
+// Simple copy functionality for target text only
+function copyToClipboard(element) {     
+  const text = element.textContent;     
+  navigator.clipboard.writeText(text).then(() => {         
+      element.classList.add('copied');         
+      setTimeout(() => {             
+          element.classList.remove('copied');         
+      }, 1000);     
+  }); 
+}  
+
+// Modified function to handle the copy before navigation
+function copyPromptBeforeNavigate(event) {     
+  const fullPrompt = document.querySelector('.prompt-template').textContent;     
+  const button = document.querySelector('.insights-button');
   
-  <script>
-  // Simple copy functionality for target text only
-  function copyToClipboard(element) {     
-      const text = element.textContent;     
-      navigator.clipboard.writeText(text).then(() => {         
-          element.classList.add('copied');         
-          setTimeout(() => {             
-              element.classList.remove('copied');         
-          }, 1000);     
-      }); 
-  }  
+  navigator.clipboard.writeText(fullPrompt).then(() => {         
+      button.classList.add('copied');         
+      setTimeout(() => {             
+          button.classList.remove('copied');         
+      }, 500);     
+  }).catch(err => {         
+      console.error('Failed to copy text: ', err);     
+  }); 
   
-  // Modified function to handle the copy before navigation
-  function copyPromptBeforeNavigate(event) {     
-      const fullPrompt = document.querySelector('.prompt-template').textContent;     
-      const button = document.querySelector('.insights-button');
-      
-      navigator.clipboard.writeText(fullPrompt).then(() => {         
-          button.classList.add('copied');         
-          setTimeout(() => {             
-              button.classList.remove('copied');         
-          }, 500);     
-      }).catch(err => {         
-          console.error('Failed to copy text: ', err);     
-      }); 
-      
-      // Let the default navigation happen
-      return true;
-  }
-  </script>
+  // Let the default navigation happen
+  return true;
+}
+
+// New function to copy template text without navigation
+function copyInsightsTemplate() {
+  const templateDiv = document.querySelector('.prompt-template');
+  const textToCopy = templateDiv.textContent.trim();
+  const button = document.querySelector('.copy-button');
+  
+  navigator.clipboard.writeText(textToCopy).then(() => {
+      // Visual feedback
+      button.textContent = 'Prompt copied ✓';
+      setTimeout(() => {
+          button.textContent = '📋';
+      }, 1000);
+  }).catch(err => {
+      console.error('Failed to copy text: ', err);
+  });
+}
+</script>

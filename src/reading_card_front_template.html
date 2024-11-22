@@ -1,17 +1,5 @@
 <div class="card">
-    <div class="picture-container">
-        <div class="flip-container" id="imageFlip">
-            <div class="flip-front">
-                <button class="reveal-button">
-                    <svg class="reveal-icon" viewBox="0 0 24 24">
-                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
-                    </svg>
-                    Reveal Image
-                </button>
-            </div>
-            <div class="flip-back">{{Picture}}</div>
-        </div>
-    </div>
+    <div class="picture-container">{{Picture}}</div>
 
     <div class="target-text" onclick="copyToClipboard(this)">{{TargetText}}</div>
 </div>
@@ -54,6 +42,63 @@ function copyToClipboard(element) {
             element.classList.remove('copied');
         }, 1000);
     });
+}
+
+// Define the function
+function processText() {
+    const container = document.getElementById('target-text-container');
+    if (!container) return;
+    
+    const text = container.textContent.trim();
+    if (!text) return;
+    
+    // Check if text contains spaces
+    const hasSpaces = text.includes(' ');
+    
+    if (hasSpaces) {
+        // Original word-based logic for spaced text
+        const words = text.split(/(\s+)/);
+        const actualWords = words.filter(word => /[a-zA-Z\u0080-\u024F]+/.test(word));
+        
+        if (actualWords.length > 0) {
+            const randomWord = actualWords[Math.floor(Math.random() * actualWords.length)];
+            
+            const html = words.map(word => {
+                if (word === randomWord) {
+                    return `<button onclick="this.classList.toggle('revealed')" 
+                            class="hide-button">${word}</button>`;
+                }
+                return word;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+    } else {
+        // Character-based logic for non-spaced text
+        const chars = Array.from(text); // Split into individual characters
+        
+        if (chars.length > 0) {
+            // Pick a random character
+            const randomIndex = Math.floor(Math.random() * chars.length);
+            
+            const html = chars.map((char, index) => {
+                if (index === randomIndex) {
+                    return `<button onclick="this.classList.toggle('revealed')" 
+                            class="hide-button">${char}</button>`;
+                }
+                return char;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+    }
+}
+
+// Wait for document to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processText);
+} else {
+    processText();
 }
 </script>
 
