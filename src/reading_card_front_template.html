@@ -17,32 +17,27 @@ function processText() {
     const hasSpaces = text.includes(' ');
     
     if (hasSpaces) {
-        // Word-based logic for spaced text
-        const words = text.split(/(\s+)/);
-        // Modified regex to include Arabic Unicode range (\u0600-\u06FF)
-        const actualWords = words.filter(word => 
-            /[a-zA-Z\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\u0080-\u024F]+/.test(word)
-        );
+        // Simple word-based logic - just split on spaces
+        const words = text.split(' ');
         
-        if (actualWords.length > 0) {
-            const randomWord = actualWords[Math.floor(Math.random() * actualWords.length)];
-            
-            const html = words.map(word => {
-                if (word === randomWord) {
-                    return `<button onclick="this.classList.toggle('revealed')" 
-                            class="hide-button">${word}</button>`;
-                }
-                return word;
-            }).join('');
-            
-            container.innerHTML = html;
-        }
+        // Pick a random word
+        const randomWord = words[Math.floor(Math.random() * words.length)];
+        
+        // Reconstruct text with hidden word
+        const html = words.map(word => {
+            if (word === randomWord) {
+                return `<button onclick="this.classList.toggle('revealed')" 
+                        class="hide-button">${word}</button>`;
+            }
+            return word;
+        }).join(' '); // Join with spaces
+        
+        container.innerHTML = html;
     } else {
         // Character-based logic for non-spaced text
-        const chars = Array.from(text); // Split into individual characters
+        const chars = Array.from(text);
         
         if (chars.length > 0) {
-            // Pick a random character
             const randomIndex = Math.floor(Math.random() * chars.length);
             
             const html = chars.map((char, index) => {
@@ -56,6 +51,13 @@ function processText() {
             container.innerHTML = html;
         }
     }
+}
+
+// Wait for document to be ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', processText);
+} else {
+    processText();
 }
 
 // Wait for document to be ready
