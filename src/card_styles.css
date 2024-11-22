@@ -138,6 +138,31 @@
     transition: opacity 0.3s, visibility 0.3s;
     z-index: 10;
 }
+.hide-button {
+    /* Base styles that apply to the button at all times */
+    font-size: 28px;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    padding: 4px 8px;  /* Increased padding for better button appearance */
+    margin: 0;
+}
+
+.hide-button:not(.revealed) {
+    /* Styles when the text is hidden */
+    background: rgba(181, 236, 250, 0.5);
+    border-radius: 4px;  /* Rounded corners */
+    color: transparent;
+    text-shadow: 0 0 8px rgba(0,0,0,0.5);
+}
+
+.hide-button.revealed {
+    /* Styles when the text is revealed */
+    background: none;  /* Remove background */
+    color: inherit;      /* Inherits from base
+    text-shadow: none;
+    padding: 0;        /* Remove padding when revealed */
+}
 
 .info-icon:focus .info-tooltip {
     visibility: visible;
