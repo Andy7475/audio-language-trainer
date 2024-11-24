@@ -4,11 +4,12 @@ import html
 import io
 import multiprocessing
 import os
+import re
 import sys
 import time
 import uuid
 from functools import partial
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import IPython.display as ipd
 import librosa
@@ -17,8 +18,8 @@ import soundfile as sf
 from google.cloud import texttospeech, texttospeech_v1
 from mutagen.mp4 import MP4, MP4Cover
 from pydub import AudioSegment
-
-from src.config_loader import config
+import azure.cognitiveservices.speech as speechsdk
+from src.config_loader import VoiceProvider, config, VoiceInfo
 from src.translation import tokenize_text
 from src.utils import clean_filename
 from tqdm import tqdm
@@ -26,8 +27,6 @@ from tqdm import tqdm
 
 def generate_translated_phrase_audio(
     translated_phrases: List[Tuple[str, str]],
-    english_voice_models: Dict = None,
-    target_voice_models: Dict = None,
 ) -> List[List[AudioSegment]]:
     """
     Generate audio for a list of translated phrases.
@@ -41,10 +40,6 @@ def generate_translated_phrase_audio(
         List of AudioSegment lists, where each inner list contains:
         [english_audio, target_slow_audio, target_normal_audio]
     """
-    if english_voice_models is None:
-        english_voice_models = config.english_voice_models
-    if target_voice_models is None:
-        target_voice_models = config.target_language_voice_models
 
     all_audio_segments = []
 
@@ -56,16 +51,16 @@ def generate_translated_phrase_audio(
         # Generate English audio
         english_audio = text_to_speech(
             text=cleaned_eng,
-            language_code=english_voice_models["language_code"],
-            voice_name=english_voice_models["male_voice"],
+            config_language="source",
+            gender="MALE",
             speaking_rate=0.9,
         )
 
         # Generate slow target language audio with word breaks
         target_slow = slow_text_to_speech(
             text=cleaned_target,
-            language_code=target_voice_models["language_code"],
-            voice_name=target_voice_models["female_voice"],
+            config_language="target",
+            gender="FEMALE",
             speaking_rate=config.SPEAKING_RATE_SLOW,
             word_break_ms=config.WORD_BREAK_MS,
         )
@@ -73,8 +68,8 @@ def generate_translated_phrase_audio(
         # Generate normal target language audio
         target_normal = text_to_speech(
             text=cleaned_target,
-            language_code=target_voice_models["language_code"],
-            voice_name=target_voice_models["female_voice"],
+            config_language="target",
+            gender="FEMALE",
             speaking_rate=1.0,
         )
 
@@ -129,7 +124,7 @@ def clean_translated_content(
         raise ValueError(f"Unsupported content format: {type(content)}")
 
 
-def generate_phrase_audio_files(phrases: List[str], output_dir: str) -> None:
+def generate_phrase__english_audio_files(phrases: List[str], output_dir: str) -> None:
     """
     Generate slow and normal English-only speed MP3 files for each phrase and save them to output_dir.
 
@@ -155,8 +150,6 @@ def generate_phrase_audio_files(phrases: List[str], output_dir: str) -> None:
         # Generate the audio for slow speed
         slow_audio = slow_text_to_speech(
             text=phrase,
-            language_code="en",
-            voice_name=config.english_voice_models["male"],
         )
 
         # Save the normal speed version
@@ -185,98 +178,241 @@ def setup_ffmpeg():
 setup_ffmpeg()
 
 
+def text_to_speech_google(
+    text: str,
+    voice_model: VoiceInfo,
+    speaking_rate: float = 1.0,
+    is_ssml: bool = False,
+) -> AudioSegment:
+    """
+    Convert text to speech using Google Cloud TTS.
+
+    Args:
+        text: Text or SSML to convert to speech
+        language_code: Language code (e.g., 'en-US')
+        voice_name: Name of the voice to use
+        speaking_rate: Speed of speech (1.0 is normal speed)
+        is_ssml: Whether the input text is SSML
+
+    Returns:
+        AudioSegment containing the generated speech
+    """
+    client = texttospeech.TextToSpeechClient()
+
+    # Create appropriate input type based on whether text is SSML
+    if is_ssml:
+        synthesis_input = texttospeech.SynthesisInput(ssml=text)
+    else:
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+
+    voice = texttospeech.VoiceSelectionParams(
+        language_code=voice_model.language_code, name=voice_model.voice_id
+    )
+
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
+    )
+
+    response = client.synthesize_speech(
+        input=synthesis_input, voice=voice, audio_config=audio_config
+    )
+
+    return AudioSegment.from_mp3(io.BytesIO(response.audio_content))
+
+
+def text_to_speech_azure(
+    text: str,
+    voice_model: VoiceInfo,
+    speaking_rate: float = 1.0,
+    is_ssml: bool = False,
+) -> AudioSegment:
+    """
+    Convert text to speech using Azure Speech Service.
+
+    Args:
+        text: Text or SSML to convert to speech
+        voice_model: VoiceInfo object containing voice details
+        speaking_rate: Speed of speech (1.0 is normal speed)
+        is_ssml: Whether the input text is SSML
+
+    Returns:
+        AudioSegment containing the generated speech
+    """
+    speech_key = os.getenv("AZURE_API_KEY")
+    service_region = os.getenv("AZURE_REGION", "eastus")
+
+    speech_config = speechsdk.SpeechConfig(
+        subscription=speech_key, region=service_region
+    )
+    speech_config.speech_synthesis_voice_name = voice_model.voice_id
+    speech_config.set_speech_synthesis_output_format(
+        speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
+    )
+
+    # Create a temporary file for output
+    audio_buffer = io.BytesIO()
+
+    def write_to_buffer(evt):
+        audio_buffer.write(evt.result.audio_data)
+
+    # Configure speech synthesizer
+    pull_stream = speechsdk.audio.PullAudioOutputStream()
+    audio_config = speechsdk.audio.AudioOutputConfig(stream=pull_stream)
+    speech_synthesizer = speechsdk.SpeechSynthesizer(
+        speech_config=speech_config, audio_config=audio_config
+    )
+
+    # Subscribe to events for audio data
+    speech_synthesizer.synthesizing.connect(write_to_buffer)
+
+    try:
+        # Handle SSML and non-SSML input appropriately
+
+        if is_ssml:
+            # Extract the content between <speak> tags
+            content = text[7:-8].strip()  # Remove <speak> and </speak>
+
+            # Wrap with Azure's required SSML format
+            azure_ssml = (
+                f'<speak xmlns="http://www.w3.org/2001/10/synthesis" '
+                f'xmlns:mstts="http://www.w3.org/2001/mstts" '
+                f'xmlns:emo="http://www.w3.org/2009/10/emotionml" '
+                f'version="1.0" xml:lang="{voice_model.language_code}">'
+                f'<voice name="{voice_model.voice_id}">'
+                f"{content}"
+                f"</voice></speak>"
+            )
+            result = speech_synthesizer.speak_ssml_async(azure_ssml).get()
+        else:
+            if speaking_rate != 1.0:
+                # Wrap with rate modification in SSML
+                text = (
+                    f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
+                    f'xmlns:mstts="http://www.w3.org/2001/mstts">'
+                    f'<voice name="{voice_model.voice_id}">'
+                    f'<lang xml:lang="{voice_model.language_code}">'
+                    f'<prosody rate="{int((speaking_rate - 1) * 100):+d}%">'
+                    f"{text}"
+                    f"</prosody>"
+                    f"</lang>"
+                    f"</voice>"
+                    f"</speak>"
+                )
+                result = speech_synthesizer.speak_ssml_async(text).get()
+            else:
+                result = speech_synthesizer.speak_text_async(text).get()
+
+        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+            audio_buffer.seek(0)
+            return AudioSegment.from_mp3(audio_buffer)
+        else:
+            error_details = f"Reason: {result.reason}"
+            if hasattr(result, "cancellation_details"):
+                error_details = (
+                    f"Reason: {result.cancellation_details.reason}, "
+                    f"Error: {result.cancellation_details.error_details}"
+                )
+            raise Exception(f"Speech synthesis failed: {error_details}")
+
+    except Exception as e:
+        raise Exception(f"Azure speech synthesis error: {str(e)}")
+
+
+def text_to_speech(
+    text: str,
+    config_language: Literal["source", "target"] = "source",
+    gender: Literal["MALE", "FEMALE"] = "MALE",
+    speaking_rate: float = 1.0,
+    is_ssml: bool = False,
+) -> AudioSegment:
+    """
+    Wrapper that handles diveriting to Azure or Google depending on the settings in the config file
+    for language, which then cause the voice models to be either Azure or Google ones.
+    Converts text to speech using the configured provider (Google or Azure).
+
+    Args:
+        text: Text to convert to speech
+        config_language: so we know which model to choose
+        gender: target voice models are both male or female
+        speaking_rate: Speed of speech (1.0 is normal speed)
+        is_ssml: Whether the input text is SSML
+
+    Returns:
+        AudioSegment containing the generated speech
+    """
+    # Use config values if parameters are not provided
+    voice_models = config.get_voice_models()
+
+    if config_language == "source":
+        voice_model = voice_models[0]
+    elif (config_language == "target") & (gender == "FEMALE"):
+        voice_model = voice_models[1]
+    else:
+        voice_model = voice_models[2]
+
+    # Route to appropriate provider
+    if voice_model.provider == VoiceProvider.GOOGLE:
+        return text_to_speech_google(text, voice_model, speaking_rate, is_ssml)
+    elif voice_model.provider == VoiceProvider.AZURE:
+        return text_to_speech_azure(text, voice_model, speaking_rate, is_ssml)
+    else:
+        raise ValueError(f"Unsupported voice provider: {voice_model.provider}")
+
+
 def slow_text_to_speech(
     text: str,
-    language_code: str = config.target_language_voice_models["language_code"],
-    voice_name: str = config.target_language_voice_models["male_voice"],
-    speaking_rate: float = config.SPEAKING_RATE_SLOW,
-    word_break_ms: int = config.WORD_BREAK_MS,
+    config_language: Literal["source", "target"] = "source",
+    gender: Literal["MALE", "FEMALE"] = "MALE",
+    speaking_rate: float = None,
+    word_break_ms: int = None,
 ) -> AudioSegment:
     """
     Generate slowed down text-to-speech audio with breaks between words using SSML.
 
     Args:
         text: Text to convert to speech
-        language_code: Language code for TTS (defaults to config's English voice)
-        voice_name: Name of voice to use (defaults to config's English male voice)
+        language_code: Language code for TTS (defaults to config's target language code)
+        voice_name: Name of voice to use (defaults to config's target male voice)
         speaking_rate: Speaking rate (defaults to config.SPEAKING_RATE_SLOW)
-        word_break_time: Break time between words in ms (e.g. 250)
+        word_break_ms: Break time between words in ms (defaults to config.WORD_BREAK_MS)
 
     Returns:
         AudioSegment containing the generated speech with word breaks
     """
-    client = texttospeech.TextToSpeechClient()
+
+    if config_language == "source":
+        language_2_alpha = config.SOURCE_LANGUAGE_ALPHA2
+    else:
+        language_2_alpha = config.TARGET_LANGUAGE_ALPHA2
+
+    if speaking_rate is None:
+        speaking_rate = config.SPEAKING_RATE_SLOW
+    if word_break_ms is None:
+        word_break_ms = config.WORD_BREAK_MS
 
     word_break_time = str(word_break_ms) + "ms"
+
     # Clean the text and tokenize it
     cleaned_text = clean_tts_text(text)
-    tokens = tokenize_text(cleaned_text, language_code[:2])
+    tokens = tokenize_text(cleaned_text, language_2_alpha)
 
     # Create SSML with breaks between words
     ssml_parts = ["<speak>"]
-
     for i, token in enumerate(tokens):
         ssml_parts.append(token)
-        # Add break after each token except the last one
         if i < len(tokens) - 1:
             ssml_parts.append(f'<break time="{word_break_time}"/>')
-
     ssml_parts.append("</speak>")
     ssml_text = " ".join(ssml_parts)
 
-    # Configure TTS request
-    synthesis_input = texttospeech.SynthesisInput(ssml=ssml_text)
-
-    voice = texttospeech.VoiceSelectionParams(
-        language_code=language_code, name=voice_name
+    # Use the main text_to_speech function with SSML
+    return text_to_speech(
+        text=ssml_text,
+        config_language=config_language,
+        gender=gender,
+        speaking_rate=speaking_rate,
+        is_ssml=True,
     )
-
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
-    )
-
-    # Generate the audio
-    response = client.synthesize_speech(
-        input=synthesis_input, voice=voice, audio_config=audio_config
-    )
-
-    # Convert to AudioSegment
-    audio_segment = AudioSegment.from_mp3(io.BytesIO(response.audio_content))
-
-    return audio_segment
-
-
-def text_to_speech(
-    text: str,
-    language_code: str = None,
-    voice_name: str = None,
-    speaking_rate: float = 1.0,
-) -> AudioSegment:
-    """text to audio segment, defaults to english male voice"""
-    client = texttospeech.TextToSpeechClient()
-
-    # Use config values if parameters are not provided
-    if language_code is None:
-        language_code = config.english_voice_models["language_code"]
-    if voice_name is None:
-        voice_name = config.english_voice_models["male_voice"]
-
-    synthesis_input = texttospeech.SynthesisInput(text=text)
-    voice = texttospeech.VoiceSelectionParams(
-        language_code=language_code, name=voice_name
-    )
-    audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
-    )
-
-    response = client.synthesize_speech(
-        input=synthesis_input, voice=voice, audio_config=audio_config
-    )
-
-    # Convert the response to an AudioSegment
-    audio_segment = AudioSegment.from_mp3(io.BytesIO(response.audio_content))
-
-    return audio_segment
 
 
 def export_audio(final_audio: AudioSegment, filename: str = None) -> str:
@@ -408,10 +544,12 @@ def generate_normal_and_fast_audio(
 
 
 def generate_audio_from_dialogue(
-    dialogue: List[Dict[str, str]], in_target_language: bool = True
+    dialogue: List[Dict[str, str]],
+    config_language: Literal["source", "target"] = "target",
 ) -> List[AudioSegment]:
     """
     Generate audio from dialogue using sequential processing.
+    Typicall only generated in the target language
 
     Args:
         dialogue: List of dialogue utterances
@@ -423,70 +561,25 @@ def generate_audio_from_dialogue(
     # Clean the dialogue text while preserving the format
     cleaned_dialogue = clean_translated_content(dialogue)
 
-    if in_target_language:
-        voice_models = config.target_language_voice_models
-    else:
-        voice_models = config.english_voice_models
-
     audio_segments = []
 
     for utterance in tqdm(cleaned_dialogue, desc="Generating dialogue audio"):
-        # Select voice based on speaker
-        voice_name = (
-            voice_models["male_voice"]
-            if utterance["speaker"] == "Sam"
-            else voice_models["female_voice"]
-        )
-
+        # Select gender based on speaker
+        if utterance["speaker"] == "Sam":
+            gender = "MALE"
+        else:
+            gender = "FEMALE"
         # Generate audio for this utterance
         audio = text_to_speech(
-            text=utterance["text"],
-            language_code=voice_models["language_code"],
-            voice_name=voice_name,
+            utterance["text"],
+            config_language,
+            gender,
             speaking_rate=1.0,
         )
 
         audio_segments.append(audio)
 
     return audio_segments
-
-
-# def generate_audio_from_dialogue(
-#     dialogue: List[Dict[str, str]], in_target_language: bool = True
-# ) -> List[AudioSegment]:
-#     """
-#     Generate audio from dialogue, handling HTML entities and special characters.
-
-#     Args:
-#         dialogue: List of dialogue utterances
-#         in_target_language: Whether to use target language voices
-
-#     Returns:
-#         List of AudioSegment objects for each utterance
-#     """
-#     # Clean the dialogue text while preserving the format
-#     cleaned_dialogue = clean_translated_content(dialogue)
-
-#     if in_target_language:
-#         voice_models = config.target_language_voice_models
-#     else:
-#         voice_models = config.english_voice_models
-
-#     texts = [utterance["text"] for utterance in cleaned_dialogue]
-#     language_codes = [voice_models["language_code"]] * len(cleaned_dialogue)
-#     voice_names = [
-#         (
-#             voice_models["male_voice"]
-#             if utterance["speaker"] == "Sam"
-#             else voice_models["female_voice"]
-#         )
-#         for utterance in cleaned_dialogue
-#     ]
-#     speaking_rates = [1.0] * len(cleaned_dialogue)
-
-#     return text_to_speech_multiprocessing(
-#         texts, language_codes, voice_names, speaking_rates
-#     )
 
 
 def create_m4a_with_timed_lyrics(

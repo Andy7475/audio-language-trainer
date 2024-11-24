@@ -77,7 +77,7 @@ def create_html_story(
     output_path: str,
     component_path: str,
     title: Optional[str] = None,
-    language: str = config.get_language_name(),
+    language: str = config.TARGET_LANGUAGE_NAME,
 ) -> None:
     """
     Create a standalone HTML file from the story data dictionary.

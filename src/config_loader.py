@@ -1,217 +1,350 @@
 import json
-from types import SimpleNamespace
 import os
 import time
-from typing import Dict, Optional, List
-import pycountry
 
 # Assume these imports are available
+from dataclasses import dataclass
+from enum import Enum
+from types import SimpleNamespace
+from typing import Dict, List, Optional, Set, Tuple
+
+import azure.cognitiveservices.speech as speechsdk
+import pycountry
+from google.cloud import texttospeech
+
+
+class VoiceProvider(Enum):
+    GOOGLE = "google"
+    AZURE = "azure"
+    NONE = "none"  # Added for when no provider is available
+
+
+class VoiceType(Enum):
+    STANDARD = "standard"
+    WAVENET = "wavenet"
+    NEURAL = "neural"
+    STUDIO = "studio"
+    NONE = "none"  # Added for when no voice type is available
+
+
+@dataclass
+class VoiceInfo:
+    name: str
+    provider: VoiceProvider
+    voice_type: VoiceType
+    gender: str
+    language_code: str
+    country_code: str
+    voice_id: str
+
+
+class VoiceManager:
+    """Manages voice selection with lazy loading of voice data."""
+
+    def __init__(self):
+        self.voices: Dict[str, List[VoiceInfo]] = {}
+        self.voice_type_ranking = [
+            VoiceType.STUDIO,
+            VoiceType.NEURAL,
+            VoiceType.WAVENET,
+            VoiceType.STANDARD,
+        ]
+        self.provider_preferences: Dict[str, VoiceProvider] = {}
+        self.voice_overrides: Dict[str, str] = {}
+        self._voices_loaded = False
+
+    def _lazy_load_voices(self):
+        """Lazily load voices only when needed"""
+        if not self._voices_loaded:
+            try:
+                self._load_google_voices()
+            except Exception as e:
+                print(f"Warning: Failed to load Google voices: {e}")
+
+            try:
+                self._load_azure_voices()
+            except Exception as e:
+                print(f"Warning: Failed to load Azure voices: {e}")
+
+            self._voices_loaded = True
+
+    def _load_google_voices(self):
+        """Load Google voices with proper error handling"""
+        try:
+            from google.cloud import texttospeech
+
+            client = texttospeech.TextToSpeechClient()
+            response = client.list_voices()
+
+            for voice in response.voices:
+                for language_code in voice.language_codes:
+                    voice_type = VoiceType.STANDARD
+                    if "Neural2" in voice.name:
+                        voice_type = VoiceType.NEURAL
+                    elif "Studio" in voice.name:
+                        voice_type = VoiceType.STUDIO
+                    elif "Wavenet" in voice.name:
+                        voice_type = VoiceType.WAVENET
+
+                    country_code = (
+                        language_code.split("-")[1]
+                        if "-" in language_code
+                        else language_code
+                    )
+
+                    voice_info = VoiceInfo(
+                        name=voice.name,
+                        provider=VoiceProvider.GOOGLE,
+                        voice_type=voice_type,
+                        gender=voice.ssml_gender.name,
+                        language_code=language_code,
+                        country_code=country_code,
+                        voice_id=voice.name,
+                    )
+
+                    if language_code not in self.voices:
+                        self.voices[language_code] = []
+                    self.voices[language_code].append(voice_info)
+
+        except Exception as e:
+            print(f"Warning: Unable to initialize Google TTS: {e}")
+
+    def _load_azure_voices(self):
+        """Load Azure voices with proper error handling"""
+        try:
+            import azure.cognitiveservices.speech as speechsdk
+
+            speech_key = os.getenv("AZURE_API_KEY")
+            if not speech_key:
+                print("Warning: AZURE_API_KEY not found in environment variables")
+                return
+
+            service_region = os.getenv("AZURE_REGION", "eastus")
+            speech_config = speechsdk.SpeechConfig(
+                subscription=speech_key, region=service_region
+            )
+            speech_synthesizer = speechsdk.SpeechSynthesizer(
+                speech_config=speech_config
+            )
+
+            result = speech_synthesizer.get_voices_async().get()
+
+            for voice in result.voices:
+                voice_type = (
+                    VoiceType.NEURAL
+                    if voice.voice_type._name_ == "OnlineNeural"
+                    else VoiceType.STANDARD
+                )
+                language_code = voice.locale
+                country_code = (
+                    language_code.split("-")[1]
+                    if "-" in language_code
+                    else language_code
+                )
+
+                voice_info = VoiceInfo(
+                    name=voice.local_name,
+                    provider=VoiceProvider.AZURE,
+                    voice_type=voice_type,
+                    gender=voice.gender._name_.upper(),
+                    language_code=language_code,
+                    country_code=country_code,
+                    voice_id=voice.short_name,
+                )
+
+                if language_code not in self.voices:
+                    self.voices[language_code] = []
+                self.voices[language_code].append(voice_info)
+
+        except Exception as e:
+            print(f"Warning: Unable to initialize Azure TTS: {e}")
+
+    def get_voice(
+        self,
+        language_code: str,
+        gender: str = "FEMALE",
+        country_code: Optional[str] = None,
+    ) -> Optional[VoiceInfo]:
+        """Get best available voice with fallback options"""
+        self._lazy_load_voices()
+
+        # If no voices are available, return a dummy VoiceInfo
+        if not self.voices:
+            return VoiceInfo(
+                name="dummy",
+                provider=VoiceProvider.NONE,
+                voice_type=VoiceType.NONE,
+                gender=gender.upper(),
+                language_code=language_code,
+                country_code=country_code or language_code.split("-")[1],
+                voice_id="dummy",
+            )
+
+        # Rest of the voice selection logic remains the same...
+        available_voices = self.voices.get(language_code, [])
+        if not available_voices:
+            return None
+
+        gender_voices = [v for v in available_voices if v.gender == gender.upper()]
+        if not gender_voices:
+            gender_voices = available_voices
+
+        if country_code:
+            country_voices = [
+                v for v in gender_voices if v.country_code == country_code.upper()
+            ]
+            if country_voices:
+                gender_voices = country_voices
+
+        preferred_provider = self.provider_preferences.get(language_code)
+        if preferred_provider:
+            provider_voices = [
+                v for v in gender_voices if v.provider == preferred_provider
+            ]
+            if provider_voices:
+                gender_voices = provider_voices
+
+        sorted_voices = sorted(
+            gender_voices,
+            key=lambda x: (
+                self.voice_type_ranking.index(x.voice_type)
+                if x.voice_type in self.voice_type_ranking
+                else len(self.voice_type_ranking)
+            ),
+        )
+
+        return sorted_voices[0] if sorted_voices else None
 
 
 class ConfigLoader:
     def __init__(self, config_file="config.json"):
-        self.config_file = self._find_config_file(config_file)
+        """Initialize with explicit object attributes"""
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.config_file = os.path.join(self.script_dir, config_file)
         self.config = SimpleNamespace()
         self._last_load_time = 0
         self._file_modified_time = 0
-        self.english_voice_models = {}
-        self.target_language_voice_models = {}
-        self.time_api_last_called = 0  # New attribute for API rate limiting
-        self.API_DELAY_SECONDS = 20  # Configurable delay between API calls
+        self.voice_manager = VoiceManager()  # No immediate voice loading
         self._load_config()
 
-    def update_api_timestamp(self):
-        """Update the timestamp of the last API call"""
-        self.time_api_last_called = time.time()
+    def _validate_language_code(
+        self, code: str, field_name: str
+    ) -> Tuple[str, str, str]:
+        """Validates language code with better error handling"""
+        if not code:
+            raise ValueError(f"{field_name} must be specified")
 
-    def get_time_since_last_api_call(self):
-        """Get the number of seconds since the last API call"""
-        return time.time() - self.time_api_last_called
-
-    def get_language_name(self) -> str:
-        language_name = pycountry.languages.get(alpha_2=self.config.TARGET_LANGUAGE)
-        if language_name:
-            return language_name.name.capitalize()
-        else:
-            raise AttributeError(
-                "Invalid TARGET_LANGUAGE code in config, use an Alpha-2 like 'en'"
+        try:
+            language_alpha2 = code.split("-")[0].lower()
+            country_code = code.split("-")[1].upper() if "-" in code else None
+        except IndexError:
+            raise ValueError(
+                f"{field_name} must be in format 'language-COUNTRY' (e.g., 'fr-FR')"
             )
 
-    def _find_config_file(self, config_file):
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        full_path = os.path.join(script_dir, config_file)
+        language = pycountry.languages.get(alpha_2=language_alpha2)
+        if not language:
+            raise ValueError(
+                f"Invalid language code '{language_alpha2}' in {field_name}"
+            )
 
-        if os.path.isfile(full_path):
-            print(f"Found config file at: {full_path}")
-            return full_path
+        if country_code:
+            country = pycountry.countries.get(alpha_2=country_code)
+            if not country:
+                raise ValueError(
+                    f"Invalid country code '{country_code}' in {field_name}"
+                )
         else:
-            print(f"Could not find {config_file} in {script_dir}")
-            raise FileNotFoundError(f"Could not find {config_file}")
+            country_code = language_alpha2.upper()
+
+        return (f"{language_alpha2}-{country_code}", language_alpha2, language.name)
 
     def _load_config(self):
+        """Load config with fallback values"""
         try:
-            with open(self.config_file, "r") as f:
-                config_dict = json.load(f)
-            self.config = SimpleNamespace(**config_dict)
-            self._last_load_time = time.time()
-            self._file_modified_time = os.path.getmtime(self.config_file)
-            self.language_name = self.get_language_name()
-            print(
-                f"Language name: {self.language_name} determined from code {self.config.TARGET_LANGUAGE}"
+            if not os.path.exists(self.config_file):
+                print(f"Warning: Config file not found at {self.config_file}")
+                config_dict = {
+                    "TARGET_LANGUAGE_CODE": "fr-FR",  # Default values
+                    "SOURCE_LANGUAGE_CODE": "en-US",
+                }
+            else:
+                with open(self.config_file, "r") as f:
+                    config_dict = json.load(f)
+
+            # Validate and store language codes
+            target_code, target_alpha2, target_name = self._validate_language_code(
+                config_dict.get("TARGET_LANGUAGE_CODE"), "TARGET_LANGUAGE_CODE"
             )
-            print(f"Successfully loaded config from: {self.config_file}")
-            self._update_voice_models()
-        except Exception as e:
-            print(f"Error loading config: {e}")
-            print("Initializing with default values.")
-            self.config = SimpleNamespace(
-                TARGET_LANGUAGE="en",
-                COUNTRY_CODE_ENGLISH="GB",
-                COUNTRY_CODE_TARGET_LANGUAGE=None,
-                USE_CHEAP_VOICE_MODELS=True,
+            source_code, source_alpha2, source_name = self._validate_language_code(
+                config_dict.get("SOURCE_LANGUAGE_CODE"), "SOURCE_LANGUAGE_CODE"
             )
 
-    def _check_reload(self):
+            # Update config with validated values
+            config_dict.update(
+                {
+                    "TARGET_LANGUAGE_CODE": target_code,
+                    "TARGET_LANGUAGE_ALPHA2": target_alpha2,
+                    "TARGET_LANGUAGE_NAME": target_name,
+                    "SOURCE_LANGUAGE_CODE": source_code,
+                    "SOURCE_LANGUAGE_ALPHA2": source_alpha2,
+                    "SOURCE_LANGUAGE_NAME": source_name,
+                }
+            )
+
+            self.config = SimpleNamespace(**config_dict)
+            self._last_load_time = time.time()
+            self._file_modified_time = (
+                os.path.getmtime(self.config_file)
+                if os.path.exists(self.config_file)
+                else 0
+            )
+
+        except Exception as e:
+            print(f"Error loading config: {e}")
+            # Set fallback values
+            self.config = SimpleNamespace(
+                TARGET_LANGUAGE_CODE="fr-FR",
+                TARGET_LANGUAGE_ALPHA2="fr",
+                TARGET_LANGUAGE_NAME="French",
+                SOURCE_LANGUAGE_CODE="en-US",
+                SOURCE_LANGUAGE_ALPHA2="en",
+                SOURCE_LANGUAGE_NAME="English",
+            )
+
+    def get_voice_models(self):
+        """Get voice models with fallback values"""
         try:
-            if os.path.getmtime(self.config_file) > self._file_modified_time:
-                print("Config file has been modified. Reloading...")
-                self._load_config()
+            source_voice = self.voice_manager.get_voice(
+                self.config.SOURCE_LANGUAGE_CODE, gender="MALE"
+            )
+            target_voice_female = self.voice_manager.get_voice(
+                self.config.TARGET_LANGUAGE_CODE, gender="FEMALE"
+            )
+            target_voice_male = self.voice_manager.get_voice(
+                self.config.TARGET_LANGUAGE_CODE, gender="MALE"
+            )
+
+            return (source_voice, target_voice_female, target_voice_male)
+        except Exception as e:
+            print(f"Warning: Error getting voice models: {e}")
+
+    def _check_reload(self):
+        """Check if config file has been modified"""
+        try:
+            if os.path.exists(self.config_file):
+                current_mtime = os.path.getmtime(self.config_file)
+                if current_mtime > self._file_modified_time:
+                    print("Config file has been modified. Reloading...")
+                    self._load_config()
         except Exception as e:
             print(f"Error checking config reload: {e}")
 
-    def _update_voice_models(self):
-        self.english_voice_models = self._get_optimal_voice_models(
-            "en", self.config.COUNTRY_CODE_ENGLISH, self.config.USE_CHEAP_VOICE_MODELS
-        )
-        self.target_language_voice_models = self._get_optimal_voice_models(
-            self.config.TARGET_LANGUAGE,
-            self.config.COUNTRY_CODE_TARGET_LANGUAGE,
-            self.config.USE_CHEAP_VOICE_MODELS,
-        )
-
-    def _get_optimal_voice_models(
-        self,
-        language_code: str,
-        preferred_country_code: Optional[str] = None,
-        cheap_voices: bool = False,
-    ) -> Dict[str, str]:
-        """Returns a dictionary of keys: language_code - (e.g. en-GB), male_voice and female_voice from Google TTS services. voice models to use based on a 2-char language code and preferred country code,
-        e.g. en and GB would prefer british english voices over en and US. if cheap = True it picks poor quality but cheaper voices
-        which is useful for testing. Otherwise it priorities voices in the rank Studio > Neural2 > Wavenet > Standard
-        which you'll want for production.
-
-        These voice codes are needed for TTS and translation services at Google API"""
-        # Initialize clients
-        from google.cloud import texttospeech
-        from google.cloud import translate_v2 as translate
-
-        tts_client = texttospeech.TextToSpeechClient()
-        translate_client = translate.Client()
-
-        # Check if the language is supported by Google Translate
-        supported_languages = [
-            lang["language"] for lang in translate_client.get_languages()
-        ]
-        if language_code not in supported_languages:
-            raise ValueError(
-                f"Language code '{language_code}' is not supported by Google Translate"
-            )
-
-        # Get all available voices
-        voices = tts_client.list_voices(language_code=language_code).voices
-
-        if not voices:
-            raise ValueError(f"No voices found for language code '{language_code}'")
-
-        # Determine the best language code
-        available_codes = set(sum((list(v.language_codes) for v in voices), []))
-        if preferred_country_code:
-            preferred_full_code = f"{language_code}-{preferred_country_code.upper()}"
-            if preferred_full_code in available_codes:
-                best_language_code = preferred_full_code
-            else:
-                print(
-                    f"Preferred country code '{preferred_country_code}' not available for {language_code}"
-                )
-                best_language_code = sorted(available_codes)[0]
-        else:
-            best_language_code = sorted(available_codes)[0]
-
-        # Print a message if there are multiple country codes available
-        if len(available_codes) > 1:
-            print(
-                f"Multiple country codes available for {language_code}: {', '.join(sorted(available_codes))}"
-            )
-
-        def select_best_voice(
-            voices: List[texttospeech.Voice], gender: texttospeech.SsmlVoiceGender
-        ) -> texttospeech.Voice:
-            # Filter voices by gender
-            gender_voices = [v for v in voices if v.ssml_gender == gender]
-
-            if (
-                len(gender_voices) == 0
-            ):  # it means there is no gender voice available for that gender
-                gender_voices = voices
-
-            # Prefer voices matching the best_language_code
-            matching_voices = [
-                v for v in gender_voices if best_language_code in v.language_codes
-            ]
-
-            voices_to_choose = matching_voices if matching_voices else gender_voices
-
-            # Define voice type preference order
-            voice_types = (
-                ["Standard", "Wavenet", "Neural", "Studio"]
-                if cheap_voices
-                else ["Studio", "Neural", "Wavenet", "Standard"]
-            )
-
-            # Prefer voice types in the specified order
-            for voice_type in voice_types:
-                typed_voices = [v for v in voices_to_choose if voice_type in v.name]
-                if typed_voices:
-                    # Return the first voice of this type
-                    return typed_voices[0]
-
-            # If no preferred voice types found, return the first available voice
-            if not voices_to_choose:
-                raise ValueError(
-                    f"No voice found for within select_best_voice function and gender: {gender}, within this voice list: {voices}"
-                )
-            return voices_to_choose[0]
-
-        best_male_voice = select_best_voice(voices, texttospeech.SsmlVoiceGender.MALE)
-        best_female_voice = select_best_voice(
-            voices, texttospeech.SsmlVoiceGender.FEMALE
-        )
-
-        return {
-            "language_code": best_language_code,
-            "male_voice": (best_male_voice.name if best_male_voice else None),
-            "female_voice": (best_female_voice.name if best_female_voice else None),
-        }
-
     def __getattr__(self, name):
-        self._check_reload()
-        return getattr(self.config, name)
-
-    def get_voice_models(self):
-        """Returns the voice models to use"""
-        if not self.english_voice_models:
-            self.english_voice_models = self._get_optimal_voice_models(
-                "en",
-                self.config.COUNTRY_CODE_ENGLISH,
-                self.config.USE_CHEAP_VOICE_MODELS,
-            )
-        if not self.target_language_voice_models:
-            self.target_language_voice_models = self._get_optimal_voice_models(
-                self.config.TARGET_LANGUAGE,
-                self.config.COUNTRY_CODE_TARGET_LANGUAGE,
-                self.config.USE_CHEAP_VOICE_MODELS,
-            )
-        return self.english_voice_models, self.target_language_voice_models
+        """Delegate attribute access to config object after checking reload"""
+        self._check_reload()  # Using direct attribute access
+        return getattr(self.config, name)  # Delegate to config object
 
 
-config = ConfigLoader()
+# Create singleton instance
+config = ConfigLoader()  # Delegate to config object

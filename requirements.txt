@@ -1,5 +1,6 @@
 accelerate
 altair
+azure-cognitiveservices-speech #as google TTS does not have some voices like Persian
 anki
 anthropic                      #for querying the Anthropic models hosted on Google Cloud
 beautifulsoup4

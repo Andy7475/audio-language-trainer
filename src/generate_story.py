@@ -48,7 +48,7 @@ def generate_story(story_name: str):
 
     # Load config
     config._load_config()
-    print(f"Your target language is {config.get_language_name()}")
+    print(f"Your target language is {config.TARGET_LANGUAGE_NAME}")
 
     try:
         # Create story plan and dialogue

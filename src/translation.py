@@ -13,7 +13,7 @@ def batch_translate(texts, batch_size=128):
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
         result = translate.Client().translate(
-            batch, target_language=config.TARGET_LANGUAGE, source_language="en"
+            batch, target_language=config.TARGET_LANGUAGE_ALPHA2, source_language="en"
         )
         translated_texts.extend([item["translatedText"] for item in result])
     return translated_texts
@@ -24,7 +24,7 @@ def translate_from_english(
 ) -> List[str]:
     """translates text into the target_language, returns translated text. text can be a str or List[str]"""
     if target_language is None:
-        target_language = config.TARGET_LANGUAGE
+        target_language = config.TARGET_LANGUAGE_ALPHA2
 
     result = translate.Client().translate(
         text, target_language=target_language, source_language="en"
@@ -59,7 +59,9 @@ def translate_phrases(corrected_phrases: List[str]) -> List[Tuple[str, str]]:
     return list(zip(corrected_phrases, translated_phrases))
 
 
-def tokenize_text(text: str, language_code: str = config.TARGET_LANGUAGE) -> List[str]:
+def tokenize_text(
+    text: str, language_code: str = config.TARGET_LANGUAGE_ALPHA2
+) -> List[str]:
     """
     Tokenize text in a way that's practical for:
     1. Adding SSML breaks between words
