@@ -174,7 +174,7 @@ def add_audio(story_data_dict):
         if "translated_dialogue" in story_data_dict[story_part]:
             print(f"Beginning text-to-speech for {story_part}")
             translated_dialogue_audio_segments = generate_audio_from_dialogue(
-                story_data_dict[story_part]["translated_dialogue"]
+                story_data_dict[story_part]["translated_dialogue"],config_language="target"
             )
             story_data_dict[story_part][
                 "translated_dialogue_audio"

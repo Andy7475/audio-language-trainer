@@ -4,6 +4,7 @@ import html
 import io
 import multiprocessing
 import os
+import re
 import sys
 import time
 import uuid
@@ -230,8 +231,7 @@ def text_to_speech_azure(
 
     Args:
         text: Text or SSML to convert to speech
-        language_code: Language code (e.g., 'en-US')
-        voice_name: Name of the voice to use
+        voice_model: VoiceInfo object containing voice details
         speaking_rate: Speed of speech (1.0 is normal speed)
         is_ssml: Whether the input text is SSML
 
@@ -249,47 +249,73 @@ def text_to_speech_azure(
         speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
     )
 
-    memory_stream = io.BytesIO()
-    audio_config = speechsdk.audio.AudioOutputConfig(
-        filename=None, stream=memory_stream
-    )
+    # Create a temporary file for output
+    audio_buffer = io.BytesIO()
 
+    def write_to_buffer(evt):
+        audio_buffer.write(evt.result.audio_data)
+
+    # Configure speech synthesizer
+    pull_stream = speechsdk.audio.PullAudioOutputStream()
+    audio_config = speechsdk.audio.AudioOutputConfig(stream=pull_stream)
     speech_synthesizer = speechsdk.SpeechSynthesizer(
         speech_config=speech_config, audio_config=audio_config
     )
 
-    # Handle SSML and non-SSML input appropriately
-    if is_ssml:
-        if not text.startswith("<speak"):
-            # Wrap plain SSML elements in speak tags if not already present
-            text = (
-                f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
-                f'xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="{voice_model.language_code}">'
-                f"{text}"
-                f"</speak>"
-            )
-        result = speech_synthesizer.speak_ssml_async(text).get()
-    else:
-        # If not SSML but speaking_rate is different from 1.0, wrap in SSML with prosody
-        if speaking_rate != 1.0:
-            ssml_text = (
-                f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
-                f'xmlns:mstts="http://www.w3.org/2001/mstts" xml:lang="{voice_model.language_code}">'
-                f'<prosody rate="{int((speaking_rate - 1) * 100):+d}%">{text}</prosody>'
-                f"</speak>"
-            )
-            result = speech_synthesizer.speak_ssml_async(ssml_text).get()
-        else:
-            result = speech_synthesizer.speak_text_async(text).get()
+    # Subscribe to events for audio data
+    speech_synthesizer.synthesizing.connect(write_to_buffer)
 
-    if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-        memory_stream.seek(0)
-        return AudioSegment.from_mp3(memory_stream)
-    else:
-        raise Exception(
-            f"Speech synthesis failed: {result.cancellation_details.reason}"
-            f" ({result.cancellation_details.error_details})"
-        )
+    try:
+        # Handle SSML and non-SSML input appropriately
+
+        if is_ssml:
+            # Extract the content between <speak> tags
+            content = text[7:-8].strip()  # Remove <speak> and </speak>
+
+            # Wrap with Azure's required SSML format
+            azure_ssml = (
+                f'<speak xmlns="http://www.w3.org/2001/10/synthesis" '
+                f'xmlns:mstts="http://www.w3.org/2001/mstts" '
+                f'xmlns:emo="http://www.w3.org/2009/10/emotionml" '
+                f'version="1.0" xml:lang="{voice_model.language_code}">'
+                f'<voice name="{voice_model.voice_id}">'
+                f"{content}"
+                f"</voice></speak>"
+            )
+            result = speech_synthesizer.speak_ssml_async(azure_ssml).get()
+        else:
+            if speaking_rate != 1.0:
+                # Wrap with rate modification in SSML
+                text = (
+                    f'<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" '
+                    f'xmlns:mstts="http://www.w3.org/2001/mstts">'
+                    f'<voice name="{voice_model.voice_id}">'
+                    f'<lang xml:lang="{voice_model.language_code}">'
+                    f'<prosody rate="{int((speaking_rate - 1) * 100):+d}%">'
+                    f"{text}"
+                    f"</prosody>"
+                    f"</lang>"
+                    f"</voice>"
+                    f"</speak>"
+                )
+                result = speech_synthesizer.speak_ssml_async(text).get()
+            else:
+                result = speech_synthesizer.speak_text_async(text).get()
+
+        if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
+            audio_buffer.seek(0)
+            return AudioSegment.from_mp3(audio_buffer)
+        else:
+            error_details = f"Reason: {result.reason}"
+            if hasattr(result, "cancellation_details"):
+                error_details = (
+                    f"Reason: {result.cancellation_details.reason}, "
+                    f"Error: {result.cancellation_details.error_details}"
+                )
+            raise Exception(f"Speech synthesis failed: {error_details}")
+
+    except Exception as e:
+        raise Exception(f"Azure speech synthesis error: {str(e)}")
 
 
 def text_to_speech(
