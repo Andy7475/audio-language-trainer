@@ -89,7 +89,9 @@ def test_translate_from_english(mock_translate_client):
     result = translate_from_english("Hello world")
     assert result == ["Hola mundo"]
     mock_client.translate.assert_called_with(
-        "Hello world", target_language=config.TARGET_LANGUAGE, source_language="en"
+        "Hello world",
+        target_language=config.TARGET_LANGUAGE_ALPHA2,
+        source_language="en",
     )
 
     # Test with specific target language

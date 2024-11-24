@@ -425,8 +425,8 @@ def export_to_anki_with_images_english(
 
     # Set up deck name and ID
     if deck_name is None:
-        deck_id = string_to_large_int("english_learning_" + config.language_name)
-        deck_name = f"English Learning - {config.language_name} speakers"
+        deck_id = string_to_large_int("english_learning_" + config.TARGET_LANGUAGE_NAME)
+        deck_name = f"English Learning - {config.TARGET_LANGUAGE_NAME} speakers"
     else:
         deck_id = string_to_large_int(deck_name)
     deck = genanki.Deck(deck_id, deck_name)
@@ -461,7 +461,7 @@ def export_to_anki_with_images_english(
             media_files.append(dest.split(os.path.sep)[-1])
 
         # Translate English phrase to native language
-        native_text = translate_from_english(english_phrase, config.TARGET_LANGUAGE)
+        native_text = translate_from_english(english_phrase)
 
         # Generate Wiktionary links for the English phrase
         wiktionary_links = generate_wiktionary_links(english_phrase, "English")
@@ -635,8 +635,8 @@ def generate_wiktionary_links_non_english(
 
 def generate_wiktionary_links(
     phrase: str,
-    language_name: str = config.language_name,
-    language_code: str = config.TARGET_LANGUAGE,
+    language_name: str = config.TARGET_LANGUAGE_NAME,
+    language_code: str = config.TARGET_LANGUAGE_ALPHA2,
 ) -> str:
     words = tokenize_text(text=phrase, language_code=language_code)
     links: List[str] = []
@@ -687,7 +687,7 @@ def get_learning_insights_prompt(english_phrase: str, target_phrase: str) -> str
     can paste it in to get more information"""
 
     prompt = f"""
-    {config.language_name} Language Learning Insights.
+    {config.TARGET_LANGUAGE_NAME} Language Learning Insights.
     For the given English phrase: "{english_phrase}" and its translation: "{target_phrase}", create some language learning insights. Present your response in this structured format:
 
 # Breakdown and Alternative Translations
@@ -740,7 +740,7 @@ These will be very language dependent (so some not relevant or you might need to
 Remember to:
 - Use clear, learner-friendly language
 - Provide plenty of examples
-- always provide an english translation for any {config.language_name} text
+- always provide an english translation for any {config.TARGET_LANGUAGE_NAME} text
 - Use bullet points and clear formatting for readability, but add explanations so it's easy to understand
 - Link concepts together to show language patterns
 - Flag particularly useful or important points with 💡
@@ -860,8 +860,8 @@ def export_to_anki(
     media_files = []
     notes = []
     if deck_name is None:
-        deck_id = string_to_large_int(config.language_name)
-        deck_name = f"{config.language_name} - phrases"
+        deck_id = string_to_large_int(config.TARGET_LANGUAGE_NAME)
+        deck_name = f"{config.TARGET_LANGUAGE_NAME} - phrases"
     else:
         deck_id = string_to_large_int(deck_name)
     deck = genanki.Deck(deck_id, deck_name)
@@ -895,7 +895,9 @@ def export_to_anki(
             media_files.extend([target_audio_normal, target_audio_slow])
 
             # Generate Wiktionary links
-            wiktionary_links = generate_wiktionary_links(target, config.language_name)
+            wiktionary_links = generate_wiktionary_links(
+                target, config.TARGET_LANGUAGE_NAME
+            )
 
             # Create notes for each card type
             note = genanki.Note(
@@ -1002,8 +1004,8 @@ def export_to_anki_with_images(
 
     # Set up deck name and ID
     if deck_name is None:
-        deck_id = string_to_large_int(config.language_name + "image")
-        deck_name = f"{config.language_name} - phrases with images"
+        deck_id = string_to_large_int(config.TARGET_LANGUAGE_NAME + "image")
+        deck_name = f"{config.TARGET_LANGUAGE_NAME} - phrases with images"
     else:
         deck_id = string_to_large_int(deck_name + "image")
     deck = genanki.Deck(deck_id, deck_name)
@@ -1057,7 +1059,9 @@ def export_to_anki_with_images(
             media_files.extend([target_audio_normal, target_audio_slow])
 
             # Generate Wiktionary links
-            wiktionary_links = generate_wiktionary_links(target, config.language_name)
+            wiktionary_links = generate_wiktionary_links(
+                target, config.TARGET_LANGUAGE_NAME
+            )
 
             prompt_text = get_learning_insights_prompt(english, target)
             # Create note
