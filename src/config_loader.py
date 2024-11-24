@@ -235,18 +235,21 @@ class ConfigLoader:
             raise ValueError(f"{field_name} must be specified")
 
         try:
-            language_alpha2 = code.split("-")[0].lower()
+            language_alpha = code.split("-")[0].lower()
             country_code = code.split("-")[1].upper() if "-" in code else None
         except IndexError:
             raise ValueError(
                 f"{field_name} must be in format 'language-COUNTRY' (e.g., 'fr-FR')"
             )
 
-        language = pycountry.languages.get(alpha_2=language_alpha2)
+        language = pycountry.languages.get(alpha_2=language_alpha)
         if not language:
-            raise ValueError(
-                f"Invalid language code '{language_alpha2}' in {field_name}"
-            )
+            # Try ISO 639-3
+            language = pycountry.languages.get(alpha_3=language_alpha)
+            if not language:
+                raise ValueError(
+                    f"Invalid language code '{language_alpha}' in {field_name}"
+                )
 
         if country_code:
             country = pycountry.countries.get(alpha_2=country_code)
@@ -255,9 +258,9 @@ class ConfigLoader:
                     f"Invalid country code '{country_code}' in {field_name}"
                 )
         else:
-            country_code = language_alpha2.upper()
+            country_code = language_alpha.upper()
 
-        return (f"{language_alpha2}-{country_code}", language_alpha2, language.name)
+        return (f"{language_alpha}-{country_code}", language_alpha, language.name)
 
     def _load_config(self):
         """Load config with fallback values"""

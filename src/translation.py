@@ -73,7 +73,7 @@ def tokenize_text(
 
     Args:
         text: Text to tokenize
-        language_code: Two-letter language code (e.g. 'en', 'ja')
+        language_code: Two-letter or three-letter, language code (e.g. 'en', 'ja')
 
     Returns:
         List of tokens suitable for TTS breaks and Wiktionary lookups
@@ -106,7 +106,7 @@ def tokenize_text(
         tokens = [token.text.content for token in response.tokens]
 
         # Post-process tokens for CJK languages
-        if language_code in ("zh", "ja", "ko"):
+        if language_code in ("zh", "ja", "ko", "cmn", "yue", "wuu", "hak", "nan"):
             # Merge single characters that likely belong together
             merged_tokens = []
             current_token = ""
