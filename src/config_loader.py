@@ -225,7 +225,17 @@ class ConfigLoader:
         self._last_load_time = 0
         self._file_modified_time = 0
         self.voice_manager = VoiceManager()  # No immediate voice loading
+        self.time_api_last_called = 0  # New attribute for API rate limiting
+        self.API_DELAY_SECONDS = 20  # Configurable delay between API calls
         self._load_config()
+
+    def update_api_timestamp(self):
+        """Update the timestamp of the last API call"""
+        self.time_api_last_called = time.time()
+
+    def get_time_since_last_api_call(self):
+        """Get the number of seconds since the last API call"""
+        return time.time() - self.time_api_last_called
 
     def _validate_language_code(
         self, code: str, field_name: str
@@ -345,8 +355,13 @@ class ConfigLoader:
 
     def __getattr__(self, name):
         """Delegate attribute access to config object after checking reload"""
-        self._check_reload()  # Using direct attribute access
-        return getattr(self.config, name)  # Delegate to config object
+        # First check if it's a direct instance attribute
+        if name in self.__dict__:
+            return self.__dict__[name]
+
+        # If not, check the config namespace
+        self._check_reload()
+        return getattr(self.config, name)
 
 
 # Create singleton instance

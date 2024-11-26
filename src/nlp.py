@@ -5,6 +5,7 @@ import spacy
 from typing import Dict, List, Set, Tuple
 from spacy.tokens import Token
 
+
 def load_spacy_model():
     """Load spaCy model with error handling."""
     try:
@@ -13,7 +14,29 @@ def load_spacy_model():
         print("Downloading spaCy model...")
         spacy.cli.download("en_core_web_md")
         return spacy.load("en_core_web_md")
-    
+
+
+def remove_matching_words(phrases: list[str], original_set: set[str]) -> set[str]:
+    """
+    Remove items from original_set that match with any word in phrases,
+    ignoring parenthetical text in original_set items.
+
+    So if our original set had 'falling (over)' as an entry, it would be removed if our
+    phrases had 'falling' in it.
+
+    This is because falling (over) as a prompt to an LLM can give better context for phrase
+    creation, but we won't have the (over) returned in any of our phrases.
+    """
+    updated_set = original_set.copy()
+
+    for item in original_set:
+        base_word = re.sub(r"\([^)]*\)\s*", "", item).strip()
+        if base_word in phrases:
+            updated_set.remove(item)
+
+    return updated_set
+
+
 def extract_vocab_and_pos(english_phrases: List[str]) -> List[Tuple[str, str]]:
     """Returns the (lemma and POS) for feeding into update_vocab_usage, as a list."""
     # Process vocabulary
@@ -39,23 +62,29 @@ def extract_vocab_and_pos(english_phrases: List[str]) -> List[Tuple[str, str]]:
 def extract_substring_matches(
     new_phrases: List[str], target_phrases: Set[str]
 ) -> Set[str]:
+    """Should find matches due to the presence of phrasal verbs etc
+    in our target_phrases (original vocab set) as this might contain
+    multiple words or lexical chunks like 'what's the time?'"""
     # Convert all new phrases to lowercase
     lowercase_phrases = [phrase.lower() for phrase in new_phrases]
 
     # Convert all target phrases to lowercase
     lowercase_targets = [target.lower() for target in target_phrases]
 
-    # Initialize a set to store matched substrings
     matched_substrings = set()
 
-    # Check each target phrase against each new phrase
     for target in lowercase_targets:
-        # Create a regex pattern that matches the target as a whole word or phrase
-        pattern = r"\b" + re.escape(target) + r"\b"
         for phrase in lowercase_phrases:
-            if re.search(pattern, phrase):
+            # Check for exact whole word matches with word boundaries
+            word_pattern = r"\b" + re.escape(target) + r"\b"
+            if re.search(word_pattern, phrase):
                 matched_substrings.add(target)
-                break  # Move to the next target once a match is found
+                break
+
+            # Check for complete phrase match
+            if phrase.strip() == target.strip():
+                matched_substrings.add(target)
+                break
 
     return matched_substrings
 
@@ -98,89 +127,110 @@ def get_verb_and_vocab_lists(used_words: Set[Tuple[str, str]]) -> Dict[str, List
 
     return {"verbs": verb_list, "vocab": vocab_list}
 
+
 def extract_content_words(phrase: str, nlp) -> Set[Tuple[str, str]]:
     """
     Extract content words (verbs and meaningful vocabulary) from a phrase.
     Returns set of (lemma, pos) tuples.
     """
     doc = nlp(phrase.lower())
-    
+
     # Define parts of speech to exclude
-    exclude_pos = {'DET', 'PUNCT', 'SPACE', 'PART', 'CCONJ', 'SCONJ', 'ADP', 'PRON', 'PROPN'}
-    
+    exclude_pos = {
+        "DET",
+        "PUNCT",
+        "SPACE",
+        "PART",
+        "CCONJ",
+        "SCONJ",
+        "ADP",
+        "PRON",
+        "PROPN",
+    }
+
     content_words = set()
     for token in doc:
         # Only include if:
         # 1. Not in excluded POS tags
         # 2. Not a stop word (unless it's a verb)
-        if (token.pos_ not in exclude_pos and 
-            (not token.is_stop or token.pos_ == 'VERB')):
+        if token.pos_ not in exclude_pos and (
+            not token.is_stop or token.pos_ == "VERB"
+        ):
             content_words.add((token.lemma_.lower(), token.pos_))
-    
+
     return content_words
 
-def check_vocab_match(phrase_words: Set[Tuple[str, str]], vocab_dict: Dict[str, List[str]]) -> bool:
+
+def check_vocab_match(
+    phrase_words: Set[Tuple[str, str]], vocab_dict: Dict[str, List[str]]
+) -> bool:
     """
     Check if the content words from the phrase match the vocabulary dictionary.
     Returns True if all content words are found in the vocabulary lists.
     """
     for lemma, pos in phrase_words:
-        if pos in ['VERB', 'AUX']:
-            if lemma not in vocab_dict.get('verbs', []):
+        if pos in ["VERB", "AUX"]:
+            if lemma not in vocab_dict.get("verbs", []):
                 return False
         else:
-            if lemma not in vocab_dict.get('vocab', []):
+            if lemma not in vocab_dict.get("vocab", []):
                 return False
     return True
 
-def phrase_matches_vocab(english_phrase: str, vocab_dictionary: Dict[str, List[str]]) -> bool:
+
+def phrase_matches_vocab(
+    english_phrase: str, vocab_dictionary: Dict[str, List[str]]
+) -> bool:
     """
     Check if a phrase only uses words from the provided vocabulary dictionary.
-    
+
     Args:
         english_phrase: The English phrase to check
         vocab_dictionary: Dictionary with 'verbs' and 'vocab' lists
-        
+
     Returns:
         bool: True if all content words in the phrase are found in the vocabulary lists
     """
     nlp = load_spacy_model()
-    
+
     # Convert vocabulary lists to lowercase for matching
     vocab_dict = {
-        'verbs': [v.lower() for v in vocab_dictionary.get('verbs', [])],
-        'vocab': [v.lower() for v in vocab_dictionary.get('vocab', [])]
+        "verbs": [v.lower() for v in vocab_dictionary.get("verbs", [])],
+        "vocab": [v.lower() for v in vocab_dictionary.get("vocab", [])],
     }
-    
+
     # Extract content words from the phrase
     phrase_words = extract_content_words(english_phrase, nlp)
-    
+
     # Check if all content words are in the vocabulary
     return check_vocab_match(phrase_words, vocab_dict)
 
-def filter_matching_phrases(phrases: List[str], vocab_dictionary: Dict[str, List[str]]) -> List[str]:
+
+def filter_matching_phrases(
+    phrases: List[str], vocab_dictionary: Dict[str, List[str]]
+) -> List[str]:
     """
     Filter a list of phrases to only include those that match the vocabulary.
-    
+
     Args:
         phrases: List of English phrases to check
         vocab_dictionary: Dictionary with 'verbs' and 'vocab' lists
-        
+
     Returns:
         List[str]: Filtered list of phrases that only use words from the vocabulary
     """
     nlp = load_spacy_model()
-    
+
     # Convert vocabulary lists to lowercase for matching
     vocab_dict = {
-        'verbs': [v.lower() for v in vocab_dictionary.get('verbs', [])],
-        'vocab': [v.lower() for v in vocab_dictionary.get('vocab', [])]
+        "verbs": [v.lower() for v in vocab_dictionary.get("verbs", [])],
+        "vocab": [v.lower() for v in vocab_dictionary.get("vocab", [])],
     }
-    
+
     matching_phrases = []
     for phrase in phrases:
         phrase_words = extract_content_words(phrase, nlp)
         if check_vocab_match(phrase_words, vocab_dict):
             matching_phrases.append(phrase)
-            
+
     return matching_phrases
