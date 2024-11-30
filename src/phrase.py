@@ -26,6 +26,7 @@ def generate_phrases_from_vocab_dict(
     length_phrase: str = "6-9 words long",
     verbs_per_phrase: str = "one or two verbs",
     num_phrases: int = 100,
+    localise: bool = False,  # whether to make the phrases aligned to the country
 ) -> List[str]:
     """This takes a dict with keys 'verbs' and 'vocab'  and constructs phrases using them, iterating through until all words are exhausted.
     Desgined for Longman Communication vocab lists with a verb : vocab ratio of about 1:4 and 1000 words tends to generate around 850 phrases in
@@ -95,6 +96,7 @@ def generate_phrases_from_vocab_dict(
             num_phrases=num_phrases,
             length_phrase=length_phrase,
             verbs_per_phrase=verbs_per_phrase,
+            localise=localise,
         )
 
         new_phrases = extract_json_from_llm_response(response)["phrases"]
@@ -136,7 +138,12 @@ def generate_phrases_with_llm(
     num_phrases: int = 100,
     length_phrase: str = "6-9 words long",
     verbs_per_phrase: str = "one or two verbs",
+    localise: bool = False,
 ) -> List[str]:
+
+    localise_prompt_segment = ""  # default is blank
+    if localise:
+        localise_prompt_segment = f"- Localisation: {config.TARGET_COUNTRY_NAME} (For applying any societal, cultural or location elements to the phrases, such as city names etc) - but do not localize every phrase, the phrases can be generic."
     prompt = f"""
     Task: Generate {num_phrases} unique British English phrases using words from the provided verb and vocabulary lists. Each phrase should be {length_phrase} and use {verbs_per_phrase} (no more) per phrase.
 
@@ -152,11 +159,12 @@ def generate_phrases_with_llm(
         - Simple statements ("The traffic was terrible...")
         - First-person expressions ("I enjoy...")
         - Question ("Shall we...?", "Do you ...?", "Did they...?")
-    5. Localisation: {config.TARGET_COUNTRY_NAME} (For applying any societal, cultural or location elements to the phrases, such as city names etc) - but do not localize every phrase, the phrases can be generic.
-    6. Make phrases active rather than passive, something you would commonly say rather than read.
-    7. Ensure each output is a complete sentence or phrase (so you may extend the length if needed)
-    8. Try to use all the words provided to create the {num_phrases} phrases.
-    9. Make the phrases memorable by creating interesting or slightly humorous scenarios.
+        {localise_prompt_segment}
+    
+    5. Make phrases active rather than passive, something you would commonly say rather than read.
+    6. Ensure each phrase is gramatically correct (so you may extend the length if required to meet this condition)
+    7. Try to use all the words provided to create the {num_phrases} phrases.
+    8. Make the phrases memorable by creating interesting or slightly humorous scenarios.
 
     Please return your response in the following JSON format:
     {{
@@ -178,6 +186,8 @@ def generate_minimal_phrases_with_llm(
     length_phrase: str = "6-9 words long",
     verbs_per_phrase: str = "one or two verbs",
 ) -> List[str]:
+    """We don't localise the minimal phrases as we are trying to exhaust the vocab"""
+
     prompt = f"""
     Task: Create the minimum number of English phrases necessary to use all the words from the provided list at least once. Each phrase should be {length_phrase}.
 
@@ -187,7 +197,7 @@ def generate_minimal_phrases_with_llm(
     1. Use all words from the provided list at least once across all phrases.
     2. Create the minimum number of phrases possible while meeting requirement 1.
     3. Each phrase must contain {verbs_per_phrase} from the verb list, and be {length_phrase}.
-    3a. Ensure each output is a complete sentence or phrase (so you may extend the length if needed)
+    3a. Ensure each phrase is gramatically correct (so you may extend the length if required to meet this condition)
     4. You may use additional common words (articles, prepositions, pronouns, basic verbs) that a beginner language learner would know to complete phrases.
     5. Prioritize exhausting the provided word list over creating a large number of phrases.
     6. Vary the verb tenses (present, past, future) across the phrases. Stick mainly to first and second person.
