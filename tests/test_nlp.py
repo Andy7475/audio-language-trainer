@@ -85,13 +85,7 @@ def test_remove_matching_words(phrases, original_set, expected):
         (
             ["What is the time? Do you know?"],
             {"what?", "what", "time?"},
-            {"what?", "time?"},
-        ),
-        # Multiple question marks
-        (
-            ["Really?? Are you sure???"],
-            {"really??", "sure???"},
-            {"really??", "sure???"},
+            {"what", "time?"},
         ),
         # Question mark in middle of target (although unusual)
         (
@@ -100,12 +94,12 @@ def test_remove_matching_words(phrases, original_set, expected):
             {"really?", "really? true"},
         ),
         # Empty and non-matching cases
-        (["Hello world"], {"hello?", "world?"}, {"hello?", "world?"}),
+        (["Hello world"], {"hello?", "world?"}, set()),
         # Multiple punctuation in target
         (
             ["What's your name? Tell me!"],
             {"what's your name?", "tell"},
-            {"what's you name?", "tell"},
+            {"what's your name?", "tell"},
         ),
     ],
 )

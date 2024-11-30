@@ -64,7 +64,14 @@ def extract_substring_matches(
 ) -> Set[str]:
     """Should find matches due to the presence of phrasal verbs etc
     in our target_phrases (original vocab set) as this might contain
-    multiple words or lexical chunks like 'what's the time?'"""
+    multiple words or lexical chunks like 'what's the time?'
+
+    We are basically checking that the phrases we have generated (new_phrases) have successfully
+    'ticked off' words or lexical chunks we are trying to generate (target_phrases) that come
+    from our vocab dict.
+
+    WIth the set of phrases we return, we will remove those from the to-do list so we steadily
+    erode away the target phrases / chunks we need to create"""
     # Convert all new phrases to lowercase
     lowercase_phrases = [phrase.lower() for phrase in new_phrases]
 
@@ -76,13 +83,7 @@ def extract_substring_matches(
     for target in lowercase_targets:
         for phrase in lowercase_phrases:
             # Check for exact whole word matches with word boundaries
-            word_pattern = r"\b" + re.escape(target) + r"\b"
-            if re.search(word_pattern, phrase):
-                matched_substrings.add(target)
-                break
-
-            # Check for complete phrase match
-            if phrase.strip() == target.strip():
+            if target in phrase:
                 matched_substrings.add(target)
                 break
 

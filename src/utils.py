@@ -364,6 +364,10 @@ def ok_to_query_api() -> bool:
     # Calculate how long we need to wait
     wait_time = int(config.API_DELAY_SECONDS - time_since_last_call)
 
+    if time_since_last_call == 0:
+        # first generation
+        wait_time = 1
+
     # Show progress bar for waiting time
     pbar = tqdm(
         range(wait_time), desc="Waiting for API cooldown", ncols=75, colour="blue"

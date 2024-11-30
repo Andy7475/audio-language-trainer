@@ -268,9 +268,14 @@ class ConfigLoader:
                     f"Invalid country code '{country_code}' in {field_name}"
                 )
         else:
-            country_code = language_alpha.upper()
+            raise ValueError(f"You must specififc a country code e.g. en-GB (GB part)")
 
-        return (f"{language_alpha}-{country_code}", language_alpha, language.name)
+        return (
+            f"{language_alpha}-{country_code}",
+            language_alpha,
+            language.name,
+            country.name,
+        )
 
     def _load_config(self):
         """Load config with fallback values"""
@@ -286,10 +291,17 @@ class ConfigLoader:
                     config_dict = json.load(f)
 
             # Validate and store language codes
-            target_code, target_alpha2, target_name = self._validate_language_code(
-                config_dict.get("TARGET_LANGUAGE_CODE"), "TARGET_LANGUAGE_CODE"
+            target_code, target_alpha2, target_name, target_country_name = (
+                self._validate_language_code(
+                    config_dict.get("TARGET_LANGUAGE_CODE"), "TARGET_LANGUAGE_CODE"
+                )
             )
-            source_code, source_alpha2, source_name = self._validate_language_code(
+            (
+                source_code,
+                source_alpha2,
+                source_name,
+                source_country_name,
+            ) = self._validate_language_code(
                 config_dict.get("SOURCE_LANGUAGE_CODE"), "SOURCE_LANGUAGE_CODE"
             )
 
@@ -299,9 +311,11 @@ class ConfigLoader:
                     "TARGET_LANGUAGE_CODE": target_code,
                     "TARGET_LANGUAGE_ALPHA2": target_alpha2,
                     "TARGET_LANGUAGE_NAME": target_name,
+                    "TARGET_COUNTRY_NAME": target_country_name,
                     "SOURCE_LANGUAGE_CODE": source_code,
                     "SOURCE_LANGUAGE_ALPHA2": source_alpha2,
                     "SOURCE_LANGUAGE_NAME": source_name,
+                    "SOURCE_COUNTRY_NAME": source_country_name,
                 }
             )
 
