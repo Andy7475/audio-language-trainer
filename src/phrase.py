@@ -138,7 +138,7 @@ def generate_phrases_with_llm(
     verbs_per_phrase: str = "one or two verbs",
 ) -> List[str]:
     prompt = f"""
-    Task: Generate {num_phrases} unique English phrases using words from the provided verb and vocabulary lists. Each phrase should be {length_phrase} and use {verbs_per_phrase} (no more) per phrase.
+    Task: Generate {num_phrases} unique British English phrases using words from the provided verb and vocabulary lists. Each phrase should be {length_phrase} and use {verbs_per_phrase} (no more) per phrase.
 
     Verb List: {', '.join(verb_list)}
     Vocabulary List: {', '.join(vocab_list)}
@@ -152,10 +152,11 @@ def generate_phrases_with_llm(
         - Simple statements ("The traffic was terrible...")
         - First-person expressions ("I enjoy...")
         - Question ("Shall we...?", "Do you ...?", "Did they...?")
-    5. Make phrases active rather than passive, something you would commonly say rather than read.
-    6. Ensure each output is a complete sentence or phrase (so you may extend the length if needed)
-    7. Try to use all the words provided to create the {num_phrases} phrases.
-    8. Make the phrases memorable by creating interesting or slightly humorous scenarios.
+    5. Localisation: {config.TARGET_COUNTRY_NAME} (For applying any societal, cultural or location elements to the phrases, such as city names etc) - but do not localize every phrase, the phrases can be generic.
+    6. Make phrases active rather than passive, something you would commonly say rather than read.
+    7. Ensure each output is a complete sentence or phrase (so you may extend the length if needed)
+    8. Try to use all the words provided to create the {num_phrases} phrases.
+    9. Make the phrases memorable by creating interesting or slightly humorous scenarios.
 
     Please return your response in the following JSON format:
     {{
