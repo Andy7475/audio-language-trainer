@@ -141,12 +141,13 @@ class AnkiCollectionReader:
             self.col = None
 
     def get_deck_names(self) -> Dict[int, str]:
+        """returns a dictionary of deck_id : deck_name"""
         if not self.col:
             raise RuntimeError("Not connected to collection")
 
         decks = {}
-        for deck_id, deck in self.col.decks.all():
-            decks[deck_id] = deck["name"]
+        for deck in self.col.decks.all():
+            decks[deck["id"]] = deck["name"]
         return decks
 
     def get_notes_for_deck(self, deck_name: str) -> List[Dict[str, Any]]:
