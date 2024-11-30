@@ -977,7 +977,7 @@ def export_to_anki_with_images(
             {"name": "EnglishText"},
             {"name": "WiktionaryLinks"},
             {"name": "Picture"},
-            {"name": "InsightsPrompt"},
+            {"name": "TargetLanguageName"},
         ],
         templates=[
             {
@@ -1063,7 +1063,6 @@ def export_to_anki_with_images(
                 target, config.TARGET_LANGUAGE_NAME
             )
 
-            prompt_text = get_learning_insights_prompt(english, target)
             # Create note
             note = genanki.Note(
                 model=language_practice_model,
@@ -1074,7 +1073,7 @@ def export_to_anki_with_images(
                     english,
                     wiktionary_links,
                     f'<img src="{image_filename}">' if image_filename else "",
-                    prompt_text,
+                    config.TARGET_LANGUAGE_NAME,
                 ],
                 guid=string_to_large_int(target + "image"),
             )

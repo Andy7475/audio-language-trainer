@@ -1,79 +1,152 @@
-<div class="card">     
-  <hr id="answer">     
-  <div class="picture-container">{{Picture}}</div>     
-  <div class="prompt-template" style="display: none;">{{InsightsPrompt}}</div>     
-  <div class="target-text" onclick="copyToClipboard(this)">{{TargetText}}</div>     
-  <div class="english-text">{{EnglishText}}</div>      
-  <div class="audio-controls">         
-      <div class="audio-button-container">             
-          <div class="audio-label">Normal speed:</div>             
-          {{TargetAudio}}         
-      </div>         
-      <div class="audio-button-container">             
-          <div class="audio-label">Slow speed:</div>             
-          {{TargetAudioSlow}}         
-      </div>     
-  </div>      
-  <div class="wiktionary-links">{{WiktionaryLinks}}</div>          
-  <!-- Insights Button Container -->     
-  <div class="insights-container">
-      <button class="copy-button" onclick="copyInsightsTemplate()">
-          📋
-      </button>     
-      <a href="https://claude.ai" target="_blank" class="insights-button" onclick="return copyPromptBeforeNavigate(event)">             
-          <span class="insights-icon">💡</span>             
-          Learning Insights         
-      </a>         
-      <div class="info-icon" role="button" tabindex="0">ⓘ             
-          <span class="info-tooltip">This will open claude.ai and copy a prompt to your clipboard. You can paste (Ctrl/Cmd+V) when you arrive.</span>         
-      </div>     
-  </div> 
-</div>  
+<div class="card">
+    <hr id="answer">
+    <div class="picture-container">{{Picture}}</div>
+    
+    <!-- Hidden prompt template -->
+    <div class="prompt-template" style="display: none;">
+        {{TargetLanguageName}} Language Learning Insights.
+
+        For the given English phrase: "{{EnglishText}}" and its translation: "{{TargetText}}", create some language learning insights. Present your response in this structured format:
+
+        # Breakdown and Alternative Translations
+        - insights from a literal translation
+        - where / when / why would this translation be used over others
+        - different translations for different contexts 
+        - different formalities (e.g. tu / vous if French etc)
+        - plural / singlaur alternatives (e.g. du, ni in Swedish)
+
+        # Vocabulary Building
+        - Expand compound words or word-part origins so I learn more vocab (Bonjour = bon + jour etc.)
+        - Common prefixes/suffixes patterns demonstrated
+        - Related words sharing same roots/stems
+        - Etymology and connections to other languages
+        - Common collocations
+        - Synonyms and antonyms
+        - Situational variations
+        - Register variations (formal/informal/slang)
+        - Idiomatic expressions using similar patterns
+
+        # Practice Points
+        Concrete examples showing how to use this learning in other contexts:
+        - Similar phrases using the same pattern
+        - Common variations
+        - When and how to use this in real conversations
+
+        # Memory Hooks
+        - Mnemonics if helpful
+        - Connections to English or other languages
+        - Visual associations
+        - Memorable cultural connections
+
+        # Grammar Patterns
+        These will be very language dependent (so some not relevant or you might need to insert your own).
+        Identify key structural patterns that learners can apply elsewhere:
+        - Word order rules demonstrated
+        - Conjugation/declension patterns
+        - Case/gender/number agreement if relevant
+        - Special constructions worth noting
+        - Similar phrases using the same pattern
+        - Common mistakes to avoid
+
+        # Cultural Corner (make this a commentary rather than bullets)
+        - Formal vs informal usage
+        - Cultural context and connotations
+        - Regional variations
+        - Social situations where this phrase is commonly used
+        - Any cultural faux pas to avoid
+        - Historical/cultural background if relevant
+
+        Remember to:
+        - Use clear, learner-friendly language
+        - Provide plenty of examples
+        - always provide an english translation for any {{TargetLanguageName}} text
+        - Use bullet points and clear formatting for readability, but add explanations so it's easy to understand
+        - Link concepts together to show language patterns
+        - Flag particularly useful or important points with 💡
+        - Mark common pitfalls or important warnings with ⚠️
+        - Use tables for comparing variations where appropriate
+
+        Note: Not every section needs to be equally detailed - expand on the most relevant aspects for this particular phrase, but maintain the consistent structure for familiarity.
+    </div>
+
+    <!-- Main card content -->
+    <div class="target-text" onclick="copyToClipboard(this)">{{TargetText}}</div>
+    <div class="english-text">{{EnglishText}}</div>
+
+    <!-- Audio controls -->
+    <div class="audio-controls">
+        <div class="audio-button-container">
+            <div class="audio-label">Normal speed:</div>
+            {{TargetAudio}}
+        </div>
+        <div class="audio-button-container">
+            <div class="audio-label">Slow speed:</div>
+            {{TargetAudioSlow}}
+        </div>
+    </div>
+
+    <div class="wiktionary-links">{{WiktionaryLinks}}</div>
+
+    <!-- Insights Button Container -->
+    <div class="insights-container">
+        <button class="copy-button" onclick="copyInsightsTemplate()">
+            📋
+        </button>
+        <a href="https://claude.ai" target="_blank" class="insights-button" onclick="return copyPromptBeforeNavigate(event)">
+            <span class="insights-icon">💡</span>
+            Learning Insights
+        </a>
+    </div>
+
+    <!-- Footer info text -->
+    <div class="footer-info">
+        Click 📋 to copy the prompt or 💡 to open Claude and automatically copy the prompt for pasting.
+    </div>
+</div>
 
 <script>
-// Simple copy functionality for target text only
-function copyToClipboard(element) {     
-  const text = element.textContent;     
-  navigator.clipboard.writeText(text).then(() => {         
-      element.classList.add('copied');         
-      setTimeout(() => {             
-          element.classList.remove('copied');         
-      }, 1000);     
-  }); 
-}  
-
-// Modified function to handle the copy before navigation
-function copyPromptBeforeNavigate(event) {     
-  const fullPrompt = document.querySelector('.prompt-template').textContent;     
-  const button = document.querySelector('.insights-button');
-  
-  navigator.clipboard.writeText(fullPrompt).then(() => {         
-      button.classList.add('copied');         
-      setTimeout(() => {             
-          button.classList.remove('copied');         
-      }, 500);     
-  }).catch(err => {         
-      console.error('Failed to copy text: ', err);     
-  }); 
-  
-  // Let the default navigation happen
-  return true;
+// Simple copy functionality for target text
+function copyToClipboard(element) {
+    const text = element.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        element.classList.add('copied');
+        setTimeout(() => {
+            element.classList.remove('copied');
+        }, 1000);
+    });
 }
 
-// New function to copy template text without navigation
+// Modified function to handle the copy before navigation
+function copyPromptBeforeNavigate(event) {
+    const fullPrompt = document.querySelector('.prompt-template').textContent;
+    const button = document.querySelector('.insights-button');
+    
+    navigator.clipboard.writeText(fullPrompt).then(() => {
+        button.classList.add('copied');
+        setTimeout(() => {
+            button.classList.remove('copied');
+        }, 500);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+    
+    return true;
+}
+
+// Function to copy template text without navigation
 function copyInsightsTemplate() {
-  const templateDiv = document.querySelector('.prompt-template');
-  const textToCopy = templateDiv.textContent.trim();
-  const button = document.querySelector('.copy-button');
-  
-  navigator.clipboard.writeText(textToCopy).then(() => {
-      // Visual feedback
-      button.textContent = 'Prompt copied ✓';
-      setTimeout(() => {
-          button.textContent = '📋';
-      }, 1000);
-  }).catch(err => {
-      console.error('Failed to copy text: ', err);
-  });
+    const templateDiv = document.querySelector('.prompt-template');
+    const textToCopy = templateDiv.textContent.trim();
+    const button = document.querySelector('.copy-button');
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        // Visual feedback
+        button.textContent = '✓';
+        setTimeout(() => {
+            button.textContent = '📋';
+        }, 1000);
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
 }
 </script>
