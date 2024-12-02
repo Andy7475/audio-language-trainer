@@ -70,7 +70,7 @@ def generate_story(story_name: str):
 
         # Add audio (async operation)
         print("\nGenerating audio...")
-        story_data_dict = add_audio(story_data_dict)
+        story_data_dict = add_audio(story_data_dict, source_language_audio=True)
 
         # Save complete data as pickle
         pickle_path = output_dir / f"story_data_{story_name_clean}.pkl"

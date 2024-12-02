@@ -9,8 +9,11 @@ from types import SimpleNamespace
 from typing import Dict, List, Optional, Set, Tuple
 
 import azure.cognitiveservices.speech as speechsdk
+from langcodes import Language, LanguageTagError
 import pycountry
 from google.cloud import texttospeech
+import azure.cognitiveservices.speech as speechsdk
+import pysnooper
 
 
 class VoiceProvider(Enum):
@@ -22,8 +25,10 @@ class VoiceProvider(Enum):
 class VoiceType(Enum):
     STANDARD = "standard"
     WAVENET = "wavenet"
+    NEURAL2 = "neural2"
     NEURAL = "neural"
     STUDIO = "studio"
+    JOURNEY = "journey"
     NONE = "none"  # Added for when no voice type is available
 
 
@@ -39,81 +44,80 @@ class VoiceInfo:
 
 
 class VoiceManager:
-    """Manages voice selection with lazy loading of voice data."""
+    """Manages voice selection with lazy loading of voice data.
+
+    Terminology:    language_code = language-country pair like fr-FR or en-GB
+                    language_alpha = the language ISO code - usually 2 ALPHA standard but can be 3 (e.g. fr, en)
+                    country_code = the 2 ALPHA country code (GB, FR)"""
 
     def __init__(self):
         self.voices: Dict[str, List[VoiceInfo]] = {}
         self.voice_type_ranking = [
+            VoiceType.JOURNEY,
             VoiceType.STUDIO,
-            VoiceType.NEURAL,
+            VoiceType.NEURAL2,
             VoiceType.WAVENET,
+            VoiceType.NEURAL,
             VoiceType.STANDARD,
         ]
         self.provider_preferences: Dict[str, VoiceProvider] = {}
         self.voice_overrides: Dict[str, str] = {}
-        self._voices_loaded = False
 
-    def _lazy_load_voices(self):
-        """Lazily load voices only when needed"""
-        if not self._voices_loaded:
-            try:
-                self._load_google_voices()
-            except Exception as e:
-                print(f"Warning: Failed to load Google voices: {e}")
+    def _lazy_load_voices(self, language_code: str):
+        """Lazily load voices only when needed, language_code can be fr-FR or just fr"""
+        try:
+            self._load_google_voices(language_code=language_code)
+        except Exception as e:
+            print(f"Warning: Failed to load Google voices: {e}")
 
-            try:
-                self._load_azure_voices()
-            except Exception as e:
-                print(f"Warning: Failed to load Azure voices: {e}")
+        try:
+            self._load_azure_voices(locale=language_code)
+        except Exception as e:
+            print(f"Warning: Failed to load Azure voices: {e}")
 
-            self._voices_loaded = True
-
-    def _load_google_voices(self):
+    def _load_google_voices(self, language_code: str):
         """Load Google voices with proper error handling"""
         try:
             from google.cloud import texttospeech
 
+            language_object = Language.get(language_code)
             client = texttospeech.TextToSpeechClient()
-            response = client.list_voices()
+            response = client.list_voices(language_code=language_code)
 
             for voice in response.voices:
-                for language_code in voice.language_codes:
-                    voice_type = VoiceType.STANDARD
-                    if "Neural2" in voice.name:
-                        voice_type = VoiceType.NEURAL
-                    elif "Studio" in voice.name:
-                        voice_type = VoiceType.STUDIO
-                    elif "Wavenet" in voice.name:
-                        voice_type = VoiceType.WAVENET
+                voice_type = VoiceType.STANDARD
+                if "Neural2" in voice.name:
+                    voice_type = VoiceType.NEURAL2
+                elif "Studio" in voice.name:
+                    voice_type = VoiceType.STUDIO
+                elif "Wavenet" in voice.name:
+                    voice_type = VoiceType.WAVENET
+                elif "Journey" in voice.name:
+                    voice_type = VoiceType.JOURNEY
 
-                    country_code = (
-                        language_code.split("-")[1]
-                        if "-" in language_code
-                        else language_code
-                    )
+                voice_info = VoiceInfo(
+                    name=voice.name,
+                    provider=VoiceProvider.GOOGLE,
+                    voice_type=voice_type,
+                    gender=voice.ssml_gender.name,
+                    language_code=language_code,
+                    country_code=language_object.territory,
+                    voice_id=voice.name,
+                )
 
-                    voice_info = VoiceInfo(
-                        name=voice.name,
-                        provider=VoiceProvider.GOOGLE,
-                        voice_type=voice_type,
-                        gender=voice.ssml_gender.name,
-                        language_code=language_code,
-                        country_code=country_code,
-                        voice_id=voice.name,
-                    )
-
-                    if language_code not in self.voices:
-                        self.voices[language_code] = []
+                if language_code in self.voices:
                     self.voices[language_code].append(voice_info)
+                else:
+                    self.voices[language_code] = [voice_info]
 
         except Exception as e:
             print(f"Warning: Unable to initialize Google TTS: {e}")
 
-    def _load_azure_voices(self):
-        """Load Azure voices with proper error handling"""
+    def _load_azure_voices(self, locale: str):
+        """Load Azure voices with proper error handling. locale is the language_code"""
         try:
-            import azure.cognitiveservices.speech as speechsdk
 
+            language_object = Language.get(locale)
             speech_key = os.getenv("AZURE_API_KEY")
             if not speech_key:
                 print("Warning: AZURE_API_KEY not found in environment variables")
@@ -127,19 +131,12 @@ class VoiceManager:
                 speech_config=speech_config
             )
 
-            result = speech_synthesizer.get_voices_async().get()
-
+            result = speech_synthesizer.get_voices_async(locale=locale).get()
             for voice in result.voices:
                 voice_type = (
                     VoiceType.NEURAL
                     if voice.voice_type._name_ == "OnlineNeural"
                     else VoiceType.STANDARD
-                )
-                language_code = voice.locale
-                country_code = (
-                    language_code.split("-")[1]
-                    if "-" in language_code
-                    else language_code
                 )
 
                 voice_info = VoiceInfo(
@@ -147,14 +144,15 @@ class VoiceManager:
                     provider=VoiceProvider.AZURE,
                     voice_type=voice_type,
                     gender=voice.gender._name_.upper(),
-                    language_code=language_code,
-                    country_code=country_code,
+                    language_code=voice.locale,
+                    country_code=language_object.territory,
                     voice_id=voice.short_name,
                 )
 
-                if language_code not in self.voices:
-                    self.voices[language_code] = []
-                self.voices[language_code].append(voice_info)
+                if locale in self.voices:
+                    self.voices[locale].append(voice_info)
+                else:
+                    self.voices[locale] = [voice_info]
 
         except Exception as e:
             print(f"Warning: Unable to initialize Azure TTS: {e}")
@@ -163,10 +161,9 @@ class VoiceManager:
         self,
         language_code: str,
         gender: str = "FEMALE",
-        country_code: Optional[str] = None,
     ) -> Optional[VoiceInfo]:
         """Get best available voice with fallback options"""
-        self._lazy_load_voices()
+        self._lazy_load_voices(language_code)
 
         # If no voices are available, return a dummy VoiceInfo
         if not self.voices:
@@ -176,7 +173,7 @@ class VoiceManager:
                 voice_type=VoiceType.NONE,
                 gender=gender.upper(),
                 language_code=language_code,
-                country_code=country_code or language_code.split("-")[1],
+                country_code="dummy",
                 voice_id="dummy",
             )
 
@@ -188,13 +185,6 @@ class VoiceManager:
         gender_voices = [v for v in available_voices if v.gender == gender.upper()]
         if not gender_voices:
             gender_voices = available_voices
-
-        if country_code:
-            country_voices = [
-                v for v in gender_voices if v.country_code == country_code.upper()
-            ]
-            if country_voices:
-                gender_voices = country_voices
 
         preferred_provider = self.provider_preferences.get(language_code)
         if preferred_provider:
@@ -238,43 +228,30 @@ class ConfigLoader:
         return time.time() - self.time_api_last_called
 
     def _validate_language_code(
-        self, code: str, field_name: str
+        self, language_code: str, field_name: str
     ) -> Tuple[str, str, str]:
         """Validates language code with better error handling"""
-        if not code:
+        if not language_code:
             raise ValueError(f"{field_name} must be specified")
 
         try:
-            language_alpha = code.split("-")[0].lower()
-            country_code = code.split("-")[1].upper() if "-" in code else None
-        except IndexError:
-            raise ValueError(
+            language_object = Language.get(language_code)
+
+            if not language_object.is_valid():
+                raise ValueError(f"{field_name} is not parsing as a valid language.")
+
+        except LanguageTagError:
+            raise LanguageTagError(
                 f"{field_name} must be in format 'language-COUNTRY' (e.g., 'fr-FR')"
             )
 
-        language = pycountry.languages.get(alpha_2=language_alpha)
-        if not language:
-            # Try ISO 639-3
-            language = pycountry.languages.get(alpha_3=language_alpha)
-            if not language:
-                raise ValueError(
-                    f"Invalid language code '{language_alpha}' in {field_name}"
-                )
-
-        if country_code:
-            country = pycountry.countries.get(alpha_2=country_code)
-            if not country:
-                raise ValueError(
-                    f"Invalid country code '{country_code}' in {field_name}"
-                )
-        else:
-            raise ValueError(f"You must specififc a country code e.g. en-GB (GB part)")
-
         return (
-            f"{language_alpha}-{country_code}",
-            language_alpha,
-            language.name,
-            country.name,
+            f"{language_object}",  # fr-FR
+            language_object.language,  # fr
+            language_object.display_name()
+            .split("(")[0]
+            .strip(),  # French (France) -> French
+            language_object.territory_name(),  # France
         )
 
     def _load_config(self):

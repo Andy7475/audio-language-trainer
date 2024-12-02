@@ -26,7 +26,7 @@ from tqdm import tqdm
 
 
 def generate_translated_phrase_audio(
-    translated_phrases: List[Tuple[str, str]],
+    translated_phrases: List[Tuple[str, str]], source_language_audio: bool = False
 ) -> List[List[AudioSegment]]:
     """
     Generate audio for a list of translated phrases.
@@ -49,12 +49,15 @@ def generate_translated_phrase_audio(
         cleaned_target = clean_tts_text(target_text)
 
         # Generate English audio
-        english_audio = text_to_speech(
-            text=cleaned_eng,
-            config_language="source",
-            gender="MALE",
-            speaking_rate=0.9,
-        )
+        if source_language_audio:
+            english_audio = text_to_speech(
+                text=cleaned_eng,
+                config_language="source",
+                gender="MALE",
+                speaking_rate=0.9,
+            )
+        else:
+            english_audio = AudioSegment.silent(100)
 
         # Generate slow target language audio with word breaks
         target_slow = slow_text_to_speech(
@@ -381,9 +384,9 @@ def slow_text_to_speech(
     """
 
     if config_language == "source":
-        language_2_alpha = config.SOURCE_LANGUAGE_ALPHA2
+        language_code = config.SOURCE_LANGUAGE_CODE
     else:
-        language_2_alpha = config.TARGET_LANGUAGE_ALPHA2
+        language_code = config.TARGET_LANGUAGE_CODE
 
     if speaking_rate is None:
         speaking_rate = config.SPEAKING_RATE_SLOW
@@ -394,7 +397,7 @@ def slow_text_to_speech(
 
     # Clean the text and tokenize it
     cleaned_text = clean_tts_text(text)
-    tokens = tokenize_text(cleaned_text, language_2_alpha)
+    tokens = tokenize_text(cleaned_text, language_code)
 
     # Create SSML with breaks between words
     ssml_parts = ["<speak>"]
