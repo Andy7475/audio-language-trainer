@@ -60,20 +60,17 @@ def translate_phrases(corrected_phrases: List[str]) -> List[Tuple[str, str]]:
 
 
 def tokenize_text(
-    text: str, language_code: str = config.TARGET_LANGUAGE_ALPHA2
+    text: str, language_code: str = config.TARGET_LANGUAGE_CODE
 ) -> List[str]:
     """
-    Tokenize text in a way that's practical for:
-    1. Adding SSML breaks between words
-    2. Looking up words in Wiktionary
+    Tokenize text using language-appropriate methods.
 
     For space-separated languages: Simply split on spaces
-    For CJK languages: Use API but merge very short tokens that likely belong together
-    For Thai: Use API but accept larger chunks if tokenization fails
+    For other languages: Use Google Cloud Natural Language API
 
     Args:
         text: Text to tokenize
-        language_code: Two-letter or three-letter, language code (e.g. 'en', 'ja')
+        language_code: Two-letter language code (e.g. 'en', 'ja')
 
     Returns:
         List of tokens suitable for TTS breaks and Wiktionary lookups
@@ -104,26 +101,6 @@ def tokenize_text(
         )
 
         tokens = [token.text.content for token in response.tokens]
-
-        # Post-process tokens for CJK languages
-        if language_code in ("zh", "ja", "ko", "cmn", "yue", "wuu", "hak", "nan"):
-            # Merge single characters that likely belong together
-            merged_tokens = []
-            current_token = ""
-
-            for token in tokens:
-                if len(token) == 1 and len(current_token) < 3:
-                    current_token += token
-                else:
-                    if current_token:
-                        merged_tokens.append(current_token)
-                    current_token = token
-
-            if current_token:
-                merged_tokens.append(current_token)
-
-            return merged_tokens
-
         return tokens if tokens else text.split()
 
     except Exception as e:

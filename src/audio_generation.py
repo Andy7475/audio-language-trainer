@@ -384,9 +384,9 @@ def slow_text_to_speech(
     """
 
     if config_language == "source":
-        language_2_alpha = config.SOURCE_LANGUAGE_ALPHA2
+        language_code = config.SOURCE_LANGUAGE_CODE
     else:
-        language_2_alpha = config.TARGET_LANGUAGE_ALPHA2
+        language_code = config.TARGET_LANGUAGE_CODE
 
     if speaking_rate is None:
         speaking_rate = config.SPEAKING_RATE_SLOW
@@ -397,7 +397,7 @@ def slow_text_to_speech(
 
     # Clean the text and tokenize it
     cleaned_text = clean_tts_text(text)
-    tokens = tokenize_text(cleaned_text, language_2_alpha)
+    tokens = tokenize_text(cleaned_text, language_code)
 
     # Create SSML with breaks between words
     ssml_parts = ["<speak>"]

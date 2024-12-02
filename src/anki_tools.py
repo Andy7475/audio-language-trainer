@@ -634,42 +634,72 @@ def generate_wiktionary_links_non_english(
     return " ".join(links)
 
 
+def get_wiktionary_language_name(language_name: str) -> str:
+    """Map standard language names to Wiktionary header names"""
+    wiktionary_mapping = {
+        "Mandarin Chinese": "Chinese",
+        "Modern Greek": "Greek",
+        "Standard Arabic": "Arabic",
+        "Brazilian Portuguese": "Portuguese",
+        # Add more mappings as discovered
+    }
+    return wiktionary_mapping.get(language_name, language_name)
+
+
+def find_language_section(soup: BeautifulSoup, language_name: str) -> Optional[str]:
+    """Try different strategies to find the language section"""
+    # Try exact match with mapping
+    wiktionary_name = get_wiktionary_language_name(language_name)
+    if section := soup.find("h2", {"id": wiktionary_name}):
+        return wiktionary_name
+
+    # Try words in reverse order (longest to shortest)
+    words = language_name.split()
+    for i in range(len(words), 0, -1):
+        partial_name = " ".join(words[:i])
+        if section := soup.find("h2", {"id": partial_name}):
+            return partial_name
+
+    # If still not found, try individual words
+    for word in words:
+        if section := soup.find("h2", {"id": word}):
+            return word
+
+    return None
+
+
 def generate_wiktionary_links(
     phrase: str,
     language_name: str = config.TARGET_LANGUAGE_NAME,
-    language_code: str = config.TARGET_LANGUAGE_ALPHA2,
+    language_code: str = config.TARGET_LANGUAGE_CODE,
 ) -> str:
     words = tokenize_text(text=phrase, language_code=language_code)
     links: List[str] = []
 
     for word in words:
         clean_word = "".join(char for char in word if char.isalnum())
-        if clean_word:
+        if not clean_word:
+            links.append(word)
+            continue
+
+        # Try to create wiktionary link
+        try:
             # Lowercase the word for URL and search, but keep original for display
             lowercase_word = clean_word.lower()
-            # URL encode the lowercase word to handle non-ASCII characters
             encoded_word = urllib.parse.quote(lowercase_word)
             url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-            try:
-                response = requests.get(url)
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.content, "html.parser")
-                    # Look for the language section using h2 tag
-                    language_section = soup.find("h2", {"id": language_name})
 
-                    if language_section:
-                        # If found, create a link with the anchor to the specific language section
-                        # Use the original word (with original capitalization) for display
-                        link = f'<a href="{url}#{language_name}">{word}</a>'
-                        links.append(link)
-                    else:
-                        # If not found, just add the original word without a link
-                        links.append(word)
-                else:
-                    links.append(word)
-            except requests.RequestException:
-                links.append(word)
-        else:
+            response = requests.get(url)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, "html.parser")
+                if section_name := find_language_section(soup, language_name):
+                    links.append(f'<a href="{url}#{section_name}">{word}</a>')
+                    continue
+
+            # If any step fails, fall back to original word
+            links.append(word)
+
+        except requests.RequestException:
             links.append(word)
 
     return " ".join(links)
@@ -1060,9 +1090,7 @@ def export_to_anki_with_images(
             media_files.extend([target_audio_normal, target_audio_slow])
 
             # Generate Wiktionary links
-            wiktionary_links = generate_wiktionary_links(
-                target, config.TARGET_LANGUAGE_NAME
-            )
+            wiktionary_links = generate_wiktionary_links(target)
 
             # Create note
             note = genanki.Note(
