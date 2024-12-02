@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .character-card {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        .character {
+            font-size: 36px;
+            margin: 10px 0;
+        }
+        .romanized {
+            color: #666;
+            font-size: 14px;
+        }
+        .download-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 2px;
+            font-size: 12px;
+        }
+        .download-btn:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <select id="scriptSelect" onchange="loadCharacters()">
+                <option value="persian">Persian/Farsi</option>
+                <option value="arabic">Arabic</option>
+                <option value="devanagari">Devanagari</option>
+            </select>
+            <button onclick="generateAll()">Generate All Files</button>
+        </div>
+        <div id="characterGrid" class="character-grid"></div>
+    </div>
+
+    <script>
+        // Hidden canvas and SVG for file generation
+        const canvas = document.createElement('canvas');
+        document.body.appendChild(canvas);
+        canvas.style.display = 'none';
+
+        const scripts = {
+            persian: {
+                name: 'Persian/Farsi',
+                characters: [
+                    { char: 'ا', roman: 'alef', variations: ['ا', 'ـا'] },
+                    { char: 'ب', roman: 'be', variations: ['ب', 'بـ', 'ـبـ', 'ـب'] },
+                    { char: 'پ', roman: 'pe', variations: ['پ', 'پـ', 'ـپـ', 'ـپ'] },
+                    // Add more Persian characters...
+                ],
+                font: 'Noto Naskh Arabic'
+            },
+            arabic: {
+                name: 'Arabic',
+                characters: [
+                    { char: 'ا', roman: 'alif', variations: ['ا', 'ـا'] },
+                    { char: 'ب', roman: 'ba', variations: ['ب', 'بـ', 'ـبـ', 'ـب'] },
+                    // Add more Arabic characters...
+                ],
+                font: 'Noto Naskh Arabic'
+            },
+            devanagari: {
+                name: 'Devanagari',
+                characters: [
+                    { char: 'अ', roman: 'a', variations: ['अ'] },
+                    { char: 'आ', roman: 'aa', variations: ['आ'] },
+                    // Add more Devanagari characters...
+                ],
+                font: 'Noto Sans Devanagari'
+            }
+        };
+
+        function loadCharacters() {
+            const scriptKey = document.getElementById('scriptSelect').value;
+            const script = scripts[scriptKey];
+            const grid = document.getElementById('characterGrid');
+            grid.innerHTML = '';
+
+            script.characters.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'character-card';
+                card.innerHTML = `
+                    <div class="character">${char.char}</div>
+                    <div class="romanized">${char.roman}</div>
+                    <div class="variations">
+                        ${char.variations.map(v => `<span>${v}</span>`).join(' ')}
+                    </div>
+                    <button class="download-btn" onclick="generateFiles('${char.char}', '${char.roman}', '${scriptKey}')">
+                        Generate Files
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function generateSVG(character, font, size = 200) {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', size);
+            svg.setAttribute('height', size);
+            svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', size/2);
+            text.setAttribute('y', size/2);
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'middle');
+            text.setAttribute('font-size', size * 0.6);
+            text.setAttribute('font-family', font);
+            text.textContent = character;
+
+            svg.appendChild(text);
+            return svg;
+        }
+
+        function generatePNG(character, font, size = 200) {
+            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+
+            // Clear canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, size, size);
+
+            // Draw character
+            ctx.fillStyle = 'black';
+            ctx.font = `${size * 0.6}px "${font}"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(character, size/2, size/2);
+
+            return canvas;
+        }
+
+        function downloadFile(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function generateFiles(character, romanized, scriptKey) {
+            const script = scripts[scriptKey];
+            const baseName = `${scriptKey}_${romanized}`;
+
+            // Generate SVG
+            const svg = generateSVG(character, script.font);
+            const svgBlob = new Blob([svg.outerHTML], {type: 'image/svg+xml'});
+            downloadFile(svgBlob, `${baseName}.svg`);
+
+            // Generate PNG
+            generatePNG(character, script.font).toBlob(blob => {
+                downloadFile(blob, `${baseName}.png`);
+            });
+        }
+
+        function generateAll() {
+            const scriptKey = document.getElementById('scriptSelect').value;
+            const script = scripts[scriptKey];
+            
+            script.characters.forEach(char => {
+                generateFiles(char.char, char.roman, scriptKey);
+            });
+        }
+
+        // Load initial script
+        loadCharacters();
+    </script>
+</body>
+</html>
