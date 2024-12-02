@@ -29,7 +29,7 @@ from src.phrase import generate_practice_phrases_from_dialogue
 from src.translation import translate_dialogue, translate_phrases
 
 
-#@pysnooper.snoop(depth=2, output="../outputs/test/snoop.txt")
+# @pysnooper.snoop(depth=2, output="../outputs/test/snoop.txt")
 def create_story_plan_and_dialogue(
     story_name: str,
     n_verbs: int = 10,
@@ -167,14 +167,15 @@ def add_translations(story_data_dict):
     return story_data_dict
 
 
-def add_audio(story_data_dict):
+def add_audio(story_data_dict, source_language_audio: bool = False):
     """Adds text-to-speech for english and target language for all dialogue and
     practice phrases"""
     for story_part in tqdm(story_data_dict, desc="adding audio"):
         if "translated_dialogue" in story_data_dict[story_part]:
             print(f"Beginning text-to-speech for {story_part}")
             translated_dialogue_audio_segments = generate_audio_from_dialogue(
-                story_data_dict[story_part]["translated_dialogue"],config_language="target"
+                story_data_dict[story_part]["translated_dialogue"],
+                config_language="target",
             )
             story_data_dict[story_part][
                 "translated_dialogue_audio"
@@ -189,7 +190,9 @@ def add_audio(story_data_dict):
             print(f"Text-to-speech for dialogue done")
         # now do phrases asynchronoulsy (still unsure if Google API allows this, not getting huge speed up)
         translated_phrases = story_data_dict[story_part]["translated_phrase_list"]
-        translated_phrases_audio = generate_translated_phrase_audio(translated_phrases)
+        translated_phrases_audio = generate_translated_phrase_audio(
+            translated_phrases, source_language_audio
+        )
         story_data_dict[story_part][
             "translated_phrase_list_audio"
         ] = translated_phrases_audio

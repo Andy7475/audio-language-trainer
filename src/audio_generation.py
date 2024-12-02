@@ -26,7 +26,7 @@ from tqdm import tqdm
 
 
 def generate_translated_phrase_audio(
-    translated_phrases: List[Tuple[str, str]],
+    translated_phrases: List[Tuple[str, str]], source_language_audio: bool = False
 ) -> List[List[AudioSegment]]:
     """
     Generate audio for a list of translated phrases.
@@ -49,12 +49,15 @@ def generate_translated_phrase_audio(
         cleaned_target = clean_tts_text(target_text)
 
         # Generate English audio
-        english_audio = text_to_speech(
-            text=cleaned_eng,
-            config_language="source",
-            gender="MALE",
-            speaking_rate=0.9,
-        )
+        if source_language_audio:
+            english_audio = text_to_speech(
+                text=cleaned_eng,
+                config_language="source",
+                gender="MALE",
+                speaking_rate=0.9,
+            )
+        else:
+            english_audio = AudioSegment.silent(100)
 
         # Generate slow target language audio with word breaks
         target_slow = slow_text_to_speech(
