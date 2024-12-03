@@ -37,6 +37,24 @@ def remove_matching_words(phrases: list[str], original_set: set[str]) -> set[str
     return updated_set
 
 
+def get_vocab_dictionary_from_phrases(
+    english_phrases: List[str],
+) -> Dict[str, List[str]]:
+    """Processes the english phrases to extract a vocabulary dictionary with keys
+    'verbs' and 'vocab'. This is so we can, for a given chunk of phrases we are learning (in
+    flash cards), extract the vocab, and then re-use that vocab to create a story to
+    listen to (practice long-form listening)
+
+    Returns: vocab_dict: {'verbs' : ['try', 'care', ...], 'vocab' : ['really', 'hello', ...]}
+    """
+
+    vocab_pos_tuples = extract_vocab_and_pos(
+        english_phrases
+    )  # [('trying', 'VERB'), etc]
+    vocab_dict = get_verb_and_vocab_lists(vocab_pos_tuples)
+    return vocab_dict
+
+
 def extract_vocab_and_pos(english_phrases: List[str]) -> List[Tuple[str, str]]:
     """Returns the (lemma and POS) for feeding into update_vocab_usage, as a list."""
     # Process vocabulary
