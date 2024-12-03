@@ -4,6 +4,7 @@ import sys
 import spacy
 from typing import Dict, List, Set, Tuple
 from spacy.tokens import Token
+from tqdm import tqdm
 
 
 def load_spacy_model():
@@ -75,6 +76,200 @@ def extract_vocab_and_pos(english_phrases: List[str]) -> List[Tuple[str, str]]:
                 vocab_set.add((token.lemma_.lower(), token.pos_))
 
     return vocab_set
+
+
+def get_vocab_dict_from_dialogue(story_dict: Dict) -> Dict[str, List[str]]:
+    """
+    For a given English dialogue story dictionary {'introduction' : {'dialogue' : [...] etc}, extracts the vocab used and places it into a dictionary
+    with keys 'verbs' and 'vocab', which is our common format.
+    Excludes punctuation, persons identified by spaCy, and the names 'sam' and 'alex'.
+    """
+
+    english_phrases = []
+    for story_part, content in story_dict.items():
+        for utterance in content.get("dialogue"):
+            english_phrases.append(utterance["text"])
+
+    return get_vocab_dictionary_from_phrases(english_phrases)
+
+
+def compare_vocab_overlap(vocab_dict_origin, vocab_dict_from_story):
+    """Compare vocabulary overlap between original and story-generated dictionaries.
+
+    Args:
+        vocab_dict_origin: Dictionary with 'verbs' and 'vocab' lists from original flashcards
+        vocab_dict_from_story: Dictionary with 'verbs' and 'vocab' lists extracted from generated story
+    """
+    # Process verbs
+    original_verbs = set(vocab_dict_origin["verbs"])
+    story_verbs = set(vocab_dict_from_story["verbs"])
+
+    # Process other vocabulary
+    original_vocab = set(vocab_dict_origin["vocab"])
+    story_vocab = set(vocab_dict_from_story["vocab"])
+
+    # Calculate overlaps and differences
+    verb_overlap = original_verbs.intersection(story_verbs)
+    new_verbs = story_verbs - original_verbs
+    unused_verbs = original_verbs - story_verbs
+
+    vocab_overlap = original_vocab.intersection(story_vocab)
+    new_vocab = story_vocab - original_vocab
+    unused_vocab = original_vocab - story_vocab
+
+    # Print analysis
+    print("=== VERB ANALYSIS ===")
+    print(f"Original verbs: {len(original_verbs)}")
+    print(f"Verbs used in story: {len(story_verbs)}")
+    print(
+        f"Verbs from original used: {len(verb_overlap)} ({(len(verb_overlap)/len(original_verbs)*100):.1f}%)"
+    )
+    print(f"New verbs introduced: {len(new_verbs)}")
+    if new_verbs:
+        print("Examples of new verbs:", list(new_verbs)[:5])
+
+    print("\n=== VOCABULARY ANALYSIS ===")
+    print(f"Original vocabulary: {len(original_vocab)}")
+    print(f"Vocabulary used in story: {len(story_vocab)}")
+    print(
+        f"Vocabulary from original used: {len(vocab_overlap)} ({(len(vocab_overlap)/len(original_vocab)*100):.1f}%)"
+    )
+    print(f"New vocabulary introduced: {len(new_vocab)}")
+    if new_vocab:
+        print("Examples of new vocabulary:", list(new_vocab)[:5])
+
+    return {
+        "verb_overlap": verb_overlap,
+        "new_verbs": new_verbs,
+        "unused_verbs": unused_verbs,
+        "vocab_overlap": vocab_overlap,
+        "new_vocab": new_vocab,
+        "unused_vocab": unused_vocab,
+    }
+
+
+def create_flashcard_index(flashcard_phrases: list[str]) -> dict:
+    """Create indexes mapping words to the flashcards containing them."""
+    nlp = load_spacy_model()
+
+    # Create indexes
+    verb_index = {}  # word -> set of flashcard indices
+    vocab_index = {}
+    flashcard_word_counts = []  # List of dicts with verb/vocab counts per card
+
+    for idx, phrase in tqdm(enumerate(flashcard_phrases)):
+        vocab_used = extract_vocab_and_pos([phrase])
+        verb_matches = set()
+        vocab_matches = set()
+
+        # Build indexes
+        for word, pos in vocab_used:
+            if pos in ["VERB", "AUX"]:
+                verb_matches.add(word)
+                if word not in verb_index:
+                    verb_index[word] = set()
+                verb_index[word].add(idx)
+            else:
+                vocab_matches.add(word)
+                if word not in vocab_index:
+                    vocab_index[word] = set()
+                vocab_index[word].add(idx)
+
+        # Store word counts
+        flashcard_word_counts.append(
+            {
+                "verb_count": len(verb_matches),
+                "vocab_count": len(vocab_matches),
+                "words": vocab_used,
+            }
+        )
+
+    # convert sets to lists so they can be JSON saved
+    for word in verb_index:
+        verb_index[word] = list(verb_index[word])
+    for word in vocab_index:
+        vocab_index[word] = list(vocab_index[word])
+    for count_dict in flashcard_word_counts:
+        count_dict["words"] = list(count_dict["words"])
+
+    return {
+        "verb_index": verb_index,
+        "vocab_index": vocab_index,
+        "word_counts": flashcard_word_counts,
+        "phrases": flashcard_phrases,
+    }
+
+
+def get_matching_flashcards_indexed(vocab_dict: dict, flashcard_index: dict) -> dict:
+    """Find matching flashcards using pre-computed index."""
+    remaining_verbs = set(vocab_dict["verbs"])
+    remaining_vocab = set(vocab_dict["vocab"])
+    selected_cards = []
+
+    while remaining_verbs or remaining_vocab:
+        # Find cards containing remaining words using index
+        candidate_cards = set()
+
+        # Get relevant card indices from indexes
+        for word in tqdm(remaining_verbs, desc="verb matches"):
+            if word in flashcard_index["verb_index"]:
+                candidate_cards.update(flashcard_index["verb_index"][word])
+
+        for word in tqdm(remaining_vocab, desc="vocab matches"):
+            if word in flashcard_index["vocab_index"]:
+                candidate_cards.update(flashcard_index["vocab_index"][word])
+
+        if not candidate_cards:
+            break
+
+        # Find best candidate
+        best_card_idx = None
+        best_score = 0
+        best_matches = None
+
+        for card_idx in tqdm(candidate_cards, desc="ranking cards"):
+            # Get pre-computed word info
+            card_words = flashcard_index["word_counts"][card_idx]["words"]
+
+            # Count matches with remaining words
+            verb_matches = {
+                word
+                for word, pos in card_words
+                if pos in ["VERB", "AUX"] and word in remaining_verbs
+            }
+            vocab_matches = {
+                word
+                for word, pos in card_words
+                if pos not in ["VERB", "AUX"] and word in remaining_vocab
+            }
+
+            score = len(verb_matches) + len(vocab_matches)
+            if score > best_score:
+                best_score = score
+                best_card_idx = card_idx
+                best_matches = {"verbs": verb_matches, "vocab": vocab_matches}
+
+        if best_score == 0:
+            break
+
+        # Add best card
+        selected_cards.append(
+            {
+                "phrase": flashcard_index["phrases"][best_card_idx],
+                "new_matches": best_score,
+                "verb_matches": best_matches["verbs"],
+                "vocab_matches": best_matches["vocab"],
+            }
+        )
+
+        # Update remaining words
+        remaining_verbs -= best_matches["verbs"]
+        remaining_vocab -= best_matches["vocab"]
+
+    return {
+        "selected_cards": selected_cards,
+        "remaining_vocab": {"verbs": remaining_verbs, "vocab": remaining_vocab},
+    }
 
 
 def extract_substring_matches(

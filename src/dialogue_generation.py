@@ -24,6 +24,74 @@ from src.nlp import extract_vocab_and_pos
 load_dotenv()  # so we can use environment variables for various global settings
 
 
+def get_story_prompt(verbs: list, vocab: list) -> str:
+    prompt = f"""Create a three-part story told through dialogue between Alex and Sam. Each part should be about 2 minutes long when spoken (approximately 300 words or 20-25 dialogue exchanges).
+
+Story Requirements:
+1. The story must have a clear narrative arc across three parts:
+   - Introduction (2 mins): Set up the situation and characters
+   - Development (2 mins): Present a challenge or complication
+   - Resolution (2 mins): Resolve the situation
+
+2. Use vocabulary naturally from these lists:
+   Verbs: {', '.join(verbs)}
+   Other words: {', '.join(vocab)}
+   
+3. Guidelines:
+   - Use at least 50% of the provided vocabulary across the story
+   - Mix the vocabulary naturally - don't force all words
+   - Keep dialogue exchanges realistic (about 10-15 words per utterance)
+   - Alternate between Alex and Sam
+
+4. Output Format:
+{{
+    "introduction": {{
+        "dialogue": [
+            {{"speaker": "Alex", "text": "..."}},
+            {{"speaker": "Sam", "text": "..."}}
+        ]
+    }},
+    "development": {{
+        "dialogue": [
+            {{"speaker": "Alex", "text": "..."}},
+            {{"speaker": "Sam", "text": "..."}}
+        ]
+    }},
+    "resolution": {{
+        "dialogue": [
+            {{"speaker": "Alex", "text": "..."}},
+            {{"speaker": "Sam", "text": "..."}}
+        ]
+    }}
+}}
+
+Create a natural, engaging story that primarily uses the provided vocabulary but allows for essential connecting words. The story should feel cohesive across all three parts while maintaining natural dialogue flow."""
+
+    return prompt
+
+
+def generate_story(vocab_dict: Dict[str, List[str]]) -> Dict:
+    """Extract dialogue from an LLM response.
+    Returns a dictionary with story parts as keys and dialogue lists as values.
+    """
+
+    prompt = get_story_prompt(verbs=vocab_dict["verbs"], vocab=vocab_dict["vocab"])
+    llm_response = anthropic_generate(prompt, max_tokens=4000)
+    extracted_json = extract_json_from_llm_response(llm_response)
+
+    if not extracted_json:
+        print("No valid dialogue found in the response")
+        return None
+
+    # Verify the structure of the extracted JSON
+    for part, content in extracted_json.items():
+        if not isinstance(content, dict) or "dialogue" not in content:
+            print(f"Invalid dialogue structure in part: {part}")
+            return None
+
+    return extracted_json
+
+
 def generate_story_plan(
     story_guide: str,
     verb_list: List[str],
@@ -368,17 +436,3 @@ def generate_dialogue(dialogue_prompt: str) -> Dict:
             return None
 
     return extracted_json
-
-
-def get_vocab_from_dialogue(dialogue: List[Dict[str, str]]) -> Set[Tuple[str, str]]:
-    """
-    For a given English dialogue, extracts the vocab used as the lemmas.
-    Returns a set of tuples of the form (lemma, POS) e.g. ("go", "VERB")
-    Excludes punctuation, persons identified by spaCy, and the names 'sam' and 'alex'.
-    """
-
-    english_phrases = []
-    for utterance in dialogue:
-        english_phrases.append(utterance["text"])
-
-    return extract_vocab_and_pos(english_phrases)

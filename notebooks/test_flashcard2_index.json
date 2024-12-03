@@ -1,0 +1,566 @@
+{
+  "verb_index": {
+    "let": [
+      0,
+      6
+    ],
+    "show": [
+      0
+    ],
+    "waste": [
+      1
+    ],
+    "stop": [
+      1
+    ],
+    "do": [
+      8,
+      2,
+      3
+    ],
+    "like": [
+      2
+    ],
+    "play": [
+      2
+    ],
+    "forget": [
+      3
+    ],
+    "wear": [
+      3
+    ],
+    "be": [
+      4
+    ],
+    "produce": [
+      4
+    ],
+    "accept": [
+      5
+    ],
+    "have": [
+      5
+    ],
+    "throw": [
+      6
+    ],
+    "pay": [
+      7
+    ],
+    "lift": [
+      8
+    ],
+    "try": [
+      8
+    ],
+    "live": [
+      9
+    ],
+    "want": [
+      9
+    ]
+  },
+  "vocab_index": {
+    "city": [
+      0
+    ],
+    "around": [
+      0
+    ],
+    "the": [
+      0,
+      2,
+      5
+    ],
+    "i": [
+      0,
+      9
+    ],
+    "you": [
+      0,
+      2,
+      5
+    ],
+    "time": [
+      1
+    ],
+    "this": [
+      1
+    ],
+    "on": [
+      1
+    ],
+    "at": [
+      2
+    ],
+    "guitar": [
+      2
+    ],
+    "night": [
+      2
+    ],
+    "a": [
+      9,
+      3,
+      4,
+      6
+    ],
+    "cycling": [
+      3
+    ],
+    "while": [
+      3
+    ],
+    "helmet": [
+      3
+    ],
+    "not": [
+      8,
+      3
+    ],
+    "to": [
+      3,
+      5,
+      7,
+      8,
+      9
+    ],
+    "we": [
+      4
+    ],
+    "soon": [
+      4
+    ],
+    "new": [
+      4
+    ],
+    "product": [
+      4
+    ],
+    "consequence": [
+      5
+    ],
+    "your": [
+      5
+    ],
+    "of": [
+      5
+    ],
+    "action": [
+      5
+    ],
+    "party": [
+      6
+    ],
+    "us": [
+      6
+    ],
+    "surprise": [
+      6
+    ],
+    "mom": [
+      6
+    ],
+    "for": [
+      6
+    ],
+    "attention": [
+      7
+    ],
+    "more": [
+      7
+    ],
+    "detail": [
+      7
+    ],
+    "furniture": [
+      8
+    ],
+    "alone": [
+      8
+    ],
+    "heavy": [
+      8
+    ],
+    "neighborhood": [
+      9
+    ],
+    "in": [
+      9
+    ],
+    "quiet": [
+      9
+    ]
+  },
+  "word_counts": [
+    {
+      "verb_count": 2,
+      "vocab_count": 5,
+      "words": [
+        [
+          "let",
+          "VERB"
+        ],
+        [
+          "city",
+          "NOUN"
+        ],
+        [
+          "around",
+          "ADP"
+        ],
+        [
+          "show",
+          "VERB"
+        ],
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "i",
+          "PRON"
+        ],
+        [
+          "you",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 3,
+      "words": [
+        [
+          "waste",
+          "VERB"
+        ],
+        [
+          "time",
+          "NOUN"
+        ],
+        [
+          "stop",
+          "VERB"
+        ],
+        [
+          "this",
+          "PRON"
+        ],
+        [
+          "on",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 3,
+      "vocab_count": 5,
+      "words": [
+        [
+          "at",
+          "ADP"
+        ],
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "like",
+          "VERB"
+        ],
+        [
+          "play",
+          "VERB"
+        ],
+        [
+          "guitar",
+          "NOUN"
+        ],
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "night",
+          "NOUN"
+        ],
+        [
+          "you",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 3,
+      "vocab_count": 6,
+      "words": [
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "forget",
+          "VERB"
+        ],
+        [
+          "cycling",
+          "NOUN"
+        ],
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "while",
+          "SCONJ"
+        ],
+        [
+          "helmet",
+          "NOUN"
+        ],
+        [
+          "not",
+          "PART"
+        ],
+        [
+          "to",
+          "PART"
+        ],
+        [
+          "wear",
+          "VERB"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 5,
+      "words": [
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "produce",
+          "VERB"
+        ],
+        [
+          "we",
+          "PRON"
+        ],
+        [
+          "soon",
+          "ADV"
+        ],
+        [
+          "new",
+          "ADJ"
+        ],
+        [
+          "product",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 7,
+      "words": [
+        [
+          "consequence",
+          "NOUN"
+        ],
+        [
+          "accept",
+          "VERB"
+        ],
+        [
+          "your",
+          "PRON"
+        ],
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "to",
+          "PART"
+        ],
+        [
+          "of",
+          "ADP"
+        ],
+        [
+          "action",
+          "NOUN"
+        ],
+        [
+          "have",
+          "VERB"
+        ],
+        [
+          "you",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 6,
+      "words": [
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "let",
+          "VERB"
+        ],
+        [
+          "party",
+          "NOUN"
+        ],
+        [
+          "throw",
+          "VERB"
+        ],
+        [
+          "us",
+          "PRON"
+        ],
+        [
+          "surprise",
+          "NOUN"
+        ],
+        [
+          "mom",
+          "NOUN"
+        ],
+        [
+          "for",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 4,
+      "words": [
+        [
+          "attention",
+          "NOUN"
+        ],
+        [
+          "more",
+          "ADJ"
+        ],
+        [
+          "to",
+          "ADP"
+        ],
+        [
+          "detail",
+          "NOUN"
+        ],
+        [
+          "pay",
+          "VERB"
+        ]
+      ]
+    },
+    {
+      "verb_count": 3,
+      "vocab_count": 5,
+      "words": [
+        [
+          "furniture",
+          "NOUN"
+        ],
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "not",
+          "PART"
+        ],
+        [
+          "lift",
+          "VERB"
+        ],
+        [
+          "alone",
+          "ADV"
+        ],
+        [
+          "to",
+          "PART"
+        ],
+        [
+          "try",
+          "VERB"
+        ],
+        [
+          "heavy",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 6,
+      "words": [
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "live",
+          "VERB"
+        ],
+        [
+          "neighborhood",
+          "NOUN"
+        ],
+        [
+          "in",
+          "ADP"
+        ],
+        [
+          "to",
+          "PART"
+        ],
+        [
+          "want",
+          "VERB"
+        ],
+        [
+          "quiet",
+          "ADJ"
+        ],
+        [
+          "i",
+          "PRON"
+        ]
+      ]
+    }
+  ],
+  "phrases": [
+    "Let me show you around the city",
+    "Stop wasting time on this",
+    "Do you like playing the guitar at night?",
+    "Don't forget to wear a helmet while cycling",
+    "We're producing a new product soon",
+    "You have to accept the consequences of your actions",
+    "Let's throw a surprise party for mom",
+    "Pay more attention to details",
+    "Don't try to lift heavy furniture alone",
+    "I want to live in a quiet neighborhood"
+  ]
+}
