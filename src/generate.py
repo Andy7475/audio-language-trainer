@@ -17,14 +17,10 @@ from src.audio_generation import (  # async_process_phrases,
 from src.config_loader import config
 from src.dialogue_generation import (
     add_usage_to_words,
-    generate_complete_dialogue_prompt,
-    generate_dialogue,
-    # generate_dialogue_prompt, generate_recap,
-    generate_story_plan,
     get_least_used_words,
-    get_vocab_from_dialogue,
     update_vocab_usage,
 )
+from src.nlp import get_vocab_dict_from_dialogue
 from src.phrase import generate_practice_phrases_from_dialogue
 from src.translation import translate_dialogue, translate_phrases
 
@@ -122,7 +118,7 @@ def create_story_plan_and_dialogue(
     # Organize dialogue into story_data_dict
     for story_part, dialogue in complete_dialogue.items():
         dialogue = dialogue.get("dialogue")
-        vocab_used = get_vocab_from_dialogue(dialogue)
+        vocab_used = get_vocab_dict_from_dialogue(dialogue)
         all_vocab_used.update(vocab_used)
         story_data_dict[story_part]["dialogue"] = dialogue
         story_data_dict[story_part]["dialogue_generation_prompt"] = dialogue_prompt
@@ -157,12 +153,15 @@ def add_translations(story_data_dict):
             translated_dialogue = translate_dialogue(dialogue)
             print(f"Translated dialogue")
             story_data_dict[story_part]["translated_dialogue"] = translated_dialogue
-        corrected_phrase_list = story_data_dict[story_part]["corrected_phrase_list"]
-        translated_phrase_list = translate_phrases(corrected_phrase_list)
 
-        story_data_dict[story_part]["translated_phrase_list"] = translated_phrase_list
+        corrected_phrase_list = story_data_dict[story_part].get("corrected_phrase_list")
+        if corrected_phrase_list:
+            translated_phrase_list = translate_phrases(corrected_phrase_list)
 
-        print(f"Translated phrases\n")
+            story_data_dict[story_part][
+                "translated_phrase_list"
+            ] = translated_phrase_list
+            print(f"Translated phrases\n")
 
     return story_data_dict
 
@@ -189,14 +188,15 @@ def add_audio(story_data_dict, source_language_audio: bool = False):
 
             print(f"Text-to-speech for dialogue done")
         # now do phrases asynchronoulsy (still unsure if Google API allows this, not getting huge speed up)
-        translated_phrases = story_data_dict[story_part]["translated_phrase_list"]
-        translated_phrases_audio = generate_translated_phrase_audio(
-            translated_phrases, source_language_audio
-        )
-        story_data_dict[story_part][
-            "translated_phrase_list_audio"
-        ] = translated_phrases_audio
-        print(f"Text-to-speech for phrases done\n")
+        translated_phrases = story_data_dict[story_part].get("translated_phrase_list")
+        if translated_phrases:
+            translated_phrases_audio = generate_translated_phrase_audio(
+                translated_phrases, source_language_audio
+            )
+            story_data_dict[story_part][
+                "translated_phrase_list_audio"
+            ] = translated_phrases_audio
+            print(f"Text-to-speech for phrases done\n")
 
     return story_data_dict
 

@@ -4,6 +4,7 @@ import sys
 import spacy
 from typing import Dict, List, Set, Tuple
 from spacy.tokens import Token
+from tqdm import tqdm
 
 
 def load_spacy_model():
@@ -75,6 +76,279 @@ def extract_vocab_and_pos(english_phrases: List[str]) -> List[Tuple[str, str]]:
                 vocab_set.add((token.lemma_.lower(), token.pos_))
 
     return vocab_set
+
+
+def get_vocab_dict_from_dialogue(
+    story_dict: Dict, limit_story_parts: list = None
+) -> Dict[str, List[str]]:
+    """
+    For a given English dialogue story dictionary {'introduction' : {'dialogue' : [...] etc}, extracts the vocab used and places it into a dictionary
+    with keys 'verbs' and 'vocab', which is our common format.
+    Excludes punctuation, persons identified by spaCy, and the names 'sam' and 'alex'.
+    """
+
+    if limit_story_parts:
+        story_parts_to_process = limit_story_parts
+    else:
+        story_parts_to_process = list(story_dict.keys())  # all of them
+
+    english_phrases = []
+    for story_part in story_parts_to_process:
+        content = story_dict.get(story_part)
+        if content:
+            for utterance in content.get("dialogue"):
+                english_phrases.append(utterance["text"])
+        else:
+            raise KeyError(f"We are missing story_part {story_part} in the dictionary")
+
+    return get_vocab_dictionary_from_phrases(english_phrases)
+
+
+def find_missing_vocabulary(vocab_dict_source: dict, vocab_dict_target: dict) -> dict:
+    """Compare vocabulary between source flashcards and target story to find gaps in coverage.
+
+    Identifies which words in the target story aren't covered by existing flashcards,
+    helping determine what new flashcards need to be created.
+
+    Args:
+        vocab_dict_source: Dictionary with 'verbs' and 'vocab' lists from existing flashcards
+        vocab_dict_target: Dictionary with 'verbs' and 'vocab' lists from target story
+
+    Returns:
+        Dictionary containing:
+        - missing_vocab: Dictionary with 'verbs' and 'vocab' lists containing uncovered words
+        - coverage_stats: Dictionary with percentage coverage statistics
+    """
+    # Convert to sets for set operations
+    source_verbs = set(vocab_dict_source["verbs"])
+    target_verbs = set(vocab_dict_target["verbs"])
+
+    source_vocab = set(vocab_dict_source["vocab"])
+    target_vocab = set(vocab_dict_target["vocab"])
+
+    # Find words in target not covered by source
+    uncovered_verbs = target_verbs - source_verbs
+    uncovered_vocab = target_vocab - source_vocab
+
+    # Calculate coverage percentages
+    verb_coverage = (
+        len(target_verbs - uncovered_verbs) / len(target_verbs) * 100
+        if target_verbs
+        else 100
+    )
+    vocab_coverage = (
+        len(target_vocab - uncovered_vocab) / len(target_vocab) * 100
+        if target_vocab
+        else 100
+    )
+
+    # Print analysis
+    print("=== VOCABULARY COVERAGE ANALYSIS ===")
+    print(f"Target verbs covered by flashcards: {verb_coverage:.1f}%")
+    print(f"Target vocabulary covered by flashcards: {vocab_coverage:.1f}%")
+
+    if uncovered_verbs:
+        print("\nVerbs needing new flashcards:")
+        print(list(uncovered_verbs)[:5], "..." if len(uncovered_verbs) > 5 else "")
+
+    if uncovered_vocab:
+        print("\nVocabulary needing new flashcards:")
+        print(list(uncovered_vocab)[:5], "..." if len(uncovered_vocab) > 5 else "")
+
+    return {
+        "missing_vocab": {
+            "verbs": list(uncovered_verbs),
+            "vocab": list(uncovered_vocab),
+        },
+        "coverage_stats": {
+            "verb_coverage": verb_coverage,
+            "vocab_coverage": vocab_coverage,
+            "total_target_verbs": len(target_verbs),
+            "total_target_vocab": len(target_vocab),
+        },
+    }
+
+
+def process_phrase_vocabulary(phrase: str) -> tuple[set, set, set]:
+    """Process a single phrase to extract verb and vocab matches
+
+    Returns:
+        tuple containing:
+        - set of (word, pos) tuples for all words
+        - set of verb matches
+        - set of vocab matches
+    """
+    vocab_used = extract_vocab_and_pos([phrase])
+    verb_matches = set()
+    vocab_matches = set()
+
+    for word, pos in vocab_used:
+        if pos in ["VERB", "AUX"]:
+            verb_matches.add(word)
+        else:
+            vocab_matches.add(word)
+
+    return vocab_used, verb_matches, vocab_matches
+
+
+def create_flashcard_index(flashcard_phrases: list[str]) -> dict:
+    """Create indexes mapping words to the flashcards containing them."""
+    verb_index = {}  # word -> set of flashcard indices
+    vocab_index = {}
+    flashcard_word_counts = []
+
+    for idx, phrase in tqdm(
+        enumerate(flashcard_phrases),
+        desc="Indexes phrases...",
+        total=len(flashcard_phrases),
+    ):
+        vocab_used, verb_matches, vocab_matches = process_phrase_vocabulary(phrase)
+
+        # Build indexes
+        for word in verb_matches:
+            if word not in verb_index:
+                verb_index[word] = set()
+            verb_index[word].add(idx)
+
+        for word in vocab_matches:
+            if word not in vocab_index:
+                vocab_index[word] = set()
+            vocab_index[word].add(idx)
+
+        # Store word counts
+        flashcard_word_counts.append(
+            {
+                "verb_count": len(verb_matches),
+                "vocab_count": len(vocab_matches),
+                "words": list(vocab_used),
+            }
+        )
+
+    # Convert sets to lists for JSON
+    for word in verb_index:
+        verb_index[word] = list(verb_index[word])
+    for word in vocab_index:
+        vocab_index[word] = list(vocab_index[word])
+
+    return {
+        "verb_index": verb_index,
+        "vocab_index": vocab_index,
+        "word_counts": flashcard_word_counts,
+        "phrases": flashcard_phrases,
+    }
+
+
+def find_candidate_cards(
+    remaining_verbs: set, remaining_vocab: set, flashcard_index: dict
+) -> set:
+    """Find all cards that contain any remaining words"""
+    candidate_cards = set()
+
+    # Get all cards containing remaining verbs
+    for word in remaining_verbs:
+        if word in flashcard_index["verb_index"]:
+            candidate_cards.update(flashcard_index["verb_index"][word])
+
+    # Get all cards containing remaining vocab
+    for word in remaining_vocab:
+        if word in flashcard_index["vocab_index"]:
+            candidate_cards.update(flashcard_index["vocab_index"][word])
+
+    return candidate_cards
+
+
+def find_best_card(
+    candidate_cards: set,
+    remaining_verbs: set,
+    remaining_vocab: set,
+    flashcard_index: dict,
+) -> tuple[int, dict]:
+    """Find card with most matches from candidates
+
+    Returns:
+        tuple of (best_card_index, match_info)
+        where match_info contains verb and vocab matches
+    """
+    best_card_idx = None
+    best_score = 0
+    best_matches = None
+
+    for card_idx in candidate_cards:
+        card_words = flashcard_index["word_counts"][card_idx]["words"]
+
+        # Count matches with remaining words
+        verb_matches = {
+            word
+            for word, pos in card_words
+            if pos in ["VERB", "AUX"] and word in remaining_verbs
+        }
+        vocab_matches = {
+            word
+            for word, pos in card_words
+            if pos not in ["VERB", "AUX"] and word in remaining_vocab
+        }
+
+        score = len(verb_matches) + len(vocab_matches)
+        if score > best_score:
+            best_score = score
+            best_card_idx = card_idx
+            best_matches = {"verbs": verb_matches, "vocab": vocab_matches}
+
+    return best_card_idx, best_matches
+
+
+def get_matching_flashcards_indexed(vocab_dict: dict, flashcard_index: dict) -> dict:
+    """Find minimal set of flashcards that cover the vocabulary.
+
+    Prioritizes cards that contain the most uncovered words to minimize
+    the total number of cards needed.
+
+    Args:
+        vocab_dict: Dictionary with 'verbs' and 'vocab' lists to cover
+        flashcard_index: Pre-computed index mapping words to flashcard indices
+
+    Returns:
+        Dictionary containing:
+        - selected_cards: List of selected flashcards with match info
+        - remaining_vocab: Words not found in any flashcard
+    """
+    remaining_verbs = set(vocab_dict["verbs"])
+    remaining_vocab = set(vocab_dict["vocab"])
+    selected_cards = []
+
+    while remaining_verbs or remaining_vocab:
+        # Find all cards containing any remaining words
+        candidate_cards = find_candidate_cards(
+            remaining_verbs, remaining_vocab, flashcard_index
+        )
+        if not candidate_cards:
+            break
+
+        # Find card with most matches
+        best_card_idx, best_matches = find_best_card(
+            candidate_cards, remaining_verbs, remaining_vocab, flashcard_index
+        )
+        if not best_matches:
+            break
+
+        # Add best card to selection
+        selected_cards.append(
+            {
+                "phrase": flashcard_index["phrases"][best_card_idx],
+                "new_matches": len(best_matches["verbs"]) + len(best_matches["vocab"]),
+                "verb_matches": best_matches["verbs"],
+                "vocab_matches": best_matches["vocab"],
+            }
+        )
+
+        # Remove covered words
+        remaining_verbs -= best_matches["verbs"]
+        remaining_vocab -= best_matches["vocab"]
+
+    return {
+        "selected_cards": selected_cards,
+        "remaining_vocab": {"verbs": remaining_verbs, "vocab": remaining_vocab},
+    }
 
 
 def extract_substring_matches(
