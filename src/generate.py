@@ -17,10 +17,6 @@ from src.audio_generation import (  # async_process_phrases,
 from src.config_loader import config
 from src.dialogue_generation import (
     add_usage_to_words,
-    generate_complete_dialogue_prompt,
-    generate_dialogue,
-    # generate_dialogue_prompt, generate_recap,
-    generate_story_plan,
     get_least_used_words,
     update_vocab_usage,
 )

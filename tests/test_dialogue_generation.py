@@ -5,101 +5,8 @@ from unittest.mock import mock_open, patch, ANY
 from src.dialogue_generation import add_usage_to_words
 import pytest
 
-from src.dialogue_generation import (
-    generate_dialogue_prompt,
-    get_vocab_from_dialogue,
-    select_grammar_concepts,
-    update_grammar_concept_usage,
-)
-
 from src.utils import update_vocab_usage
-
-
-@pytest.fixture
-def mock_grammar_concepts():
-    return {
-        "verb_tenses": {
-            "Simple Present": {"use": True, "times_seen": 0},
-            "Present Continuous": {"use": True, "times_seen": 1},
-            "Simple Past": {"use": False, "times_seen": 2},
-        },
-        "noun_forms": {
-            "Singular": {"use": True, "times_seen": 0},
-            "Plural": {"use": True, "times_seen": 3},
-        },
-    }
-
-
-def test_select_grammar_concepts(mock_grammar_concepts):
-    selected = select_grammar_concepts(mock_grammar_concepts, 2)
-    assert len(selected) == 2
-    assert "verb_tenses - Simple Present" in selected
-    assert "noun_forms - Singular" in selected
-
-
-def test_select_grammar_concepts_more_than_available(mock_grammar_concepts):
-    selected = select_grammar_concepts(mock_grammar_concepts, 10)
-    assert len(selected) == 4
-    assert set(selected) == {
-        "verb_tenses - Simple Present",
-        "verb_tenses - Present Continuous",
-        "noun_forms - Singular",
-        "noun_forms - Plural",
-    }
-
-
-def test_update_grammar_concept_usage(mock_grammar_concepts):
-    used_concepts = ["verb_tenses - Simple Present", "noun_forms - Plural"]
-
-    with patch("builtins.open", mock_open()) as mock_file, patch(
-        "json.dump"
-    ) as mock_json_dump:
-        update_grammar_concept_usage(mock_grammar_concepts, used_concepts)
-
-    assert mock_grammar_concepts["verb_tenses"]["Simple Present"]["times_seen"] == 1
-    assert mock_grammar_concepts["noun_forms"]["Plural"]["times_seen"] == 4
-    assert mock_grammar_concepts["verb_tenses"]["Present Continuous"]["times_seen"] == 1
-
-    mock_file.assert_called_once_with(config.GRAMMAR_USAGE_PATH, "w")
-    mock_json_dump.assert_called_once_with(mock_grammar_concepts, ANY, indent=2)
-
-
-@patch("src.dialogue_generation.load_json")
-@patch("src.dialogue_generation.select_grammar_concepts")
-@patch("src.dialogue_generation.update_grammar_concept_usage")
-def test_generate_dialogue_prompt(
-    mock_update_usage, mock_select_concepts, mock_load_json
-):
-    mock_load_json.return_value = {"mock": "grammar_concepts"}
-    mock_select_concepts.return_value = [
-        "verb_tenses - Simple Present",
-        "noun_forms - Plural",
-    ]
-
-    prompt = generate_dialogue_prompt(
-        "Exposition",
-        "Introduce the characters",
-        "Last time, Alex and Sam met at the library.",
-        verb_usage_str="""{'can' : 2, 'run' : 0, 'jump' : 0}""",
-        verb_use_count=1,
-        vocab_use_count=2,
-        vocab_usage_str="""{'hello' : 1}""",
-        grammar_concept_count=2,
-        grammar_use_count=2,
-    )
-
-    assert "jump" in prompt
-    assert "hello" in prompt
-    assert "verb_tenses - Simple Present, noun_forms - Plural" in prompt
-    assert "Exposition: Introduce the characters" in prompt
-    assert "Last time, Alex and Sam met at the library." in prompt
-
-    mock_load_json.assert_called_once_with(config.GRAMMAR_USAGE_PATH)
-    mock_select_concepts.assert_called_once_with({"mock": "grammar_concepts"}, 2)
-    mock_update_usage.assert_called_once_with(
-        {"mock": "grammar_concepts"},
-        ["verb_tenses - Simple Present", "noun_forms - Plural"],
-    )
+from src.nlp import get_vocab_dict_from_dialogue
 
 
 # Mock the Google Cloud clients
@@ -146,17 +53,17 @@ def expected_vocab() -> Set[Tuple[str, str]]:
     }
 
 
-def test_get_vocab_from_dialogue(
+def test_get_vocab_dict_from_dialogue(
     sample_dialogue: List[Dict[str, str]], expected_vocab: Set[Tuple[str, str]]
 ):
-    result = get_vocab_from_dialogue(sample_dialogue)
+    result = get_vocab_dict_from_dialogue(sample_dialogue)
     assert result == expected_vocab, f"Expected {expected_vocab}, but got {result}"
 
 
 # Additional test cases
 def test_empty_dialogue():
     assert (
-        get_vocab_from_dialogue([]) == set()
+        get_vocab_dict_from_dialogue([]) == set()
     ), "Empty dialogue should return an empty set"
 
 
@@ -170,7 +77,7 @@ def test_dialogue_with_punctuation():
         ("you", "PRON"),
     }
     assert (
-        get_vocab_from_dialogue(dialogue) == expected
+        get_vocab_dict_from_dialogue(dialogue) == expected
     ), "Punctuation should be ignored"
 
 
@@ -187,7 +94,7 @@ def test_dialogue_with_repeated_words():
         ("sleep", "VERB"),
     }
     assert (
-        get_vocab_from_dialogue(dialogue) == expected
+        get_vocab_dict_from_dialogue(dialogue) == expected
     ), "Repeated words should only appear once in the output"
 
 

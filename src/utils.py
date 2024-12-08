@@ -330,6 +330,7 @@ def load_text_file(file_path) -> List[str]:
 def load_json(file_path) -> dict:
     """Returns {} if JSON does not exist"""
     if not os.path.exists(file_path):
+        print("file does not exist, returning empty dict")
         return {}
     with open(file_path, "r") as file:
         return json.load(file)
