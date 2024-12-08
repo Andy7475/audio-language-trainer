@@ -104,58 +104,68 @@ def get_vocab_dict_from_dialogue(
     return get_vocab_dictionary_from_phrases(english_phrases)
 
 
-def compare_vocab_overlap(vocab_dict_origin, vocab_dict_from_story):
-    """Compare vocabulary overlap between original and story-generated dictionaries.
+def find_missing_vocabulary(vocab_dict_source: dict, vocab_dict_target: dict) -> dict:
+    """Compare vocabulary between source flashcards and target story to find gaps in coverage.
+
+    Identifies which words in the target story aren't covered by existing flashcards,
+    helping determine what new flashcards need to be created.
 
     Args:
-        vocab_dict_origin: Dictionary with 'verbs' and 'vocab' lists from original flashcards
-        vocab_dict_from_story: Dictionary with 'verbs' and 'vocab' lists extracted from generated story
+        vocab_dict_source: Dictionary with 'verbs' and 'vocab' lists from existing flashcards
+        vocab_dict_target: Dictionary with 'verbs' and 'vocab' lists from target story
+
+    Returns:
+        Dictionary containing:
+        - missing_vocab: Dictionary with 'verbs' and 'vocab' lists containing uncovered words
+        - coverage_stats: Dictionary with percentage coverage statistics
     """
-    # Process verbs
-    original_verbs = set(vocab_dict_origin["verbs"])
-    story_verbs = set(vocab_dict_from_story["verbs"])
+    # Convert to sets for set operations
+    source_verbs = set(vocab_dict_source["verbs"])
+    target_verbs = set(vocab_dict_target["verbs"])
 
-    # Process other vocabulary
-    original_vocab = set(vocab_dict_origin["vocab"])
-    story_vocab = set(vocab_dict_from_story["vocab"])
+    source_vocab = set(vocab_dict_source["vocab"])
+    target_vocab = set(vocab_dict_target["vocab"])
 
-    # Calculate overlaps and differences
-    verb_overlap = original_verbs.intersection(story_verbs)
-    new_verbs = story_verbs - original_verbs
-    unused_verbs = original_verbs - story_verbs
+    # Find words in target not covered by source
+    uncovered_verbs = target_verbs - source_verbs
+    uncovered_vocab = target_vocab - source_vocab
 
-    vocab_overlap = original_vocab.intersection(story_vocab)
-    new_vocab = story_vocab - original_vocab
-    unused_vocab = original_vocab - story_vocab
+    # Calculate coverage percentages
+    verb_coverage = (
+        len(target_verbs - uncovered_verbs) / len(target_verbs) * 100
+        if target_verbs
+        else 100
+    )
+    vocab_coverage = (
+        len(target_vocab - uncovered_vocab) / len(target_vocab) * 100
+        if target_vocab
+        else 100
+    )
 
     # Print analysis
-    print("=== VERB ANALYSIS ===")
-    print(f"Original verbs: {len(original_verbs)}")
-    print(f"Verbs used in story: {len(story_verbs)}")
-    print(
-        f"Verbs from original used: {len(verb_overlap)} ({(len(verb_overlap)/len(original_verbs)*100):.1f}%)"
-    )
-    print(f"New verbs introduced: {len(new_verbs)}")
-    if new_verbs:
-        print("Examples of new verbs:", list(new_verbs)[:5])
+    print("=== VOCABULARY COVERAGE ANALYSIS ===")
+    print(f"Target verbs covered by flashcards: {verb_coverage:.1f}%")
+    print(f"Target vocabulary covered by flashcards: {vocab_coverage:.1f}%")
 
-    print("\n=== VOCABULARY ANALYSIS ===")
-    print(f"Original vocabulary: {len(original_vocab)}")
-    print(f"Vocabulary used in story: {len(story_vocab)}")
-    print(
-        f"Vocabulary from original used: {len(vocab_overlap)} ({(len(vocab_overlap)/len(original_vocab)*100):.1f}%)"
-    )
-    print(f"New vocabulary introduced: {len(new_vocab)}")
-    if new_vocab:
-        print("Examples of new vocabulary:", list(new_vocab)[:5])
+    if uncovered_verbs:
+        print("\nVerbs needing new flashcards:")
+        print(list(uncovered_verbs)[:5], "..." if len(uncovered_verbs) > 5 else "")
+
+    if uncovered_vocab:
+        print("\nVocabulary needing new flashcards:")
+        print(list(uncovered_vocab)[:5], "..." if len(uncovered_vocab) > 5 else "")
 
     return {
-        "verb_overlap": verb_overlap,
-        "new_verbs": new_verbs,
-        "unused_verbs": unused_verbs,
-        "vocab_overlap": vocab_overlap,
-        "new_vocab": new_vocab,
-        "unused_vocab": unused_vocab,
+        "missing_vocab": {
+            "verbs": list(uncovered_verbs),
+            "vocab": list(uncovered_vocab),
+        },
+        "coverage_stats": {
+            "verb_coverage": verb_coverage,
+            "vocab_coverage": vocab_coverage,
+            "total_target_verbs": len(target_verbs),
+            "total_target_vocab": len(target_vocab),
+        },
     }
 
 

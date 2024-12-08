@@ -45,7 +45,7 @@ def generate_phrases_from_vocab_dict(
         if len(vocab_list_set) < 150:
             # Switch to minimal phrase generation and use any verbs
             response = generate_minimal_phrases_with_llm(
-                list(vocab_list_set),
+                list(vocab_list_set) + list(verb_list_set),
                 length_phrase=length_phrase,
                 verbs_per_phrase=verbs_per_phrase,
             )
