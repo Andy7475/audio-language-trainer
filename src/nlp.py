@@ -1,10 +1,115 @@
 import re
 import subprocess
 import sys
-import spacy
 from typing import Dict, List, Set, Tuple
+
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+import spacy
+from plotly.subplots import make_subplots
 from spacy.tokens import Token
 from tqdm import tqdm
+
+
+def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
+    """
+    Plot vocabulary growth with cumulative total, new words per phrase, rolling mean,
+    and overall mean.
+
+    Args:
+        phrases: List of phrases to analyze
+        window: Window size for rolling mean calculation
+    """
+    vocab = set()
+    cumulative_counts = []
+    new_words_per_phrase = []
+
+    # Calculate new words and cumulative counts
+    for phrase in phrases:
+        current_words = set(phrase.lower().split())
+        new_words = len(current_words - vocab)
+        new_words_per_phrase.append(new_words)
+
+        vocab.update(current_words)
+        cumulative_counts.append(len(vocab))
+
+    # Calculate rolling mean and overall mean
+    df = pd.DataFrame({"new_words": new_words_per_phrase})
+    rolling_mean = (
+        df["new_words"].rolling(window=min(window, len(phrases)), min_periods=1).mean()
+    )
+    overall_mean = np.mean(new_words_per_phrase)
+
+    # Create plot with secondary y-axis
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Add cumulative vocabulary trace
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(phrases) + 1)),
+            y=cumulative_counts,
+            name="Total Vocabulary",
+            line=dict(color="blue"),
+        ),
+        secondary_y=False,
+    )
+
+    # Add new words per phrase bars
+    fig.add_trace(
+        go.Bar(
+            x=list(range(1, len(phrases) + 1)),
+            y=new_words_per_phrase,
+            name="New Words per Phrase",
+            opacity=0.3,
+            marker_color="green",
+        ),
+        secondary_y=True,
+    )
+
+    # Add rolling mean line
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(phrases) + 1)),
+            y=rolling_mean,
+            name=f"Rolling Mean (window={min(window, len(phrases))})",
+            line=dict(color="red"),
+        ),
+        secondary_y=True,
+    )
+
+    # Add overall mean line
+    fig.add_trace(
+        go.Scatter(
+            x=[1, len(phrases)],
+            y=[overall_mean, overall_mean],
+            name="Overall Mean",
+            line=dict(color="purple", dash="dot"),
+        ),
+        secondary_y=True,
+    )
+
+    # Update layout
+    fig.update_layout(
+        title="Vocabulary Growth Analysis",
+        xaxis_title="Phrase Number",
+        showlegend=True,
+        # Add margin to ensure legend is visible
+        margin=dict(r=150),
+        # Improve legend formatting
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.05),
+    )
+
+    # Update y-axes titles
+    fig.update_yaxes(
+        title_text="Total Unique Words", secondary_y=False, gridcolor="lightgrey"
+    )
+    fig.update_yaxes(
+        title_text="New Words per Phrase", secondary_y=True, gridcolor="lightgrey"
+    )
+
+    # Show plot
+    fig.show()
 
 
 def load_spacy_model():
@@ -527,3 +632,183 @@ def filter_matching_phrases(
             matching_phrases.append(phrase)
 
     return matching_phrases
+
+
+from typing import Dict, List, Set, Tuple
+
+import numpy as np
+import pandas as pd
+import spacy
+from tqdm import tqdm
+
+
+def prepare_phrase_dataframe(phrases: List[str]) -> pd.DataFrame:
+    """Create DataFrame with parsed phrases and extract content words.
+
+    Args:
+        phrases: List of phrases to analyze
+
+    Returns:
+        DataFrame with columns:
+            - phrase: Original phrase
+            - doc: Spacy Doc object
+            - content_words: Set of lemmatized content words
+    """
+    nlp = spacy.load("en_core_web_sm")
+
+    # Create base dataframe
+    df = pd.DataFrame({"phrase": phrases})
+
+    # Parse phrases
+    df["doc"] = [
+        nlp(phrase.lower()) for phrase in tqdm(phrases, desc="Parsing phrases")
+    ]
+
+    # Extract content words
+    df["content_words"] = df["doc"].apply(
+        lambda doc: {
+            token.lemma_ for token in doc if not token.is_stop and token.pos_ != "PUNCT"
+        }
+    )
+
+    # Calculate total words per phrase
+    df["total_words"] = df["content_words"].apply(len)
+
+    return df
+
+
+def calculate_new_words(row: pd.Series, known_vocab: Set[str]) -> Dict:
+    """Calculate new vocabulary metrics for a row."""
+    new_words = row["content_words"] - known_vocab
+    return {
+        "new_words": len(new_words),
+        "new_vocab": new_words,
+        "new_ratio": (
+            len(new_words) / row["total_words"] if row["total_words"] > 0 else 0
+        ),
+    }
+
+
+def optimize_sequence(df: pd.DataFrame, window_size: int = 5) -> pd.DataFrame:
+    """Optimize the sequence of phrases for steady vocabulary acquisition.
+
+    Args:
+        df: DataFrame with parsed phrases (from prepare_phrase_dataframe)
+        window_size: Size of rolling window for local optimization
+
+    Returns:
+        DataFrame with optimized sequence and metrics
+    """
+    # Calculate ideal rate
+    total_vocab = set().union(*df["content_words"].values)
+    ideal_rate = len(total_vocab) / len(df)
+
+    # Initialize result storage
+    result_indices = []
+    known_vocab = set()
+    available_indices = set(df.index)
+
+    # Choose initial phrase closest to ideal rate
+    initial_metrics = df.apply(
+        lambda row: calculate_new_words(row, known_vocab), axis=1
+    ).apply(pd.Series)
+
+    best_start_idx = (initial_metrics["new_ratio"] - ideal_rate).abs().idxmin()
+    result_indices.append(best_start_idx)
+    available_indices.remove(best_start_idx)
+    known_vocab.update(df.loc[best_start_idx, "content_words"])
+
+    # Build rest of sequence
+    with tqdm(total=len(df) - 1, desc="Optimizing sequence") as pbar:
+        while available_indices:
+            # Calculate rolling mean of recent phrases
+            if len(result_indices) >= window_size:
+                recent_indices = result_indices[-window_size:]
+                recent_new_words = np.mean(
+                    [
+                        len(df.loc[idx, "content_words"] - known_vocab)
+                        for idx in recent_indices
+                    ]
+                )
+            else:
+                recent_new_words = ideal_rate
+
+            # Score remaining phrases
+            candidates = []
+            for idx in available_indices:
+                metrics = calculate_new_words(df.loc[idx], known_vocab)
+                score = abs(metrics["new_words"] - ideal_rate)
+                # Add penalty for big deviations from recent average
+                local_penalty = abs(metrics["new_words"] - recent_new_words)
+                score += local_penalty * 0.5  # Weight local smoothness
+                candidates.append((idx, metrics, score))
+
+            # Select best candidate
+            best_idx = min(candidates, key=lambda x: x[2])[0]
+            result_indices.append(best_idx)
+            available_indices.remove(best_idx)
+            known_vocab.update(df.loc[best_idx, "content_words"])
+            pbar.update(1)
+
+    # Create result DataFrame
+    result_df = df.loc[result_indices].copy()
+    result_df["sequence_position"] = range(len(result_df))
+
+    # Calculate final metrics
+    metrics = []
+    known = set()
+    for _, row in result_df.iterrows():
+        m = calculate_new_words(row, known)
+        metrics.append(m)
+        known.update(row["content_words"])
+
+    metrics_df = pd.DataFrame(metrics)
+    result_df = pd.concat([result_df, metrics_df], axis=1)
+
+    return result_df
+
+
+def analyze_sequence(df: pd.DataFrame) -> Dict:
+    """Analyze and print statistics about the optimized sequence."""
+    stats = {
+        "avg_new_words": df["new_words"].mean(),
+        "std_new_words": df["new_words"].std(),
+        "min_new_words": df["new_words"].min(),
+        "max_new_words": df["new_words"].max(),
+        "total_phrases": len(df),
+        "cumulative_vocab": len(set().union(*df["content_words"].values)),
+    }
+
+    print("\nSequence Analysis:")
+    print(f"Total phrases: {stats['total_phrases']}")
+    print(f"Total vocabulary: {stats['cumulative_vocab']}")
+    print(f"Average new words per phrase: {stats['avg_new_words']:.2f}")
+    print(f"Standard deviation: {stats['std_new_words']:.2f}")
+    print(f"Min new words: {stats['min_new_words']}")
+    print(f"Max new words: {stats['max_new_words']}")
+
+    return stats
+
+
+def optimize_vocab_sequence(
+    phrases: List[str], window_size: int = 5
+) -> Tuple[pd.DataFrame, Dict]:
+    """Main function to optimize phrase sequence for vocabulary acquisition.
+
+    Args:
+        phrases: List of phrases to optimize
+        window_size: Size of rolling window for local optimization
+
+    Returns:
+        Tuple of (optimized DataFrame, statistics dictionary)
+    """
+    # Prepare data
+    df = prepare_phrase_dataframe(phrases)
+
+    # Optimize sequence
+    optimized_df = optimize_sequence(df, window_size)
+
+    # Analyze results
+    stats = analyze_sequence(optimized_df)
+
+    return optimized_df, stats
