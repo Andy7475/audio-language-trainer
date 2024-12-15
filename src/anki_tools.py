@@ -1,23 +1,18 @@
-import csv
-import io
-import json
 import os
 import re
 import shutil
-import sqlite3
 import tempfile
 import urllib.parse
 import uuid
-import zipfile
 from collections import defaultdict
 from random import shuffle
 from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
+import pandas as pd
 import pysnooper
 import requests
 from anki.collection import Collection
-from anki.models import NotetypeDict
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from PIL import Image
@@ -25,7 +20,6 @@ from pydub import AudioSegment
 from tqdm import tqdm
 
 from src.config_loader import config
-from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
 from src.images import add_image_paths
 from src.translation import tokenize_text, translate_from_english
@@ -328,14 +322,11 @@ def print_deck_info(collection_path: str):
                 print(f"- {file}")
 
 
-import pandas as pd
-from typing import Optional, Dict, Any
-
-
 def get_deck_contents(
     deck_name: str,
     collection_path: Optional[str] = None,
     fields_to_extract: Optional[list[str]] = None,
+    include_stats: bool = True,
 ) -> pd.DataFrame:
     """
     Get contents of a specific Anki deck as a pandas DataFrame.
@@ -343,34 +334,31 @@ def get_deck_contents(
     Args:
         deck_name: Name of the deck to analyze
         collection_path: Optional path to collection file. Uses ANKI_COLLECTION_PATH from env if None
-        fields_to_extract: Optional list of field names to extract. If None, extracts all fields.
+        fields_to_extract: Optional list of field names to extract. If None, extracts all fields
+        include_stats: Whether to include card statistics (ease, intervals, etc.)
 
     Returns:
-        pd.DataFrame with columns for each note field plus model_name and tags
-
-    Raises:
-        EnvironmentError: If collection path not found
-        ValueError: If deck not found
+        pd.DataFrame with columns for each note field plus statistics
     """
     try:
         with AnkiCollectionReader(collection_path) as reader:
+            deck_id = reader.col.decks.id_for_name(deck_name)
             notes = reader.get_notes_for_deck(deck_name)
 
             if not notes:
-                return pd.DataFrame()  # Return empty DataFrame if no notes
+                return pd.DataFrame()
 
-            # Initialize list to store note data
             note_data = []
 
             for note in notes:
-                # Start with basic note info
+                # Basic note info
                 note_dict = {
                     "note_id": note["id"],
                     "model_name": note["model_name"],
                     "tags": " ".join(note["tags"]),
                 }
 
-                # Add fields based on fields_to_extract or all fields if None
+                # Add fields
                 fields = note["fields"]
                 if fields_to_extract:
                     for field in fields_to_extract:
@@ -378,20 +366,125 @@ def get_deck_contents(
                 else:
                     note_dict.update(fields)
 
+                if include_stats:
+                    # Get all cards for this note - no need for fetchall()
+                    cards = reader.col.db.execute(
+                        "SELECT id, type, queue, due, ivl, factor, reps, lapses "
+                        "FROM cards WHERE nid = ? AND did = ?",
+                        note["id"],
+                        deck_id,
+                    )
+
+                    if cards:  # cards is now directly the list of results
+                        # Calculate average stats across all cards for this note
+                        n_cards = len(cards)
+                        total_ease = (
+                            sum(card[5] for card in cards) / 10.0
+                        )  # factor is stored as integer
+                        total_reps = sum(card[6] for card in cards)
+                        total_lapses = sum(card[7] for card in cards)
+                        avg_interval = sum(card[4] for card in cards)  # ivl
+
+                        note_dict.update(
+                            {
+                                "n_cards": n_cards,
+                                "avg_ease": round(total_ease / n_cards, 1),
+                                "total_reps": total_reps,
+                                "avg_reps": round(total_reps / n_cards, 1),
+                                "total_lapses": total_lapses,
+                                "avg_lapses": round(total_lapses / n_cards, 1),
+                                "avg_interval": round(avg_interval / n_cards, 1),
+                            }
+                        )
+                    else:
+                        # No cards found for this note
+                        note_dict.update(
+                            {
+                                "n_cards": 0,
+                                "avg_ease": None,
+                                "total_reps": 0,
+                                "avg_reps": 0,
+                                "total_lapses": 0,
+                                "avg_lapses": 0,
+                                "avg_interval": 0,
+                            }
+                        )
+
                 note_data.append(note_dict)
 
             # Create DataFrame
             df = pd.DataFrame(note_data)
 
-            # Reorder columns to put note_id, model_name, and tags first
+            # Reorder columns
             first_cols = ["note_id", "model_name", "tags"]
+            if include_stats:
+                stat_cols = [
+                    "n_cards",
+                    "avg_ease",
+                    "total_reps",
+                    "avg_reps",
+                    "total_lapses",
+                    "avg_lapses",
+                    "avg_interval",
+                ]
+                first_cols.extend(stat_cols)
             other_cols = [col for col in df.columns if col not in first_cols]
             df = df[first_cols + other_cols]
 
+            if include_stats:
+                df = add_knowledge_score(df)
             return df
 
     except Exception as e:
         raise Exception(f"Error getting deck contents: {str(e)}")
+
+
+def calculate_knowledge_score(row: pd.Series) -> float:
+    """
+    Calculate a knowledge score (0-1) for a single card based on its statistics.
+
+    Components:
+    - Interval (40%): max 365 days
+    - Ease (20%): range 1300-3100
+    - Success (30%): based on lapses vs reps
+    - Efficiency (10%): interval gained per rep
+
+    Args:
+        row: Series containing card statistics with columns:
+            avg_interval, avg_ease, total_reps, total_lapses
+
+    Returns:
+        float: Knowledge score between 0 and 1
+    """
+    # Return 0 if card has never been reviewed
+    if row.total_reps == 0:
+        return 0.0
+
+    # 1. Interval score (40%)
+    max_interval = 365
+    interval_score = min(row.avg_interval / max_interval, 1) * 0.4
+
+    # 2. Ease score (20%)
+    min_ease = 1300
+    max_ease = 3100
+    ease_score = min(max(0, (row.avg_ease - min_ease) / (max_ease - min_ease)), 1) * 0.2
+
+    # 3. Success score (30%)
+    success_rate = 1 - (row.total_lapses / row.total_reps)
+    success_score = max(0, success_rate) * 0.3
+
+    # 4. Efficiency score (10%)
+    days_per_rep = row.avg_interval / row.total_reps
+    efficiency_score = min(days_per_rep / 30, 1) * 0.1  # Cap at 30 days per rep
+
+    return round(interval_score + ease_score + success_score + efficiency_score, 3)
+
+
+def add_knowledge_score(df: pd.DataFrame) -> pd.DataFrame:
+    """Add knowledge score column to DataFrame using apply."""
+    result_df = df.copy()
+    result_df["knowledge_score"] = df.apply(calculate_knowledge_score, axis=1)
+    return result_df
 
 
 def export_to_anki_with_images_english(
