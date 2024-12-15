@@ -62,6 +62,7 @@ class VoiceManager:
         ]
         self.provider_preferences: Dict[str, VoiceProvider] = {}
         self.voice_overrides: Dict[str, Dict[str, str]] = {}
+        self.loaded_languages: Set[str] = set()  # Track which languages we've loaded
 
     def set_voice_override(self, language_code: str, gender: str, voice_name: str):
         """Set a voice override for a specific language and gender.
@@ -83,16 +84,19 @@ class VoiceManager:
         print(f"setting voice override: {voice_name}")
 
     def _lazy_load_voices(self, language_code: str):
-        """Lazily load voices only when needed, language_code can be fr-FR or just fr"""
-        try:
-            self._load_google_voices(language_code=language_code)
-        except Exception as e:
-            print(f"Warning: Failed to load Google voices: {e}")
+        """Only load voices for a language if we haven't already"""
+        if language_code not in self.loaded_languages:
+            try:
+                self._load_google_voices(language_code=language_code)
+            except Exception as e:
+                print(f"Warning: Failed to load Google voices: {e}")
 
-        try:
-            self._load_azure_voices(locale=language_code)
-        except Exception as e:
-            print(f"Warning: Failed to load Azure voices: {e}")
+            try:
+                self._load_azure_voices(locale=language_code)
+            except Exception as e:
+                print(f"Warning: Failed to load Azure voices: {e}")
+
+            self.loaded_languages.add(language_code)
 
     def _load_google_voices(self, language_code: str):
         """Load Google voices with proper error handling"""
