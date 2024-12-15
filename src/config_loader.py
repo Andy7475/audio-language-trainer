@@ -210,7 +210,6 @@ class VoiceManager:
             if language_code in self.voices:
                 for voice in self.voices[language_code]:
                     if voice.name == override_voice_name:
-                        print(f"Using override voice: {override_voice_name}")
                         return voice
 
         # If no voices available at all, return dummy
