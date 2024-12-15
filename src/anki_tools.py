@@ -1,33 +1,28 @@
-import csv
-import io
-import json
 import os
 import re
 import shutil
-import sqlite3
 import tempfile
 import urllib.parse
 import uuid
-import zipfile
 from collections import defaultdict
 from random import shuffle
 from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
+import pandas as pd
 import pysnooper
 import requests
 from anki.collection import Collection
-from anki.models import NotetypeDict
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
 
 from src.config_loader import config
-from src.dialogue_generation import update_vocab_usage
 from src.generate import add_audio, add_translations
-from src.translation import tokenize_text, translate_from_english
 from src.images import add_image_paths
+from src.translation import tokenize_text, translate_from_english
 from src.utils import (
     clean_filename,
     create_test_story_dict,
@@ -122,9 +117,114 @@ def extract_audio_filename(field_value: str) -> str:
     return None
 
 
+def get_anki_path() -> str:
+    """
+    Get Anki collection path from environment variable with error checking.
+
+    Returns:
+        str: Path to Anki collection
+
+    Raises:
+        EnvironmentError: If ANKI_COLLECTION_PATH not set or file doesn't exist
+    """
+    load_dotenv()
+    path = os.getenv("ANKI_COLLECTION_PATH")
+    if not path:
+        raise EnvironmentError("ANKI_COLLECTION_PATH not set in environment variables")
+    if not os.path.exists(path):
+        raise EnvironmentError(f"Anki collection not found at: {path}")
+    return path
+
+
+def validate_anki_tag(tag: str) -> bool:
+    """
+    Validate if a tag is acceptable for Anki.
+
+    Args:
+        tag: String to validate as an Anki tag
+
+    Returns:
+        bool: True if tag is valid, False otherwise
+    """
+    if not tag or " " in tag:
+        return False
+    return True
+
+
+def append_tag_to_note(existing_tags: str, new_tag: str) -> str:
+    """
+    Append a new tag to existing space-separated tags if not already present.
+
+    Args:
+        existing_tags: Space-separated string of existing tags
+        new_tag: Tag to append
+
+    Returns:
+        str: Updated space-separated tags string
+    """
+    tags = set(existing_tags.split()) if existing_tags else set()
+    tags.add(new_tag)
+    return " ".join(sorted(tags))
+
+
+def add_tag_to_matching_notes(
+    phrases: List[str], tag: str, deck_name: str, collection_path: Optional[str] = None
+) -> Tuple[int, List[str]]:
+    """
+    Add tag to notes where EnglishText matches any of the provided phrases.
+    Uses ANKI_COLLECTION_PATH from environment if collection_path not provided.
+
+    Args:
+        phrases: List of English phrases to match against
+        tag: Tag to add to matching notes
+        deck_name: Name of the deck to process
+        collection_path: Optional override for collection path
+
+    Returns:
+        tuple[int, list[str]]: (Number of notes updated, List of errors if any)
+    """
+    if collection_path is None:
+        collection_path = get_anki_path()
+
+    if not validate_anki_tag(tag):
+        raise ValueError("Invalid tag - must not contain spaces")
+
+    errors = []
+    updates = 0
+
+    try:
+        with AnkiCollectionReader(collection_path) as reader:
+            notes = reader.get_notes_for_deck(deck_name)
+
+            for note in notes:
+                english_text = note["fields"].get("EnglishText", "").strip()
+
+                if english_text in phrases:
+                    try:
+                        current_tags = " ".join(note["tags"]) if note["tags"] else ""
+                        updated_tags = append_tag_to_note(current_tags, tag)
+
+                        anki_note = reader.col.get_note(note["id"])
+                        anki_note.tags = updated_tags.split()
+                        # Replace flush() with update_note()
+                        reader.col.update_note(anki_note)
+
+                        updates += 1
+
+                    except Exception as e:
+                        errors.append(f"Error updating note {note['id']}: {str(e)}")
+
+            reader.col.save()
+
+    except Exception as e:
+        errors.append(f"Error accessing collection: {str(e)}")
+
+    return updates, errors
+
+
 class AnkiCollectionReader:
-    def __init__(self, collection_path: str):
-        self.collection_path = collection_path
+    def __init__(self, collection_path: str = None):
+        self.collection_path = os.getenv("ANKI_COLLECTION_PATH", collection_path)
         if not os.path.exists(self.collection_path):
             raise FileNotFoundError(
                 f"Anki collection not found at: {self.collection_path}"
@@ -222,40 +322,169 @@ def print_deck_info(collection_path: str):
                 print(f"- {file}")
 
 
-def print_deck_contents(collection_path: str, deck_name: str):
-    """Print contents of a specific deck
+def get_deck_contents(
+    deck_name: str,
+    collection_path: Optional[str] = None,
+    fields_to_extract: Optional[list[str]] = None,
+    include_stats: bool = True,
+) -> pd.DataFrame:
+    """
+    Get contents of a specific Anki deck as a pandas DataFrame.
 
     Args:
-        collection_path: Path to the .anki2 collection file
         deck_name: Name of the deck to analyze
+        collection_path: Optional path to collection file. Uses ANKI_COLLECTION_PATH from env if None
+        fields_to_extract: Optional list of field names to extract. If None, extracts all fields
+        include_stats: Whether to include card statistics (ease, intervals, etc.)
+
+    Returns:
+        pd.DataFrame with columns for each note field plus statistics
     """
     try:
         with AnkiCollectionReader(collection_path) as reader:
-            print(f"\nAnalyzing deck: {deck_name}")
-
-            # Get notes from the deck
+            deck_id = reader.col.decks.id_for_name(deck_name)
             notes = reader.get_notes_for_deck(deck_name)
-            print(f"\nFound {len(notes)} notes")
 
-            # Print the first few notes in detail
-            print("\nFirst few notes:")
-            for i, note in enumerate(notes[:5]):
-                print(f"\nNote {i+1}:")
-                print(f"Model: {note['model_name']}")
-                print("Fields:")
-                for field_name, field_value in note["fields"].items():
-                    # Truncate very long field values
-                    display_value = (
-                        field_value[:100] + "..."
-                        if len(field_value) > 100
-                        else field_value
+            if not notes:
+                return pd.DataFrame()
+
+            note_data = []
+
+            for note in notes:
+                # Basic note info
+                note_dict = {
+                    "note_id": note["id"],
+                    "model_name": note["model_name"],
+                    "tags": " ".join(note["tags"]),
+                }
+
+                # Add fields
+                fields = note["fields"]
+                if fields_to_extract:
+                    for field in fields_to_extract:
+                        note_dict[field] = fields.get(field, "")
+                else:
+                    note_dict.update(fields)
+
+                if include_stats:
+                    # Get all cards for this note - no need for fetchall()
+                    cards = reader.col.db.execute(
+                        "SELECT id, type, queue, due, ivl, factor, reps, lapses "
+                        "FROM cards WHERE nid = ? AND did = ?",
+                        note["id"],
+                        deck_id,
                     )
-                    print(f"  {field_name}: {display_value}")
-                print("Tags:", " ".join(note["tags"]))
+
+                    if cards:  # cards is now directly the list of results
+                        # Calculate average stats across all cards for this note
+                        n_cards = len(cards)
+                        total_ease = (
+                            sum(card[5] for card in cards) / 10.0
+                        )  # factor is stored as integer
+                        total_reps = sum(card[6] for card in cards)
+                        total_lapses = sum(card[7] for card in cards)
+                        avg_interval = sum(card[4] for card in cards)  # ivl
+
+                        note_dict.update(
+                            {
+                                "n_cards": n_cards,
+                                "avg_ease": round(total_ease / n_cards, 1),
+                                "total_reps": total_reps,
+                                "avg_reps": round(total_reps / n_cards, 1),
+                                "total_lapses": total_lapses,
+                                "avg_lapses": round(total_lapses / n_cards, 1),
+                                "avg_interval": round(avg_interval / n_cards, 1),
+                            }
+                        )
+                    else:
+                        # No cards found for this note
+                        note_dict.update(
+                            {
+                                "n_cards": 0,
+                                "avg_ease": None,
+                                "total_reps": 0,
+                                "avg_reps": 0,
+                                "total_lapses": 0,
+                                "avg_lapses": 0,
+                                "avg_interval": 0,
+                            }
+                        )
+
+                note_data.append(note_dict)
+
+            # Create DataFrame
+            df = pd.DataFrame(note_data)
+
+            # Reorder columns
+            first_cols = ["note_id", "model_name", "tags"]
+            if include_stats:
+                stat_cols = [
+                    "n_cards",
+                    "avg_ease",
+                    "total_reps",
+                    "avg_reps",
+                    "total_lapses",
+                    "avg_lapses",
+                    "avg_interval",
+                ]
+                first_cols.extend(stat_cols)
+            other_cols = [col for col in df.columns if col not in first_cols]
+            df = df[first_cols + other_cols]
+
+            if include_stats:
+                df = add_knowledge_score(df)
+            return df
 
     except Exception as e:
-        print(f"Error: {e}")
-        raise
+        raise Exception(f"Error getting deck contents: {str(e)}")
+
+
+def calculate_knowledge_score(row: pd.Series) -> float:
+    """
+    Calculate a knowledge score (0-1) for a single card based on its statistics.
+
+    Components:
+    - Interval (40%): max 365 days
+    - Ease (20%): range 1300-3100
+    - Success (30%): based on lapses vs reps
+    - Efficiency (10%): interval gained per rep
+
+    Args:
+        row: Series containing card statistics with columns:
+            avg_interval, avg_ease, total_reps, total_lapses
+
+    Returns:
+        float: Knowledge score between 0 and 1
+    """
+    # Return 0 if card has never been reviewed
+    if row.total_reps == 0:
+        return 0.0
+
+    # 1. Interval score (40%)
+    max_interval = 365
+    interval_score = min(row.avg_interval / max_interval, 1) * 0.4
+
+    # 2. Ease score (20%)
+    min_ease = 1300
+    max_ease = 3100
+    ease_score = min(max(0, (row.avg_ease - min_ease) / (max_ease - min_ease)), 1) * 0.2
+
+    # 3. Success score (30%)
+    success_rate = 1 - (row.total_lapses / row.total_reps)
+    success_score = max(0, success_rate) * 0.3
+
+    # 4. Efficiency score (10%)
+    days_per_rep = row.avg_interval / row.total_reps
+    efficiency_score = min(days_per_rep / 30, 1) * 0.1  # Cap at 30 days per rep
+
+    return round(interval_score + ease_score + success_score + efficiency_score, 3)
+
+
+def add_knowledge_score(df: pd.DataFrame) -> pd.DataFrame:
+    """Add knowledge score column to DataFrame using apply."""
+    result_df = df.copy()
+    result_df["knowledge_score"] = df.apply(calculate_knowledge_score, axis=1)
+    return result_df
 
 
 def export_to_anki_with_images_english(
@@ -514,9 +743,9 @@ def create_anki_deck_from_english_phrase_list(
     phrase_list: List[str],
     deck_name: str,
     anki_filename_prefix: str,
+    image_dir: str,
     batch_size: int = 50,
     output_dir="../outputs/longman",
-    image_dir: str = None,
 ):
     """Takes a list of english phrases and does: 1) translation 2) text to speech 3) export to Anki deck.
     To avoid overloading the text-to-speech APIs it will batch up the phrases into smaller decks (*.apkg), but these will all have the same 'deck_id'
@@ -551,12 +780,7 @@ def create_anki_deck_from_english_phrase_list(
                 deck_name=deck_name,
             )
         else:
-            export_to_anki(
-                translated_phrases_dict_audio,
-                output_dir,
-                f"{anki_filename_prefix}_{from_index}",
-                deck_name=deck_name,
-            )
+            raise ValueError("Missing an image directory (image_dir)")
     return translated_phrases_dict_audio
 
 
@@ -715,205 +939,6 @@ def load_template(filename):
     filename = os.path.join("..", "src", filename)
     with open(filename, "r", encoding="utf-8") as f:
         return f.read()
-
-
-def export_to_anki(
-    story_data_dict: Dict[str, Dict],
-    output_dir: str,
-    story_name: str,
-    deck_name: str = None,
-):
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Common CSS for all card types
-
-    card_back = """
-        <script>
-        function copyText(element) {
-        var textToCopy = element.textContent;
-        navigator.clipboard.writeText(textToCopy).then(function() {
-            element.classList.add('copied');
-            setTimeout(function() {
-            element.classList.remove('copied');
-            }, 1000);
-        }).catch(function(err) {
-            console.error('Failed to copy text: ', err);
-        });
-        }
-        </script>
-        """
-
-    language_practice_model = genanki.Model(
-        1607392312,
-        "Language Practice",
-        fields=[
-            {"name": "TargetText"},
-            {"name": "TargetAudio"},
-            {"name": "TargetAudioSlow"},  # New field for slow audio
-            {"name": "EnglishText"},
-            {"name": "WiktionaryLinks"},
-        ],
-        # ... (rest of the model definition)
-        templates=[
-            {
-                "name": "Listening Card",
-                "qfmt": f"""<div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
-            <div>
-                Normal speed:
-                <br>
-                {{{{TargetAudio}}}}
-            </div>
-            <div>
-                Slow speed:
-                <br>
-                {{{{TargetAudioSlow}}}}
-            </div>
-        </div>""",
-                "afmt": f"""
-        <hr id="answer">
-        <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-        <div class="english-text">{{{{EnglishText}}}}</div>
-        <div>
-            Normal speed: {{{{TargetAudio}}}}
-        </div>
-        <div class="wiktionary-links">
-        {{{{WiktionaryLinks}}}}
-        </div>
-        {card_back}
-        """,
-            },
-            {
-                "name": "Reading Card",
-                "qfmt": """
-        <div class="target-text" onclick="copyText(this)">{{TargetText}}</div>
-        """,
-                "afmt": f"""
-        {{{{FrontSide}}}}
-        <hr id="answer">
-        <div class="english-text">{{{{EnglishText}}}}</div>
-        <div>
-            {{{{TargetAudio}}}}
-        </div>
-        <div class="wiktionary-links">
-        {{{{WiktionaryLinks}}}}
-        </div>
-        {card_back}
-        """,
-            },
-            {
-                "name": "Speaking Card",
-                "qfmt": """
-        <div class="english-text">{{EnglishText}}</div>
-        """,
-                "afmt": f"""
-        {{{{FrontSide}}}}
-        <hr id="answer">
-        <div class="target-text" onclick="copyText(this)">{{{{TargetText}}}}</div>
-        <div>
-            {{{{TargetAudio}}}}
-        </div>
-        <div class="wiktionary-links">
-        {{{{WiktionaryLinks}}}}
-        </div>
-        {card_back}
-        """,
-            },
-        ],
-        css=load_template("card_styles.css"),
-    )
-
-    media_files = []
-    notes = []
-    if deck_name is None:
-        deck_id = string_to_large_int(config.TARGET_LANGUAGE_NAME)
-        deck_name = f"{config.TARGET_LANGUAGE_NAME} - phrases"
-    else:
-        deck_id = string_to_large_int(deck_name)
-    deck = genanki.Deck(deck_id, deck_name)
-
-    for _, data in story_data_dict.items():
-        for (english, target), audio_segments in zip(
-            data["translated_phrase_list"], data["translated_phrase_list_audio"]
-        ):
-            # Generate unique filename for audio
-            target_audio_normal = f"{uuid.uuid4()}.mp3"
-            target_audio_slow = f"{uuid.uuid4()}.mp3"
-
-            # Export audio segment
-            if isinstance(audio_segments, AudioSegment):
-                target_normal_audio_segment = audio_segments
-                target_slow_audio_segment = audio_segments
-            elif isinstance(audio_segments, List) and len(audio_segments) > 2:
-                target_normal_audio_segment = audio_segments[2]
-                target_slow_audio_segment = audio_segments[1]
-            else:
-                raise Exception(f"Unexpected audio format: {audio_segments}")
-
-            target_normal_audio_segment.export(
-                os.path.join(output_dir, target_audio_normal), format="mp3"
-            )
-            target_slow_audio_segment.export(
-                os.path.join(output_dir, target_audio_slow), format="mp3"
-            )
-
-            # Add to media files list
-            media_files.extend([target_audio_normal, target_audio_slow])
-
-            # Generate Wiktionary links
-            wiktionary_links = generate_wiktionary_links(
-                target, config.TARGET_LANGUAGE_NAME
-            )
-
-            # Create notes for each card type
-            note = genanki.Note(
-                model=language_practice_model,
-                fields=[
-                    target,
-                    f"[sound:{target_audio_normal}]",
-                    f"[sound:{target_audio_slow}]",
-                    english,
-                    wiktionary_links,
-                ],
-                guid=string_to_large_int(target),
-            )
-
-            notes.append(note)
-            # Add notes to the deck
-
-    def sort_key(note):
-        # Find the English field based on the note's model
-        return 2  # english is the 2nd field (0 index)
-
-        # Count words in the English phrase
-        return len(note.fields[english_field_index].split())
-
-    # shuffle the notes
-    shuffle(notes)
-    notes.sort(key=sort_key)
-    for note in notes:
-        deck.add_note(note)
-
-    # Create a package with all decks
-    # package = genanki.Package(list(decks.values()))
-    package = genanki.Package(deck)
-    package.media_files = [os.path.join(output_dir, file) for file in media_files]
-
-    # Write the package to a file
-    output_filename = os.path.join(output_dir, f"{story_name}_anki_deck.apkg")
-    package.write_to_file(output_filename)
-
-    print(f"Anki deck exported to {output_filename}")
-
-    # Clean up temporary MP3 files
-    for media_file in media_files:
-        file_path = os.path.join(output_dir, media_file)
-        try:
-            os.remove(file_path)
-            # print(f"Deleted temporary file: {file_path}")
-        except OSError as e:
-            print(f"Error deleting file {file_path}: {e}")
-
-    print("Cleanup of temporary MP3 files completed.")
 
 
 def export_to_anki_with_images(
