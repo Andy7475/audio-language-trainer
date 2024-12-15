@@ -3,6 +3,7 @@ import subprocess
 import sys
 from typing import Dict, List, Set, Tuple
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -632,14 +633,6 @@ def filter_matching_phrases(
             matching_phrases.append(phrase)
 
     return matching_phrases
-
-
-from typing import Dict, List, Set, Tuple
-
-import numpy as np
-import pandas as pd
-import spacy
-from tqdm import tqdm
 
 
 def prepare_phrase_dataframe(phrases: List[str]) -> pd.DataFrame:
