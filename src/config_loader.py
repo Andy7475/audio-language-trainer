@@ -53,15 +53,34 @@ class VoiceManager:
     def __init__(self):
         self.voices: Dict[str, List[VoiceInfo]] = {}
         self.voice_type_ranking = [
-            VoiceType.JOURNEY,
             VoiceType.STUDIO,
             VoiceType.NEURAL2,
             VoiceType.WAVENET,
             VoiceType.NEURAL,
             VoiceType.STANDARD,
+            VoiceType.JOURNEY,  # does not support speaking rate adjustments
         ]
         self.provider_preferences: Dict[str, VoiceProvider] = {}
-        self.voice_overrides: Dict[str, str] = {}
+        self.voice_overrides: Dict[str, Dict[str, str]] = {}
+
+    def set_voice_override(self, language_code: str, gender: str, voice_name: str):
+        """Set a voice override for a specific language and gender.
+
+        Args:
+            language_code (str): Language code in format "fr-FR"
+            gender (str): "MALE" or "FEMALE"
+            voice_name (str): Name of the voice as it appears in self.voices[language_code]
+
+        Example:
+            voice_manager.set_voice_override("fr-FR", "MALE", "fr-FR-DenisNeural")
+        """
+        # Initialize nested dict if needed
+        if language_code not in self.voice_overrides:
+            self.voice_overrides[language_code] = {}
+
+        # Set the override
+        self.voice_overrides[language_code][gender.upper()] = voice_name
+        print(f"setting voice override: {voice_name}")
 
     def _lazy_load_voices(self, language_code: str):
         """Lazily load voices only when needed, language_code can be fr-FR or just fr"""
@@ -162,27 +181,52 @@ class VoiceManager:
         language_code: str,
         gender: str = "FEMALE",
     ) -> Optional[VoiceInfo]:
-        """Get best available voice with fallback options"""
+        """Get best available voice with fallback options.
+
+        Will first check for override voices set via set_voice_override().
+        If no override found, will select best voice based on ranking.
+
+        Args:
+            language_code (str): Language code in format "fr-FR"
+            gender (str): "MALE" or "FEMALE"
+
+        Returns:
+            VoiceInfo object or None if no voice found
+        """
         self._lazy_load_voices(language_code)
 
-        # If no voices are available, return a dummy VoiceInfo
+        # Check for override first
+        gender = gender.upper()
+        if (
+            language_code in self.voice_overrides
+            and gender in self.voice_overrides[language_code]
+        ):
+            override_voice_name = self.voice_overrides[language_code][gender]
+            # Find the voice in our loaded voices
+            if language_code in self.voices:
+                for voice in self.voices[language_code]:
+                    if voice.name == override_voice_name:
+                        print(f"Using override voice: {override_voice_name}")
+                        return voice
+
+        # If no voices available at all, return dummy
         if not self.voices:
             return VoiceInfo(
                 name="dummy",
                 provider=VoiceProvider.NONE,
                 voice_type=VoiceType.NONE,
-                gender=gender.upper(),
+                gender=gender,
                 language_code=language_code,
                 country_code="dummy",
                 voice_id="dummy",
             )
 
-        # Rest of the voice selection logic remains the same...
+        # Rest of original logic
         available_voices = self.voices.get(language_code, [])
         if not available_voices:
             return None
 
-        gender_voices = [v for v in available_voices if v.gender == gender.upper()]
+        gender_voices = [v for v in available_voices if v.gender == gender]
         if not gender_voices:
             gender_voices = available_voices
 
@@ -303,6 +347,36 @@ class ConfigLoader:
                 if os.path.exists(self.config_file)
                 else 0
             )
+
+            if (
+                hasattr(self.config, "SOURCE_LANGUAGE_MALE_VOICE")
+                and self.config.SOURCE_LANGUAGE_MALE_VOICE
+            ):
+                self.voice_manager.set_voice_override(
+                    self.config.SOURCE_LANGUAGE_CODE,
+                    "MALE",
+                    self.config.SOURCE_LANGUAGE_MALE_VOICE,
+                )
+
+            if (
+                hasattr(self.config, "TARGET_LANGUAGE_FEMALE_VOICE")
+                and self.config.TARGET_LANGUAGE_FEMALE_VOICE
+            ):
+                self.voice_manager.set_voice_override(
+                    self.config.TARGET_LANGUAGE_CODE,
+                    "FEMALE",
+                    self.config.TARGET_LANGUAGE_FEMALE_VOICE,
+                )
+
+            if (
+                hasattr(self.config, "TARGET_LANGUAGE_MALE_VOICE")
+                and self.config.TARGET_LANGUAGE_MALE_VOICE
+            ):
+                self.voice_manager.set_voice_override(
+                    self.config.TARGET_LANGUAGE_CODE,
+                    "MALE",
+                    self.config.TARGET_LANGUAGE_MALE_VOICE,
+                )
 
         except Exception as e:
             print(f"Error loading config: {e}")

@@ -1,7 +1,9 @@
 {
     "SOURCE_LANGUAGE_CODE": "en-GB",
-    "TARGET_LANGUAGE_CODE": "ru-RU",
-    "USE_CHEAP_VOICE_MODELS": false,
+    "TARGET_LANGUAGE_CODE": "it-IT",
+    "SOURCE_LANGUAGE_MALE_VOICE": null,
+    "TARGET_LANGUAGE_FEMALE_VOICE": "it-IT-Wavenet-E",
+    "TARGET_LANGUAGE_MALE_VOICE": "it-IT-Wavenet-F",
     "ANTHROPIC_MODEL_NAME":"claude-3-5-sonnet@20240620",
     "ANTHROPIC_SMALL_MODEL_NAME":"claude-3-haiku@20240307",
     "ANTHROPIC_REGION":"europe-west1",
