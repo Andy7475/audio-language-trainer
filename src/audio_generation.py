@@ -54,7 +54,6 @@ def generate_translated_phrase_audio(
                 text=cleaned_eng,
                 config_language="source",
                 gender="MALE",
-                speaking_rate=0.9,
             )
         else:
             english_audio = AudioSegment.silent(100)
