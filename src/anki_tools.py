@@ -670,9 +670,14 @@ def find_language_section(soup: BeautifulSoup, language_name: str) -> Optional[s
 
 def generate_wiktionary_links(
     phrase: str,
-    language_name: str = config.TARGET_LANGUAGE_NAME,
-    language_code: str = config.TARGET_LANGUAGE_CODE,
+    language_name: str = None,
+    language_code: str = None,
 ) -> str:
+
+    if language_name is None:
+        language_name = config.TARGET_LANGUAGE_NAME
+    if language_code is None:
+        language_code = config.TARGET_LANGUAGE_CODE
     words = tokenize_text(text=phrase, language_code=language_code)
     links: List[str] = []
 

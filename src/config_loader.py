@@ -424,11 +424,12 @@ class ConfigLoader:
     def __getattr__(self, name):
         """Delegate attribute access to config object after checking reload"""
         # First check if it's a direct instance attribute
+        self._check_reload()
         if name in self.__dict__:
             return self.__dict__[name]
 
         # If not, check the config namespace
-        self._check_reload()
+
         return getattr(self.config, name)
 
 
