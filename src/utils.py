@@ -1,38 +1,27 @@
 import base64
-import copy
 import hashlib
 import inspect
 import io
 import json
 import os
+import pickle
 import re
-import subprocess
-import sys
 import time
 from collections import defaultdict
 from io import BytesIO
+from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
 
-import numpy as np
-import pycountry
-import requests
-import spacy
-import vertexai
 from anthropic import AnthropicVertex
 from dotenv import load_dotenv
+from google.cloud import storage
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
-from vertexai.preview.vision_models import ImageGenerationModel
 
 from src.config_loader import config
 
 load_dotenv()  # so we can use environment variables for various global settings
-
-from pathlib import Path
-from google.cloud import storage
-from typing import Optional
-import os
 
 
 def sanitize_path_component(s: str) -> str:
@@ -250,29 +239,6 @@ def create_html_story(
     print(f"HTML story created at: {output_path}")
 
 
-def test_image_reading(image_path):
-    """
-    Test reading and basic image properties from a path
-
-    Args:
-        image_path: Path to the image file
-
-    Returns:
-        Tuple of (width, height) if successful
-    """
-    try:
-        # Open image in binary mode, not text mode
-        with Image.open(image_path) as img:
-            print(f"Successfully opened image from: {image_path}")
-            print(f"Image size: {img.size}")
-            print(f"Image mode: {img.mode}")
-            return img.size
-    except FileNotFoundError:
-        print(f"Image file not found at: {image_path}")
-    except Exception as e:
-        print(f"Error reading image: {str(e)}")
-
-
 def clean_filename(phrase: str) -> str:
     """Convert a phrase to a clean filename-safe string."""
     # Convert to lowercase
@@ -289,6 +255,18 @@ def clean_filename(phrase: str) -> str:
 
 
 def string_to_large_int(s: str) -> int:
+    """Notes in Anki have a unique ID, and so to create the note ID and ensure
+    it correlates with the content we can pass in the translated phrase as a string
+    and get back a large interger (a bit like a hash function).
+
+    So this can be used to create a numerical ID from a given phrase.
+
+    Args:
+        s (str): The string to convert (usually the translated phrase)
+
+    Returns:
+        int: A large interger (equivalent to a hash)
+    """
     # Encode the string to bytes
     encoded = s.encode("utf-8")
     # Create a SHA-256 hash
@@ -349,32 +327,6 @@ def create_test_story_dict(
     return test_dict
 
 
-def update_vocab_usage(used_words: Set[Tuple[str, str]], update_amount: int = 1):
-    """Taking a list of (word, word_type) e.g. ('can', 'verbs') we update the vocab_usage
-    list, if the word doesn't exist we add it to list. This is used for sampling vocab for subsequent
-    lessons. words that haven't been used have a higher chance of being sampled.
-
-    No return statement"""
-    # Load the current usage
-
-    vocab_usage = load_json(config.VOCAB_USAGE_PATH)
-    # Update the usage count for each used word
-    for word, pos in used_words:
-        if pos in ["VERB", "AUX"]:
-            if word in vocab_usage["verbs"]:
-                vocab_usage["verbs"][word] += update_amount
-            else:
-                vocab_usage["verbs"][word] = update_amount
-        else:
-            if word in vocab_usage["vocab"]:
-                vocab_usage["vocab"][word] += update_amount
-            else:
-                vocab_usage["vocab"][word] = update_amount
-
-    # Save the updated usage dictionary
-    save_json(vocab_usage, config.VOCAB_USAGE_PATH)
-
-
 def convert_defaultdict(d):
     if isinstance(d, defaultdict):
         d = {k: convert_defaultdict(v) for k, v in d.items()}
@@ -417,6 +369,51 @@ def get_longman_verb_vocab_dict(
     return words_dict
 
 
+def save_pickle(data: Any, file_path: str) -> None:
+    """
+    Save data to a pickle file, with special handling for AudioSegment objects.
+
+    Args:
+        data: Any Python object that can be pickled, including those containing AudioSegment objects
+        file_path: Path where the pickle file will be saved
+    """
+    try:
+        # Create directory if it doesn't exist
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        # Save with highest protocol for better compatibility
+        with open(file_path, "wb") as file:
+            pickle.dump(data, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+    except Exception as e:
+        print(f"Error saving pickle file {file_path}: {str(e)}")
+        raise
+
+
+def load_pickle(file_path: str, default_value: Any = None) -> Any:
+    """
+    Load data from a pickle file, with proper error handling.
+
+    Args:
+        file_path: Path to the pickle file
+        default_value: Value to return if file doesn't exist or loading fails (default: None)
+
+    Returns:
+        The unpickled data, or default_value if loading fails
+    """
+    if not os.path.exists(file_path):
+        print(f"File does not exist: {file_path}")
+        return default_value
+
+    try:
+        with open(file_path, "rb") as file:
+            return pickle.load(file)
+
+    except Exception as e:
+        print(f"Error loading pickle file {file_path}: {str(e)}")
+        return default_value
+
+
 def load_text_file(file_path) -> List[str]:
     with open(file_path, "r") as f:
         return [line.strip() for line in f.readlines()]
@@ -446,7 +443,6 @@ def load_json(file_path) -> dict:
 def save_json(data, file_path):
     with open(file_path, "w") as file:
         json.dump(data, file, indent=2)
-    # print(f"Data saved to {file_path}")
 
 
 def get_caller_name():

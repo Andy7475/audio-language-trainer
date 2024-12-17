@@ -126,7 +126,7 @@ def clean_translated_content(
         raise ValueError(f"Unsupported content format: {type(content)}")
 
 
-def generate_phrase__english_audio_files(phrases: List[str], output_dir: str) -> None:
+def generate_phrase_english_audio_files(phrases: List[str], output_dir: str) -> None:
     """
     Generate slow and normal English-only speed MP3 files for each phrase and save them to output_dir.
 
