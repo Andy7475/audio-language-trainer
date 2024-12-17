@@ -1,6 +1,6 @@
 {
     "SOURCE_LANGUAGE_CODE": "en-GB",
-    "TARGET_LANGUAGE_CODE": "uk-UA",
+    "TARGET_LANGUAGE_CODE": "sv-SE",
     "SOURCE_LANGUAGE_MALE_VOICE": null,
     "TARGET_LANGUAGE_FEMALE_VOICE": null,
     "TARGET_LANGUAGE_MALE_VOICE": null,
@@ -18,5 +18,6 @@
     "MAX_TTS_REQUESTS_PER_MINUTE":10,
     "VOCAB_USAGE_PATH":"../data/1000_vocab_usage.json",
     "VOCAB_LIST":"../data/1000_vocab_list.json",
-    "API_DELAY_SECONDS":20
+    "API_DELAY_SECONDS":20,
+    "GCS_PUBLIC_BUCKET":"audio-language-trainer-stories"
 }
