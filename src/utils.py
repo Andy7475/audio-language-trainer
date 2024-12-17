@@ -29,6 +29,101 @@ from src.config_loader import config
 
 load_dotenv()  # so we can use environment variables for various global settings
 
+from pathlib import Path
+from google.cloud import storage
+from typing import Optional
+import os
+
+
+def sanitize_path_component(s: str) -> str:
+    """
+    Sanitize a string for use in GCS paths.
+    Replaces spaces with underscores, removes special characters, and converts to lowercase.
+    """
+    # Replace one or more spaces with a single underscore
+    s = re.sub(r"\s+", "_", s)
+    # Remove any characters that aren't alphanumeric, underscore, or hyphen
+    s = "".join(c for c in s if c.isalnum() or c in "_-")
+    # Convert to lowercase for consistency
+    return s.lower()
+
+
+def construct_gcs_path(
+    story_name: str,
+    language_name: Optional[str] = None,
+    bucket_name: Optional[str] = None,
+) -> str:
+    """
+    Construct the Google Cloud Storage path for a story HTML file.
+
+    Args:
+        story_name: Name of the story (without .html extension)
+        language_name: Optional language name (defaults to config.TARGET_LANGUAGE_NAME)
+        bucket_name: Optional bucket name (defaults to config.GCS_PUBLIC_BUCKET)
+
+    Returns:
+        str: Full GCS path in format: gs://<bucket>/<language>/<story_name>/story_name.html
+    """
+    # Get defaults from config if not provided
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+    if language_name is None:
+        language_name = config.TARGET_LANGUAGE_NAME
+
+    # Sanitize paths
+    language_folder = sanitize_path_component(language_name)
+    story_name = sanitize_path_component(Path(story_name).stem)
+
+    # Construct path
+    return f"gs://{bucket_name}/{language_folder}/{story_name}/{story_name}.html"
+
+
+def upload_to_gcs(
+    html_file_path: str,
+    language_name: Optional[str] = None,
+    bucket_name: Optional[str] = None,
+) -> str:
+    """
+    Upload an HTML file to Google Cloud Storage with organized folder structure.
+
+    Args:
+        html_file_path: Path to the HTML file to upload
+        language_name: Language name (e.g. "Swedish", "French")
+        bucket_name: Optional bucket name (defaults to config.GCS_PUBLIC_BUCKET)
+
+    Returns:
+        str: Public URL of the uploaded file
+
+    Raises:
+        FileNotFoundError: If the HTML file doesn't exist
+        google.cloud.exceptions.NotFound: If the bucket doesn't exist
+    """
+    # Check if file exists
+    if not os.path.exists(html_file_path):
+        raise FileNotFoundError(f"HTML file not found: {html_file_path}")
+
+    # Initialize storage client
+    storage_client = storage.Client()
+
+    # Get bucket
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+    bucket = storage_client.bucket(bucket_name)
+
+    # Get story name and construct GCS path
+    story_name = Path(html_file_path).stem
+    gcs_path = construct_gcs_path(story_name, language_name, bucket_name)
+
+    # Remove gs:// prefix and bucket name for blob path
+    blob_path = "/".join(gcs_path.split("/")[3:])
+
+    # Create and upload blob
+    blob = bucket.blob(blob_path)
+    blob.upload_from_filename(html_file_path, content_type="text/html")
+
+    # Construct the public URL (since bucket is public)
+    return f"https://storage.googleapis.com/{bucket_name}/{blob_path}"
+
 
 def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
     """Convert an AudioSegment to a base64 encoded string."""
