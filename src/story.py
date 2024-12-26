@@ -1,7 +1,11 @@
 from pydub import AudioSegment
 from tqdm import tqdm
 from src.audio_generation import create_m4a_with_timed_lyrics
-from config_loader import config
+from src.config_loader import config
+from typing import Optional, Dict
+import json
+import io
+import base64
 
 
 def create_html_story(

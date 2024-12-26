@@ -1,5 +1,22 @@
 // StoryViewer component without JSX or imports
 const StoryViewer = ({ storyData, targetLanguage, title }) => {
+  const createWiktionaryLinks = (text) => {
+    return text.split(' ').map((word, index) => {
+      const cleanWord = word.toLowerCase().replace(/[^\p{L}0-9]/gu, '');
+      if (cleanWord) {
+        return React.createElement(React.Fragment, { key: index },
+          React.createElement('a', {
+            href: `https://en.wiktionary.org/wiki/${encodeURIComponent(cleanWord)}#${targetLanguage}`,
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            className: 'text-blue-600 hover:underline'
+          }, word),
+          ' '
+        );
+      }
+      return word + ' ';
+    });
+  };
   const [activeSection, setActiveSection] = React.useState(null);
   const [isPlaying, setIsPlaying] = React.useState({});
   const [loopCount, setLoopCount] = React.useState(12); // Default 12 loops
@@ -10,6 +27,17 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
   const fastAudioQueue = React.useRef([]);
   
   // Handle sequential playback for normal dialogue
+  const stopPlayback = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    audioQueue.current = [];
+    fastAudioQueue.current = [];
+    setIsPlaying({});
+    setPlaybackMode(null);
+    setRemainingLoops(0);
+  };
   const playNextInQueue = () => {
     if (audioQueue.current.length > 0) {
       const nextAudio = audioQueue.current.shift();
@@ -208,7 +236,7 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
 
             // Controls for dialogue playback
             React.createElement('div', { 
-              className: 'grid grid-cols-3 gap-4 mb-4 p-2 bg-gray-50 rounded-lg'
+              className: 'grid grid-cols-4 gap-4 mb-4 p-2 bg-gray-50 rounded-lg'
             },
               React.createElement('button', {
                 onClick: () => playAllDialogue(sectionIndex, section.audio_data.dialogue),
@@ -225,6 +253,11 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
               }, playbackMode === 'fast' ? 
                 `Playing (${remainingLoops + 1} loops left)` : 
                 'Play Fast Version'),
+                
+              playbackMode && React.createElement('button', {
+                onClick: stopPlayback,
+                className: 'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white'
+              }, '■ Stop'),
               
               section.m4a_data && React.createElement('button', {
                 onClick: () => downloadM4A(sectionIndex),
