@@ -18,6 +18,76 @@ load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
 
+def create_image_generation_prompt_for_story_part(
+    story_part: Union[Dict, List[Dict]], anthropic_model: str = None
+) -> str:
+    """
+    Create an image generation prompt from a story part or list of story parts.
+
+    Args:
+        story_part: Either a dictionary containing a 'dialogue' key, or a list of such dictionaries.
+            Each dialogue entry should be a list of speaker/text pairs.
+        anthropic_model: Optional model name for Claude
+
+    Returns:
+        str: A prompt suitable for image generation
+    """
+    # Convert single part to list for consistent processing
+    story_parts = story_part if isinstance(story_part, list) else [story_part]
+
+    # Extract all dialogue text, removing speaker information
+    all_dialogue = []
+    for part in story_parts:
+        if "dialogue" in part:
+            all_dialogue.extend([utterance["text"] for utterance in part["dialogue"]])
+
+    dialogue_text = " ".join(all_dialogue)
+
+    llm_prompt = f"""
+    Analyze this dialogue and create a first-person perspective image prompt to visualize the scene:
+
+    {dialogue_text}
+    
+    Create a detailed prompt for generating an image that captures the location and atmosphere of this scene.
+    
+    Requirements:
+    1. Use first-person perspective as if the viewer is participating in the scene
+    2. Focus on the environment, setting, and background elements
+    3. Do not include the main characters (Alex and Sam) in the description
+    4. You may include background people for atmosphere, but keep them generic
+    5. Include time of day, weather, and atmospheric details if mentioned or implied
+    6. Capture the emotional tone of the conversation in the environment
+    7. Limit output to 1-2 sentences focused on the visual elements only
+    
+    Example output format:
+    "View of a bustling city square from a cafe terrace, morning light streaming through trees, people walking past market stalls"
+    """
+
+    # Watercolor style - light, airy, organic
+    # base_style = "watercolor illustration style, fluid brush strokes, soft color transitions, vibrant pigments, organic textures, white paper showing through, loose expressive style, dynamic washes"
+
+    # Oil painting style - rich, textured, detailed
+    # base_style = "oil painting style, rich impasto textures, visible brushstrokes, saturated colors, warm undertones, glazed layers, painterly details"
+
+    # Children's book illustration - whimsical, friendly
+    # base_style = "children's book illustration style, clean linework, bright cheerful colors, decorative details, playful shapes, gentle shading, hand-drawn feel"
+
+    # Studio Ghibli inspired - atmospheric, detailed
+    base_style = "Studio Ghibli art style, soft atmospheric colors, detailed backgrounds, gentle gradients, natural elements, dreamy lighting, painted textures"
+
+    # Modern animated style - clean, bold
+    # base_style = "modern animation art style, clean vector-like shapes, bold color palette, subtle textures, smooth gradients, graphic design elements, minimalist details"
+
+    # Traditional gouache style - flat, bold
+    # base_style = "gouache painting style, matte finish, bold flat colors, painterly textures, crisp edges, vintage poster feel, decorative elements"
+
+    # Use anthropic_generate to get the response
+    image_prompt = anthropic_generate(llm_prompt, model=anthropic_model)
+    image_prompt = image_prompt.strip('".')
+
+    return image_prompt + f" in the style of {base_style}"
+
+
 def create_image_generation_prompt(phrase, anthropic_model: str = None):
     """
     Create a specific image generation prompt based on a language learning phrase.
@@ -414,7 +484,7 @@ def add_image_paths(story_dict: Dict[str, Any], image_dir: str) -> Dict[str, Any
     return updated_dict
 
 
-def generate_story_image(story_plan):
+def generate_story_image(story_dialogue: str):
     """
     Generate an image for a story using Google Cloud Vertex AI's Image Generation API.
 
@@ -433,15 +503,16 @@ def generate_story_image(story_plan):
     prompt = f"""
     Create a colorful, engaging image for a language learning story. 
     The image should be suitable as album art for an educational audio file.
-    The story is about: {story_plan}
+    The story dialogue is: {story_dialogue:str}
     The image should be family-friendly and appropriate for all ages.
-    The style should be hand-painted (not a photo). It should not contain any people.
+    The style should be hand-painted (not a photo).
     """
 
     ok_to_query_api()
     # Generate the image
     images = generation_model.generate_images(
         prompt=prompt,
+        negative_prompt="people",
         number_of_images=1,
         aspect_ratio="1:1",
         # safety_filter_level="block_some",

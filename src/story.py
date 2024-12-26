@@ -6,6 +6,7 @@ from typing import Optional, Dict
 import json
 import io
 import base64
+from PIL import Image
 
 
 def create_html_story(
@@ -100,7 +101,36 @@ def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
     return base64.b64encode(audio_bytes).decode("utf-8")
 
 
-def create_album_files(story_data_dict, image_data, output_dir, story_name_clean):
+def convert_m4a_file_to_base64(m4a_file_path: str) -> str:
+    """
+    Convert an M4A file to a base64 encoded string.
+
+    Args:
+        m4a_file_path: Path to the M4A file
+
+    Returns:
+        str: Base64 encoded string representation of the M4A file
+
+    Raises:
+        FileNotFoundError: If the M4A file doesn't exist
+        IOError: If there's an error reading the file
+    """
+    try:
+        with open(m4a_file_path, "rb") as audio_file:
+            audio_bytes = audio_file.read()
+            return base64.b64encode(audio_bytes).decode("utf-8")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"M4A file not found at: {m4a_file_path}")
+    except IOError as e:
+        raise IOError(f"Error reading M4A file: {str(e)}")
+
+
+def create_album_files(
+    story_data_dict: dict,
+    cover_image: Image.Image,
+    output_dir: str,
+    story_name_clean: str,
+):
     """Creates and saves M4A files for the story, with album artwork.
     Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue."""
 
@@ -131,12 +161,11 @@ def create_album_files(story_data_dict, image_data, output_dir, story_name_clean
         audio_list.append(GAP_BETWEEN_PHRASES)
         captions_list.append(f"{story_part} - Fast Dialogue Practice")
 
-        # Add fast dialogue 10 times
-        for i in range(10):
-            audio_list.append(data["translated_dialogue_audio_fast"])
-            captions_list.append(f"Fast Dialogue - Repetition {i+1}")
-            audio_list.append(GAP_BETWEEN_PHRASES)
-            captions_list.append(PAUSE_TEXT)
+        # Add fast dialogue (there are 10 repeats in the audio)
+        audio_list.append(data["translated_dialogue_audio_fast"])
+        captions_list.append(f"Fast Dialogue - Repetition")
+        audio_list.append(GAP_BETWEEN_PHRASES)
+        captions_list.append(PAUSE_TEXT)
 
         # Final dialogue at normal speed again
         audio_list.append(GAP_BETWEEN_PHRASES)
@@ -154,7 +183,7 @@ def create_album_files(story_data_dict, image_data, output_dir, story_name_clean
             track_title=story_part,
             track_number=track_number,
             total_tracks=TOTAL_TRACKS,
-            image_data=image_data,
+            cover_image=cover_image,
         )
         print(f"Saved M4A file track number {track_number}")
 
@@ -184,14 +213,13 @@ def create_album_files(story_data_dict, image_data, output_dir, story_name_clean
     all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
     all_dialogue_captions.append("Fast Dialogue Practice - All Parts")
 
-    for i in range(10):  # Repeat fast version 10 times
-        for story_part in story_data_dict:
-            all_dialogue_audio.append(
-                story_data_dict[story_part]["translated_dialogue_audio_fast"]
-            )
-            all_dialogue_captions.append(f"{story_part} - Fast Repetition {i+1}")
-            all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-            all_dialogue_captions.append(PAUSE_TEXT)
+    for story_part in story_data_dict:
+        all_dialogue_audio.append(
+            story_data_dict[story_part]["translated_dialogue_audio_fast"]
+        )
+        all_dialogue_captions.append(f"{story_part} - Fast Repetition")
+        all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
+        all_dialogue_captions.append(PAUSE_TEXT)
 
     # Final normal speed pass
     all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
@@ -222,7 +250,7 @@ def create_album_files(story_data_dict, image_data, output_dir, story_name_clean
         track_title="Full Dialogue - All Episodes",
         track_number=TOTAL_TRACKS,  # Last track
         total_tracks=TOTAL_TRACKS,
-        image_data=image_data,
+        cover_image=cover_image,
     )
     print(f"Saved full dialogue M4A as track number {TOTAL_TRACKS}")
 

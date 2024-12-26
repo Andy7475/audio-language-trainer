@@ -10,7 +10,7 @@ import time
 import uuid
 from functools import partial
 from typing import Dict, List, Literal, Optional, Tuple, Union
-
+from PIL import Image
 import IPython.display as ipd
 import librosa
 import numpy as np
@@ -585,15 +585,28 @@ def generate_audio_from_dialogue(
 
 
 def create_m4a_with_timed_lyrics(
-    audio_segments,
-    phrases,
-    output_file,
-    album_name,
-    track_title,
-    track_number,
-    total_tracks=6,
-    image_data=None,
-):
+    audio_segments: List[AudioSegment],
+    phrases: List[str],
+    output_file: str,
+    album_name: str,
+    track_title: str,
+    track_number: int,
+    total_tracks: int = 6,
+    cover_image: Optional[Image.Image] = None,
+) -> None:
+    """
+    Create an M4A file with timed lyrics and metadata.
+
+    Args:
+        audio_segments: List of AudioSegment objects to combine
+        phrases: List of text phrases matching the audio segments
+        output_file: Name of the output file
+        album_name: Name of the album
+        track_title: Title of this track
+        track_number: Number of this track in the album
+        total_tracks: Total number of tracks in album
+        cover_image: Optional cover artwork as PIL Image
+    """
     # Ensure the output directory exists
     output_dir = "../outputs/"
     os.makedirs(output_dir, exist_ok=True)
@@ -640,8 +653,9 @@ def create_m4a_with_timed_lyrics(
     audio["\xa9gen"] = "Education"  # Genre set to Education
     audio["pcst"] = True  # Podcast flag set to True
 
-    if image_data:
-        audio["covr"] = [MP4Cover(image_data, imageformat=MP4Cover.FORMAT_JPEG)]
+    if cover_image:
+        jpeg_bytes = cover_image.convert("RGB").tobytes("jpeg", "RGB")
+        audio["covr"] = [MP4Cover(jpeg_bytes, imageformat=MP4Cover.FORMAT_JPEG)]
 
     audio.save()
 

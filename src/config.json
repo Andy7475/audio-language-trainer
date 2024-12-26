@@ -15,7 +15,7 @@
     "PROJECT_ID":"swedish-course",
     "VERTEX_REGION":"us-central1",
     "TTS_REGION":"us-central1",
-    "MAX_TTS_REQUESTS_PER_MINUTE":10,
+    "MAX_TTS_REQUESTS_PER_MINUTE":100,
     "VOCAB_USAGE_PATH":"../data/1000_vocab_usage.json",
     "VOCAB_LIST":"../data/1000_vocab_list.json",
     "API_DELAY_SECONDS":20,

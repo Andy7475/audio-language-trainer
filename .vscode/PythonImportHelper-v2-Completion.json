@@ -911,11 +911,19 @@
         "documentation": {}
     },
     {
-        "label": "AudioSegment",
-        "importPath": "pydub",
-        "description": "pydub",
+        "label": "Image",
+        "importPath": "PIL",
+        "description": "PIL",
         "isExtraImport": true,
-        "detail": "pydub",
+        "detail": "PIL",
+        "documentation": {}
+    },
+    {
+        "label": "Image",
+        "importPath": "PIL",
+        "description": "PIL",
+        "isExtraImport": true,
+        "detail": "PIL",
         "documentation": {}
     },
     {
@@ -1080,14 +1088,6 @@
     },
     {
         "label": "VoiceInfo",
-        "importPath": "src.config_loader",
-        "description": "src.config_loader",
-        "isExtraImport": true,
-        "detail": "src.config_loader",
-        "documentation": {}
-    },
-    {
-        "label": "config",
         "importPath": "src.config_loader",
         "description": "src.config_loader",
         "isExtraImport": true,
@@ -1629,14 +1629,6 @@
     },
     {
         "label": "# async_process_phrases",
-        "importPath": "src.audio_generation",
-        "description": "src.audio_generation",
-        "isExtraImport": true,
-        "detail": "src.audio_generation",
-        "documentation": {}
-    },
-    {
-        "label": "create_m4a_with_timed_lyrics",
         "importPath": "src.audio_generation",
         "description": "src.audio_generation",
         "isExtraImport": true,
@@ -2804,7 +2796,7 @@
         "kind": 2,
         "importPath": "src.audio_generation",
         "description": "src.audio_generation",
-        "peekOfCode": "def create_m4a_with_timed_lyrics(\n    audio_segments,\n    phrases,\n    output_file,\n    album_name,\n    track_title,\n    track_number,\n    total_tracks=6,\n    image_data=None,\n):",
+        "peekOfCode": "def create_m4a_with_timed_lyrics(\n    audio_segments: List[AudioSegment],\n    phrases: List[str],\n    output_file: str,\n    album_name: str,\n    track_title: str,\n    track_number: int,\n    total_tracks: int = 6,\n    cover_image: Optional[Image.Image] = None,\n) -> None:",
         "detail": "src.audio_generation",
         "documentation": {}
     },
@@ -2908,12 +2900,12 @@
         "documentation": {}
     },
     {
-        "label": "create_album_files",
+        "label": "create_image_generation_prompt_for_story_part",
         "kind": 2,
-        "importPath": "src.generate",
-        "description": "src.generate",
-        "peekOfCode": "def create_album_files(story_data_dict, image_data, output_dir, story_name_clean):\n    \"\"\"Creates and saves M4A files for the story, with album artwork\"\"\"\n    # get lists and audio clips synced together\n    full_audio_list = []\n    full_captions_list = []\n    # fast dialogue (no text)\n    PAUSE_TEXT = \"---------\"\n    THINKING_GAP = AudioSegment.silent(duration=config.THINKING_GAP_MS)\n    GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)\n    # translated dialogue",
-        "detail": "src.generate",
+        "importPath": "src.images",
+        "description": "src.images",
+        "peekOfCode": "def create_image_generation_prompt_for_story_part(\n    story_part: Union[Dict, List[Dict]], anthropic_model: str = None\n) -> str:\n    \"\"\"\n    Create an image generation prompt from a story part or list of story parts.\n    Args:\n        story_part: Either a dictionary containing a 'dialogue' key, or a list of such dictionaries.\n            Each dialogue entry should be a list of speaker/text pairs.\n        anthropic_model: Optional model name for Claude\n    Returns:",
+        "detail": "src.images",
         "documentation": {}
     },
     {
@@ -2984,7 +2976,7 @@
         "kind": 2,
         "importPath": "src.images",
         "description": "src.images",
-        "peekOfCode": "def generate_story_image(story_plan):\n    \"\"\"\n    Generate an image for a story using Google Cloud Vertex AI's Image Generation API.\n    :param story_plan: A string containing the story plan\n    :param project_id: Your Google Cloud project ID\n    :param location: The location of your Vertex AI endpoint\n    :return: Image data as bytes\n    \"\"\"\n    # Initialize Vertex AI\n    vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)",
+        "peekOfCode": "def generate_story_image(story_dialogue: str):\n    \"\"\"\n    Generate an image for a story using Google Cloud Vertex AI's Image Generation API.\n    :param story_plan: A string containing the story plan\n    :param project_id: Your Google Cloud project ID\n    :param location: The location of your Vertex AI endpoint\n    :return: Image data as bytes\n    \"\"\"\n    # Initialize Vertex AI\n    vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)",
         "detail": "src.images",
         "documentation": {}
     },
@@ -2993,7 +2985,7 @@
         "kind": 5,
         "importPath": "src.images",
         "description": "src.images",
-        "peekOfCode": "STABILITY_API_KEY = os.getenv(\"STABILITY_API_KEY\")\ndef create_image_generation_prompt(phrase, anthropic_model: str = None):\n    \"\"\"\n    Create a specific image generation prompt based on a language learning phrase.\n    :param phrase: The language learning phrase to visualize\n    :return: A specific prompt for image generation\n    \"\"\"\n    llm_prompt = f\"\"\"\n    Given the following phrase for language learners: \"{phrase}\"\n    Create a specific, detailed prompt for generating an image that will help learners remember this phrase.",
+        "peekOfCode": "STABILITY_API_KEY = os.getenv(\"STABILITY_API_KEY\")\ndef create_image_generation_prompt_for_story_part(\n    story_part: Union[Dict, List[Dict]], anthropic_model: str = None\n) -> str:\n    \"\"\"\n    Create an image generation prompt from a story part or list of story parts.\n    Args:\n        story_part: Either a dictionary containing a 'dialogue' key, or a list of such dictionaries.\n            Each dialogue entry should be a list of speaker/text pairs.\n        anthropic_model: Optional model name for Claude",
         "detail": "src.images",
         "documentation": {}
     },
@@ -3362,7 +3354,16 @@
         "kind": 2,
         "importPath": "src.story",
         "description": "src.story",
-        "peekOfCode": "def convert_audio_to_base64(audio_segment: AudioSegment) -> str:\n    \"\"\"Convert an AudioSegment to a base64 encoded string.\"\"\"\n    buffer = io.BytesIO()\n    audio_segment.export(buffer, format=\"mp3\")\n    buffer.seek(0)\n    audio_bytes = buffer.read()\n    return base64.b64encode(audio_bytes).decode(\"utf-8\")\ndef create_album_files(story_data_dict, image_data, output_dir, story_name_clean):\n    \"\"\"Creates and saves M4A files for the story, with album artwork.\n    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue.\"\"\"",
+        "peekOfCode": "def convert_audio_to_base64(audio_segment: AudioSegment) -> str:\n    \"\"\"Convert an AudioSegment to a base64 encoded string.\"\"\"\n    buffer = io.BytesIO()\n    audio_segment.export(buffer, format=\"mp3\")\n    buffer.seek(0)\n    audio_bytes = buffer.read()\n    return base64.b64encode(audio_bytes).decode(\"utf-8\")\ndef convert_m4a_file_to_base64(m4a_file_path: str) -> str:\n    \"\"\"\n    Convert an M4A file to a base64 encoded string.",
+        "detail": "src.story",
+        "documentation": {}
+    },
+    {
+        "label": "convert_m4a_file_to_base64",
+        "kind": 2,
+        "importPath": "src.story",
+        "description": "src.story",
+        "peekOfCode": "def convert_m4a_file_to_base64(m4a_file_path: str) -> str:\n    \"\"\"\n    Convert an M4A file to a base64 encoded string.\n    Args:\n        m4a_file_path: Path to the M4A file\n    Returns:\n        str: Base64 encoded string representation of the M4A file\n    Raises:\n        FileNotFoundError: If the M4A file doesn't exist\n        IOError: If there's an error reading the file",
         "detail": "src.story",
         "documentation": {}
     },
@@ -3371,7 +3372,7 @@
         "kind": 2,
         "importPath": "src.story",
         "description": "src.story",
-        "peekOfCode": "def create_album_files(story_data_dict, image_data, output_dir, story_name_clean):\n    \"\"\"Creates and saves M4A files for the story, with album artwork.\n    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue.\"\"\"\n    PAUSE_TEXT = \"---------\"\n    GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)\n    ALBUM_NAME = story_name_clean.replace(\"_\", \" \")\n    TOTAL_TRACKS = len(story_data_dict) + 1  # +1 for the full dialogue track\n    for track_number, (story_part, data) in enumerate(\n        tqdm(story_data_dict.items(), desc=\"creating album\"), start=1\n    ):",
+        "peekOfCode": "def create_album_files(\n    story_data_dict: dict,\n    cover_image: Image.Image,\n    output_dir: str,\n    story_name_clean: str,\n):\n    \"\"\"Creates and saves M4A files for the story, with album artwork.\n    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue.\"\"\"\n    PAUSE_TEXT = \"---------\"\n    GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)",
         "detail": "src.story",
         "documentation": {}
     },
