@@ -144,7 +144,7 @@ def create_album_files(
 ):
     """Creates and saves M4A files for the story, with album artwork.
     Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue."""
-
+    REPEATS_OF_FAST_DIALOGUE = 10
     PAUSE_TEXT = "---------"
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
 
@@ -173,10 +173,11 @@ def create_album_files(
         captions_list.append(f"{story_part} - Fast Dialogue Practice")
 
         # Add fast dialogue (there are 10 repeats in the audio)
-        audio_list.append(data["translated_dialogue_audio_fast"])
-        captions_list.append("Fast Dialogue - Repetition")
-        audio_list.append(GAP_BETWEEN_PHRASES)
-        captions_list.append(PAUSE_TEXT)
+        for i in range(REPEATS_OF_FAST_DIALOGUE):
+            audio_list.append(data["translated_dialogue_audio_fast"])
+            captions_list.append(f"Fast Dialogue - Repetition {i+1}")
+            audio_list.append(GAP_BETWEEN_PHRASES)
+            captions_list.append(PAUSE_TEXT)
 
         # Final dialogue at normal speed again
         audio_list.append(GAP_BETWEEN_PHRASES)
