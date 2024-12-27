@@ -529,7 +529,7 @@ def generate_normal_and_fast_audio(
     audio_segments: List[AudioSegment],
 ) -> Tuple[AudioSegment, AudioSegment]:
     """
-    Generate normal speed and (10 copies) of a fast version of the dialogue. Designed to be
+    Generate normal speed and a fast version of the dialogue. Designed to be
     called after generate_audio_from_dialogue as that func returns a list of audio segments
 
     :param audio_segments: List of AudioSegment objects representing each utterance
@@ -541,7 +541,7 @@ def generate_normal_and_fast_audio(
         fast_segment = speed_up_audio(segment)
         fast_segments.append(fast_segment)
 
-    fast_audio = join_audio_segments(fast_segments * 10, gap_ms=200)
+    fast_audio = join_audio_segments(fast_segments, gap_ms=200)
     return normal_speed, fast_audio
 
 
