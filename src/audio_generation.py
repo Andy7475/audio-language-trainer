@@ -10,7 +10,7 @@ import time
 import uuid
 from functools import partial
 from typing import Dict, List, Literal, Optional, Tuple, Union
-
+from PIL import Image
 import IPython.display as ipd
 import librosa
 import numpy as np
@@ -126,7 +126,7 @@ def clean_translated_content(
         raise ValueError(f"Unsupported content format: {type(content)}")
 
 
-def generate_phrase__english_audio_files(phrases: List[str], output_dir: str) -> None:
+def generate_phrase_english_audio_files(phrases: List[str], output_dir: str) -> None:
     """
     Generate slow and normal English-only speed MP3 files for each phrase and save them to output_dir.
 
@@ -529,7 +529,7 @@ def generate_normal_and_fast_audio(
     audio_segments: List[AudioSegment],
 ) -> Tuple[AudioSegment, AudioSegment]:
     """
-    Generate normal speed and (10 copies) of a fast version of the dialogue. Designed to be
+    Generate normal speed and a fast version of the dialogue. Designed to be
     called after generate_audio_from_dialogue as that func returns a list of audio segments
 
     :param audio_segments: List of AudioSegment objects representing each utterance
@@ -541,7 +541,7 @@ def generate_normal_and_fast_audio(
         fast_segment = speed_up_audio(segment)
         fast_segments.append(fast_segment)
 
-    fast_audio = join_audio_segments(fast_segments * 10, gap_ms=200)
+    fast_audio = join_audio_segments(fast_segments, gap_ms=200)
     return normal_speed, fast_audio
 
 
@@ -585,15 +585,28 @@ def generate_audio_from_dialogue(
 
 
 def create_m4a_with_timed_lyrics(
-    audio_segments,
-    phrases,
-    output_file,
-    album_name,
-    track_title,
-    track_number,
-    total_tracks=6,
-    image_data=None,
-):
+    audio_segments: List[AudioSegment],
+    phrases: List[str],
+    output_file: str,
+    album_name: str,
+    track_title: str,
+    track_number: int,
+    total_tracks: int = 6,
+    cover_image: Optional[Image.Image] = None,
+) -> None:
+    """
+    Create an M4A file with timed lyrics and metadata.
+
+    Args:
+        audio_segments: List of AudioSegment objects to combine
+        phrases: List of text phrases matching the audio segments
+        output_file: Name of the output file
+        album_name: Name of the album
+        track_title: Title of this track
+        track_number: Number of this track in the album
+        total_tracks: Total number of tracks in album
+        cover_image: Optional cover artwork as PIL Image
+    """
     # Ensure the output directory exists
     output_dir = "../outputs/"
     os.makedirs(output_dir, exist_ok=True)
@@ -640,8 +653,9 @@ def create_m4a_with_timed_lyrics(
     audio["\xa9gen"] = "Education"  # Genre set to Education
     audio["pcst"] = True  # Podcast flag set to True
 
-    if image_data:
-        audio["covr"] = [MP4Cover(image_data, imageformat=MP4Cover.FORMAT_JPEG)]
+    if cover_image:
+        jpeg_bytes = cover_image.convert("RGB").tobytes("jpeg", "RGB")
+        audio["covr"] = [MP4Cover(jpeg_bytes, imageformat=MP4Cover.FORMAT_JPEG)]
 
     audio.save()
 

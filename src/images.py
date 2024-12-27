@@ -18,6 +18,76 @@ load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
 
+def create_image_generation_prompt_for_story_part(
+    story_part: Union[Dict, List[Dict]], anthropic_model: str = None
+) -> str:
+    """
+    Create an image generation prompt from a story part or list of story parts.
+
+    Args:
+        story_part: Either a dictionary containing a 'dialogue' key, or a list of such dictionaries.
+            Each dialogue entry should be a list of speaker/text pairs.
+        anthropic_model: Optional model name for Claude
+
+    Returns:
+        str: A prompt suitable for image generation
+    """
+    # Convert single part to list for consistent processing
+    story_parts = story_part if isinstance(story_part, list) else [story_part]
+
+    # Extract all dialogue text, removing speaker information
+    all_dialogue = []
+    for part in story_parts:
+        if "dialogue" in part:
+            all_dialogue.extend([utterance["text"] for utterance in part["dialogue"]])
+
+    dialogue_text = " ".join(all_dialogue)
+
+    llm_prompt = f"""
+    Analyze this dialogue and create a first-person perspective image prompt to visualize the scene:
+
+    {dialogue_text}
+    
+    Create a detailed prompt for generating an image that captures the location and atmosphere of this scene.
+    
+    Requirements:
+    1. Use first-person perspective as if the viewer is participating in the scene
+    2. Focus on the environment, setting, and background elements
+    3. Do not include the main characters (Alex and Sam) in the description
+    4. You may include background people for atmosphere, but keep them generic
+    5. Include time of day, weather, and atmospheric details if mentioned or implied
+    6. Capture the emotional tone of the conversation in the environment
+    7. Limit output to 1-2 sentences focused on the visual elements only
+    
+    Example output format:
+    "View of a bustling city square from a cafe terrace, morning light streaming through trees, people walking past market stalls"
+    """
+
+    # Watercolor style - light, airy, organic
+    # base_style = "watercolor illustration style, fluid brush strokes, soft color transitions, vibrant pigments, organic textures, white paper showing through, loose expressive style, dynamic washes"
+
+    # Oil painting style - rich, textured, detailed
+    # base_style = "oil painting style, rich impasto textures, visible brushstrokes, saturated colors, warm undertones, glazed layers, painterly details"
+
+    # Children's book illustration - whimsical, friendly
+    # base_style = "children's book illustration style, clean linework, bright cheerful colors, decorative details, playful shapes, gentle shading, hand-drawn feel"
+
+    # Studio Ghibli inspired - atmospheric, detailed
+    base_style = "Studio Ghibli art style, soft atmospheric colors, detailed backgrounds, gentle gradients, natural elements, dreamy lighting, painted textures"
+
+    # Modern animated style - clean, bold
+    # base_style = "modern animation art style, clean vector-like shapes, bold color palette, subtle textures, smooth gradients, graphic design elements, minimalist details"
+
+    # Traditional gouache style - flat, bold
+    # base_style = "gouache painting style, matte finish, bold flat colors, painterly textures, crisp edges, vintage poster feel, decorative elements"
+
+    # Use anthropic_generate to get the response
+    image_prompt = anthropic_generate(llm_prompt, model=anthropic_model)
+    image_prompt = image_prompt.strip('".')
+
+    return image_prompt + f" in the style of {base_style}"
+
+
 def create_image_generation_prompt(phrase, anthropic_model: str = None):
     """
     Create a specific image generation prompt based on a language learning phrase.
@@ -289,6 +359,115 @@ def resize_image(generated_image, height=500, width=500):
     return image_data
 
 
+def generate_image(
+    prompt: str,
+    model_order: List[Literal["imagen", "stability", "deepai"]] = [
+        "imagen",
+        "stability",
+        "deepai",
+    ],
+) -> Optional[Image.Image]:
+    """
+    Try to generate an image using multiple providers in specified order.
+
+    Args:
+        prompt: The image generation prompt
+        model_order: List of models to try in order
+
+    Returns:
+        Optional[Image.Image]: Generated image or None if all attempts fail
+    """
+    for model in model_order:
+        try:
+            ok_to_query_api()
+
+            if model == "imagen":
+                image = generate_image_imagen(prompt, model="imagen-3.0-generate-001")
+                if image:
+                    return image
+
+            elif model == "stability":
+                image = generate_image_stability(prompt)
+                if image:
+                    return image
+
+            elif model == "deepai":
+                image = generate_image_deepai(prompt)
+                if image:
+                    return image
+
+        except Exception as e:
+            print(f"Error with {model} provider: {str(e)}")
+            continue
+
+    return None
+
+
+def generate_and_save_story_images(
+    story_dict: Dict[str, Dict],
+    output_dir: str,
+    story_name: str,
+    model_order: List[Literal["imagen", "stability", "deepai"]] = [
+        "imagen",
+        "stability",
+        "deepai",
+    ],
+    anthropic_model: Optional[str] = None,
+) -> Dict[str, str]:
+    """
+    Generate and save images for each part of a story.
+
+    Args:
+        story_dict: Dictionary containing story data
+        output_dir: Directory to save generated images
+        story_name: Name of the story (used for filenames)
+        model_order: Order of image generation models to try
+        anthropic_model: Optional model name for prompt generation
+
+    Returns:
+        Dict[str, str]: Mapping of story parts to image file paths
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Store image paths for each story part
+    image_paths = {}
+
+    for story_part, content in tqdm(story_dict.items(), desc="Generating story images"):
+        # Construct image filename
+        image_filename = f"{story_name}_{story_part}.png"
+        image_path = os.path.join(output_dir, image_filename)
+
+        # Skip if image already exists
+        if os.path.exists(image_path):
+            print(f"Image already exists for {story_part}, skipping generation")
+            image_paths[story_part] = image_path
+            continue
+
+        # Generate prompt
+        ok_to_query_api()
+        prompt = create_image_generation_prompt_for_story_part(content, anthropic_model)
+
+        # Try to generate image
+        try:
+            image = generate_image(prompt, model_order)
+
+            if image is None:
+                print(f"Failed to generate image for {story_part} with all providers")
+                continue
+
+            # Save the image
+            image.save(image_path)
+            image_paths[story_part] = image_path
+            print(f"Successfully generated and saved image for {story_part}")
+
+        except Exception as e:
+            print(f"Error processing {story_part}: {str(e)}")
+            continue
+
+    return image_paths
+
+
 def add_images_to_phrases(
     phrases: List[str],
     output_dir: str,
@@ -412,46 +591,3 @@ def add_image_paths(story_dict: Dict[str, Any], image_dir: str) -> Dict[str, Any
             )
 
     return updated_dict
-
-
-def generate_story_image(story_plan):
-    """
-    Generate an image for a story using Google Cloud Vertex AI's Image Generation API.
-
-    :param story_plan: A string containing the story plan
-    :param project_id: Your Google Cloud project ID
-    :param location: The location of your Vertex AI endpoint
-    :return: Image data as bytes
-    """
-    # Initialize Vertex AI
-    vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
-
-    # Initialize the Image Generation model
-    generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
-
-    # Craft the prompt
-    prompt = f"""
-    Create a colorful, engaging image for a language learning story. 
-    The image should be suitable as album art for an educational audio file.
-    The story is about: {story_plan}
-    The image should be family-friendly and appropriate for all ages.
-    The style should be hand-painted (not a photo). It should not contain any people.
-    """
-
-    ok_to_query_api()
-    # Generate the image
-    images = generation_model.generate_images(
-        prompt=prompt,
-        number_of_images=1,
-        aspect_ratio="1:1",
-        # safety_filter_level="block_some",
-        person_generation="don't allow",
-    )
-
-    # Get the first (and only) generated image
-    generated_image = images[0]
-
-    image_data = resize_image(generated_image, 500, 500)
-    # Get the image bytes directly
-
-    return image_data

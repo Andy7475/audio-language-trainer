@@ -14,9 +14,6 @@ from src.config_loader import config
 from src.utils import (
     anthropic_generate,
     extract_json_from_llm_response,
-    load_json,
-    save_json,
-    update_vocab_usage,
 )
 
 
@@ -89,35 +86,6 @@ def generate_story(vocab_dict: Dict[str, List[str]]) -> Dict:
             return None
 
     return extracted_json
-
-
-def get_least_used_words(category, count):
-    # Load the current usage
-    with open(config.VOCAB_USAGE_PATH, "r") as f:
-        vocab_usage = json.load(f)
-
-    # Calculate weights (inverse of usage count + 1 to avoid division by zero)
-    words = list(vocab_usage[category].keys())
-    weights = [1 / (usage + 1) for usage in vocab_usage[category].values()]
-
-    # Normalize weights
-    total_weight = sum(weights)
-    normalized_weights = [w / total_weight for w in weights]
-
-    # Perform weighted random sampling
-    selected_words = random.choices(words, weights=normalized_weights, k=count)
-
-    # now we should update that they have been used once (to prevent instances of words remaining at 0)
-    # for any mismatch in the lemmma or the vocab list
-    if category == "verbs":
-        pos = "VERB"
-    else:
-        pos = "vocab"
-
-    words_with_pos = [(word, pos) for word in selected_words]
-    update_vocab_usage(words_with_pos)
-
-    return selected_words
 
 
 def add_usage_to_words(word_list: List[str], category: str) -> str:

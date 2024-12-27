@@ -102,6 +102,57 @@
     <div class="footer-info">
         Click 📋 to copy the prompt or 💡 to open Claude and automatically copy the prompt for pasting.
     </div>
+
+    <!-- Stories Section --> 
+    <div id="stories-section" class="stories-container">
+        <div class="stories-header">Stories</div>
+					<div class="footer-info">
+        Stories will direct to an external website
+    </div>
+        <div class="stories-links">
+            <script>
+                (function() {
+                    const tagString = "{{Tags}}";  // This will get the tags as a string
+                    const tags = tagString ? tagString.split(" ") : [];
+                    const storyTags = tags.filter(tag => tag.startsWith('story_'));
+                    const storiesContainer = document.querySelector('.stories-links');
+                    
+                    if (storyTags && storyTags.length > 0) {
+                        storyTags.forEach(tag => {
+                            const displayName = tag
+                                .replace('story_', '')
+                                .split('_')
+                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                .join(' ');
+                            
+                            const targetLang = "{{TargetLanguageName}}".toLowerCase();
+                            const bucketUrl = `https://storage.googleapis.com/audio-language-trainer-stories/${targetLang}/${tag}/${tag}.html`;
+                            
+                            const link = document.createElement('a');
+                            link.href = bucketUrl;
+                            link.className = 'story-link';
+                            link.target = '_blank';
+                            link.textContent = displayName;
+                            
+                            storiesContainer.appendChild(link);
+                        });
+                    } else {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'story-placeholder';
+                        placeholder.innerHTML = `
+                            <p>No stories available yet for this vocabulary.</p>
+                            <a href="https://github.com/Andy7475/audio-language-trainer/discussions/118" 
+                            target="_blank" 
+                            class="request-story-link">
+                                Request a story in the GitHub discussion →
+                            </a>
+                        `;
+                        storiesContainer.appendChild(placeholder);
+                    }
+                })();
+            </script>
+        </div>
+    </div>
 </div>
 
 <script>
