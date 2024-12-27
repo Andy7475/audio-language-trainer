@@ -2954,6 +2954,24 @@
         "documentation": {}
     },
     {
+        "label": "generate_image",
+        "kind": 2,
+        "importPath": "src.images",
+        "description": "src.images",
+        "peekOfCode": "def generate_image(\n    prompt: str,\n    model_order: List[Literal[\"imagen\", \"stability\", \"deepai\"]] = [\n        \"imagen\",\n        \"stability\",\n        \"deepai\",\n    ],\n) -> Optional[Image.Image]:\n    \"\"\"\n    Try to generate an image using multiple providers in specified order.",
+        "detail": "src.images",
+        "documentation": {}
+    },
+    {
+        "label": "generate_and_save_story_images",
+        "kind": 2,
+        "importPath": "src.images",
+        "description": "src.images",
+        "peekOfCode": "def generate_and_save_story_images(\n    story_dict: Dict[str, Dict],\n    output_dir: str,\n    story_name: str,\n    model_order: List[Literal[\"imagen\", \"stability\", \"deepai\"]] = [\n        \"imagen\",\n        \"stability\",\n        \"deepai\",\n    ],\n    anthropic_model: Optional[str] = None,",
+        "detail": "src.images",
+        "documentation": {}
+    },
+    {
         "label": "add_images_to_phrases",
         "kind": 2,
         "importPath": "src.images",
@@ -2968,15 +2986,6 @@
         "importPath": "src.images",
         "description": "src.images",
         "peekOfCode": "def add_image_paths(story_dict: Dict[str, Any], image_dir: str) -> Dict[str, Any]:\n    \"\"\"\n    Add image paths to the story dictionary based on the English phrases.\n    Args:\n        story_dict: Dictionary containing story data with translated_phrase_list\n        image_dir: Directory containing the images\n    Returns:\n        Updated dictionary with image_path added for each story part\n    Note:\n        For each story part, expects translated_phrase_list to be a list of tuples",
-        "detail": "src.images",
-        "documentation": {}
-    },
-    {
-        "label": "generate_story_image",
-        "kind": 2,
-        "importPath": "src.images",
-        "description": "src.images",
-        "peekOfCode": "def generate_story_image(story_dialogue: str):\n    \"\"\"\n    Generate an image for a story using Google Cloud Vertex AI's Image Generation API.\n    :param story_plan: A string containing the story plan\n    :param project_id: Your Google Cloud project ID\n    :param location: The location of your Vertex AI endpoint\n    :return: Image data as bytes\n    \"\"\"\n    # Initialize Vertex AI\n    vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)",
         "detail": "src.images",
         "documentation": {}
     },
@@ -3345,7 +3354,7 @@
         "kind": 2,
         "importPath": "src.story",
         "description": "src.story",
-        "peekOfCode": "def create_html_story(\n    story_data_dict: Dict,\n    output_path: str,\n    component_path: str,\n    title: Optional[str] = None,\n    language: str = config.TARGET_LANGUAGE_NAME,\n) -> None:\n    \"\"\"\n    Create a standalone HTML file from the story data dictionary.\n    Args:",
+        "peekOfCode": "def create_html_story(\n    story_data_dict: Dict,\n    output_dir: str,\n    component_path: str,\n    story_name: str,\n    language: str = config.TARGET_LANGUAGE_NAME,\n) -> None:\n    \"\"\"\n    Create a standalone HTML file from the story data dictionary.\n    Args:",
         "detail": "src.story",
         "documentation": {}
     },
@@ -3372,7 +3381,16 @@
         "kind": 2,
         "importPath": "src.story",
         "description": "src.story",
-        "peekOfCode": "def create_album_files(\n    story_data_dict: dict,\n    cover_image: Image.Image,\n    output_dir: str,\n    story_name_clean: str,\n):\n    \"\"\"Creates and saves M4A files for the story, with album artwork.\n    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue.\"\"\"\n    PAUSE_TEXT = \"---------\"\n    GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)",
+        "peekOfCode": "def create_album_files(\n    story_data_dict: dict,\n    cover_image: Image.Image,\n    output_dir: str,\n    story_name: str,\n):\n    \"\"\"Creates and saves M4A files for the story, with album artwork.\n    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue.\"\"\"\n    PAUSE_TEXT = \"---------\"\n    GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)",
+        "detail": "src.story",
+        "documentation": {}
+    },
+    {
+        "label": "clean_story_name",
+        "kind": 2,
+        "importPath": "src.story",
+        "description": "src.story",
+        "peekOfCode": "def clean_story_name(story_name: str) -> str:\n    \"\"\"\n    Clean a story name by removing 'story' and underscores, returning in title case.\n    Args:\n        story_name: Input story name (e.g. \"story_community_park\")\n    Returns:\n        str: Cleaned story name in title case (e.g. \"Community Park\")\n    Example:\n        >>> clean_story_name(\"story_community_park\")\n        'Community Park'",
         "detail": "src.story",
         "documentation": {}
     },
@@ -3381,7 +3399,7 @@
         "kind": 2,
         "importPath": "src.story",
         "description": "src.story",
-        "peekOfCode": "def prepare_story_data_for_html(story_data_dict: Dict) -> Dict:\n    \"\"\"Process the story data dictionary to include base64 encoded audio for both\n    normal dialogue utterances and fast dialogue versions.\"\"\"\n    prepared_data = {}\n    for section_name, section_data in story_data_dict.items():\n        prepared_data[section_name] = {\n            \"dialogue\": section_data.get(\"dialogue\", []),\n            \"translated_dialogue\": section_data.get(\"translated_dialogue\", []),\n            \"audio_data\": {\n                \"dialogue\": [],",
+        "peekOfCode": "def prepare_story_data_for_html(\n    story_data_dict: Dict,\n    story_name: str,\n    m4a_folder: Optional[str] = None,\n    image_folder: Optional[str] = None,\n) -> Dict:\n    \"\"\"Process the story data dictionary to include base64 encoded audio, images and M4A files.\n    Args:\n        story_data_dict: Dictionary containing story dialogue and audio data\n        story_name: Name of the story (used to find corresponding M4A/image files)",
         "detail": "src.story",
         "documentation": {}
     },
