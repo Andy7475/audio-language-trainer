@@ -1,4 +1,3 @@
-// StoryViewer component without JSX or imports
 const StoryViewer = ({ storyData, targetLanguage, title }) => {
   const createWiktionaryLinks = (text) => {
     return text.split(' ').map((word, index) => {
@@ -17,16 +16,18 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
       return word + ' ';
     });
   };
+
   const [activeSection, setActiveSection] = React.useState(null);
   const [isPlaying, setIsPlaying] = React.useState({});
-  const [loopCount, setLoopCount] = React.useState(12); // Default 12 loops
+  const [loopCount, setLoopCount] = React.useState(12);
   const [remainingLoops, setRemainingLoops] = React.useState(0);
-  const [playbackMode, setPlaybackMode] = React.useState(null); // 'normal' or 'fast'
+  const [playbackMode, setPlaybackMode] = React.useState(null);
+  
   const audioRef = React.useRef(null);
   const audioQueue = React.useRef([]);
   const fastAudioQueue = React.useRef([]);
-  
-  // Handle sequential playback for normal dialogue
+  const activeSectionAudio = React.useRef(null);
+
   const stopPlayback = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -34,60 +35,100 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     }
     audioQueue.current = [];
     fastAudioQueue.current = [];
+    activeSectionAudio.current = null;
     setIsPlaying({});
     setPlaybackMode(null);
     setRemainingLoops(0);
   };
+
+  const playAudioData = (audioData) => {
+    if (audioRef.current) {
+      audioRef.current.src = `data:audio/mp3;base64,${audioData}`;
+      audioRef.current.play().catch(error => {
+        console.error('Audio playback error:', error);
+        stopPlayback();
+      });
+    }
+  };
+
   const playNextInQueue = () => {
     if (audioQueue.current.length > 0) {
       const nextAudio = audioQueue.current.shift();
-      if (audioRef.current) {
-        audioRef.current.src = `data:audio/mp3;base64,${nextAudio}`;
-        audioRef.current.play();
-      }
+      playAudioData(nextAudio);
     } else {
-      // Queue is empty, playback complete
       setIsPlaying({});
       setPlaybackMode(null);
     }
   };
 
-  // Handle fast audio playback with looping
+  const resetFastAudioQueue = (mode = 'single') => {
+    if (mode === 'all') {
+      // For playing all sections
+      const sectionKeys = Object.keys(storyData);
+      return sectionKeys.map((key, index) => ({
+        audio: storyData[key].audio_data.fast_dialogue,
+        isLastInLoop: index === sectionKeys.length - 1
+      }));
+    } else {
+      // For playing single section
+      return [{
+        audio: activeSectionAudio.current,
+        isLastInLoop: true
+      }];
+    }
+  };
+  
+  const playFastAudio = (sectionIndex, loops = loopCount) => {
+    stopPlayback();
+    setIsPlaying(prev => ({ ...prev, [sectionIndex]: true }));
+    setPlaybackMode('fast'); // Keep as 'fast', not 'all'
+    setRemainingLoops(loops - 1); // Subtract 1 as we're about to play first loop
+    
+    const fastAudio = storyData[Object.keys(storyData)[sectionIndex]].audio_data.fast_dialogue;
+    activeSectionAudio.current = fastAudio;
+    
+    // Initialize queue with first loop
+    fastAudioQueue.current = [{
+      audio: fastAudio,
+      isLastInLoop: true
+    }];
+    
+    playNextFastAudio();
+  };
+  
   const playNextFastAudio = () => {
+    if (remainingLoops < 0 && fastAudioQueue.current.length === 0) {
+      stopPlayback();
+      return;
+    }
+  
     if (fastAudioQueue.current.length > 0) {
-      // If we've played all sections once, decrement loop counter
-      if (fastAudioQueue.current.length === Object.keys(storyData).length) {
-        setRemainingLoops(prev => prev - 1);
-      }
-
       const nextAudio = fastAudioQueue.current.shift();
-      if (audioRef.current) {
-        audioRef.current.src = `data:audio/mp3;base64,${nextAudio}`;
-        audioRef.current.play();
+      playAudioData(nextAudio.audio);
+      
+      if (nextAudio.isLastInLoop) {
+        setRemainingLoops(prev => {
+          const newCount = prev - 1;
+          if (newCount >= 0) {
+            // Important: Use the same mode as initial playback
+            fastAudioQueue.current = resetFastAudioQueue(
+              playbackMode === 'all' ? 'all' : 'single'
+            );
+          }
+          return newCount;
+        });
       }
     } else {
-      // Check if we should continue looping
-      if (remainingLoops > 0) {
-        // Reset queue for another loop
-        const sections = Object.values(storyData);
-        fastAudioQueue.current = sections.map(section => section.audio_data.fast_dialogue);
-        playNextFastAudio();
-      } else {
-        // All loops complete
-        setIsPlaying({});
-        setPlaybackMode(null);
-        setRemainingLoops(0);
-      }
+      stopPlayback();
     }
   };
 
   React.useEffect(() => {
-    // Add ended event listener for sequential playback
     if (audioRef.current) {
       const handleEnded = () => {
         if (playbackMode === 'normal') {
           playNextInQueue();
-        } else if (playbackMode === 'fast') {
+        } else if (playbackMode === 'fast' || playbackMode === 'all') {
           playNextFastAudio();
         }
       };
@@ -99,39 +140,31 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     }
   }, [playbackMode]);
 
-  const playAudio = (audioData) => {
-    if (audioRef.current) {
-      audioRef.current.src = `data:audio/mp3;base64,${audioData}`;
-      audioRef.current.play();
-    }
-  };
-
   const playAllDialogue = (sectionIndex, dialogueAudio) => {
+    stopPlayback();
     setIsPlaying(prev => ({ ...prev, [sectionIndex]: true }));
     setPlaybackMode('normal');
     audioQueue.current = [...dialogueAudio];
     playNextInQueue();
   };
 
-  const playFastAudio = (sectionIndex, loops = loopCount) => {
-    setIsPlaying(prev => ({ ...prev, [sectionIndex]: true }));
-    setPlaybackMode('fast');
-    setRemainingLoops(loops - 1);
-    
-    // For single section loop
-    const fastAudio = storyData[Object.keys(storyData)[sectionIndex]].audio_data.fast_dialogue;
-    fastAudioQueue.current = Array(loops).fill(fastAudio);
-    playNextFastAudio();
-  };
+  
 
   const playAllFastAudio = (loops = loopCount) => {
-    setIsPlaying(prev => ({ ...prev, 'all': true }));
-    setPlaybackMode('fast');
-    setRemainingLoops(loops - 1);
+    console.log('playAllFastAudio called with loops:', loops);
+    console.log('Current story data keys:', Object.keys(storyData));
+    console.log('Sample audio data from first section:', 
+      storyData[Object.keys(storyData)[0]]?.audio_data?.fast_dialogue ? 'exists' : 'missing');
     
-    // Queue all sections in order
-    const sections = Object.values(storyData);
-    fastAudioQueue.current = sections.map(section => section.audio_data.fast_dialogue);
+    stopPlayback();
+    setIsPlaying(prev => ({ ...prev, 'all': true }));
+    setPlaybackMode('all');
+    setRemainingLoops(loops);
+    
+    const queue = resetFastAudioQueue('all');
+    console.log('Queue created with length:', queue.length);
+    fastAudioQueue.current = queue;
+    
     playNextFastAudio();
   };
 
@@ -139,7 +172,6 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     const section = storyData[Object.keys(storyData)[sectionIndex]];
     if (!section.m4a_data) return;
 
-    // Convert base64 to blob while preserving MIME type and metadata
     const byteCharacters = atob(section.m4a_data);
     const byteNumbers = new Array(byteCharacters.length);
     for (let i = 0; i < byteCharacters.length; i++) {
@@ -148,17 +180,14 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: 'audio/x-m4a' });
 
-    // Create filename from story part name
     const sectionName = Object.keys(storyData)[sectionIndex];
     const cleanName = sectionName.replace(/_/g, ' ').toLowerCase();
     const filename = `${cleanName}.m4a`;
 
-    // Trigger download while preserving metadata
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
     a.download = filename;
-    // Use .m4a extension to ensure media players recognize it properly
     a.type = 'audio/x-m4a';
     document.body.appendChild(a);
     a.click();
@@ -192,10 +221,15 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
           ),
           React.createElement('button', {
             onClick: () => playAllFastAudio(loopCount),
-            disabled: playbackMode === 'fast',
-            className: `px-4 py-2 rounded-lg ${playbackMode === 'fast' ? 
-              'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white`
-          }, playbackMode === 'fast' ? `Playing (${remainingLoops + 1} loops left)` : 'Play All Fast')
+            disabled: playbackMode !== null,
+            className: `px-4 py-2 rounded-lg ${
+              playbackMode !== null
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-green-600 hover:bg-green-700'
+            } text-white`
+          }, playbackMode !== null
+            ? `Playing (${remainingLoops + 1} loops left)`
+            : 'Play All Fast')
         )
       )
     ),
@@ -224,8 +258,7 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
           activeSection === sectionIndex && React.createElement('div', { className: 'p-4' },
             // Story part image
             section.image_data && React.createElement('div', { 
-              className: 'mb-4 rounded-lg overflow-hidden',
-              style: { maxWidth: '100%', height: 'auto' }
+              className: 'mb-4 rounded-lg overflow-hidden'
             },
               React.createElement('img', {
                 src: `data:image/jpeg;base64,${section.image_data}`,
@@ -240,19 +273,25 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
             },
               React.createElement('button', {
                 onClick: () => playAllDialogue(sectionIndex, section.audio_data.dialogue),
-                disabled: playbackMode === 'normal',
-                className: `px-4 py-2 rounded-lg ${playbackMode === 'normal' ? 
-                  'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white`
+                disabled: playbackMode !== null,
+                className: `px-4 py-2 rounded-lg ${
+                  playbackMode !== null
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                } text-white`
               }, playbackMode === 'normal' ? 'Playing...' : 'Play Dialogue'),
               
               React.createElement('button', {
                 onClick: () => playFastAudio(sectionIndex, loopCount),
-                disabled: playbackMode === 'fast',
-                className: `px-4 py-2 rounded-lg ${playbackMode === 'fast' ? 
-                  'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white`
-              }, playbackMode === 'fast' ? 
-                `Playing (${remainingLoops + 1} loops left)` : 
-                'Play Fast Version'),
+                disabled: playbackMode !== null,
+                className: `px-4 py-2 rounded-lg ${
+                  playbackMode !== null
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-green-600 hover:bg-green-700'
+                } text-white`
+              }, playbackMode !== null
+                ? `Playing (${remainingLoops + 1} loops left)`
+                : 'Play Fast Version'),
                 
               playbackMode && React.createElement('button', {
                 onClick: stopPlayback,
@@ -284,7 +323,7 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
                     )
                   ),
                   section.audio_data?.dialogue[index] && React.createElement('button', {
-                    onClick: () => playAudio(section.audio_data.dialogue[index]),
+                    onClick: () => playAudioData(section.audio_data.dialogue[index]),
                     disabled: playbackMode !== null,
                     className: `p-2 rounded-full hover:bg-gray-200 ${
                       playbackMode !== null ? 'opacity-50 cursor-not-allowed' : ''

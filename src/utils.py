@@ -159,19 +159,23 @@ def string_to_large_int(s: str) -> int:
 def create_test_story_dict(
     story_data_dict: Dict[str, Dict],
     story_parts: int = 2,
-    phrases: int = 2,
     from_index: int = 0,
+    dialogue_entries: int = 2,
+    fast_audio_fraction: Optional[float] = None,
 ) -> Dict[str, Dict]:
     """
     Create a smaller version of the story_data_dict for testing purposes.
 
     Args:
-    story_data_dict (Dict[str, Dict]): The original story data dictionary.
-    story_parts (int): Number of story parts to include in the test dictionary.
-    phrases (int): Number of phrases to include in each story part.
+        story_data_dict (Dict[str, Dict]): The original story data dictionary.
+        story_parts (int): Number of story parts to include in the test dictionary.
+        from_index (int): Starting index for dialogue entries to include.
+        dialogue_entries (int): Number of dialogue entries to include in each story part.
+        fast_audio_fraction (float, optional): If provided, clips the fast audio to this
+            fraction of its original length (e.g., 0.1 for 10% of length).
 
     Returns:
-    Dict[str, Dict]: A smaller version of the story data dictionary for testing.
+        Dict[str, Dict]: A smaller version of the story data dictionary for testing.
     """
     test_dict = {}
 
@@ -179,25 +183,41 @@ def create_test_story_dict(
         if i >= story_parts:
             break
 
-        test_dict[part_key] = {
-            "translated_phrase_list": [],
-            "translated_phrase_list_audio": [],
-        }
+        test_dict[part_key] = {}
 
-        for j in range(
-            from_index,
-            min(phrases + from_index, len(part_data["translated_phrase_list"])),
-        ):
-            test_dict[part_key]["translated_phrase_list"].append(
-                part_data["translated_phrase_list"][j]
+        # Handle dialogue related fields
+        if "dialogue" in part_data:
+            end_index = min(from_index + dialogue_entries, len(part_data["dialogue"]))
+            test_dict[part_key]["dialogue"] = part_data["dialogue"][
+                from_index:end_index
+            ]
+
+        if "translated_dialogue" in part_data:
+            end_index = min(
+                from_index + dialogue_entries, len(part_data["translated_dialogue"])
             )
+            test_dict[part_key]["translated_dialogue"] = part_data[
+                "translated_dialogue"
+            ][from_index:end_index]
 
-            # Check if audio data exists and is in the correct format
-            try:
-                audio_data = part_data["translated_phrase_list_audio"][j]
-                test_dict[part_key]["translated_phrase_list_audio"].append(audio_data)
-            except KeyError:
-                pass
+        if "translated_dialogue_audio" in part_data:
+            end_index = min(
+                from_index + dialogue_entries,
+                len(part_data["translated_dialogue_audio"]),
+            )
+            test_dict[part_key]["translated_dialogue_audio"] = part_data[
+                "translated_dialogue_audio"
+            ][from_index:end_index]
+
+        # Handle fast dialogue audio with optional clipping
+        if "translated_dialogue_audio_fast" in part_data:
+            fast_audio = part_data["translated_dialogue_audio_fast"]
+            if fast_audio_fraction is not None and 0 < fast_audio_fraction <= 1:
+                # Calculate length in milliseconds
+                total_length = len(fast_audio)
+                clip_length = int(total_length * fast_audio_fraction)
+                fast_audio = fast_audio[:clip_length]
+            test_dict[part_key]["translated_dialogue_audio_fast"] = fast_audio
 
     return test_dict
 
