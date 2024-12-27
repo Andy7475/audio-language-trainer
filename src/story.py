@@ -46,41 +46,60 @@ def create_html_story(
 
     html_template = """
     <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>{title}</title>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js"></script>
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-        <style>
-            .audio-player {{
-                display: none;
-            }}
-        </style>
-    </head>
-    <body>
-        <div id="root"></div>
-        <script>
-            // Embed the story data
-            const storyData = {story_data};
-            const targetLanguage = "{language}";
-            
-            {react_component}
-            
-            // Render the app
-            const root = ReactDOM.createRoot(document.getElementById('root'));
-            root.render(React.createElement(StoryViewer, {{ 
-                storyData: storyData,
-                targetLanguage: targetLanguage,
-                title: "{title}"
-            }}));
-        </script>
-    </body>
-    </html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title}</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .audio-player {{
+            display: none;
+        }}
+        .info-link {{
+            text-decoration: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }}
+        .info-link:hover {{
+            opacity: 1;
+        }}
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <a href="https://storage.googleapis.com/audio-language-trainer-stories/time_compressed_speech.html" 
+   target="_blank" 
+   rel="noopener noreferrer"
+   class="info-link fixed bottom-4 right-4 flex items-center gap-2 text-blue-600 bg-white rounded-lg px-3 py-2 shadow-md hover:bg-blue-50"
+   title="Learn about speed listening practice">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="16" x2="12" y2="12"></line>
+        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+    </svg>
+    <span class="text-sm font-medium">About Speed Listening</span>
+</a>
+    <script>
+        // Embed the story data
+        const storyData = {story_data};
+        const targetLanguage = "{language}";
+        
+        {react_component}
+        
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(StoryViewer, {{ 
+            storyData: storyData,
+            targetLanguage: targetLanguage,
+            title: "{title}"
+        }}));
+    </script>
+</body>
+</html>
     """
 
     # Format the HTML template
