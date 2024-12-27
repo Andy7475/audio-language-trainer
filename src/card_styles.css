@@ -366,3 +366,69 @@
 .mobile .audio-controls {
     gap: 20px;
 }
+
+.stories-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+}
+
+.stories-header {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 12px;
+}
+
+.stories-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.story-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #e2e8f0;
+    color: #2d3748;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.story-link:hover {
+    background-color: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+.story-placeholder {
+    text-align: center;
+    padding: 15px;
+    color: #666;
+    background-color: #fff;
+    border: 1px dashed #ccc;
+    border-radius: 6px;
+    width: 100%;
+}
+
+.story-placeholder p {
+    margin: 0 0 12px 0;
+    font-style: italic;
+}
+
+.request-story-link {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #0366d6;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.95em;
+    transition: background-color 0.2s ease;
+}
+
+.request-story-link:hover {
+    background-color: #0255b3;
+    text-decoration: none;
+}
