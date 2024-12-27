@@ -359,6 +359,115 @@ def resize_image(generated_image, height=500, width=500):
     return image_data
 
 
+def generate_image(
+    prompt: str,
+    model_order: List[Literal["imagen", "stability", "deepai"]] = [
+        "imagen",
+        "stability",
+        "deepai",
+    ],
+) -> Optional[Image.Image]:
+    """
+    Try to generate an image using multiple providers in specified order.
+
+    Args:
+        prompt: The image generation prompt
+        model_order: List of models to try in order
+
+    Returns:
+        Optional[Image.Image]: Generated image or None if all attempts fail
+    """
+    for model in model_order:
+        try:
+            ok_to_query_api()
+
+            if model == "imagen":
+                image = generate_image_imagen(prompt, model="imagen-3.0-generate-001")
+                if image:
+                    return image
+
+            elif model == "stability":
+                image = generate_image_stability(prompt)
+                if image:
+                    return image
+
+            elif model == "deepai":
+                image = generate_image_deepai(prompt)
+                if image:
+                    return image
+
+        except Exception as e:
+            print(f"Error with {model} provider: {str(e)}")
+            continue
+
+    return None
+
+
+def generate_and_save_story_images(
+    story_dict: Dict[str, Dict],
+    output_dir: str,
+    story_name: str,
+    model_order: List[Literal["imagen", "stability", "deepai"]] = [
+        "imagen",
+        "stability",
+        "deepai",
+    ],
+    anthropic_model: Optional[str] = None,
+) -> Dict[str, str]:
+    """
+    Generate and save images for each part of a story.
+
+    Args:
+        story_dict: Dictionary containing story data
+        output_dir: Directory to save generated images
+        story_name: Name of the story (used for filenames)
+        model_order: Order of image generation models to try
+        anthropic_model: Optional model name for prompt generation
+
+    Returns:
+        Dict[str, str]: Mapping of story parts to image file paths
+    """
+    # Create output directory if it doesn't exist
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Store image paths for each story part
+    image_paths = {}
+
+    for story_part, content in tqdm(story_dict.items(), desc="Generating story images"):
+        # Construct image filename
+        image_filename = f"{story_name}_{story_part}.png"
+        image_path = os.path.join(output_dir, image_filename)
+
+        # Skip if image already exists
+        if os.path.exists(image_path):
+            print(f"Image already exists for {story_part}, skipping generation")
+            image_paths[story_part] = image_path
+            continue
+
+        # Generate prompt
+        ok_to_query_api()
+        prompt = create_image_generation_prompt_for_story_part(content, anthropic_model)
+
+        # Try to generate image
+        try:
+            image = generate_image(prompt, model_order)
+
+            if image is None:
+                print(f"Failed to generate image for {story_part} with all providers")
+                continue
+
+            # Save the image
+            image.save(image_path)
+            image_paths[story_part] = image_path
+            print(f"Successfully generated and saved image for {story_part}")
+
+        except Exception as e:
+            print(f"Error processing {story_part}: {str(e)}")
+            continue
+
+    return image_paths
+
+
 def add_images_to_phrases(
     phrases: List[str],
     output_dir: str,
@@ -482,47 +591,3 @@ def add_image_paths(story_dict: Dict[str, Any], image_dir: str) -> Dict[str, Any
             )
 
     return updated_dict
-
-
-def generate_story_image(story_dialogue: str):
-    """
-    Generate an image for a story using Google Cloud Vertex AI's Image Generation API.
-
-    :param story_plan: A string containing the story plan
-    :param project_id: Your Google Cloud project ID
-    :param location: The location of your Vertex AI endpoint
-    :return: Image data as bytes
-    """
-    # Initialize Vertex AI
-    vertexai.init(project=config.PROJECT_ID, location=config.VERTEX_REGION)
-
-    # Initialize the Image Generation model
-    generation_model = ImageGenerationModel.from_pretrained("imagen-3.0-generate-001")
-
-    # Craft the prompt
-    prompt = f"""
-    Create a colorful, engaging image for a language learning story. 
-    The image should be suitable as album art for an educational audio file.
-    The story dialogue is: {story_dialogue:str}
-    The image should be family-friendly and appropriate for all ages.
-    The style should be hand-painted (not a photo).
-    """
-
-    ok_to_query_api()
-    # Generate the image
-    images = generation_model.generate_images(
-        prompt=prompt,
-        negative_prompt="people",
-        number_of_images=1,
-        aspect_ratio="1:1",
-        # safety_filter_level="block_some",
-        person_generation="don't allow",
-    )
-
-    # Get the first (and only) generated image
-    generated_image = images[0]
-
-    image_data = resize_image(generated_image, 500, 500)
-    # Get the image bytes directly
-
-    return image_data

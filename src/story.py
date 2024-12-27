@@ -7,13 +7,14 @@ import json
 import io
 import base64
 from PIL import Image
+import os
 
 
 def create_html_story(
     story_data_dict: Dict,
-    output_path: str,
+    output_dir: str,
     component_path: str,
-    title: Optional[str] = None,
+    story_name: str,
     language: str = config.TARGET_LANGUAGE_NAME,
 ) -> None:
     """
@@ -21,14 +22,19 @@ def create_html_story(
 
     Args:
         story_data_dict: Dictionary containing story data, translations, and audio
-        output_path: Path where the HTML file should be saved
+        output_dir: Path where the HTML file should be saved
         component_path: Path to the React component file
         title: Optional title for the story
         language: Target language name for Wiktionary links
     """
-
+    story_title = clean_story_name(story_name)
     # Process the story data and convert audio to base64
-    prepared_data = prepare_story_data_for_html(story_data_dict)
+    prepared_data = prepare_story_data_for_html(
+        story_data_dict,
+        story_name=story_name,
+        m4a_folder=output_dir / language,
+        image_folder=output_dir,
+    )
 
     # Read the React component
     with open(component_path, "r", encoding="utf-8") as f:
@@ -79,17 +85,22 @@ def create_html_story(
 
     # Format the HTML template
     html_content = html_template.format(
-        title=title or "Language Learning Story",
+        title=story_title,
         story_data=json.dumps(prepared_data),
         language=language,
         react_component=react_component,
     )
 
-    # Write the HTML file
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(html_content)
+    # Create html file path
+    html_path = output_dir / language / f"{story_name}.html"
 
-    print(f"HTML story created at: {output_path}")
+    # Create parent directory if it doesn't exist
+    html_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Write the HTML file
+    html_path.write_text(html_content, encoding="utf-8")
+
+    print(f"HTML story created at: {html_path}")
 
 
 def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
@@ -129,7 +140,7 @@ def create_album_files(
     story_data_dict: dict,
     cover_image: Image.Image,
     output_dir: str,
-    story_name_clean: str,
+    story_name: str,
 ):
     """Creates and saves M4A files for the story, with album artwork.
     Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue."""
@@ -137,8 +148,8 @@ def create_album_files(
     PAUSE_TEXT = "---------"
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
 
-    ALBUM_NAME = story_name_clean.replace("_", " ")
-    TOTAL_TRACKS = len(story_data_dict) + 1  # +1 for the full dialogue track
+    ALBUM_NAME = clean_story_name(story_name)
+    TOTAL_TRACKS = len(story_data_dict)
 
     for track_number, (story_part, data) in enumerate(
         tqdm(story_data_dict.items(), desc="creating album"), start=1
@@ -163,7 +174,7 @@ def create_album_files(
 
         # Add fast dialogue (there are 10 repeats in the audio)
         audio_list.append(data["translated_dialogue_audio_fast"])
-        captions_list.append(f"Fast Dialogue - Repetition")
+        captions_list.append("Fast Dialogue - Repetition")
         audio_list.append(GAP_BETWEEN_PHRASES)
         captions_list.append(PAUSE_TEXT)
 
@@ -178,7 +189,7 @@ def create_album_files(
         create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
             phrases=captions_list,
-            output_file=f"{output_dir}/{story_name_clean}_{story_part}.m4a",
+            output_file=f"{output_dir}/{story_name}_{story_part}.m4a",
             album_name=ALBUM_NAME,
             track_title=story_part,
             track_number=track_number,
@@ -187,77 +198,46 @@ def create_album_files(
         )
         print(f"Saved M4A file track number {track_number}")
 
-    # Create final track with all dialogue in sequence
-    print("Creating full dialogue track...")
-    all_dialogue_audio = []
-    all_dialogue_captions = []
 
-    # First pass - normal speed
-    for story_part in story_data_dict:
-        dialogue_list = [
-            utterance["text"]
-            for utterance in story_data_dict[story_part]["translated_dialogue"]
-        ]
-        dialogue_audio_list = story_data_dict[story_part]["translated_dialogue_audio"]
+def clean_story_name(story_name: str) -> str:
+    """
+    Clean a story name by removing 'story' and underscores, returning in title case.
 
-        all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-        all_dialogue_captions.append(f"Normal Speed - {story_part}")
+    Args:
+        story_name: Input story name (e.g. "story_community_park")
 
-        all_dialogue_audio.extend(dialogue_audio_list)
-        all_dialogue_captions.extend(dialogue_list)
+    Returns:
+        str: Cleaned story name in title case (e.g. "Community Park")
 
-        all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-        all_dialogue_captions.append(PAUSE_TEXT)
+    Example:
+        >>> clean_story_name("story_community_park")
+        'Community Park'
+    """
+    # Remove 'story' and split on underscores
+    name = story_name.replace("story_", "")
+    words = name.split("_")
 
-    # Fast version of all dialogue
-    all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-    all_dialogue_captions.append("Fast Dialogue Practice - All Parts")
-
-    for story_part in story_data_dict:
-        all_dialogue_audio.append(
-            story_data_dict[story_part]["translated_dialogue_audio_fast"]
-        )
-        all_dialogue_captions.append(f"{story_part} - Fast Repetition")
-        all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-        all_dialogue_captions.append(PAUSE_TEXT)
-
-    # Final normal speed pass
-    all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-    all_dialogue_captions.append("Final Normal Speed - All Parts")
-
-    for story_part in story_data_dict:
-        dialogue_list = [
-            utterance["text"]
-            for utterance in story_data_dict[story_part]["translated_dialogue"]
-        ]
-        dialogue_audio_list = story_data_dict[story_part]["translated_dialogue_audio"]
-
-        all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-        all_dialogue_captions.append(f"Normal Speed - {story_part}")
-
-        all_dialogue_audio.extend(dialogue_audio_list)
-        all_dialogue_captions.extend(dialogue_list)
-
-        all_dialogue_audio.append(GAP_BETWEEN_PHRASES)
-        all_dialogue_captions.append(PAUSE_TEXT)
-
-    # Create the full dialogue M4A
-    create_m4a_with_timed_lyrics(
-        audio_segments=all_dialogue_audio,
-        phrases=all_dialogue_captions,
-        output_file=f"{output_dir}/{story_name_clean}_full_dialogue.m4a",
-        album_name=ALBUM_NAME,
-        track_title="Full Dialogue - All Episodes",
-        track_number=TOTAL_TRACKS,  # Last track
-        total_tracks=TOTAL_TRACKS,
-        cover_image=cover_image,
-    )
-    print(f"Saved full dialogue M4A as track number {TOTAL_TRACKS}")
+    # Convert to title case and join with spaces
+    return " ".join(word.title() for word in words)
 
 
-def prepare_story_data_for_html(story_data_dict: Dict) -> Dict:
-    """Process the story data dictionary to include base64 encoded audio for both
-    normal dialogue utterances and fast dialogue versions."""
+def prepare_story_data_for_html(
+    story_data_dict: Dict,
+    story_name: str,
+    m4a_folder: Optional[str] = None,
+    image_folder: Optional[str] = None,
+) -> Dict:
+    """Process the story data dictionary to include base64 encoded audio, images and M4A files.
+
+    Args:
+        story_data_dict: Dictionary containing story dialogue and audio data
+        story_name: Name of the story (used to find corresponding M4A/image files)
+        m4a_folder: Optional path to folder containing M4A files
+        image_folder: Optional path to folder containing image files
+
+    Returns:
+        Dict: Processed dictionary with base64 encoded media content
+    """
     prepared_data = {}
 
     for section_name, section_data in story_data_dict.items():
@@ -266,7 +246,7 @@ def prepare_story_data_for_html(story_data_dict: Dict) -> Dict:
             "translated_dialogue": section_data.get("translated_dialogue", []),
             "audio_data": {
                 "dialogue": [],
-                "fast_dialogue": None,  # Will hold the single fast version
+                "fast_dialogue": None,
             },
         }
 
@@ -287,12 +267,32 @@ def prepare_story_data_for_html(story_data_dict: Dict) -> Dict:
                 "fast_dialogue"
             ] = fast_audio_base64
 
-        # Include image data if present
-        if "image_data" in section_data:
-            prepared_data[section_name]["image_data"] = section_data["image_data"]
+        # Add M4A data if folder is provided
+        if m4a_folder:
+            m4a_filename = f"{story_name}_{section_name}.m4a"
+            m4a_path = os.path.join(m4a_folder, m4a_filename)
 
-        # Include M4A data if present
-        if "m4a_data" in section_data:
-            prepared_data[section_name]["m4a_data"] = section_data["m4a_data"]
+            try:
+                if os.path.exists(m4a_path):
+                    m4a_base64 = convert_m4a_file_to_base64(m4a_path)
+                    prepared_data[section_name]["m4a_data"] = m4a_base64
+            except Exception as e:
+                print(
+                    f"Warning: Failed to process M4A file for {section_name}: {str(e)}"
+                )
+
+        # Add image data if folder is provided
+        if image_folder:
+            image_filename = f"{story_name}_{section_name}.png"
+            image_path = os.path.join(image_folder, image_filename)
+
+            try:
+                if os.path.exists(image_path):
+                    with open(image_path, "rb") as img_file:
+                        image_data = img_file.read()
+                        image_base64 = base64.b64encode(image_data).decode("utf-8")
+                        prepared_data[section_name]["image_data"] = image_base64
+            except Exception as e:
+                print(f"Warning: Failed to process image for {section_name}: {str(e)}")
 
     return prepared_data
