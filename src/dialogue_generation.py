@@ -21,21 +21,22 @@ load_dotenv()  # so we can use environment variables for various global settings
 
 
 def get_story_prompt(verbs: list, vocab: list) -> str:
-    prompt = f"""Create a three-part story told through dialogue between Alex and Sam. Each part should be about 2 minutes long when spoken (approximately 300 words or 20-25 dialogue exchanges).
+    prompt = f"""Create a three-part story told through dialogue between Alex and Sam. Each part should be about 1-2 minutes long when spoken (approximately 300 words).
 
 Story Requirements:
 1. The story must have a clear narrative arc across three parts:
-   - Introduction (2 mins): Set up the situation and characters
-   - Development (2 mins): Present a challenge or complication
-   - Resolution (2 mins): Resolve the situation
+   - Introduction (1-2 mins): Set up the situation and characters
+   - Development (1-2 mins): Present a challenge or complication
+   - Resolution (1-2 mins): Resolve the situation
 
 2. Use vocabulary naturally from these lists:
    Verbs: {', '.join(verbs)}
    Other words: {', '.join(vocab)}
    
 3. Guidelines:
-   - Use at least 50% of the provided vocabulary across the story
+   - Use as much of the provided vocabulary as required
    - Mix the vocabulary naturally - don't force all words
+   - Try not to add additional vocabulary, other than connecting words, greetings, pronouns etc. necessary for good flow
    - Keep dialogue exchanges realistic (about 10-15 words per utterance)
    - Alternate between Alex and Sam
 
