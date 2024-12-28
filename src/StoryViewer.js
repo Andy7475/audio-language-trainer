@@ -1,22 +1,4 @@
-const StoryViewer = ({ storyData, targetLanguage, title }) => {
-  const createWiktionaryLinks = (text) => {
-    return text.split(' ').map((word, index) => {
-      const cleanWord = word.toLowerCase().replace(/[^\p{L}0-9]/gu, '');
-      if (cleanWord) {
-        return React.createElement(React.Fragment, { key: index },
-          React.createElement('a', {
-            href: `https://en.wiktionary.org/wiki/${encodeURIComponent(cleanWord)}#${targetLanguage}`,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            className: 'text-blue-600 hover:underline'
-          }, word),
-          ' '
-        );
-      }
-      return word + ' ';
-    });
-  };
-
+const StoryViewer = ({ storyData, title }) => {
   const [activeSection, setActiveSection] = React.useState(null);
   const [isPlaying, setIsPlaying] = React.useState({});
   const [loopCount, setLoopCount] = React.useState(12);
@@ -63,14 +45,12 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
 
   const resetFastAudioQueue = (mode = 'single') => {
     if (mode === 'all') {
-      // For playing all sections
       const sectionKeys = Object.keys(storyData);
       return sectionKeys.map((key, index) => ({
         audio: storyData[key].audio_data.fast_dialogue,
         isLastInLoop: index === sectionKeys.length - 1
       }));
     } else {
-      // For playing single section
       return [{
         audio: activeSectionAudio.current,
         isLastInLoop: true
@@ -81,13 +61,12 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
   const playFastAudio = (sectionIndex, loops = loopCount) => {
     stopPlayback();
     setIsPlaying(prev => ({ ...prev, [sectionIndex]: true }));
-    setPlaybackMode('fast'); // Keep as 'fast', not 'all'
-    setRemainingLoops(loops - 1); // Subtract 1 as we're about to play first loop
+    setPlaybackMode('fast');
+    setRemainingLoops(loops - 1);
     
     const fastAudio = storyData[Object.keys(storyData)[sectionIndex]].audio_data.fast_dialogue;
     activeSectionAudio.current = fastAudio;
     
-    // Initialize queue with first loop
     fastAudioQueue.current = [{
       audio: fastAudio,
       isLastInLoop: true
@@ -110,7 +89,6 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
         setRemainingLoops(prev => {
           const newCount = prev - 1;
           if (newCount >= 0) {
-            // Important: Use the same mode as initial playback
             fastAudioQueue.current = resetFastAudioQueue(
               playbackMode === 'all' ? 'all' : 'single'
             );
@@ -148,21 +126,13 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     playNextInQueue();
   };
 
-  
-
   const playAllFastAudio = (loops = loopCount) => {
-    console.log('playAllFastAudio called with loops:', loops);
-    console.log('Current story data keys:', Object.keys(storyData));
-    console.log('Sample audio data from first section:', 
-      storyData[Object.keys(storyData)[0]]?.audio_data?.fast_dialogue ? 'exists' : 'missing');
-    
     stopPlayback();
     setIsPlaying(prev => ({ ...prev, 'all': true }));
     setPlaybackMode('all');
     setRemainingLoops(loops);
     
     const queue = resetFastAudioQueue('all');
-    console.log('Queue created with length:', queue.length);
     fastAudioQueue.current = queue;
     
     playNextFastAudio();
@@ -195,12 +165,21 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
     window.URL.revokeObjectURL(url);
   };
 
+  const renderWiktionaryLinks = (linksHtml) => {
+    // Apply Tailwind styles to the links via a wrapper class
+    const enhancedHtml = linksHtml.replace(/<a /g, '<a class="text-blue-600 hover:text-blue-800 underline hover:bg-blue-50 rounded px-0.5 transition-colors duration-150" ');
+    return React.createElement('div', {
+      className: 'text-lg mb-2 leading-relaxed',
+      dangerouslySetInnerHTML: { __html: enhancedHtml }
+    });
+  };
+
   return React.createElement('div', { className: 'min-h-screen bg-gray-100' },
     React.createElement('audio', { ref: audioRef, className: 'hidden' }),
     
     // Header with global controls
     React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
-      React.createElement('div', { className: 'flex justify-between items-center' },
+      React.createElement('div', { className: 'flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4' },
         React.createElement('h1', { className: 'text-xl font-bold' }, 
           title || 'Language Learning Story'
         ),
@@ -269,12 +248,12 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
 
             // Controls for dialogue playback
             React.createElement('div', { 
-              className: 'grid grid-cols-4 gap-4 mb-4 p-2 bg-gray-50 rounded-lg'
+              className: 'flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-4 mb-4 p-2 bg-gray-50 rounded-lg'
             },
               React.createElement('button', {
                 onClick: () => playAllDialogue(sectionIndex, section.audio_data.dialogue),
                 disabled: playbackMode !== null,
-                className: `px-4 py-2 rounded-lg ${
+                className: `w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base ${
                   playbackMode !== null
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700'
@@ -284,7 +263,7 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
               React.createElement('button', {
                 onClick: () => playFastAudio(sectionIndex, loopCount),
                 disabled: playbackMode !== null,
-                className: `px-4 py-2 rounded-lg ${
+                className: `w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base ${
                   playbackMode !== null
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-green-600 hover:bg-green-700'
@@ -295,12 +274,12 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
                 
               playbackMode && React.createElement('button', {
                 onClick: stopPlayback,
-                className: 'px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white'
+                className: 'w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base bg-red-600 hover:bg-red-700 text-white'
               }, '■ Stop'),
               
               section.m4a_data && React.createElement('button', {
                 onClick: () => downloadM4A(sectionIndex),
-                className: 'px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white'
+                className: 'w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base bg-purple-600 hover:bg-purple-700 text-white'
               }, 'Download M4A')
             ),
 
@@ -315,9 +294,7 @@ const StoryViewer = ({ storyData, targetLanguage, title }) => {
                     React.createElement('p', { className: 'text-sm text-gray-600 mb-1' },
                       utterance.speaker
                     ),
-                    React.createElement('p', { className: 'text-lg' },
-                      createWiktionaryLinks(utterance.text)
-                    ),
+                    renderWiktionaryLinks(utterance.wiktionary_links),
                     React.createElement('p', { className: 'mt-2 text-gray-600' },
                       section.dialogue[index].text
                     )
