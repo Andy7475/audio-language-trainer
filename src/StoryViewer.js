@@ -1,9 +1,10 @@
-const StoryViewer = ({ storyData, title }) => {
+const StoryViewer = ({ storyData, title, targetLanguag }) => {
   const [activeSection, setActiveSection] = React.useState(null);
   const [isPlaying, setIsPlaying] = React.useState({});
   const [loopCount, setLoopCount] = React.useState(12);
   const [remainingLoops, setRemainingLoops] = React.useState(0);
   const [playbackMode, setPlaybackMode] = React.useState(null);
+  const [showCopyNotification, setShowCopyNotification] = React.useState(false);
   
   const audioRef = React.useRef(null);
   const audioQueue = React.useRef([]);
@@ -21,6 +22,21 @@ const StoryViewer = ({ storyData, title }) => {
     setIsPlaying({});
     setPlaybackMode(null);
     setRemainingLoops(0);
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setShowCopyNotification(true);
+      setTimeout(() => setShowCopyNotification(false), 1000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  const copyPrompt = async (translatedPhrase) => {
+    const prompt = `Given this ${targetLanguage} phrase "${translatedPhrase}", please help me understand it, break down its grammar, and explain any idiomatic expressions.`;
+    await copyToClipboard(prompt);
   };
 
   const playAudioData = (audioData) => {
@@ -175,6 +191,10 @@ const StoryViewer = ({ storyData, title }) => {
   };
 
   return React.createElement('div', { className: 'min-h-screen bg-gray-100' },
+    // Add this as the first child element inside the main div
+    showCopyNotification && React.createElement('div', {
+      className: 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg text-sm z-20'
+    }, 'Copied!'),
     React.createElement('audio', { ref: audioRef, className: 'hidden' }),
     
     // Header with global controls
@@ -299,13 +319,25 @@ const StoryViewer = ({ storyData, title }) => {
                       section.dialogue[index].text
                     )
                   ),
-                  section.audio_data?.dialogue[index] && React.createElement('button', {
-                    onClick: () => playAudioData(section.audio_data.dialogue[index]),
-                    disabled: playbackMode !== null,
-                    className: `p-2 rounded-full hover:bg-gray-200 ${
-                      playbackMode !== null ? 'opacity-50 cursor-not-allowed' : ''
-                    }`
-                  }, '🔊')
+                  React.createElement('div', { className: 'flex items-center gap-2' },
+                    section.audio_data?.dialogue[index] && React.createElement('button', {
+                      onClick: () => playAudioData(section.audio_data.dialogue[index]),
+                      disabled: playbackMode !== null,
+                      className: `p-2 rounded-full hover:bg-gray-200 ${
+                        playbackMode !== null ? 'opacity-50 cursor-not-allowed' : ''
+                      }`
+                    }, '🔊'),
+                    React.createElement('button', {
+                      onClick: () => copyToClipboard(utterance.text),
+                      className: 'p-2 rounded-full hover:bg-gray-200',
+                      title: 'Copy phrase'
+                    }, '📋'),
+                    React.createElement('button', {
+                      onClick: () => copyPrompt(utterance.text),
+                      className: 'p-2 rounded-full hover:bg-gray-200',
+                      title: 'Copy as prompt'
+                    }, '💡')
+                  )
                 )
               )
             )
