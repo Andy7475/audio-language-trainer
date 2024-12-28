@@ -2,6 +2,7 @@ from pydub import AudioSegment
 from tqdm import tqdm
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.config_loader import config
+from src.anki_tools import generate_wiktionary_links
 from typing import Optional, Dict
 import json
 import io
@@ -241,6 +242,32 @@ def clean_story_name(story_name: str) -> str:
     return " ".join(word.title() for word in words)
 
 
+def prepare_dialogue_with_wiktionary(
+    dialogue, language_name: str = config.TARGET_LANGUAGE_NAME
+):
+    """
+    Process dialogue utterances to include Wiktionary links for the target language text.
+
+    Args:
+        dialogue: List of dialogue utterances with text and speaker
+        language_name: Name of target language for Wiktionary links
+
+    Returns:
+        List of processed utterances with added wiktionary_links field
+    """
+    processed_dialogue = []
+    for utterance in dialogue:
+        # Create a copy of the utterance to avoid modifying the original
+        processed_utterance = utterance.copy()
+        # Generate Wiktionary links for the target language text
+        wiktionary_links = generate_wiktionary_links(
+            utterance["text"], language_name=language_name
+        )
+        processed_utterance["wiktionary_links"] = wiktionary_links
+        processed_dialogue.append(processed_utterance)
+    return processed_dialogue
+
+
 def prepare_story_data_for_html(
     story_data_dict: Dict,
     story_name: str,
@@ -263,7 +290,9 @@ def prepare_story_data_for_html(
     for section_name, section_data in story_data_dict.items():
         prepared_data[section_name] = {
             "dialogue": section_data.get("dialogue", []),
-            "translated_dialogue": section_data.get("translated_dialogue", []),
+            "translated_dialogue": prepare_dialogue_with_wiktionary(
+                section_data.get("translated_dialogue", [])
+            ),
             "audio_data": {
                 "dialogue": [],
                 "fast_dialogue": None,
