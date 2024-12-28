@@ -1,4 +1,4 @@
-const StoryViewer = ({ storyData, title, targetLanguag }) => {
+const StoryViewer = ({ storyData, title, targetLanguage }) => {
   const [activeSection, setActiveSection] = React.useState(null);
   const [isPlaying, setIsPlaying] = React.useState({});
   const [loopCount, setLoopCount] = React.useState(12);
@@ -309,7 +309,7 @@ const StoryViewer = ({ storyData, title, targetLanguag }) => {
                 key: index,
                 className: 'mb-4 p-3 bg-gray-50 rounded-lg'
               },
-                React.createElement('div', { className: 'flex items-center justify-between' },
+                React.createElement('div', { className: 'sm:flex sm:items-center sm:justify-between block' },
                   React.createElement('div', { className: 'flex-grow' },
                     React.createElement('p', { className: 'text-sm text-gray-600 mb-1' },
                       utterance.speaker
@@ -319,7 +319,7 @@ const StoryViewer = ({ storyData, title, targetLanguag }) => {
                       section.dialogue[index].text
                     )
                   ),
-                  React.createElement('div', { className: 'flex items-center gap-2' },
+                  React.createElement('div', { className: 'flex items-center gap-2 mt-2 sm:mt-0' },
                     section.audio_data?.dialogue[index] && React.createElement('button', {
                       onClick: () => playAudioData(section.audio_data.dialogue[index]),
                       disabled: playbackMode !== null,
