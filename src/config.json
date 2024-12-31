@@ -1,6 +1,6 @@
 {
     "SOURCE_LANGUAGE_CODE": "en-GB",
-    "TARGET_LANGUAGE_CODE": "cs-CZ",
+    "TARGET_LANGUAGE_CODE": "cy-GB",
     "SOURCE_LANGUAGE_MALE_VOICE": null,
     "TARGET_LANGUAGE_FEMALE_VOICE": null,
     "TARGET_LANGUAGE_MALE_VOICE": null,
@@ -8,16 +8,13 @@
     "ANTHROPIC_SMALL_MODEL_NAME":"claude-3-haiku@20240307",
     "ANTHROPIC_REGION":"europe-west1",
     "STABILITY_ENDPOINT":"https://api.stability.ai/v2beta/stable-image/generate/core",
-    "THINKING_GAP_MS":3000,
     "SPEAKING_RATE_SLOW":0.85,
     "WORD_BREAK_MS":250,
     "PROJECT_NUMBER":307643465852,
     "PROJECT_ID":"swedish-course",
     "VERTEX_REGION":"us-central1",
     "TTS_REGION":"us-central1",
-    "MAX_TTS_REQUESTS_PER_MINUTE":100,
-    "VOCAB_USAGE_PATH":"../data/1000_vocab_usage.json",
-    "VOCAB_LIST":"../data/1000_vocab_list.json",
+    "MAX_TTS_REQUESTS_PER_MINUTE":20,
     "API_DELAY_SECONDS":20,
     "GCS_PUBLIC_BUCKET":"audio-language-trainer-stories"
 }
