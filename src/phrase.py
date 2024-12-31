@@ -20,6 +20,91 @@ from src.nlp import (
 )
 
 
+def generate_scenario_vocab_building_phrases(
+    scenario: str, localise: bool = False, num_phrases: str = "20-30"
+) -> List[str]:
+    """
+    Generate vocabulary-rich phrases for a given scenario, focusing on nouns and adjectives.
+
+    Args:
+        scenario: Description of the scenario e.g. "at the restaurant", "taking a taxi"
+        localise: Whether to include country-specific vocabulary
+        num_phrases: Range of phrases to generate e.g. "20-30"
+
+    Returns:
+        List of English noun/adjective-focused phrases suitable for vocabulary building
+
+    Raises:
+        ValueError: If unable to generate valid phrases or extract JSON
+    """
+    localisation_phrase = ""
+    localisation_phrase_2 = ""
+    if localise:
+        localisation_phrase = f"- Consider local items and descriptions specific to {config.TARGET_COUNTRY_NAME}"
+        localisation_phrase_2 = f" when travelling to {config.TARGET_COUNTRY_NAME}"
+
+    prompt = """Generate vocabulary-rich phrases for: '{scenario}' (write in UK English). These are for language learners{localisation_phrase_2} to build their vocabulary through memorable noun-adjective combinations.
+
+Approach:
+1. First, identify 6-8 key categories of things/objects in this scenario
+   For each category list relevant:
+   - Common objects/items
+   - Descriptive adjectives (size, quality, temperature, etc.)
+   - Associated equipment/furnishings
+   - Typical problems or variations
+   - Use relatively simple vocabulary that would be useful in spoken phrases
+
+2. Combine these into natural 3-7 word phrases that:
+   - Use multiple nouns/adjectives together
+   - Create clear mental images
+   - Avoid complex verbs (use 'with', 'in', 'on', 'for' to connect)
+   - Use relatively simple vocabulary that would be useful in spoken phrases
+   - Would be easily illustrated
+
+Remember:
+- Focus on physical objects and their descriptions
+- Consider location/placement phrases
+- Consider variations (size, quality, condition)  
+- Consider typical problems or issues
+{localisation_phrase}
+
+Return {num_phrases} phrases in this JSON format:
+Example input scenario: 'eating at a restaurant'
+Example JSON output:
+{{
+    "phrases": [
+        "a fresh green salad with olives",
+        "some broken glass on a large table",
+        "the spicy noodle soup with prawns"
+    ]
+}}
+
+Each phrase should:
+- Be 3-7 words long
+- Contain at least 2 content words (nouns/adjectives)
+- Create a clear mental image
+- Focus on objects rather than actions"""
+
+    # Format the prompt with the given parameters
+    formatted_prompt = prompt.format(
+        localisation_phrase=localisation_phrase,
+        scenario=scenario,
+        num_phrases=num_phrases,
+        localisation_phrase_2=localisation_phrase_2,
+    )
+
+    # Generate response using Claude
+    response = anthropic_generate(formatted_prompt, max_tokens=2000)
+
+    # Extract JSON from response
+    json_data = extract_json_from_llm_response(response)
+
+    if not json_data or "phrases" not in json_data:
+        raise ValueError("Failed to generate valid phrases")
+
+    return json_data["phrases"]
+
+
 def generate_scenario_phrases(
     scenario: str, localise: bool = False, num_phrases: str = "10-15"
 ) -> List[str]:

@@ -12,10 +12,40 @@ from tqdm import tqdm
 from vertexai.preview.vision_models import ImageGenerationModel
 
 from src.config_loader import config
-from src.utils import anthropic_generate, clean_filename, ok_to_query_api
+from src.utils import anthropic_generate, clean_filename, ok_to_query_api, load_json
 
 load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
+
+
+def add_image_style(prompt: str, style: str = None) -> str:
+    """Adds an art style to an image generation prompt.
+
+    Args:
+        prompt (str): The image generation prompt (without a style)
+        style (str): Either a key to an existing style in art_styles.json,
+                    or if no match then it is parsed directly as a string
+
+    Returns:
+        str: The image prompt with 'in the style of <style>' added
+    """
+    # Remove any trailing periods and whitespace
+    prompt = prompt.rstrip(". ")
+
+    # Try to load style mapping
+    try:
+        style_map = load_json("./art_styles.json")
+    except Exception as e:
+        print(f"Warning: Could not load style mapping file: {e}")
+        style_map = {}
+
+    if style is None:
+        style = "default"  # our default style
+    # Get the style description - either from mapping or use directly
+    style_description = style_map.get(style.lower(), style)
+
+    # Return combined prompt with style
+    return f"{prompt} in the style of {style_description}"
 
 
 def create_image_generation_prompt_for_story_part(
@@ -63,29 +93,11 @@ def create_image_generation_prompt_for_story_part(
     "View of a bustling city square from a cafe terrace, morning light streaming through trees, people walking past market stalls"
     """
 
-    # Watercolor style - light, airy, organic
-    # base_style = "watercolor illustration style, fluid brush strokes, soft color transitions, vibrant pigments, organic textures, white paper showing through, loose expressive style, dynamic washes"
-
-    # Oil painting style - rich, textured, detailed
-    # base_style = "oil painting style, rich impasto textures, visible brushstrokes, saturated colors, warm undertones, glazed layers, painterly details"
-
-    # Children's book illustration - whimsical, friendly
-    # base_style = "children's book illustration style, clean linework, bright cheerful colors, decorative details, playful shapes, gentle shading, hand-drawn feel"
-
-    # Studio Ghibli inspired - atmospheric, detailed
-    base_style = "Studio Ghibli art style, soft atmospheric colors, detailed backgrounds, gentle gradients, natural elements, dreamy lighting, painted textures"
-
-    # Modern animated style - clean, bold
-    # base_style = "modern animation art style, clean vector-like shapes, bold color palette, subtle textures, smooth gradients, graphic design elements, minimalist details"
-
-    # Traditional gouache style - flat, bold
-    # base_style = "gouache painting style, matte finish, bold flat colors, painterly textures, crisp edges, vintage poster feel, decorative elements"
-
     # Use anthropic_generate to get the response
     image_prompt = anthropic_generate(llm_prompt, model=anthropic_model)
     image_prompt = image_prompt.strip('".')
 
-    return image_prompt + f" in the style of {base_style}"
+    return image_prompt
 
 
 def create_image_generation_prompt(phrase, anthropic_model: str = None):
@@ -115,13 +127,11 @@ def create_image_generation_prompt(phrase, anthropic_model: str = None):
     Example Output: "A bride on a balcony, looking at sunset over the horizon, tropical island, villa"
     """
 
-    base_style = "a children's book illustration, Axel Scheffler style, thick brushstrokes, colored pencil texture, expressive characters, bold outlines, textured shading, pastel color palette"
-
     # Use the anthropic_generate function to get the LLM's response
     image_prompt = anthropic_generate(llm_prompt, model=anthropic_model)
     image_prompt.strip('".')
 
-    return image_prompt + f" in the style of {base_style}"
+    return image_prompt
 
 
 def generate_image_deepai(
@@ -361,7 +371,8 @@ def resize_image(generated_image, height=500, width=500):
 
 def generate_image(
     prompt: str,
-    model_order: List[Literal["imagen", "stability", "deepai"]] = [
+    style: str = "default",
+    model_order: List[Literal["imagen", "deepai", "stability"]] = [
         "imagen",
         "stability",
         "deepai",
@@ -377,6 +388,8 @@ def generate_image(
     Returns:
         Optional[Image.Image]: Generated image or None if all attempts fail
     """
+
+    prompt = add_image_style(prompt, style)
     for model in model_order:
         try:
             ok_to_query_api()
@@ -412,6 +425,7 @@ def generate_and_save_story_images(
         "stability",
         "deepai",
     ],
+    style="ghibli",
     anthropic_model: Optional[str] = None,
 ) -> Dict[str, str]:
     """
@@ -450,7 +464,7 @@ def generate_and_save_story_images(
 
         # Try to generate image
         try:
-            image = generate_image(prompt, model_order)
+            image = generate_image(prompt, style=style, model_order=model_order)
 
             if image is None:
                 print(f"Failed to generate image for {story_part} with all providers")
@@ -468,13 +482,11 @@ def generate_and_save_story_images(
     return image_paths
 
 
-def add_images_to_phrases(
+def generate_images_from_phrases(
     phrases: List[str],
     output_dir: str,
+    style: str = "default",
     image_format: str = "png",
-    imagen_model: Literal[
-        "imagen-3.0-fast-generate-001", "imagen-3.0-generate-001"
-    ] = "imagen-3.0-generate-001",
     anthropic_model=config.ANTHROPIC_MODEL_NAME,
 ) -> Dict:
     """
@@ -519,12 +531,9 @@ def add_images_to_phrases(
         # Generate and save the image
         try:
             ok_to_query_api()
-            image = generate_image_imagen(prompt, model=imagen_model)
+            image = generate_image(prompt, style=style)
             if image is None:
-                image = generate_image_deepai(prompt)
-
-            if image is None:
-                print("Both image generation attempts failed, skipping")
+                print("All image generation attempts failed, skipping")
                 continue
             # Save image to file
             image.save(image_path)
