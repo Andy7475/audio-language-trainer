@@ -10,9 +10,9 @@ from dotenv import load_dotenv
 from PIL import Image
 from tqdm import tqdm
 from vertexai.preview.vision_models import ImageGenerationModel
-
 from src.config_loader import config
 from src.utils import anthropic_generate, clean_filename, ok_to_query_api, load_json
+from pathlib import Path
 
 load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
@@ -31,21 +31,20 @@ def add_image_style(prompt: str, style: str = None) -> str:
     """
     # Remove any trailing periods and whitespace
     prompt = prompt.rstrip(". ")
-
+    art_style_path = Path().absolute().parent / "src" / "art_styles.json"
+    if not art_style_path.exists():
+        raise FileExistsError(art_style_path)
     # Try to load style mapping
-    try:
-        style_map = load_json("./art_styles.json")
-    except Exception as e:
-        print(f"Warning: Could not load style mapping file: {e}")
-        style_map = {}
 
     if style is None:
         style = "default"  # our default style
     # Get the style description - either from mapping or use directly
+    style_map = load_json(art_style_path)
     style_description = style_map.get(style.lower(), style)
-
+    modified_prompt = f"{prompt} in the style of {style_description}"
+    print(modified_prompt)
     # Return combined prompt with style
-    return f"{prompt} in the style of {style_description}"
+    return modified_prompt
 
 
 def create_image_generation_prompt_for_story_part(
@@ -374,8 +373,8 @@ def generate_image(
     style: str = "default",
     model_order: List[Literal["imagen", "deepai", "stability"]] = [
         "imagen",
-        "stability",
         "deepai",
+        "stability",
     ],
 ) -> Optional[Image.Image]:
     """
