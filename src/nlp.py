@@ -1,15 +1,12 @@
 import re
-import subprocess
-import sys
+from copy import deepcopy
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 import spacy
 from plotly.subplots import make_subplots
-from spacy.tokens import Token
 from tqdm import tqdm
 
 
@@ -361,6 +358,21 @@ def find_candidate_cards(
             candidate_cards.update(flashcard_index["vocab_index"][word])
 
     return candidate_cards
+
+
+def remove_unknown_index_values(known_index_values: set, index_dict: dict) -> dict:
+    """Returns a modified dictionary with index values (integers) removed that are not known,
+    this is so when we find matching flash cards for vocab we only select those we already known.
+
+    index_dict will be something like phrase_index['vocab_index'] or pharse_index['verb_index']
+    """
+
+    modified_index_dict = deepcopy(index_dict)
+    for word, indicies in modified_index_dict.items():
+        new_indicies = list(set(indicies).intersection(known_index_values))
+        modified_index_dict[word] = new_indicies
+
+    return modified_index_dict
 
 
 def find_best_card(

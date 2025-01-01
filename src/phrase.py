@@ -1,12 +1,7 @@
-import json
-import os
 import random
 from collections import defaultdict
-import re
-from shutil import copy
 from typing import Dict, List, Literal, Set, Tuple
 
-import requests
 import spacy
 
 from src.config_loader import config
@@ -18,6 +13,202 @@ from src.nlp import (
     get_verb_and_vocab_lists,
     remove_matching_words,
 )
+
+
+def get_phrase_indices(known_phrases: list[str], all_phrases: list[str]) -> set[int]:
+    """
+    Get the indices of known phrases within a list of all phrases, skipping any that aren't found.
+
+    Args:
+        known_phrases: List of phrases to find indices for
+        all_phrases: Master list of phrases to search within
+
+    Returns:
+        Set of indices where known phrases were found
+    """
+    indices = set()
+    for phrase in known_phrases:
+        try:
+            idx = all_phrases.index(phrase)
+            indices.add(idx)
+        except ValueError:
+            continue
+
+    return indices
+
+
+def generate_scenario_vocab_building_phrases(
+    scenario: str, localise: bool = False, num_phrases: str = "20-30"
+) -> List[str]:
+    """
+    Generate vocabulary-rich phrases for a given scenario, focusing on nouns and adjectives.
+
+    Args:
+        scenario: Description of the scenario e.g. "at the restaurant", "taking a taxi"
+        localise: Whether to include country-specific vocabulary
+        num_phrases: Range of phrases to generate e.g. "20-30"
+
+    Returns:
+        List of English noun/adjective-focused phrases suitable for vocabulary building
+
+    Raises:
+        ValueError: If unable to generate valid phrases or extract JSON
+    """
+    localisation_phrase = ""
+    localisation_phrase_2 = ""
+    if localise:
+        localisation_phrase = f"- Consider local items and descriptions specific to {config.TARGET_COUNTRY_NAME}"
+        localisation_phrase_2 = f" when travelling to {config.TARGET_COUNTRY_NAME}"
+
+    prompt = """Generate vocabulary-rich phrases for: '{scenario}' (write in UK English). These are for language learners{localisation_phrase_2} to build their vocabulary through memorable noun-adjective combinations.
+
+Approach:
+1. First, identify 6-8 key categories of things/objects in this scenario
+   For each category list relevant:
+   - Common objects/items
+   - Descriptive adjectives (size, quality, temperature, etc.)
+   - Associated equipment/furnishings
+   - Typical problems or variations
+   - Use relatively simple vocabulary that would be useful in spoken phrases
+
+2. Combine these into natural 3-7 word phrases that:
+   - Use multiple nouns/adjectives together
+   - Create clear mental images
+   - Avoid complex verbs (use 'with', 'in', 'on', 'for' to connect)
+   - Use relatively simple vocabulary that would be useful in spoken phrases
+   - Would be easily illustrated
+
+Remember:
+- Focus on physical objects and their descriptions
+- Consider location/placement phrases
+- Consider variations (size, quality, condition)  
+- Consider typical problems or issues
+{localisation_phrase}
+
+Return {num_phrases} phrases in this JSON format:
+Example input scenario: 'eating at a restaurant'
+Example JSON output:
+{{
+    "phrases": [
+        "a fresh green salad with olives",
+        "some broken glass on a large table",
+        "the spicy noodle soup with prawns"
+    ]
+}}
+
+Each phrase should:
+- Be 3-7 words long
+- Contain at least 2 content words (nouns/adjectives)
+- Create a clear mental image
+- Focus on objects rather than actions"""
+
+    # Format the prompt with the given parameters
+    formatted_prompt = prompt.format(
+        localisation_phrase=localisation_phrase,
+        scenario=scenario,
+        num_phrases=num_phrases,
+        localisation_phrase_2=localisation_phrase_2,
+    )
+
+    # Generate response using Claude
+    response = anthropic_generate(formatted_prompt, max_tokens=2000)
+
+    # Extract JSON from response
+    json_data = extract_json_from_llm_response(response)
+
+    if not json_data or "phrases" not in json_data:
+        raise ValueError("Failed to generate valid phrases")
+
+    return json_data["phrases"]
+
+
+def generate_scenario_phrases(
+    scenario: str, localise: bool = False, num_phrases: str = "10-15"
+) -> List[str]:
+    """
+    Generate a list of useful phrases for a given scenario and country.
+
+    Args:
+        country_name: Name of the country e.g. "France", "Japan"
+        scenario: Description of the scenario e.g. "at the restaurant", "taking a taxi"
+
+    Returns:
+        List of English phrases suitable for the scenario
+
+    Raises:
+        ValueError: If unable to generate valid phrases or extract JSON
+    """
+
+    localisation_phrase = ""
+    localisation_phrase_2 = ""
+    if localise:
+        localisation_phrase = (
+            f"- Cultural considerations specific to {config.TARGET_COUNTRY_NAME}"
+        )
+        localisation_phrase_2 = f" travelling to {config.TARGET_COUNTRY_NAME}"
+
+    # Base prompt template
+    prompt = """Generate practical phrases for: '{scenario}' (write in UK english). These are for language learners{localisation_phrase_2}.
+
+    Approach this by:
+    1. Break down {scenario} into a common sequence of situations
+    2. For each situation, consider:
+    - What someone might need to ask for
+    - How they might respond to questions
+    - Common problems they might face
+    - Typical interactions with locals
+
+    For each situation, create 3-4 phrases that:
+    - Are 4-7 words in length
+    - Use common speaking patterns as a basis (e.g. "Could I have...", "Where is...", "Are there any...")
+    - But never leave phrases incomplete (e.g. insert an example location 'when is the next train to <city>?' rather than just the stem 'when is the next train to...?')
+    - Would be naturally used in conversation
+    - Focus on clear, practical communication
+    - Use shorter phrases where possible
+
+    Consider:
+    - The logical sequence of events
+    - Both asking and responding
+    - Common issues or special requests
+    {localisation_phrase}
+    - Local customs and expectations
+
+    Return {num_phrases} phrases in this JSON format:
+    Example input scenario: 'visiting tourist attractions'
+    Example JSON output:
+    {{
+        "phrases": [
+            "Which way to the museum, please?",
+            "What time does the museum close?",
+            "How much does a ticket cost?",
+            "etc...",
+        ]
+    }}
+
+    Important:
+    - Each phrase should be complete and standalone
+    - Include a mix of questions and statements
+    - Focus on everyday language people actually use
+    - Consider both formal and informal situations where appropriate"""
+
+    # Format the prompt with the given parameters
+    formatted_prompt = prompt.format(
+        localisation_phrase=localisation_phrase,
+        scenario=scenario,
+        num_phrases=num_phrases,
+        localisation_phrase_2=localisation_phrase_2,
+    )
+
+    # Generate response using Claude
+    response = anthropic_generate(formatted_prompt, max_tokens=2000)
+
+    # Extract JSON from response
+    json_data = extract_json_from_llm_response(response)
+
+    if not json_data or "phrases" not in json_data:
+        raise ValueError("Failed to generate valid phrases")
+
+    return json_data["phrases"]
 
 
 def generate_phrases_from_vocab_dict(

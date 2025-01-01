@@ -161,6 +161,7 @@ def create_test_story_dict(
     story_parts: int = 2,
     from_index: int = 0,
     dialogue_entries: int = 2,
+    num_phrases: Optional[int] = None,
     fast_audio_fraction: Optional[float] = None,
 ) -> Dict[str, Dict]:
     """
@@ -169,8 +170,10 @@ def create_test_story_dict(
     Args:
         story_data_dict (Dict[str, Dict]): The original story data dictionary.
         story_parts (int): Number of story parts to include in the test dictionary.
-        from_index (int): Starting index for dialogue entries to include.
+        from_index (int): Starting index for entries to include.
         dialogue_entries (int): Number of dialogue entries to include in each story part.
+        num_phrases (int, optional): Number of phrases to include from corrected_phrase_list
+            and related lists. If None, includes all phrases.
         fast_audio_fraction (float, optional): If provided, clips the fast audio to this
             fraction of its original length (e.g., 0.1 for 10% of length).
 
@@ -185,29 +188,35 @@ def create_test_story_dict(
 
         test_dict[part_key] = {}
 
-        # Handle dialogue related fields
-        if "dialogue" in part_data:
-            end_index = min(from_index + dialogue_entries, len(part_data["dialogue"]))
-            test_dict[part_key]["dialogue"] = part_data["dialogue"][
-                from_index:end_index
-            ]
+        # Handle phrase-related lists with num_phrases
+        phrase_related_fields = [
+            "corrected_phrase_list",
+            "translated_phrase_list",
+            "translated_phrase_list_audio",
+            "image_path",
+        ]
 
-        if "translated_dialogue" in part_data:
-            end_index = min(
-                from_index + dialogue_entries, len(part_data["translated_dialogue"])
-            )
-            test_dict[part_key]["translated_dialogue"] = part_data[
-                "translated_dialogue"
-            ][from_index:end_index]
+        for field in phrase_related_fields:
+            if field in part_data:
+                original_list = part_data[field]
+                if num_phrases is not None:
+                    end_index = min(from_index + num_phrases, len(original_list))
+                    test_dict[part_key][field] = original_list[from_index:end_index]
+                else:
+                    test_dict[part_key][field] = original_list
 
-        if "translated_dialogue_audio" in part_data:
-            end_index = min(
-                from_index + dialogue_entries,
-                len(part_data["translated_dialogue_audio"]),
-            )
-            test_dict[part_key]["translated_dialogue_audio"] = part_data[
-                "translated_dialogue_audio"
-            ][from_index:end_index]
+        # Handle dialogue-related fields
+        dialogue_fields = [
+            "dialogue",
+            "translated_dialogue",
+            "translated_dialogue_audio",
+        ]
+
+        for field in dialogue_fields:
+            if field in part_data:
+                original_list = part_data[field]
+                end_index = min(from_index + dialogue_entries, len(original_list))
+                test_dict[part_key][field] = original_list[from_index:end_index]
 
         # Handle fast dialogue audio with optional clipping
         if "translated_dialogue_audio_fast" in part_data:
@@ -218,6 +227,16 @@ def create_test_story_dict(
                 clip_length = int(total_length * fast_audio_fraction)
                 fast_audio = fast_audio[:clip_length]
             test_dict[part_key]["translated_dialogue_audio_fast"] = fast_audio
+
+        # Copy any other fields that might be present
+        other_fields = (
+            set(part_data.keys())
+            - set(phrase_related_fields)
+            - set(dialogue_fields)
+            - {"translated_dialogue_audio_fast"}
+        )
+        for field in other_fields:
+            test_dict[part_key][field] = part_data[field]
 
     return test_dict
 
@@ -328,14 +347,12 @@ def save_text_file(lines: List[str], file_path: str) -> None:
 
 def load_json(file_path) -> dict:
     """Returns {} if JSON does not exist"""
-    if not os.path.exists(file_path):
-        print("file does not exist, returning empty dict")
-        return {}
     with open(file_path, "r") as file:
         return json.load(file)
 
 
 def save_json(data, file_path):
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
     with open(file_path, "w") as file:
         json.dump(data, file, indent=2)
 

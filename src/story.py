@@ -16,7 +16,7 @@ def create_html_story(
     output_dir: str,
     component_path: str,
     story_name: str,
-    language: str = config.TARGET_LANGUAGE_NAME,
+    language: str = None,
 ) -> None:
     """
     Create a standalone HTML file from the story data dictionary.
@@ -28,6 +28,8 @@ def create_html_story(
         title: Optional title for the story
         language: Target language name for Wiktionary links
     """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME
     story_title = clean_story_name(story_name)
     # Process the story data and convert audio to base64
     prepared_data = prepare_story_data_for_html(
@@ -163,7 +165,9 @@ def create_album_files(
     story_name: str,
 ):
     """Creates and saves M4A files for the story, with album artwork.
-    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue."""
+    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue.
+
+    story_name is expected to be of the form story_<story-title-with-underscores>"""
     REPEATS_OF_FAST_DIALOGUE = 10
     PAUSE_TEXT = "---------"
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
@@ -287,7 +291,9 @@ def prepare_story_data_for_html(
     """
     prepared_data = {}
 
-    for section_name, section_data in story_data_dict.items():
+    for section_name, section_data in tqdm(
+        story_data_dict.items(), desc="Preparing HTML data"
+    ):
         prepared_data[section_name] = {
             "dialogue": section_data.get("dialogue", []),
             "translated_dialogue": prepare_dialogue_with_wiktionary(

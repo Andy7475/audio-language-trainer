@@ -764,8 +764,9 @@ def create_anki_deck_from_english_phrase_list(
         partial_dict = create_test_story_dict(
             translated_phrases_dict,
             story_parts=1,
-            phrases=batch_size,
             from_index=from_index,
+            dialogue_entries=2,
+            num_phrases=batch_size,
         )
         translated_phrases_dict_audio = add_audio(partial_dict)
 

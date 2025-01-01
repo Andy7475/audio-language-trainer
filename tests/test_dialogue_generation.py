@@ -5,9 +5,7 @@ from unittest.mock import ANY, mock_open, patch
 
 import pytest
 
-from src.dialogue_generation import add_usage_to_words
 from src.nlp import get_vocab_dict_from_dialogue
-from src.utils import update_vocab_usage
 
 
 @pytest.fixture
