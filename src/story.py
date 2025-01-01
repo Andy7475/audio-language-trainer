@@ -16,7 +16,7 @@ def create_html_story(
     output_dir: str,
     component_path: str,
     story_name: str,
-    language: str = config.TARGET_LANGUAGE_NAME,
+    language: str = None,
 ) -> None:
     """
     Create a standalone HTML file from the story data dictionary.
@@ -28,6 +28,8 @@ def create_html_story(
         title: Optional title for the story
         language: Target language name for Wiktionary links
     """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME
     story_title = clean_story_name(story_name)
     # Process the story data and convert audio to base64
     prepared_data = prepare_story_data_for_html(
