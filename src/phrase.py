@@ -1,12 +1,7 @@
-import json
-import os
 import random
 from collections import defaultdict
-import re
-from shutil import copy
 from typing import Dict, List, Literal, Set, Tuple
 
-import requests
 import spacy
 
 from src.config_loader import config
@@ -18,6 +13,28 @@ from src.nlp import (
     get_verb_and_vocab_lists,
     remove_matching_words,
 )
+
+
+def get_phrase_indices(known_phrases: list[str], all_phrases: list[str]) -> set[int]:
+    """
+    Get the indices of known phrases within a list of all phrases, skipping any that aren't found.
+
+    Args:
+        known_phrases: List of phrases to find indices for
+        all_phrases: Master list of phrases to search within
+
+    Returns:
+        Set of indices where known phrases were found
+    """
+    indices = set()
+    for phrase in known_phrases:
+        try:
+            idx = all_phrases.index(phrase)
+            indices.add(idx)
+        except ValueError:
+            continue
+
+    return indices
 
 
 def generate_scenario_vocab_building_phrases(

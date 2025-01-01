@@ -18,7 +18,7 @@ load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
 
-def add_image_style(prompt: str, style: str = None) -> str:
+def add_image_style(prompt: str, style: str) -> str:
     """Adds an art style to an image generation prompt.
 
     Args:
@@ -31,19 +31,15 @@ def add_image_style(prompt: str, style: str = None) -> str:
     """
     # Remove any trailing periods and whitespace
     prompt = prompt.rstrip(". ")
-    art_style_path = Path().absolute().parent / "src" / "art_styles.json"
+    art_style_path = Path().absolute().parent / "src" / "image_styles.json"
     if not art_style_path.exists():
         raise FileExistsError(art_style_path)
-    # Try to load style mapping
 
-    if style is None:
-        style = "default"  # our default style
     # Get the style description - either from mapping or use directly
     style_map = load_json(art_style_path)
     style_description = style_map.get(style.lower(), style)
     modified_prompt = f"{prompt} in the style of {style_description}"
-    print(modified_prompt)
-    # Return combined prompt with style
+
     return modified_prompt
 
 
@@ -370,7 +366,7 @@ def resize_image(generated_image, height=500, width=500):
 
 def generate_image(
     prompt: str,
-    style: str = "default",
+    style: str = None,
     model_order: List[Literal["imagen", "deepai", "stability"]] = [
         "imagen",
         "deepai",
@@ -388,6 +384,8 @@ def generate_image(
         Optional[Image.Image]: Generated image or None if all attempts fail
     """
 
+    if style is None:
+        style = config.IMAGE_STYLE
     prompt = add_image_style(prompt, style)
     for model in model_order:
         try:
@@ -484,7 +482,7 @@ def generate_and_save_story_images(
 def generate_images_from_phrases(
     phrases: List[str],
     output_dir: str,
-    style: str = "default",
+    style: str = None,
     image_format: str = "png",
     anthropic_model=config.ANTHROPIC_MODEL_NAME,
 ) -> Dict:

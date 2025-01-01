@@ -1,0 +1,1364 @@
+#separator:tab
+#html:false
+plus/moins	more/less
+plus que/moins que	more than/less than
+bon/meilleur/le meilleur	good/better/best
+mauvais/pire/le pire	bad/worse/worst
+bien/mieux/le mieux	well/better/best
+mal/plus mal/le plus mal	badly/worse/worst
+beaucoup/plus/le plus	lots/more/the most
+peu/moins/le moins	few, little/less/the least
+à cause de	because of
+à part	apart from
+ainsi	so, therefore
+alors	so, therefore, then
+aussi	also
+car	because
+cependant	however
+c’est-à-dire	that is to say, i.e.
+comme	as, like
+d’un côté/de l’autre côté	on the one hand/on the other hand
+donc	so, therefore
+ensuite	next
+évidemment	obviously
+mais	but
+même si	even if
+ou	or
+par contre	on the other hand
+par exemple	for example
+pendant que	while
+pourtant	however
+puis	then
+puisque	seeing that, since
+quand	when
+sans doute	undoubtedly, without doubt, probably
+si	if
+y compris	including
+à	to, at
+à côté de	next to
+à travers	across, through
+au bord de	at the side/edge of
+au bout de	at the end of (ie length, rather than time)
+au-dessous de	beneath, below
+au-dessus de	above, over
+au fond de	at the back of, at the bottom of
+au lieu de	instead of
+au milieu de	in the middle of
+autour de	around
+contre	against
+de	of, from
+depuis	since, for
+derrière	behind
+devant	in front of
+en	in, within (time)
+en dehors de	outside (of)
+en face de	opposite
+entre	between
+jusqu’à	up to, until
+malgré	despite, in spite of
+parmi	amongst
+pour	for, in order to
+près de	near
+sans	without
+selon	according to
+sous	under
+sur	on
+vers	towards
+ne...jamais	never
+ne…pas	not
+ne...personne	nobody, no-one
+ne...plus	no more, no longer
+ne…que	only, nothing but
+ne…rien	nothing
+ni…ni	neither….nor
+pas encore	not yet
+dizaine	about 10
+douzaine	dozen
+nombre de	number of
+combien ?	how much, how many?
+comment ?	how?
+est-ce que ?	expression put before a verb to make sentence into a question
+où ?	where?
+pourquoi ?	why?
+quand ?	when?
+que ?	what?
+quel/quelle ?	which?
+qu’est-ce que ?	what?
+qu’est-ce qui ?	what?
+qu’est-ce que c’est ?	what is it?
+qui ?	who?
+quoi ?	what?
+à quelle heure ?	at what time?
+ça s’écrit comment ?	how is that written?
+c’est combien ?	how much is it?
+c’est quelle date ?	what is the date?
+c’est quel jour ?	what day is it?
+de quelle couleur ?	what colour?
+d’où ?	from where?
+pour combien de temps ?	for how long?
+que veut dire... ?	what does... mean?
+quelle heure est-il ?	what time is it?
+à bientôt	see you soon
+à demain	see you tomorrow
+à tout à l’heure	see you soon/later
+allô	hello (on phone)
+amitiés	best wishes
+au secours	help
+bien sûr	of course, certainly
+bienvenue	welcome
+bon anniversaire	happy birthday
+bon appétit	enjoy your meal
+bon voyage	have a good trip
+bonne année	happy new year
+bonne chance	good luck
+bonne idée	good idea
+bonne nuit	good night
+bonnes vacances	have a good holiday
+bonsoir	good evening
+d’accord	ok
+de rien	don't mention it
+désolé(e)	sorry
+excusez-moi	excuse me
+félicitations	congratulations
+joyeux Noël	Merry Christmas
+meilleurs voeux	best wishes
+pardon	excuse me
+quel dommage	what a pity
+salut	hi
+santé	cheers
+s’il te/vous plaît	please
+à mon avis	in my opinion
+absolument	absolutely
+affreux	awful
+agréable	pleasant
+amusant	funny
+barbant	boring
+bien entendu	of course
+bien sûr	of course
+ça dépend	that depends
+ça m’énerve	it gets on my nerves
+ça me fait rire	it makes me laugh
+ça me plaît	I like it
+ça m’est égal	it’s all the same to me
+ça ne me dit rien	it means nothing to me/I don't fancy that/I don't feel like it
+ça suffit	that’s enough
+casse-pieds	annoying
+certainement	certainly
+cher	dear, expensive
+chouette	great
+comme ci comme ça	so-so
+compliqué	complicated
+content	happy
+croire	to believe
+désagréable	unpleasant
+désirer	to want
+détester	to hate
+dire	to say
+drôle	funny
+embêtant	annoying
+en général	in general
+enchanté	delighted
+ennuyeux	boring
+espérer	to hope
+étonné	astonished, amazed
+facile	easy
+faible	weak
+formidable	great
+franchement	frankly
+généralement	generally
+génial	great
+grave	serious
+habile	clever
+intéressant	interesting
+(s’)intéresser à	to be interested in
+inutile	useless
+incroyable	incredible
+inquiet/inquiète	worried
+marrant	funny
+marre (en avoir)	to be fed up
+mauvais	bad
+merveilleux/merveilleuse	marvellous
+mignon/mignonne	cute
+moche	ugly
+(moi) non plus	nor me neither, nor do I
+nouveau	new
+nul	rubbish
+parfait	perfect
+passionnant	exciting
+peine la	the bother
+penser	to think
+peut-être	perhaps
+pratique	practical
+préférer	to prefer
+promettre	to promise
+ridicule	ridiculous
+rigolo	funny
+sage	well behaved
+sembler	to seem
+sensass	sensational
+supporter	to put up with
+utile	useful
+vouloir	to wish, want
+vraiment	really, truly
+printemps	spring
+été	summer
+automne	autumn
+hiver	winter
+à la fois	at the same time
+à l’avenir	in the future
+à l’heure	on time
+à temps partiel	part-time
+an	year
+année	year
+après	after
+après-demain	the day after tomorrow
+après-midi	afternoon
+aujourd’hui	today
+auparavant	formerly, in the past
+avant	before
+avant-hier	the day before yesterday
+bientôt	soon
+d’abord	at first, firstly
+d’habitude	usually
+de bonne heure	early
+début	start
+demain	tomorrow
+dernier/dernière	last
+de temps en temps	from time to time
+déjà	already
+de nouveau	again
+en attendant	whilst waiting (for), meanwhile
+en avance	in advance
+en ce moment	at the moment
+en retard	late
+en train de (faire...)	to be doing
+en même temps	at the same time
+encore une fois	once more, again
+enfin	at last, finally
+environ	about, approximately
+fin	end
+hier	yesterday
+il y a	ago
+jour	day
+journée	day
+lendemain	the next day
+longtemps	for a long time
+maintenant	now
+matin	morning
+mois	month
+normalement	normally
+nuit	night
+parfois	sometimes
+passé	past
+pendant	during
+plus tard	later
+presque	almost, nearly
+prochain	next
+quelquefois	sometimes
+rarement	rarely
+récemment	recently
+semaine	week
+seulement	only
+siècle	century
+soir	evening
+soudain	suddenly
+souvent	often
+suivant	following
+sur le point de (être)	about to be
+tard	late
+tôt	early
+toujours	always, still
+tous les jours	every day
+tout à coup	suddenly, all of a sudden
+tout de suite	immediately
+vite	quickly
+à droite	on/to the right
+à gauche	on/to the left
+banlieue	suburb
+centre-ville	town centre
+campagne	countryside
+chez	at the house of
+de chaque côté	from each side
+de l’autre côté	from the other side
+en bas	down(stairs)
+en haut	up(stairs)
+est	east
+ici	here
+là	there
+là-bas	over there
+loin de	far from
+nord	north
+nulle part	nowhere
+ouest	west
+par	by
+partout	everywhere
+quelque part	somewhere
+situé(e)	situated
+sud	south
+tout droit	straight ahead
+tout près	very near
+toutes directions	all directions
+ville	town
+châtain	light brown
+clair	light
+foncé	dark
+marron	brown
+noisette	hazel
+pourpre	purple
+rose	pink
+roux	ginger
+assez	enough, quite
+bas	low
+boîte	box, tin, can
+bouteille	bottle
+court	short
+demi	half
+encore	more
+étroit	narrow
+gros	fat
+haut	high
+large	wide
+maigre	skinny, thin
+mince	slim, thin
+moitié	half
+morceau	piece
+moyen/moyenne	medium, average
+nombre	number
+paquet	packet
+pas mal de	lots of
+peser	to weigh
+plein de	full of, lots of
+pointure	size (for shoes)
+suffisamment	sufficiently
+taille	size (for clothes)
+tranche	slice
+trop	too (much)
+carré	square
+rond	round
+averse	shower
+briller	to shine
+brouillard	fog
+brume	mist
+chaleur	heat
+ciel	sky
+climat	climate
+couvert	overcast
+doux	mild
+éclair	lightning
+éclaircie	bright spell
+ensoleillé	sunny
+faire beau	to be fine (weather)
+faire mauvais	to be bad (weather)
+geler	to freeze
+glace	ice
+humide	humid, wet
+météo	weather forecast
+mouillé	wet
+neiger	to snow
+nuage	cloud
+nuageux	cloudy
+ombre	shade, shadow
+orage	storm
+orageux	stormy
+pleuvoir	to rain
+pluie	rain
+sec/sèche	dry
+tempête	storm
+temps	weather
+tonnerre	thunder
+tremper	to soak
+vent	wind
+complet/complète	full
+entrée l' (f)	entry, entrance
+libre	free, vacant, unoccupied
+fermer	to close
+interdit	forbidden, not allowed
+occupé	taken, occupied, engaged
+ouvert	open
+ouvrir	to open
+sortie la	exit
+avoir raison	to be right
+avoir tort	to be wrong
+corriger	to correct
+erreur l' (f)	error, mistake
+faute la	fault, mistake
+faux/fausse	false
+il (me) faut	you (I) must
+juste	correct
+obligatoire	compulsory
+parfait	perfect
+sûr	certain, sure
+se tromper	to make a mistake
+vrai	true
+argent l' (m)	silver
+béton le	concrete
+bois le	wood
+cuir le	leather
+fer le	iron
+laine la	wool
+or l' (m)	gold
+soie la	silk
+verre le	glass
+CDI centre de documentation et d’information l'	resource centre
+CES collège d’enseignement secondaire le	secondary school
+EPS éducation physique et sportive l’ (f)	PE (physical education)
+HLM habitation à loyer modéré l’ (f)	council/social housing accommodation
+SAMU service d’aide médicale d’urgence le	emergency medical services
+SDF sans domicile fixe le	homeless person
+SNCF société nationale des chemins de fer français la	National Rail Service
+TGV train à grande vitesse le	high-speed train
+TVA taxe sur la valeur ajoutée la	VAT (Value Added Tax)
+VTT vélo tout terrain le	mountain bike
+cadeau le	present
+église l' (f)	church
+fête la	festival, celebration, party
+fête des mères la	Mother's Day
+fête des rois la	Twelfth Night/Epiphany
+fête du travail la	May Day
+fêter	to celebrate
+feux d'artifice les (m)	fireworks
+Jour de l'An le	New Year’s Day
+juif/juive	Jewish
+mosquée la	Mosque
+musulman	Muslim
+Pâques	Easter
+poisson d'avril	April Fools' Day, April Fool!
+religieux/religieuse	religious
+Saint-Sylvestre la	New Year’s Eve
+Saint Valentin la	St. Valentine’s Day
+Toussaint la	All Saints' Day
+veille de Noël la	Christmas Eve
+défilé le	procession
+jour férié le	public holiday
+messe la	mass
+Pentecôte la	Whitsuntide
+réunion la	meeting
+actualités les (f)	news
+agneau l' (m)	lamb
+argent l' (m)	money
+assiette l' (f)	plate/dish
+basket le	basketball
+beurre le	butter
+bière la	beer
+billet le	ticket
+bœuf le	beef
+boire	to drink
+boisson la	drink
+canard le	duck
+carte la	menu
+centre sportif le	sports centre
+cerise la	cherry
+champignon le	mushroom
+chanter	to sing
+chanteur le/chanteuse la	singer
+chanson la	song
+cheval le	horse
+choisir	to choose
+chou le	cabbage
+chou-fleur le	cauliflower
+citron le	lemon
+club des jeunes le	youth club
+commander	to order
+commencer	to start
+confiture la	jam
+courir	to run
+coûter	to cost
+crêpe la	pancake
+crudités les (f)	raw chopped vegetables
+débuter	to begin
+dessin animé le	cartoon
+dinde la	turkey
+eau (minérale) l' (f)	(mineral) water
+équitation l' (f)	horse riding
+escalade l' (f)	rock climbing
+escargot l' (m)	snail
+essayer	to try
+fana de (le)	a fan of
+feuilleton le	soap opera
+film de guerre le	war film
+film policier le	detective film
+fraise la	strawberry
+framboise la	raspberry
+fruits de mer les (m)	seafood
+glace la	ice cream
+goûter	to taste
+haricots verts les (m)	green beans
+hors d'œuvre le (m)	starter
+s'intéresser à	to be interested in
+jambon le	ham
+jeu télévisé le	game show
+lait le	milk
+légumes les (m)	vegetables
+natation la	swimming
+nourriture la	food
+œuf l' (m)	egg
+oignon l' (m)	onion
+passe-temps le	hobby
+pâtes les (f)	pasta
+patinage à glace le	ice skating
+patinoire la	ice rink
+payer	to pay (for)
+pêche la	fishing/peach
+petits pois les (m)	peas
+planche à voile la	wind-surfing
+plat principal le	main meal/dish
+poire la	pear
+poisson le	fish
+poivre le	pepper
+pomme la	apple
+pomme de terre la	potato
+potage le	soup
+poulet le	chicken
+piscine la	swimming pool
+pourboire le	tip
+prendre	to take
+promenade la	walk
+publicité la	adverts
+raisins les (m)	grapes
+rencontrer	to meet
+repas le	meal
+riz le	rice
+saucisse la	sausage
+saumon le	salmon
+sel le	salt
+série la	series
+serveur le/serveuse la	waiter, waitress
+skate le	skateboarding
+ski (nautique) le	(water) skiing
+sports d'hiver les (m)	winter sports
+stade le	stadium
+steak haché le	burger
+sucre le	sugar
+tasse la	cup
+télé réalité la	reality television
+temps libre le	free time
+thé le	tea
+thon le	tuna
+truite la	trout
+vedette la	film star
+viande la	meat
+voile la	sailing
+voir	to see
+volley le	volleyball
+vouloir	to wish, want
+yaourt le	yoghurt
+s’abonner	to subscribe
+ado l’ (m/f)	adolescent
+ail l’ (m)	garlic
+amer/amère	sour
+ananas l’ (m)	pineapple
+bien cuit	well cooked
+chorale la	choir
+course la	race
+échecs les (m)	chess
+effets spéciaux (m)	special effects
+épicé	spicy
+espèce l’ (f)	type, kind
+féliciter	to congratulate
+lieu le (avoir lieu)	place (to take place)
+marquer un but/un essai	to score a goal/try
+noix la	nut
+pamplemousse la	grapefruit
+piquant	spicy
+prune la	plum
+séance la	performance
+tournée la	tour
+tournoi le	tournament
+veau le	veal
+aimable	kind
+aîné	elder
+amour l' (m)	love
+s’appeler	to be called
+avoir...ans	to be...years old
+barbe la	beard
+bavard	chatty/talkative
+beau/belle/bel	beautiful
+beau-père le	step-father
+belle-mère la	step-mother
+bête	stupid, silly
+bouclé	curly
+célibataire	single
+cheveux les (m)	hair
+copain le/copine la	friend, mate
+court	short
+demi-frère le	half-brother
+demi-sœur la	half-sister
+se disputer	to argue
+dire	to say, tell
+égoïste	selfish
+ensemble	together
+s’entendre (avec)	to get on (with)
+fâché	angry
+se faire des amis	to make friends
+femme la	wife/woman
+fille la	daughter/girl
+fils le	son
+frisé	curly
+généreux/généreuse	generous
+gentil/gentille	kind, nice
+grand-mère la	grandmother
+grand-père le	grandfather
+grands-parents les (m)	grandparents
+gros/grosse	fat
+heureux/heureuse	happy
+injuste	unfair
+jeune	young
+joli	pretty
+laid	ugly
+long/longue	long
+lunettes les (f)	glasses
+mari le	husband
+se marier	to get married, marry
+méchant	naughty
+mi-long	medium length
+mort	dead
+naissance la	birth
+né(e) le...	born on the...
+nom le	name
+paresseux/paresseuse	lazy
+partager	to share
+partenaire le/la	partner
+pénible	annoying
+petit ami le	boyfriend
+petite amie la	girlfriend
+petite-fille la	grand-daughter
+petit-fils le	grandson
+prénom le	first name
+raide	straight
+rapports les (m)	relationships
+sens de l’humour le	sense of humour
+séparé	separated
+sortir	to go out
+sportif/sportive	sporty
+sympa	kind, nice
+de taille moyenne	medium height
+tante la	aunt
+timide	shy
+tranquille	quiet, calm
+travailleur/travailleuse	hard-working
+triste	sad
+unique	only
+vieux/vieil/vieille	old
+yeux les (m)	eyes
+bague la	ring
+bouton le	spot, pimple
+compréhensif/compréhensive	understanding
+confiance la	trust
+connaître	to know (a person)
+de mauvaise humeur	bad tempered
+épouser	to marry
+esprit l’ (m)	mind
+étonnant	amazing
+étrange	strange
+fiançailles les (f)	engagement
+fier/fière	proud
+fou/folle	mad, crazy
+gâter	to spoil
+gêner	to annoy
+jaloux/jalouse	jealous
+jumeau le/jumelle la	twin
+jeunesse la	youth
+marre (en avoir)	 (to be) fed up
+mépriser	to despise
+se mettre en colère	to get angry
+mourir	to die
+naître	to be born
+neveu le	nephew
+les noces (f)	wedding
+ondulé	wavy
+se rendre compte	to realise
+(se) séparer	to separate
+vif/vive	lively
+acheter	to buy
+avantage l' (m)	advantage
+chercher	to look for
+clavier le	keyboard
+cliquer	to click
+dangereux	dangerous
+désavantage le	disadvantage
+écran l' (m)	screen
+envoyer	to send
+faire des achats	to shop
+forum le	chat room
+imprimante l' (f)	printer
+inconvénient l' (m)	disadvantage, drawback
+jeu le	game
+lecteur DVD le	DVD player
+lecteur MP3 le	MP3 player
+en ligne	online
+mettre	to put
+mettre en ligne	to upload
+mot de passe le	password
+ordinateur l' (m)	computer
+ordinateur portable l' (m)	laptop
+ordinateur tablette l' (m)	tablet
+passer du temps	to spend time
+portable le	mobile (phone)
+recevoir	to receive
+réseau social le	social network
+rester en contact	to stay in contact
+site internet/web le	website
+souris la	mouse
+surfer sur Internet	to surf the internet
+taper	to type
+tchater	to talk online
+télécharger	to download
+texto le	text
+touche la	key
+bloggeur le	blogger
+caméscope le	camcorder
+compte le	account
+console de jeux la	games console
+courrier électronique le	email
+écran tactile l’ (m)	touch screen
+effacer	to delete
+enregistrer	to record
+fichier le	file
+genre le	type, kind
+imprimer	to print
+internaute l’ (m)	internet user
+logiciel le	software
+moniteur le	monitor
+numérique	digital
+page d’accueil la	welcome page
+pile la	battery
+remplir	to fill (in)
+sauvegarder	to save
+traitement de texte le	word processing
+allumer	to switch on
+bain le	bath
+boîte la (en carton)	cardboard box
+centre de recyclage le	recycling centre
+chômage le	unemployment
+chauffage central le	central heating
+cultiver	to grow
+en danger	in danger
+déchets les (m)	rubbish
+détruire	to destroy
+disparaître	to disappear
+douche la	shower
+environnement l' (m)	environment
+éteindre	to switch off
+faire du recyclage	to recycle
+gaspiller	to waste
+inondation l' (f)	flood
+jeter	to throw (away)
+ordures les (f)	rubbish
+pauvreté la	poverty
+pétrole le	oil
+piste cyclable la	cycle lane
+pollué	polluted
+poubelle la	dustbin
+protéger	to protect
+réchauffement de la Terre le	global warming
+robinet le	tap
+sac en plastique le	plastic bag
+sans-abri le	homeless person
+sauver	to save
+utiliser	to use
+agresser	to attack
+améliorer	to improve
+attaque l’ (f)	attack
+augmenter	to increase
+bande la	gang
+campagne la	campaign
+charbon le	coal
+couche d’ozone la	ozone layer
+croire	to believe
+déboisement le	deforestation
+effet de serre l’ (m)	greenhouse effect
+effrayant	frightening
+égal	equal
+emballage l’ (m)	packaging
+empêcher	to prevent
+endommager	to damage
+énergie renouvelable l’ (f)	renewable energy
+ennui l’ (m)	problem, worry
+entouré	surrounded
+état l’ (m)	state
+gaz carbonique le	carbon dioxide
+gaz d’échappement le	exhaust fumes
+guerre la	war
+harceler	to bully, harass
+harcèlement le	bullying, harassment
+immigré l’ (m)	immigrant
+incendie l’ (m)	fire
+inonder	to flood
+s’inquiéter	to worry
+lourd	heavy, serious
+lutter	to struggle
+manifestation la	demonstration
+marée la	tide
+mentir	to lie
+mondial	worldwide
+niveau le	level
+paix la	peace
+paysage le	countryside/landscape
+(se) plaindre	to complain
+produire	to provide
+produits bio les (m)	green products
+ramasser	to pick up
+reconnaissant	grateful
+réfugié le	refugee
+supporter	to tolerate, put up with
+supprimer	to suppress/eliminate
+souci le	worry, concern
+témoin le	witness
+trou le	hole
+vague la	wave
+voler	to steal
+voyou le	yob, hooligan
+aider	to help
+animé	lively
+arbre l' (m)	tree
+armoire l' (f)	wardrobe
+bâtiment le	building
+besoin le	need (to need)
+bibliothèque la	library
+boucherie la	butcher’s shop
+baskets les (f)	trainers
+boulangerie la	bakery
+bijou le	jewel, jewellery
+bijouterie la	jeweller’s shop
+blouson le	coat/jacket
+bon marché	cheap
+bruit le	noise
+bureau le	office, study
+bruyant	noisy
+caisse la	till
+calme	quiet
+campagne la	countryside
+carte bancaire la	bank card
+cave la	cellar
+ceinture la	belt
+célèbre	famous
+centre commercial le	shopping centre
+champ le	field
+chapeau le	hat
+charcuterie la	delicatessen
+chaussette la	sock
+chaussure la	shoe
+chemise la	shirt
+choix le	choice
+chose la	thing
+circulation la	traffic
+commerces les (m)	shops
+colline la	hill
+commissariat le	police station
+cravate la	tie
+cuisine la	kitchen/cooking
+déménager	to move house
+démodé	old-fashioned
+dépenser	to spend (money)
+devoir	to have to
+économiser	to save
+escalier l' (m)	staircase
+essayer	to try on
+étage l' (m)	floor, storey
+fenêtre la	window
+ferme la	farm
+fleur la	flower
+gare la	railway station
+gare routière la	bus station
+gens les (m)	people
+gilet le	waistcoat
+grand magasin le	department store
+gratuit	free (of charge)
+habitant l' (m)	inhabitant
+hôtel de ville l' (m)	town hall
+immeuble l' (m)	block of flats
+jardinage le	gardening
+jupe la	skirt
+laver	to wash
+librairie la	bookshop
+livrer	to deliver
+maison la	house (detached/semi-detached/terraced)
+mairie la	town hall
+manteau le	overcoat
+marché le	market
+meubles les (m)	furniture
+mode la	fashion
+montagne la	mountain(s)
+mur le	wall
+musée le	museum
+nettoyer	to clean
+pantalon le	trousers
+parc le	park
+parfum le	perfume
+pâtisserie la	cake shop
+pauvre	poor
+perdre	to lose
+pièce la	room
+place la	square
+portefeuille le	wallet
+porte-monnaie le	purse
+poser	to put down
+poste la	post office
+pouvoir	to be able
+prix le	price
+propre	clean, tidy
+pull le	jumper
+quartier le	quarter, area
+quitter	to leave
+ranger	to tidy
+réduire	to reduce
+réduit	reduced
+rez-de-chaussée le	ground floor
+risque le	risk
+robe la	dress
+sale	dirty
+salle à manger la	dining room
+salle de bains la	bathroom
+salon le	living room, lounge
+sécurité la	safety
+soldes les (m)	sale
+sous-sol le	basement
+station-service la	service station
+tabac le	newsagent’s
+transport en commun le	public transport
+travailler	to work
+se trouver	to be situated
+usine l' (f)	factory
+vendeur le/vendeuse la	shop assistant
+vendre	to sell
+veste la	jacket
+vêtements les (m)	clothes
+vie la	life
+ville la	town
+vitrine la	shop window
+vivre	to live
+voisin le	neighbour
+zone piétonne la	pedestrian zone
+bricolage le	DIY (do it yourself)
+distractions les (f)	things to do
+écharpe l’ (f)	scarf
+embouteillage l’ (m)	traffic jam
+endroit l’ (m)	place
+fermeture la	closure
+foulard le	scarf
+four le	oven
+foyer le	home
+garder	to look after
+grande surface la	superstore
+lèche-vitrine le	window shopping (to go window shopping)
+loyer le	rent
+lumière la	light
+marque la	make, label, brand
+pelouse la	lawn
+pull à capuche le	hoodie
+rayon le	department
+rembourser	to reimburse
+surchargé	overcrowded
+tâche la	task
+alcool l' (m)	alcohol
+alimentation l' (f)	food
+aller bien	to be well
+aller mieux	to be better
+(s') arrêter	to stop
+association caritative l' (f)	charity
+bonbon le	sweet
+bonheur le	happiness
+chocolat le	chocolate
+combattre	to combat
+déjeuner le	lunch
+se détendre	to relax
+devenir	to become
+dîner le	evening meal
+dormir	to sleep
+drogue la	drug
+se droguer	to take drugs
+eau potable l' (f)	drinking water
+égalité l' (f)	equality
+en bonne forme	fit
+en bonne santé	in good health
+équilibré	balanced
+espace vert l' (m)	green area
+éviter	to avoid
+faible	weak
+faire un régime	to be on a diet
+fatigué	tired
+forme la	fitness
+fort	strong
+fumer	to smoke
+garder	to look after
+gras	fatty
+habitude l' (f)	habit
+malade	ill, sick
+maladie la	illness
+malsain	unhealthy
+matières grasses les (f)	fats
+médecin le	doctor
+médicament le	medicine
+obésité l' (f)	obesity
+odeur l' (f)	smell
+petit déjeuner le	breakfast
+pressé	in a hurry, rushed/squeezed
+se relaxer	to relax
+repas le	meal
+rester	to stay
+réussir	to succeed
+sain	healthy
+santé la	health
+(se) sentir	to feel
+sommeil le	sleep
+sucré	sugary
+suivre	to follow
+tabac le	tobacco
+travail bénévole le	voluntary work
+tuer	to kill
+vide	empty
+vomir	to be sick
+accro	addicted
+agir (il s’agit de)	to act (it’s a question of)
+alcoolique	alcoholic
+avertir	to warn
+avoir sommeil	to be sleepy
+cacher	to hide
+cancer (des poumons) le	(lung) cancer
+coupable	guilty
+casse-croûte le	snack
+conseil le	advice
+consommation la	consumption, usage
+crise cardiaque la	heart attack
+dégoûtant	disgusting
+déprimé	depressed
+désintoxiquer	to detox
+dette la	debt
+douleur la	pain
+s’enivrer	to get drunk
+enquête l’ (f)	enquiry
+entraînement l’ (m)	training
+épuiser	to exhaust
+s’entraîner	to train
+essoufflé	breathless
+foie le	liver
+hors d’haleine	out of breath
+ivre	drunk
+mannequin le	model
+mener	to lead
+musculation la	weight training
+nourriture bio la	organic food
+peau la	skin
+quotidien(ne)	daily
+personnes défavorisées les	disadvantaged people
+renoncer	to give up
+respirer	to breathe
+salé	salty
+sida le	AIDS
+soigner	to care for
+soin le	care
+surveiller	to watch
+tabagisme le	addiction to smoking
+tatouage le	tattooing
+tenter	to attempt
+tousser	to cough
+toxicomane le/la	drug addict
+valoir mieux	to be better, preferable
+voix la	voice
+accueil l' (m)	welcome
+aéroport l' (m)	airport
+Afrique l' (f)/africain	Africa/African
+agence de voyages l' (f)	travel agency
+Algérie l' (f)/algérien	Algeria/Algerian
+Allemagne l' (f)/allemand	Germany/German
+Alpes les (f)	Alps
+Angleterre l' (f)/anglais	England/English
+arrivée l' (f)	arrival
+ascenseur l' (m)	lift
+s'asseoir	to sit down
+attendre	to wait (for)
+auberge de jeunesse l' (f)	youth hostel
+auto l' (f)	car
+autobus l' (m)	bus
+autoroute l' (f)	motorway
+aventure l' (f)	adventure
+avion l' (m)	plane
+bagages les (m)	luggage
+(se) baigner	to bathe, swim
+bateau le	boat
+Belgique la/belge	Belgium/Belgian
+bord de la mer le	seaside
+bronzer	to sunbathe
+car le	coach
+carte la	map
+carte postale la	postcard
+casser	to break
+chambre de famille la	family room
+chercher	to look for
+Chine la/chinois	China/Chinese
+clé la	key
+colonie de vacances la	holiday/summer camp
+conduire	to drive
+se coucher	to go to bed
+crème solaire la	sun cream
+départ le	departure
+descendre	to stay
+dortoir le	dormitory
+Douvres	Dover
+durer	to last
+échange l' (m)	exchange
+Ecosse l' (f)/écossais	Scotland/Scottish
+en plein air	in the open air
+Espagne l' (f)/espagnol	Spain/Spanish
+essence l' (f)	petrol
+Etats-Unis les (m)	USA
+à l'étranger	abroad
+étranger l' (m)	stranger/foreigner
+expliquer	to explain
+faire la connaissance	to get to know
+faire du camping	to go camping
+(se) garer	to park
+Grande-Bretagne la/britannique	Great Britain/British
+(s') habituer à	to get used to
+horaire l' (m)	timetable
+île l' (f)	island
+lac le	lake
+laisser	to leave
+laver	to wash
+(se) laver	to get washed
+lentement	slowly
+lever	to lift
+(se) lever	to get up
+lit le	bed
+location de voitures la	car rental
+logement le	accommodation
+loger	to stay, lodge
+loisir le	free time (activity)
+Londres	London
+louer	to hire, rent
+lunettes de soleil les (f)	sun glasses
+maillot de bain le	swimming costume
+Manche la	English Channel
+marcher	to walk
+Maroc le/marocain	Morocco/Moroccan
+Méditerranée la	Mediterranean
+monde le	world
+montagne la	mountain
+monter	to go up/ascend
+moto la	motor bike
+nager	to swim
+parc d'attractions le	theme park
+partir	to leave
+Pays de Galles le/gallois	Wales/Welsh
+pièce d'identité la	means of identification
+plage la	beach
+plan de ville le	town plan
+se présenter	to introduce oneself
+prêt	ready
+projet le	plan
+se promener	to go for a walk
+propriétaire le/la	owner
+randonnée la	walk, hike
+remercier	to thank
+rendez-vous le	meeting
+renseignements les (m)	information
+réserver	to book, reserve
+rester	to stay
+retour le	return
+retourner	to return
+(se) réveiller	to wake up
+revenir	to come back
+rivière la	river
+route la	road, way
+salle de séjour la	lounge
+sable le	sand
+sac de couchage le	sleeping bag
+séjour le	stay, visit
+spectacle le	show
+Suisse la/suisse	Switzerland/Swiss
+tourisme le	tourism
+tourner	to turn
+Tunisie la/tunisien	Tunisia/Tunisian
+vacances les (f)	holidays
+valise la	suitcase
+visite la (guidée)	guided visit
+voiture la	car
+vol le	flight
+voler	to fly
+voyager	to travel
+vue de mer la	sea view
+aire de jeux l’ (f)	play area
+atterrir	to land
+avis l’ (m)	opinion
+chambre d’hôte la	bed and breakfast
+chemin le	way, path
+chemin de fer le	railway
+climatisation la	air conditioning
+concours le	competition
+se débrouiller	to get by, to cope
+décoller	to take off
+déranger	to disturb
+donner sur	to overlook
+dresser	to put up (tent)
+emplacement l’ (m)	pitch (tent)
+événement l’ (m)	event
+faire la grasse matinée	to lie in, sleep in
+foire la	fair
+frontière la	border, frontier
+héberger	to lodge, accommodate
+herbe l’ (f)	grass
+inconnu	unknown
+jardin zoologique le	zoo
+jumelé	twinned
+lavabo le	wash basin
+lits superposés les (m)	bunk beds
+manquer	to miss
+se mettre en route	to set off
+moquette la	carpet
+paraître	to seem
+permis de conduire le	driving licence
+la perte	loss
+plaire	to please
+plongée sous-marine la	underwater diving
+ralentir	to slow down
+remarquer	to notice
+sommet le	summit
+station balnéaire la	seaside resort
+tour la	tower, tour
+traduire	to translate
+trajet le	journey
+traversée la	crossing
+année sabbatique l' (f)	gap year
+apprenti(e) l' (m/f)	apprentice
+avoir envie de	to want to
+avoir l’intention (de)	to intend (to)
+bac(calauréat) le	A-level(s)
+en première	in year 12
+en terminale	in year 13
+étudier	to study
+laisser tomber	to drop
+liberté la	freedom
+lycée le	sixth form college, grammar school
+conseiller d’orientation le	careers adviser
+épreuve l’ (f)	test
+établissement l’ (m)	establishment
+faculté la	university, faculty
+former	to train
+licence la	degree
+agent de police l’ (m)	policeman
+avenir l’ (m)	future
+boucher le	butcher
+boulanger le	baker
+boulot le	job
+candidat le	candidate
+coiffeur le	hairdresser
+compter (sur)	to count (on)
+employé(e) l'	employee
+employeur l'	employer
+espérer	to hope
+facteur le	postman
+fermier le	farmer
+gagner	to earn, win
+idée l’ (f)	idea
+infirmier l’ (m)	nurse
+informaticien l’	IT worker
+ingénieur l’ (m)	engineer
+journal le	newspaper
+livre la	pound (sterling)
+maçon le	builder
+mécanicien le	mechanic
+mettre de l’argent de côté	to save money
+patron le; patronne la	boss
+petit job le	part-time job
+plombier le	plumber
+policier le	policeman
+rêve le	dream
+rêver	to dream
+recevoir	to receive
+varié	varied
+vétérinaire le	vet
+à peine	scarcely
+assis	sitting
+avocat l’ (m)	lawyer
+comptable le	accountant
+croisière la	cruise
+débouché le	prospect/job prospect/opportunity
+debout	standing
+dessinateur de mode le	fashion designer
+disponible	available
+élargir	to widen
+entreprise l’ (f)	firm, enterprise
+entretien l’ (m)	interview
+enrichissant	enriching, rewarding
+espoir l’ (m)	hope
+interprète l’ (m)	interpreter
+outil l’ (m)	tool
+venir de	to have just
+apprendre	to learn
+calculette la	calculator
+collège le	secondary school
+comprendre	to understand
+cours le	lesson
+demander	to ask
+devoirs les (m)	homework
+difficulté la	difficulty
+diplôme le	qualification
+directeur le	headmaster
+directrice la	headmistress
+discuter	to discuss
+distribuer	to give out
+droit le	right
+école l' (f) (primaire/secondaire)	primary/secondary school
+élève l' (m/f)	pupil
+emploi du temps l' (m)	timetable
+en seconde	in year 11
+études les (f)	study
+étudiant l' (m)	student
+examen l' (m)	examination
+faire attention	to pay attention
+leçon la	lesson
+lecture la	reading
+lire	to read
+maquillage le	make up
+note la	mark
+oublier	to forget
+passer un examen	to sit an exam
+pause la	break, pause
+penser	to think
+permettre	to allow, permit
+porter	to wear, carry
+pression la	pressure
+récré(ation) la	break
+règle la	rule
+règlement le	school rules
+rentrée la	return to school
+répéter	to repeat
+réponse la	reply
+résultat le	result
+réussir un examen	to pass an exam
+salle de classe la	classroom
+savoir	to know
+scolaire	school (adj)
+tableau le	board
+terrain de sport le	sports ground
+trimestre le	term
+trouver	to find
+bien équipé	well equipped
+bulletin scolaire le	school report
+car de ramassage le	school bus
+couloir le	corridor
+doué	gifted
+échouer	to fail
+enseigner	to teach
+incivilités les (f)	rudeness
+injure l' (f)	insult
+mal équipé	badly equipped
+maternelle la	nursery school
+redoubler	to repeat the year
+retenue la	detention
+chimie la	chemistry
+dessin le	art
+EPS l' (f)	PE (physical education)
+français le	French
+informatique (l') (f)	IT (information technology)
+instituteur l' (m)	primary school teacher (male)
+institutrice l' (f)	primary school teacher (female)
+langue la	language
+matière la	subject
+physique la	physics
+professeur le	teacher
+religion la	religious studies
+couture la	sewing
+langues vivantes les (f)	modern languages
+instruction civique l’ (f)	citizenship
+proviseur le	head teacher

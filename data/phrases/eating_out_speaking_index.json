@@ -1,0 +1,1071 @@
+{
+  "verb_index": {
+    "have": [
+      0,
+      8,
+      12,
+      17,
+      18
+    ],
+    "could": [
+      0,
+      5,
+      12,
+      15,
+      18,
+      22
+    ],
+    "be": [
+      1,
+      4,
+      6,
+      9,
+      11,
+      13,
+      14,
+      16,
+      19,
+      23
+    ],
+    "like": [
+      2
+    ],
+    "would": [
+      2
+    ],
+    "can": [
+      3
+    ],
+    "see": [
+      3
+    ],
+    "bring": [
+      5
+    ],
+    "gluten": [
+      6
+    ],
+    "do": [
+      7,
+      10,
+      17,
+      20,
+      21
+    ],
+    "recommend": [
+      7
+    ],
+    "may": [
+      8
+    ],
+    "include": [
+      9
+    ],
+    "take": [
+      10
+    ],
+    "sit": [
+      15
+    ],
+    "serve": [
+      20
+    ],
+    "stop": [
+      20
+    ],
+    "need": [
+      21
+    ],
+    "book": [
+      21
+    ],
+    "explain": [
+      22
+    ],
+    "drink": [
+      23
+    ]
+  },
+  "vocab_index": {
+    "a": [
+      0,
+      4,
+      11,
+      12,
+      18,
+      19,
+      21
+    ],
+    "two": [
+      0
+    ],
+    "i": [
+      0,
+      2,
+      3,
+      8,
+      12,
+      18
+    ],
+    "table": [
+      0,
+      21
+    ],
+    "for": [
+      0,
+      7
+    ],
+    "day": [
+      1
+    ],
+    "soup": [
+      1
+    ],
+    "the": [
+      1,
+      2,
+      3,
+      8,
+      9
+    ],
+    "what": [
+      1,
+      20,
+      13,
+      7
+    ],
+    "of": [
+      1,
+      12
+    ],
+    "steak": [
+      2
+    ],
+    "rare": [
+      2
+    ],
+    "medium": [
+      2
+    ],
+    "list": [
+      3
+    ],
+    "wine": [
+      3
+    ],
+    "vegetarian": [
+      4
+    ],
+    "there": [
+      4,
+      6,
+      11,
+      14,
+      19
+    ],
+    "available": [
+      19,
+      11,
+      4
+    ],
+    "option": [
+      4
+    ],
+    "some": [
+      5
+    ],
+    "more": [
+      5
+    ],
+    "you": [
+      5,
+      7,
+      10,
+      17,
+      20,
+      22
+    ],
+    "water": [
+      5,
+      23
+    ],
+    "any": [
+      17,
+      6,
+      14
+    ],
+    "free": [
+      6
+    ],
+    "dish": [
+      16,
+      13,
+      6,
+      22
+    ],
+    "dessert": [
+      7
+    ],
+    "please": [
+      8,
+      22,
+      15
+    ],
+    "bill": [
+      8
+    ],
+    "in": [
+      9,
+      14
+    ],
+    "price": [
+      9
+    ],
+    "service": [
+      9
+    ],
+    "credit": [
+      10
+    ],
+    "here": [
+      10
+    ],
+    "card": [
+      10
+    ],
+    "set": [
+      11
+    ],
+    "menu": [
+      19,
+      11
+    ],
+    "lager": [
+      12
+    ],
+    "pint": [
+      12
+    ],
+    "popular": [
+      13
+    ],
+    "your": [
+      13
+    ],
+    "most": [
+      13
+    ],
+    "nut": [
+      14
+    ],
+    "this": [
+      16,
+      14,
+      22
+    ],
+    "we": [
+      21,
+      15
+    ],
+    "outside": [
+      15
+    ],
+    "very": [
+      16
+    ],
+    "spicy": [
+      16
+    ],
+    "speciality": [
+      17
+    ],
+    "local": [
+      17
+    ],
+    "bag": [
+      18
+    ],
+    "doggy": [
+      18
+    ],
+    "child": [
+      19
+    ],
+    "'s": [
+      19
+    ],
+    "time": [
+      20
+    ],
+    "to": [
+      21,
+      23
+    ],
+    "okay": [
+      23
+    ],
+    "tap": [
+      23
+    ]
+  },
+  "word_counts": [
+    {
+      "verb_count": 2,
+      "vocab_count": 5,
+      "words": [
+        [
+          "have",
+          "VERB"
+        ],
+        [
+          "could",
+          "AUX"
+        ],
+        [
+          "two",
+          "NUM"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "table",
+          "NOUN"
+        ],
+        [
+          "i",
+          "PRON"
+        ],
+        [
+          "for",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "of",
+          "ADP"
+        ],
+        [
+          "soup",
+          "NOUN"
+        ],
+        [
+          "day",
+          "NOUN"
+        ],
+        [
+          "be",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 5,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "rare",
+          "ADJ"
+        ],
+        [
+          "steak",
+          "NOUN"
+        ],
+        [
+          "medium",
+          "ADJ"
+        ],
+        [
+          "like",
+          "VERB"
+        ],
+        [
+          "would",
+          "AUX"
+        ],
+        [
+          "i",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "see",
+          "VERB"
+        ],
+        [
+          "can",
+          "AUX"
+        ],
+        [
+          "list",
+          "NOUN"
+        ],
+        [
+          "wine",
+          "NOUN"
+        ],
+        [
+          "i",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "option",
+          "NOUN"
+        ],
+        [
+          "vegetarian",
+          "ADJ"
+        ],
+        [
+          "there",
+          "PRON"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "available",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "some",
+          "DET"
+        ],
+        [
+          "could",
+          "AUX"
+        ],
+        [
+          "bring",
+          "VERB"
+        ],
+        [
+          "more",
+          "ADJ"
+        ],
+        [
+          "water",
+          "NOUN"
+        ],
+        [
+          "you",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "dish",
+          "NOUN"
+        ],
+        [
+          "gluten",
+          "VERB"
+        ],
+        [
+          "any",
+          "DET"
+        ],
+        [
+          "there",
+          "PRON"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "free",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "dessert",
+          "NOUN"
+        ],
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "recommend",
+          "VERB"
+        ],
+        [
+          "for",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "please",
+          "INTJ"
+        ],
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "have",
+          "VERB"
+        ],
+        [
+          "bill",
+          "NOUN"
+        ],
+        [
+          "may",
+          "AUX"
+        ],
+        [
+          "i",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "service",
+          "NOUN"
+        ],
+        [
+          "price",
+          "NOUN"
+        ],
+        [
+          "in",
+          "ADP"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "include",
+          "VERB"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "take",
+          "VERB"
+        ],
+        [
+          "credit",
+          "NOUN"
+        ],
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "card",
+          "NOUN"
+        ],
+        [
+          "here",
+          "ADV"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "set",
+          "ADJ"
+        ],
+        [
+          "there",
+          "PRON"
+        ],
+        [
+          "menu",
+          "NOUN"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "available",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 5,
+      "words": [
+        [
+          "have",
+          "VERB"
+        ],
+        [
+          "of",
+          "ADP"
+        ],
+        [
+          "lager",
+          "NOUN"
+        ],
+        [
+          "could",
+          "AUX"
+        ],
+        [
+          "pint",
+          "NOUN"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "i",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "dish",
+          "NOUN"
+        ],
+        [
+          "popular",
+          "ADJ"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "your",
+          "PRON"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "most",
+          "ADV"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "any",
+          "DET"
+        ],
+        [
+          "there",
+          "PRON"
+        ],
+        [
+          "this",
+          "PRON"
+        ],
+        [
+          "nut",
+          "NOUN"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "in",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 3,
+      "words": [
+        [
+          "please",
+          "INTJ"
+        ],
+        [
+          "outside",
+          "ADV"
+        ],
+        [
+          "could",
+          "AUX"
+        ],
+        [
+          "sit",
+          "VERB"
+        ],
+        [
+          "we",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 4,
+      "words": [
+        [
+          "dish",
+          "NOUN"
+        ],
+        [
+          "spicy",
+          "ADJ"
+        ],
+        [
+          "this",
+          "DET"
+        ],
+        [
+          "very",
+          "ADV"
+        ],
+        [
+          "be",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "have",
+          "VERB"
+        ],
+        [
+          "any",
+          "DET"
+        ],
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "local",
+          "ADJ"
+        ],
+        [
+          "speciality",
+          "NOUN"
+        ],
+        [
+          "you",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "have",
+          "VERB"
+        ],
+        [
+          "doggy",
+          "ADJ"
+        ],
+        [
+          "bag",
+          "NOUN"
+        ],
+        [
+          "could",
+          "AUX"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "i",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 6,
+      "words": [
+        [
+          "there",
+          "PRON"
+        ],
+        [
+          "child",
+          "NOUN"
+        ],
+        [
+          "menu",
+          "NOUN"
+        ],
+        [
+          "'s",
+          "PART"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "available",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 3,
+      "vocab_count": 3,
+      "words": [
+        [
+          "what",
+          "DET"
+        ],
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "stop",
+          "VERB"
+        ],
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "time",
+          "NOUN"
+        ],
+        [
+          "serve",
+          "VERB"
+        ]
+      ]
+    },
+    {
+      "verb_count": 3,
+      "vocab_count": 4,
+      "words": [
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "book",
+          "VERB"
+        ],
+        [
+          "need",
+          "VERB"
+        ],
+        [
+          "we",
+          "PRON"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "table",
+          "NOUN"
+        ],
+        [
+          "to",
+          "PART"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "dish",
+          "NOUN"
+        ],
+        [
+          "please",
+          "INTJ"
+        ],
+        [
+          "explain",
+          "VERB"
+        ],
+        [
+          "could",
+          "AUX"
+        ],
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "this",
+          "DET"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "okay",
+          "ADJ"
+        ],
+        [
+          "water",
+          "NOUN"
+        ],
+        [
+          "tap",
+          "NOUN"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "drink",
+          "VERB"
+        ],
+        [
+          "to",
+          "PART"
+        ]
+      ]
+    }
+  ],
+  "phrases": [
+    "Could I have a table for two?",
+    "What's the soup of the day?",
+    "I'd like the steak, medium rare.",
+    "Can I see the wine list?",
+    "Is there a vegetarian option available?",
+    "Could you bring some more water?",
+    "Are there any gluten-free dishes?",
+    "What do you recommend for dessert?",
+    "May I have the bill, please?",
+    "Is service included in the price?",
+    "Do you take credit cards here?",
+    "Is there a set menu available?",
+    "Could I have a pint of lager?",
+    "What's your most popular dish?",
+    "Are there any nuts in this?",
+    "Could we sit outside, please?",
+    "Is this dish very spicy?",
+    "Do you have any local specialities?",
+    "Could I have a doggy bag?",
+    "Is there a children's menu available?",
+    "What time do you stop serving?",
+    "Do we need to book a table?",
+    "Could you explain this dish, please?",
+    "Is tap water okay to drink?"
+  ]
+}

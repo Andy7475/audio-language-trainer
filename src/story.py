@@ -163,7 +163,9 @@ def create_album_files(
     story_name: str,
 ):
     """Creates and saves M4A files for the story, with album artwork.
-    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue."""
+    Each M4A contains normal dialogue, fast dialogue (repeated), and final dialogue.
+
+    story_name is expected to be of the form story_<story-title-with-underscores>"""
     REPEATS_OF_FAST_DIALOGUE = 10
     PAUSE_TEXT = "---------"
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
@@ -287,7 +289,9 @@ def prepare_story_data_for_html(
     """
     prepared_data = {}
 
-    for section_name, section_data in story_data_dict.items():
+    for section_name, section_data in tqdm(
+        story_data_dict.items(), desc="Preparing HTML data"
+    ):
         prepared_data[section_name] = {
             "dialogue": section_data.get("dialogue", []),
             "translated_dialogue": prepare_dialogue_with_wiktionary(
