@@ -384,6 +384,9 @@ def generate_image(
         Optional[Image.Image]: Generated image or None if all attempts fail
     """
 
+    def print_prompt(prompt, model):
+        print(f"Generated image with {model} using prompt: {prompt}")
+
     if style is None:
         style = config.IMAGE_STYLE
     prompt = add_image_style(prompt, style)
@@ -394,16 +397,19 @@ def generate_image(
             if model == "imagen":
                 image = generate_image_imagen(prompt, model="imagen-3.0-generate-001")
                 if image:
+                    print_prompt(prompt, model)
                     return image
 
             elif model == "stability":
                 image = generate_image_stability(prompt)
                 if image:
+                    print_prompt(prompt, model)
                     return image
 
             elif model == "deepai":
                 image = generate_image_deepai(prompt)
                 if image:
+                    print_prompt(prompt, model)
                     return image
 
         except Exception as e:
@@ -419,8 +425,8 @@ def generate_and_save_story_images(
     story_name: str,
     model_order: List[Literal["imagen", "stability", "deepai"]] = [
         "imagen",
-        "stability",
         "deepai",
+        "stability",
     ],
     style="ghibli",
     anthropic_model: Optional[str] = None,
