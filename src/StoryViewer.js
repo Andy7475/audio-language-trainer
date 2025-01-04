@@ -1,5 +1,13 @@
 const StoryViewer = ({ storyData, title, targetLanguage }) => {
-  const [activeSection, setActiveSection] = React.useState(null);
+  const [activeSection, setActiveSection] = React.useState(() => {
+    // Check if there's a hash in the URL on initial load
+    const hash = window.location.hash.slice(1);
+    if (hash) {
+      const sectionIndex = Object.keys(storyData).findIndex(name => name === hash);
+      return sectionIndex >= 0 ? sectionIndex : null;
+    }
+    return null;
+  });
   const [isPlaying, setIsPlaying] = React.useState({});
   const [loopCount, setLoopCount] = React.useState(12);
   const [remainingLoops, setRemainingLoops] = React.useState(0);
@@ -10,6 +18,13 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
   const audioQueue = React.useRef([]);
   const fastAudioQueue = React.useRef([]);
   const activeSectionAudio = React.useRef(null);
+  
+  React.useEffect(() => {
+    // Hide loading message when component mounts
+    if (window.hideLoadingMessage) {
+      window.hideLoadingMessage();
+    }
+  }, []);
 
   const stopPlayback = () => {
     if (audioRef.current) {
@@ -34,9 +49,29 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
     }
   };
 
-  const copyPrompt = async (translatedPhrase) => {
-    const prompt = `Given this ${targetLanguage} phrase "${translatedPhrase}", please help me understand it, break down its grammar, and explain any idiomatic expressions.`;
-    await copyToClipboard(prompt);
+  const copyPrompt = async (translatedPhrase, event) => {
+    // Prevent the default link behavior initially
+    if (event) {
+      event.preventDefault();
+    }
+    
+    // Create a temporary div to decode HTML entities
+    const decoder = document.createElement('div');
+    decoder.innerHTML = translatedPhrase;
+    const decodedPhrase = decoder.textContent;
+    
+    const prompt = `Given this ${targetLanguage} phrase "${decodedPhrase}", please help me understand it, break down its grammar, and explain any idiomatic expressions.`;
+    
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setShowCopyNotification(true);
+      setTimeout(() => setShowCopyNotification(false), 1000);
+      
+      // Open claude.ai in a new tab after copying
+      window.open('https://claude.ai', '_blank');
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
   };
 
   const playAudioData = (audioData) => {
@@ -238,19 +273,36 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
       Object.entries(storyData).map(([sectionName, section], sectionIndex) =>
         React.createElement('div', {
           key: sectionName,
-          className: 'mb-6 bg-white rounded-lg shadow-md'
+          id: sectionName,
+          className: 'mb-6 bg-white rounded-lg shadow-md scroll-mt-20'
         },
-          // Section header button
-          React.createElement('button', {
-            onClick: () => setActiveSection(activeSection === sectionIndex ? null : sectionIndex),
-            className: 'w-full p-4 flex items-center justify-between text-left bg-gray-50 rounded-t-lg hover:bg-gray-100'
+          // Section header with anchor
+          React.createElement('a', {
+            href: `#${sectionName}`,
+            onClick: (e) => {
+              e.preventDefault();
+              const newState = activeSection === sectionIndex ? null : sectionIndex;
+              setActiveSection(newState);
+              if (newState !== null) {
+                window.location.hash = sectionName;
+                // Smooth scroll to the section
+                const element = document.getElementById(sectionName);
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth' });
+                }
+              } else {
+                // Remove hash when closing section
+                history.pushState('', document.title, window.location.pathname + window.location.search);
+              }
+            },
+            className: 'w-full p-4 flex items-center justify-between text-left bg-gray-50 rounded-t-lg hover:bg-gray-100 block no-underline text-current'
           },
-            React.createElement('h2', { className: 'text-lg font-semibold capitalize' },
-              sectionName.replace(/_/g, ' ')
-            ),
-            React.createElement('span', null, 
-              activeSection === sectionIndex ? '▼' : '▶'
-            )
+          React.createElement('h2', { className: 'text-lg font-semibold capitalize' },
+            sectionName.replace(/_/g, ' ')
+          ),
+          React.createElement('span', null, 
+            activeSection === sectionIndex ? '▼' : '▶'
+          )
           ),
 
           // Section content
@@ -333,9 +385,9 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                       title: 'Copy phrase'
                     }, '📋'),
                     React.createElement('button', {
-                      onClick: () => copyPrompt(utterance.text),
+                      onClick: (e) => copyPrompt(utterance.text, e),
                       className: 'p-2 rounded-full hover:bg-gray-200',
-                      title: 'Copy as prompt'
+                      title: 'Copy as prompt and open Claude'
                     }, '💡')
                   )
                 )
@@ -344,6 +396,7 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
           )
         )
       )
-    )
+    
+  )
   );
 };
