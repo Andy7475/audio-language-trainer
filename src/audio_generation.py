@@ -541,7 +541,7 @@ def generate_normal_and_fast_audio(
         fast_segment = speed_up_audio(segment)
         fast_segments.append(fast_segment)
 
-    fast_audio = join_audio_segments(fast_segments, gap_ms=200)
+    fast_audio = join_audio_segments(fast_segments, gap_ms=100)
     return normal_speed, fast_audio
 
 
