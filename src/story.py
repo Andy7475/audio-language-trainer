@@ -194,9 +194,7 @@ def clean_story_name(story_name: str) -> str:
     return " ".join(word.title() for word in words)
 
 
-def prepare_dialogue_with_wiktionary(
-    dialogue, language_name: str = config.TARGET_LANGUAGE_NAME
-):
+def prepare_dialogue_with_wiktionary(dialogue, language_name: str = None):
     """
     Process dialogue utterances to include Wiktionary links for the target language text.
 
@@ -207,6 +205,8 @@ def prepare_dialogue_with_wiktionary(
     Returns:
         List of processed utterances with added wiktionary_links field
     """
+    if language_name is None:
+        language_name = config.TARGET_LANGUAGE_NAME
     processed_dialogue = []
     for utterance in dialogue:
         # Create a copy of the utterance to avoid modifying the original
