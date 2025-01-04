@@ -232,10 +232,16 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
     }, 'Copied!'),
     React.createElement('audio', { ref: audioRef, className: 'hidden' }),
     
+    
     // Header with global controls
     React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
       React.createElement('div', { className: 'flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4' },
-        React.createElement('h1', { className: 'text-xl font-bold' }, 
+        React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
+          React.createElement('a', {
+            href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
+            className: 'hover:text-blue-500 transition-colors'
+          }, `${targetLanguage} Stories`),
+          React.createElement('span', { className: 'text-gray-400' }, '>'),
           title || 'Language Learning Story'
         ),
         React.createElement('div', { className: 'flex items-center gap-4' },

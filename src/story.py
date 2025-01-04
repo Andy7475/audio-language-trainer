@@ -9,9 +9,183 @@ from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
 
-from src.anki_tools import generate_wiktionary_links
+from src.anki_tools import generate_wiktionary_links, load_template
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.config_loader import config
+
+from collections import defaultdict
+from pathlib import Path
+from string import Template
+from typing import Dict, List, Tuple
+
+from google.cloud import storage
+
+
+def generate_language_section(langauge: str, stories: List[Dict[str, str]]) -> str:
+    """Generate HTML for a single language section."""
+
+    stories_html = "\n".join(
+        f'<li><a href="{story["url"]}">{story["name"]}</a></li>'
+        for story in sorted(stories, key=lambda x: x["name"])
+    )
+
+    return f"""
+    <section class="language-section" id="{langauge.lower()}">
+        <h2>{langauge}</h2>
+        <ul class="story-list">
+            {stories_html}
+        </ul>
+    </section>
+    """
+
+
+def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
+    """Generate HTML for special pages section."""
+    if not special_pages:
+        return ""
+
+    links_html = "\n".join(
+        f'<a href="{page["url"]}">{page["name"]}</a>' for page in special_pages
+    )
+
+    return f"""
+    <div class="special-pages">
+        <h3>Additional Resources</h3>
+        {links_html}
+    </div>
+    """
+
+
+def process_bucket_contents(
+    bucket_name: str = None,
+) -> Tuple[Dict[str, List[Dict]], List[Dict]]:
+    """
+    Process bucket contents to organize stories by language and find special pages.
+
+    Returns:
+        Tuple containing:
+        - Dictionary of stories organized by language
+        - List of special pages
+    """
+
+    # default to public bucket
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blobs = bucket.list_blobs()
+
+    stories_by_language = defaultdict(list)
+    special_pages = []
+
+    for blob in blobs:
+        path = Path(blob.name)
+        parts = path.parts
+
+        # Skip non-HTML files
+        if not blob.name.endswith(".html"):
+            continue
+
+        # Handle special pages at root level
+        if len(parts) == 1:
+            if parts[0] != "index.html":
+                special_pages.append(
+                    {
+                        "name": parts[0].replace(".html", "").replace("_", " ").title(),
+                        "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
+                    }
+                )
+            continue
+
+        # Process story pages
+        if len(parts) >= 3 and parts[1].startswith("story_"):
+            language = parts[0].title()
+            story_name = parts[1].replace("story_", "").replace("_", " ").title()
+            url = f"https://storage.googleapis.com/{bucket_name}/{blob.name}"
+
+            stories_by_language[language].append({"name": story_name, "url": url})
+
+    return dict(stories_by_language), special_pages
+
+
+def generate_index_html(
+    output_dir: str = "../outputs/stories",
+    bucket_name: str = None,
+    template_path: str = "index_template.html",
+) -> str:
+    """
+    Generate an index.html file from GCS bucket contents using a template.
+
+    Args:
+        bucket_name: Name of the GCS bucket containing stories
+        template_path: Path to the HTML template file
+
+    Returns:
+        str: Path to generated index.html file
+    """
+
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+    # Process bucket contents
+    stories_by_language, special_pages = process_bucket_contents(bucket_name)
+
+    # Generate sections HTML
+    language_sections = ""
+    for language, stories in sorted(stories_by_language.items()):
+        language_sections += generate_language_section(language, stories)
+
+    # Generate special pages HTML
+    special_pages_html = generate_special_pages_section(special_pages)
+
+    # Load and fill template
+    template = Template(load_template(template_path))
+
+    html_content = template.substitute(
+        language_sections=language_sections, special_pages=special_pages_html
+    )
+
+    # Write to file
+    output_path = os.path.join(output_dir, "index.html")
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    return output_path
+
+
+def add_index_navigation_to_story(story_html_path: str, language: str) -> None:
+    """
+    Add navigation link back to index.html for a story page.
+
+    Args:
+        story_html_path: Path to the story HTML file
+        language: Language section to link back to
+    """
+    with open(story_html_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    # Create navigation link HTML
+    nav_html = f"""
+    <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
+        <a href="/index.html#{language.lower()}" 
+           style="background: white; padding: 10px 20px; border-radius: 5px; 
+                  box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-decoration: none; 
+                  color: #2980b9; display: inline-flex; align-items: center; gap: 5px;">
+            ← Back to {language} Stories
+        </a>
+    </div>
+    """
+
+    # Insert navigation before closing body tag
+    if "</body>" in content:
+        content = content.replace("</body>", f"{nav_html}</body>")
+
+        with open(story_html_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+
+# Example usage:
+# index_path = generate_index_html()
+# print(f"Generated index.html at {index_path}")
 
 
 def create_html_story(
@@ -19,8 +193,8 @@ def create_html_story(
     image_dir: str,
     story_name: str,
     language: str = None,
-    component_path: str = "../src/StoryViewer.js",
-    template_path: str = "../src/story_template.html",
+    component_path: str = "StoryViewer.js",
+    template_path: str = "story_template.html",
 ) -> None:
     """
     Create a standalone HTML file from the story data dictionary using string.Template.
@@ -30,8 +204,8 @@ def create_html_story(
         image_dir: Path where images are stored and output HTML will be saved
         story_name: Name of the story
         language: Target language name for Wiktionary links (defaults to config.TARGET_LANGUAGE_NAME)
-        component_path: Path to the React component file
-        template_path: Path to the HTML template file
+        component_path: Path to the React component file..uses default parent folder in load_template()
+        template_path: Path to the HTML template file..uses default parent folder in load_template()
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME
@@ -46,12 +220,10 @@ def create_html_story(
     )
 
     # Read the React component
-    with open(component_path, "r", encoding="utf-8") as f:
-        react_component = f.read()
+    react_component = load_template(component_path)
 
     # Read the HTML template
-    with open(template_path, "r", encoding="utf-8") as f:
-        template = Template(f.read())
+    template = Template(load_template(template_path))
 
     # Substitute the template variables
     html_content = template.substitute(
@@ -194,9 +366,7 @@ def clean_story_name(story_name: str) -> str:
     return " ".join(word.title() for word in words)
 
 
-def prepare_dialogue_with_wiktionary(
-    dialogue, language_name: str = config.TARGET_LANGUAGE_NAME
-):
+def prepare_dialogue_with_wiktionary(dialogue, language_name: str = None):
     """
     Process dialogue utterances to include Wiktionary links for the target language text.
 
@@ -207,6 +377,8 @@ def prepare_dialogue_with_wiktionary(
     Returns:
         List of processed utterances with added wiktionary_links field
     """
+    if language_name is None:
+        language_name = config.TARGET_LANGUAGE_NAME
     processed_dialogue = []
     for utterance in dialogue:
         # Create a copy of the utterance to avoid modifying the original

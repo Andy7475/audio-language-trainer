@@ -474,6 +474,7 @@ def generate_and_save_story_images(
                 continue
 
             # Save the image
+            image = resize_image(image)  # 500 x 500
             image.save(image_path)
             image_paths[story_part] = image_path
             print(f"Successfully generated and saved image for {story_part}")

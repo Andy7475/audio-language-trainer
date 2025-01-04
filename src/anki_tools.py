@@ -935,9 +935,9 @@ def generate_wiktionary_links(
     return " ".join(links)
 
 
-def load_template(filename):
+def load_template(filename, parent_path: str = "../src/templates"):
     # print(os.listdir())
-    filename = os.path.join("..", "src", filename)
+    filename = os.path.join(parent_path, filename)
     with open(filename, "r", encoding="utf-8") as f:
         return f.read()
 

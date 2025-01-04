@@ -68,50 +68,78 @@ def construct_gcs_path(
 
 
 def upload_to_gcs(
-    html_file_path: str,
-    language_name: Optional[str] = None,
-    bucket_name: Optional[str] = None,
+    file_path: str,
+    bucket_name: str = None,
+    bucket_prefix: Optional[str] = None,
+    content_type: Optional[str] = None,
 ) -> str:
     """
-    Upload an HTML file to Google Cloud Storage with organized folder structure.
+    Upload a file to Google Cloud Storage.
 
     Args:
-        html_file_path: Path to the HTML file to upload
-        language_name: Language name (e.g. "Swedish", "French")
-        bucket_name: Optional bucket name (defaults to config.GCS_PUBLIC_BUCKET)
+        file_path: Local path to file to upload
+        bucket_name: Name of the GCS bucket
+        bucket_prefix: Optional prefix/path within bucket (e.g. "folder/subfolder")
+        content_type: Optional content type (e.g. "text/html")
 
     Returns:
         str: Public URL of the uploaded file
 
     Raises:
-        FileNotFoundError: If the HTML file doesn't exist
+        FileNotFoundError: If the file doesn't exist
         google.cloud.exceptions.NotFound: If the bucket doesn't exist
     """
-    # Check if file exists
-    if not os.path.exists(html_file_path):
-        raise FileNotFoundError(f"HTML file not found: {html_file_path}")
+
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
 
     # Initialize storage client
     storage_client = storage.Client()
-
-    # Get bucket
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
     bucket = storage_client.bucket(bucket_name)
 
-    # Get story name and construct GCS path
-    story_name = Path(html_file_path).stem
-    gcs_path = construct_gcs_path(story_name, language_name, bucket_name)
-
-    # Remove gs:// prefix and bucket name for blob path
-    blob_path = "/".join(gcs_path.split("/")[3:])
+    # Construct blob path
+    blob_name = Path(file_path).name
+    if bucket_prefix:
+        blob_name = f"{bucket_prefix.rstrip('/')}/{blob_name}"
 
     # Create and upload blob
-    blob = bucket.blob(blob_path)
-    blob.upload_from_filename(html_file_path, content_type="text/html")
+    blob = bucket.blob(blob_name)
+    blob.upload_from_filename(file_path, content_type=content_type, timeout=120)
 
-    # Construct the public URL (since bucket is public)
-    return f"https://storage.googleapis.com/{bucket_name}/{blob_path}"
+    # Return public URL
+    return f"https://storage.googleapis.com/{bucket_name}/{blob_name}"
+
+
+def upload_story_to_gcs(html_file_path: str, bucket_name: Optional[str] = None) -> str:
+    """
+    Upload a story HTML file to GCS using the standard language/story folder structure.
+
+    Args:
+        html_file_path: Path to the story HTML file
+        language_name: Language name (e.g. "Swedish", "French")
+        bucket_name: Optional bucket name (defaults to config.GCS_PUBLIC_BUCKET)
+
+    Returns:
+        str: Public URL of the uploaded file
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+
+    language_name = config.TARGET_LANGUAGE_NAME
+
+    # Get story name and construct path
+    story_name = Path(html_file_path).stem
+    language_folder = sanitize_path_component(language_name.lower())
+    bucket_prefix = f"{language_folder}/{story_name}"
+
+    return upload_to_gcs(
+        file_path=html_file_path,
+        bucket_name=bucket_name,
+        bucket_prefix=bucket_prefix,
+        content_type="text/html",
+    )
 
 
 def clean_filename(phrase: str) -> str:
