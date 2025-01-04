@@ -10,6 +10,13 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
   const audioQueue = React.useRef([]);
   const fastAudioQueue = React.useRef([]);
   const activeSectionAudio = React.useRef(null);
+  
+  React.useEffect(() => {
+    // Hide loading message when component mounts
+    if (window.hideLoadingMessage) {
+      window.hideLoadingMessage();
+    }
+  }, []);
 
   const stopPlayback = () => {
     if (audioRef.current) {
@@ -34,9 +41,29 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
     }
   };
 
-  const copyPrompt = async (translatedPhrase) => {
-    const prompt = `Given this ${targetLanguage} phrase "${translatedPhrase}", please help me understand it, break down its grammar, and explain any idiomatic expressions.`;
-    await copyToClipboard(prompt);
+  const copyPrompt = async (translatedPhrase, event) => {
+    // Prevent the default link behavior initially
+    if (event) {
+      event.preventDefault();
+    }
+    
+    // Create a temporary div to decode HTML entities
+    const decoder = document.createElement('div');
+    decoder.innerHTML = translatedPhrase;
+    const decodedPhrase = decoder.textContent;
+    
+    const prompt = `Given this ${targetLanguage} phrase "${decodedPhrase}", please help me understand it, break down its grammar, and explain any idiomatic expressions.`;
+    
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setShowCopyNotification(true);
+      setTimeout(() => setShowCopyNotification(false), 1000);
+      
+      // Open claude.ai in a new tab after copying
+      window.open('https://claude.ai', '_blank');
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
   };
 
   const playAudioData = (audioData) => {
@@ -333,9 +360,9 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                       title: 'Copy phrase'
                     }, '📋'),
                     React.createElement('button', {
-                      onClick: () => copyPrompt(utterance.text),
+                      onClick: (e) => copyPrompt(utterance.text, e),
                       className: 'p-2 rounded-full hover:bg-gray-200',
-                      title: 'Copy as prompt'
+                      title: 'Copy as prompt and open Claude'
                     }, '💡')
                   )
                 )

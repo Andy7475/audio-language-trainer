@@ -1,112 +1,60 @@
+import base64
+import io
+import json
+import os
+from string import Template
+from typing import Dict, Optional
+
+from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
+
+from src.anki_tools import generate_wiktionary_links
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.config_loader import config
-from src.anki_tools import generate_wiktionary_links
-from typing import Optional, Dict
-import json
-import io
-import base64
-from PIL import Image
-import os
 
 
 def create_html_story(
     story_data_dict: Dict,
-    output_dir: str,
-    component_path: str,
+    image_dir: str,
     story_name: str,
     language: str = None,
+    component_path: str = "../src/StoryViewer.js",
+    template_path: str = "../src/story_template.html",
 ) -> None:
     """
-    Create a standalone HTML file from the story data dictionary.
+    Create a standalone HTML file from the story data dictionary using string.Template.
 
     Args:
         story_data_dict: Dictionary containing story data, translations, and audio
-        output_dir: Path where the HTML file should be saved
+        image_dir: Path where images are stored and output HTML will be saved
+        story_name: Name of the story
+        language: Target language name for Wiktionary links (defaults to config.TARGET_LANGUAGE_NAME)
         component_path: Path to the React component file
-        title: Optional title for the story
-        language: Target language name for Wiktionary links
+        template_path: Path to the HTML template file
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME
     story_title = clean_story_name(story_name)
+
     # Process the story data and convert audio to base64
     prepared_data = prepare_story_data_for_html(
         story_data_dict,
         story_name=story_name,
-        m4a_folder=output_dir / language,
-        image_folder=output_dir,
+        m4a_folder=image_dir / language,
+        image_folder=image_dir,
     )
 
     # Read the React component
     with open(component_path, "r", encoding="utf-8") as f:
         react_component = f.read()
 
-    # Convert the React component from JSX to pure JavaScript
-    # Note: In practice, you'd want to use a proper JSX transformer like Babel
-    # This is a simplified version that assumes the component is already in JS
+    # Read the HTML template
+    with open(template_path, "r", encoding="utf-8") as f:
+        template = Template(f.read())
 
-    html_template = """
-    <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        .audio-player {{
-            display: none;
-        }}
-        .info-link {{
-            text-decoration: none;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }}
-        .info-link:hover {{
-            opacity: 1;
-        }}
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-    <a href="https://storage.googleapis.com/audio-language-trainer-stories/time_compressed_speech.html" 
-   target="_blank" 
-   rel="noopener noreferrer"
-   class="info-link fixed bottom-4 right-4 flex items-center gap-2 text-blue-600 bg-white rounded-lg px-3 py-2 shadow-md hover:bg-blue-50"
-   title="Learn about speed listening practice">
-    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="16" x2="12" y2="12"></line>
-        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-    </svg>
-    <span class="text-sm font-medium">About Speed Listening</span>
-</a>
-    <script>
-        // Embed the story data
-        const storyData = {story_data};
-        const targetLanguage = "{language}";
-        
-        {react_component}
-        
-        // Render the app
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(StoryViewer, {{ 
-            storyData: storyData,
-            targetLanguage: targetLanguage,
-            title: "{title}"
-        }}));
-    </script>
-</body>
-</html>
-    """
-
-    # Format the HTML template
-    html_content = html_template.format(
+    # Substitute the template variables
+    html_content = template.substitute(
         title=story_title,
         story_data=json.dumps(prepared_data),
         language=language,
@@ -114,7 +62,7 @@ def create_html_story(
     )
 
     # Create html file path
-    html_path = output_dir / language / f"{story_name}.html"
+    html_path = image_dir / language / f"{story_name}.html"
 
     # Create parent directory if it doesn't exist
     html_path.parent.mkdir(parents=True, exist_ok=True)
