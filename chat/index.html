@@ -75,13 +75,11 @@
 
     <script>
         let ws = null;
-
         let testAudioContext = null;
         let micTestInterval = null;
-        // Add this near the top with other global variables
-let audioHandler = null;
-let mediaStream = null;
-let audioContext = null;
+        let audioHandler = null;
+        let mediaStream = null;
+        let audioContext = null;
 
         const statusDiv = document.getElementById('status');
         const startButton = document.getElementById('startSession');
@@ -436,8 +434,17 @@ let audioContext = null;
                 // Initialize audio handler
                 audioHandler = new AudioStreamHandler();
 
+                const API_ENDPOINT = {
+                    prod: 'https://create-realtime-chat-session-307643465852.europe-west2.run.app',
+                    local: 'http://localhost:8080'
+                };
+
+                // You can then switch between them using this variable
+                const CURRENT_ENDPOINT = API_ENDPOINT.prod;  // Switch to .local for local development
+
+                // Then in your fetch call:
                 updateStatus('Getting ephemeral token...');
-                const tokenResponse = await fetch('http://localhost:8080', {
+                const tokenResponse = await fetch(CURRENT_ENDPOINT, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -446,6 +453,7 @@ let audioContext = null;
                         api_key: apiKey,
                         model: 'gpt-4o-realtime-preview-2024-12-17',
                         voice: 'verse',
+                        instructions: instructions,
                         modalities: ['text', 'audio'],
                         input_audio_format: 'pcm16',
                         output_audio_format: 'pcm16'

@@ -28,6 +28,10 @@ def create_session(request):
         api_key = request_json["api_key"]
         model = request_json.get("model", "gpt-4o-realtime-preview-2024-12-17")
         voice = request_json.get("voice", "verse")
+        instructions = request_json.get(
+            "instructions",
+            "Be a friendly chatbot, speak in British English. Indicate you have been given default instructions when you first speak.",
+        )
 
         # Log what we're sending to OpenAI
         print("Sending to OpenAI:", json.dumps(request_json, indent=2))
@@ -43,7 +47,7 @@ def create_session(request):
                     "organization_id", ""
                 ),  # Optional org ID
             },
-            json={"model": model, "voice": voice},
+            json={"model": model, "voice": voice, "instructions": instructions},
         )
 
         if response.status_code != 200:
