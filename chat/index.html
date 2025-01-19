@@ -1,35 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>OpenAI RTC Connection</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
 </head>
+
 <body class="bg-gray-100 p-8">
     <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
         <h1 class="text-2xl font-bold mb-6">OpenAI RTC Connection</h1>
-        
+
         <!-- Connection Status -->
         <div id="status" class="mb-4 p-2 bg-gray-200 rounded"></div>
+
+        <!-- Audio Device Selection -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="audioInput">Microphone:</label>
+            <select id="audioInput"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
+                <option value="">Loading devices...</option>
+            </select>
+            <button id="testMic"
+                class="bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Test Microphone
+            </button>
+            <div class="h-4 bg-gray-200 rounded mt-2 border border-gray-300">
+                <div id="micLevel" class="h-full bg-green-500 rounded transition-all duration-100" style="width: 0%">
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="audioOutput">Speakers:</label>
+            <select id="audioOutput"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
+                <option value="">Loading devices...</option>
+            </select>
+            <button id="testSpeaker"
+                class="bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Test Speakers
+            </button>
+        </div>
 
         <!-- API Key Input -->
         <div class="mb-4">
             <label class="block text-sm font-medium mb-2" for="apiKey">OpenAI API Key:</label>
-            <input type="password" id="apiKey" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="sk-...">
+            <input type="password" id="apiKey"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="sk-...">
         </div>
 
         <!-- Instructions Input -->
         <div class="mb-4">
             <label class="block text-sm font-medium mb-2" for="instructions">Model Instructions:</label>
-            <textarea id="instructions" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Enter instructions for the model..."></textarea>
+            <textarea id="instructions"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"
+                placeholder="Enter instructions for the model..."></textarea>
         </div>
 
         <!-- Buttons -->
         <div class="flex space-x-4">
-            <button id="startSession" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="startSession"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 Start Session
             </button>
-            <button id="endSession" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" disabled>
+            <button id="endSession"
+                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                disabled>
                 End Session
             </button>
         </div>
@@ -37,12 +75,334 @@
 
     <script>
         let ws = null;
+
+        let testAudioContext = null;
+        let micTestInterval = null;
+        // Add this near the top with other global variables
+let audioHandler = null;
+let mediaStream = null;
+let audioContext = null;
+
         const statusDiv = document.getElementById('status');
         const startButton = document.getElementById('startSession');
         const endButton = document.getElementById('endSession');
+        const audioInputSelect = document.getElementById('audioInput');
+        const audioOutputSelect = document.getElementById('audioOutput');
+        const testMicButton = document.getElementById('testMic');
+        const testSpeakerButton = document.getElementById('testSpeaker');
+        const micLevelDiv = document.getElementById('micLevel');
 
         function updateStatus(message) {
             statusDiv.textContent = message;
+        }
+
+        class AudioStreamHandler {
+            constructor() {
+                this.audioContext = new AudioContext({ sampleRate: 24000 });
+                this.audioQueue = [];
+                this.isPlaying = false;
+                this.currentBuffer = new Float32Array(0);
+                this.sampleRate = 24000;
+            }
+
+            appendAudioData(base64Data) {
+                try {
+                    // Decode base64 to raw binary
+                    const audioData = atob(base64Data);
+                    const audioArray = new Uint8Array(audioData.length);
+                    for (let i = 0; i < audioData.length; i++) {
+                        audioArray[i] = audioData.charCodeAt(i);
+                    }
+
+                    // Convert to 16-bit PCM to Float32
+                    const pcmData = new Int16Array(audioArray.buffer);
+                    const floatData = new Float32Array(pcmData.length);
+                    for (let i = 0; i < pcmData.length; i++) {
+                        floatData[i] = pcmData[i] / 32768.0;
+                    }
+
+                    // Concatenate the new data with existing buffer
+                    const newBuffer = new Float32Array(this.currentBuffer.length + floatData.length);
+                    newBuffer.set(this.currentBuffer);
+                    newBuffer.set(floatData, this.currentBuffer.length);
+                    this.currentBuffer = newBuffer;
+
+                    // Queue audio when we have enough samples (100ms worth of audio)
+                    const samplesPerChunk = this.sampleRate / 10;
+                    if (this.currentBuffer.length >= samplesPerChunk) {
+                        this.queueAudioBuffer(this.currentBuffer);
+                        this.currentBuffer = new Float32Array(0);
+                    }
+                } catch (error) {
+                    console.error('Error processing audio data:', error);
+                }
+            }
+
+            queueAudioBuffer(floatData) {
+                try {
+                    // Create an audio buffer
+                    const audioBuffer = this.audioContext.createBuffer(1, floatData.length, this.sampleRate);
+                    const channelData = audioBuffer.getChannelData(0);
+                    channelData.set(floatData);
+
+                    this.audioQueue.push(audioBuffer);
+
+                    if (!this.isPlaying) {
+                        this.playNextBuffer();
+                    }
+                } catch (error) {
+                    console.error('Error creating audio buffer:', error);
+                }
+            }
+
+            playNextBuffer() {
+                if (this.audioQueue.length === 0) {
+                    this.isPlaying = false;
+                    return;
+                }
+
+                this.isPlaying = true;
+                const audioBuffer = this.audioQueue.shift();
+                const source = this.audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(this.audioContext.destination);
+
+                source.onended = () => {
+                    this.playNextBuffer();
+                };
+
+                source.start();
+            }
+
+            reset() {
+                this.audioQueue = [];
+                this.currentBuffer = new Float32Array(0);
+                this.isPlaying = false;
+            }
+
+            close() {
+                this.reset();
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+            }
+        }
+
+        // Load available audio devices
+        async function loadAudioDevices() {
+            try {
+                console.log('Loading audio devices...');
+
+                // Get initial permission
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log('Available devices:', devices);
+
+                // Clear existing options
+                audioInputSelect.innerHTML = '';
+                audioOutputSelect.innerHTML = '';
+
+                // Add input devices
+                const inputDevices = devices.filter(device => device.kind === 'audioinput');
+                console.log('Input devices:', inputDevices);
+
+                if (inputDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.text = 'No microphones found';
+                    audioInputSelect.appendChild(option);
+                } else {
+                    inputDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Microphone ${audioInputSelect.length + 1}`;
+                        audioInputSelect.appendChild(option);
+                        console.log('Added input device:', device.label);
+                    });
+                }
+
+                // Add output devices
+                const outputDevices = devices.filter(device => device.kind === 'audiooutput');
+                console.log('Output devices:', outputDevices);
+
+                if (outputDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.text = 'No speakers found';
+                    audioOutputSelect.appendChild(option);
+                } else {
+                    outputDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Speaker ${audioOutputSelect.length + 1}`;
+                        audioOutputSelect.appendChild(option);
+                        console.log('Added output device:', device.label);
+                    });
+                }
+
+                // After loading devices, update the status
+                const inputCount = inputDevices.length;
+                const outputCount = outputDevices.length;
+                updateStatus(`Found ${inputCount} microphone(s) and ${outputCount} speaker(s)`);
+
+                // Log the current selections
+                console.log('Selected input:', audioInputSelect.value);
+                console.log('Selected output:', audioOutputSelect.value);
+
+            } catch (error) {
+                console.error('Error loading audio devices:', error);
+                updateStatus('Error loading audio devices: ' + error.message);
+            }
+        }
+
+        // Initialize audio devices on page load
+        loadAudioDevices();
+
+        // Test microphone
+        async function testMicrophone() {
+            if (micTestInterval) {
+                clearInterval(micTestInterval);
+                micTestInterval = null;
+                testMicButton.textContent = 'Test Microphone';
+                micLevelDiv.style.width = '0%';
+                if (testAudioContext) {
+                    testAudioContext.close();
+                    testAudioContext = null;
+                }
+                return;
+            }
+
+            try {
+                console.log('Starting microphone test...');
+                console.log('Selected input device:', audioInputSelect.value);
+
+                const constraints = {
+                    audio: {
+                        deviceId: audioInputSelect.value ? { exact: audioInputSelect.value } : undefined,
+                        sampleRate: 24000,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                };
+
+                console.log('Using constraints:', constraints);
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('Got media stream');
+
+                testAudioContext = new AudioContext({ sampleRate: 24000 });
+                const source = testAudioContext.createMediaStreamSource(stream);
+                const analyser = testAudioContext.createAnalyser();
+                analyser.fftSize = 1024; // Increased for better resolution
+                source.connect(analyser);
+
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                testMicButton.textContent = 'Stop Test';
+                micLevelDiv.style.backgroundColor = '#4CAF50'; // Default green color
+
+                micTestInterval = setInterval(() => {
+                    analyser.getByteTimeDomainData(dataArray); // Using time domain for better volume indication
+
+                    // Calculate RMS value for better volume representation
+                    let rms = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        const sample = (dataArray[i] - 128) / 128;
+                        rms += sample * sample;
+                    }
+                    rms = Math.sqrt(rms / dataArray.length);
+
+                    // Convert to percentage with increased sensitivity
+                    const level = Math.min(100, Math.round(rms * 400));
+
+                    micLevelDiv.style.width = `${level}%`;
+                    micLevelDiv.style.transition = 'width 100ms';
+                    console.log('Current audio level:', level);
+                }, 100);
+
+            } catch (error) {
+                console.error('Error testing microphone:', error);
+                updateStatus('Error testing microphone: ' + error.message);
+            }
+        }
+
+        // Test speakers
+        async function testSpeakers() {
+            try {
+                const testContext = new AudioContext();
+                const oscillator = testContext.createOscillator();
+                const gainNode = testContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(testContext.destination);
+
+                oscillator.frequency.value = 440; // A4 note
+                gainNode.gain.value = 0.1;
+
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    testContext.close();
+                }, 500);
+
+                updateStatus('Playing test tone');
+            } catch (error) {
+                console.error('Error testing speakers:', error);
+                updateStatus('Error testing speakers: ' + error.message);
+            }
+        }
+
+        // Set up audio processing
+        async function setupAudioProcessing() {
+            try {
+                const constraints = {
+                    audio: {
+                        deviceId: audioInputSelect.value ? { exact: audioInputSelect.value } : undefined,
+                        sampleRate: 24000,
+                        channelCount: 1
+                    }
+                };
+
+                // Request microphone access
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // Create audio context
+                audioContext = new AudioContext({ sampleRate: 24000 });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+
+                // Process audio data
+                processor.onaudioprocess = (e) => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        const inputData = e.inputBuffer.getChannelData(0);
+                        const pcmData = convertToPCM16(inputData);
+
+                        const message = {
+                            type: 'input_audio_buffer.append',
+                            audio: btoa(String.fromCharCode.apply(null, new Uint8Array(pcmData)))
+                        };
+                        ws.send(JSON.stringify(message));
+                    }
+                };
+
+                return true;
+            } catch (error) {
+                console.error('Error setting up audio:', error);
+                updateStatus('Error setting up audio: ' + error.message);
+                return false;
+            }
+        }
+
+        // Convert float32 audio data to PCM16
+        function convertToPCM16(float32Array) {
+            const pcm = new Int16Array(float32Array.length);
+            for (let i = 0; i < float32Array.length; i++) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return pcm.buffer;
         }
 
         async function startSession() {
@@ -55,8 +415,28 @@
             }
 
             try {
-                updateStatus('Getting ephemeral token...');
+                // Clean up any existing audio resources
+                if (audioHandler) {
+                    audioHandler.close();
+                }
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+                if (audioContext) {
+                    await audioContext.close();
+                }
 
+                // Initialize new audio resources
+                updateStatus('Setting up audio...');
+                const audioSuccess = await setupAudioProcessing();
+                if (!audioSuccess) {
+                    throw new Error('Failed to set up audio');
+                }
+
+                // Initialize audio handler
+                audioHandler = new AudioStreamHandler();
+
+                updateStatus('Getting ephemeral token...');
                 const tokenResponse = await fetch('http://localhost:8080', {
                     method: 'POST',
                     headers: {
@@ -94,7 +474,6 @@
                     startButton.disabled = true;
                     endButton.disabled = false;
 
-                    // Send initial instructions if provided
                     if (instructions) {
                         const event = {
                             type: "session.update",
@@ -106,9 +485,13 @@
                     }
                 };
 
-                ws.onmessage = (event) => {
+                ws.onmessage = async (event) => {
                     const data = JSON.parse(event.data);
                     console.log('Received:', data);
+
+                    if (data.type === 'response.audio.delta' && data.delta) {
+                        audioHandler.appendAudioData(data.delta);
+                    }
                 };
 
                 ws.onerror = (error) => {
@@ -120,14 +503,44 @@
                     updateStatus('Disconnected');
                     startButton.disabled = false;
                     endButton.disabled = true;
+
+                    // Clean up audio
+                    if (mediaStream) {
+                        mediaStream.getTracks().forEach(track => track.stop());
+                        mediaStream = null;
+                    }
+                    if (audioContext) {
+                        audioContext.close();
+                        audioContext = null;
+                    }
+                    if (audioHandler) {
+                        audioHandler.close();
+                        audioHandler = null;
+                    }
                     ws = null;
                 };
 
             } catch (error) {
                 console.error('Error:', error);
                 updateStatus('Error: ' + error.message);
+
+                // Clean up on error
+                if (audioHandler) {
+                    audioHandler.close();
+                    audioHandler = null;
+                }
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    mediaStream = null;
+                }
+                if (audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                }
             }
         }
+
+
 
         function endSession() {
             if (ws) {
@@ -135,8 +548,14 @@
             }
         }
 
+        // Event Listeners
         startButton.addEventListener('click', startSession);
         endButton.addEventListener('click', endSession);
+        testMicButton.addEventListener('click', testMicrophone);
+        testSpeakerButton.addEventListener('click', testSpeakers);
+        audioInputSelect.addEventListener('change', loadAudioDevices);
+        audioOutputSelect.addEventListener('change', loadAudioDevices);
     </script>
 </body>
+
 </html>
