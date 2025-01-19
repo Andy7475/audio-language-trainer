@@ -1,26 +1,28 @@
 accelerate
 altair
-azure-cognitiveservices-speech #as google TTS does not have some voices like Persian
 anki
 anthropic                      #for querying the Anthropic models hosted on Google Cloud
+azure-cognitiveservices-speech #as google TTS does not have some voices like Persian
 beautifulsoup4
 diffusers
-diffusers
+fastapi
 genanki
 google-auth
 google-cloud-aiplatform
 google-cloud-core
+google-cloud-language
 google-cloud-texttospeech
 google-cloud-translate
-google-cloud-language
+h5py==3.8.0
+httpx
 ipykernel                       #for jupyter notebook
 ipywidgets
 librosa                         #for speeding up dialogue
 matplotlib
 mutagen
-h5py==3.8.0
 numpy==1.24.3
 pandas
+proto-plus==1.24.0.dev1         # fix update bug in gcloud components update
 pycountry
 pydantic
 pydub
@@ -32,3 +34,5 @@ requests
 soundfile                       #for speeding up dialogue
 spacy==3.5.3
 transformers
+uvicorn
+flask-cors==5.0.0

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OpenAI RTC Connection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-6">OpenAI RTC Connection</h1>
+        
+        <!-- Connection Status -->
+        <div id="status" class="mb-4 p-2 bg-gray-200 rounded"></div>
+
+        <!-- API Key Input -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="sk-...">
+        </div>
+
+        <!-- Instructions Input -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="instructions">Model Instructions:</label>
+            <textarea id="instructions" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3" placeholder="Enter instructions for the model..."></textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex space-x-4">
+            <button id="startSession" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Start Session
+            </button>
+            <button id="endSession" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500" disabled>
+                End Session
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        const statusDiv = document.getElementById('status');
+        const startButton = document.getElementById('startSession');
+        const endButton = document.getElementById('endSession');
+
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+        }
+
+        async function startSession() {
+            const apiKey = document.getElementById('apiKey').value;
+            const instructions = document.getElementById('instructions').value;
+
+            if (!apiKey) {
+                updateStatus('Please enter an API key');
+                return;
+            }
+
+            try {
+                updateStatus('Getting ephemeral token...');
+
+                const tokenResponse = await fetch('http://localhost:8080', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        model: 'gpt-4o-realtime-preview-2024-12-17',
+                        voice: 'verse',
+                        modalities: ['text', 'audio'],
+                        input_audio_format: 'pcm16',
+                        output_audio_format: 'pcm16'
+                    })
+                });
+
+                if (!tokenResponse.ok) {
+                    throw new Error('Failed to get session token');
+                }
+
+                const data = await tokenResponse.json();
+                const EPHEMERAL_KEY = data.client_secret.value;
+
+                // Connect WebSocket using ephemeral key
+                ws = new WebSocket(
+                    "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
+                    [
+                        "realtime",
+                        "openai-insecure-api-key." + EPHEMERAL_KEY,
+                        "openai-beta.realtime-v1"
+                    ]
+                );
+
+                ws.onopen = () => {
+                    updateStatus('Connected to OpenAI');
+                    startButton.disabled = true;
+                    endButton.disabled = false;
+
+                    // Send initial instructions if provided
+                    if (instructions) {
+                        const event = {
+                            type: "session.update",
+                            session: {
+                                instructions: instructions
+                            }
+                        };
+                        ws.send(JSON.stringify(event));
+                    }
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log('Received:', data);
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateStatus('Error: ' + error.message);
+                };
+
+                ws.onclose = () => {
+                    updateStatus('Disconnected');
+                    startButton.disabled = false;
+                    endButton.disabled = true;
+                    ws = null;
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('Error: ' + error.message);
+            }
+        }
+
+        function endSession() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        startButton.addEventListener('click', startSession);
+        endButton.addEventListener('click', endSession);
+    </script>
+</body>
+</html>
