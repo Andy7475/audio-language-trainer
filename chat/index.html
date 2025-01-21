@@ -96,37 +96,34 @@
 
         class AudioStreamHandler {
             constructor() {
-                this.audioContext = new AudioContext({ sampleRate: 24000 });
+                // Create context without forcing sample rate
+                this.audioContext = new AudioContext();
                 this.audioQueue = [];
                 this.isPlaying = false;
                 this.currentBuffer = new Float32Array(0);
-                this.sampleRate = 24000;
+                this.targetSampleRate = 24000; // Target sample rate for OpenAI
             }
 
             appendAudioData(base64Data) {
                 try {
-                    // Decode base64 to raw binary
                     const audioData = atob(base64Data);
                     const audioArray = new Uint8Array(audioData.length);
                     for (let i = 0; i < audioData.length; i++) {
                         audioArray[i] = audioData.charCodeAt(i);
                     }
 
-                    // Convert to 16-bit PCM to Float32
                     const pcmData = new Int16Array(audioArray.buffer);
                     const floatData = new Float32Array(pcmData.length);
                     for (let i = 0; i < pcmData.length; i++) {
                         floatData[i] = pcmData[i] / 32768.0;
                     }
 
-                    // Concatenate the new data with existing buffer
                     const newBuffer = new Float32Array(this.currentBuffer.length + floatData.length);
                     newBuffer.set(this.currentBuffer);
                     newBuffer.set(floatData, this.currentBuffer.length);
                     this.currentBuffer = newBuffer;
 
-                    // Queue audio when we have enough samples (100ms worth of audio)
-                    const samplesPerChunk = this.sampleRate / 10;
+                    const samplesPerChunk = this.targetSampleRate / 10;
                     if (this.currentBuffer.length >= samplesPerChunk) {
                         this.queueAudioBuffer(this.currentBuffer);
                         this.currentBuffer = new Float32Array(0);
@@ -138,8 +135,7 @@
 
             queueAudioBuffer(floatData) {
                 try {
-                    // Create an audio buffer
-                    const audioBuffer = this.audioContext.createBuffer(1, floatData.length, this.sampleRate);
+                    const audioBuffer = this.audioContext.createBuffer(1, floatData.length, this.targetSampleRate);
                     const channelData = audioBuffer.getChannelData(0);
                     channelData.set(floatData);
 
@@ -184,6 +180,93 @@
                     this.audioContext.close();
                 }
             }
+        }
+
+        // Updated audio processing setup function
+        async function setupAudioProcessing() {
+            try {
+                const constraints = {
+                    audio: {
+                        deviceId: audioInputSelect.value ? { exact: audioInputSelect.value } : undefined,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                };
+
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // Create audio context without forcing sample rate
+                audioContext = new AudioContext();
+                console.log('Audio context sample rate:', audioContext.sampleRate);
+
+                const source = audioContext.createMediaStreamSource(mediaStream);
+
+                // Create offline context for resampling
+                const bufferSize = 4096;
+                const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+
+                // Process and resample audio data
+                processor.onaudioprocess = (e) => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        const inputData = e.inputBuffer.getChannelData(0);
+
+                        // Resample to 24000 Hz if needed
+                        const resampledData = resampleAudio(inputData, audioContext.sampleRate, 24000);
+                        const pcmData = convertToPCM16(resampledData);
+
+                        const message = {
+                            type: 'input_audio_buffer.append',
+                            audio: btoa(String.fromCharCode.apply(null, new Uint8Array(pcmData)))
+                        };
+                        ws.send(JSON.stringify(message));
+                    }
+                };
+
+                return true;
+            } catch (error) {
+                console.error('Error setting up audio:', error);
+                updateStatus('Error setting up audio: ' + error.message);
+                return false;
+            }
+        }
+
+        // Helper function to resample audio
+        function resampleAudio(audioData, fromSampleRate, toSampleRate) {
+            if (fromSampleRate === toSampleRate) {
+                return audioData;
+            }
+
+            const ratio = fromSampleRate / toSampleRate;
+            const newLength = Math.round(audioData.length / ratio);
+            const result = new Float32Array(newLength);
+
+            for (let i = 0; i < newLength; i++) {
+                const position = i * ratio;
+                const index = Math.floor(position);
+                const fraction = position - index;
+
+                if (index + 1 < audioData.length) {
+                    result[i] = audioData[index] * (1 - fraction) + audioData[index + 1] * fraction;
+                } else {
+                    result[i] = audioData[index];
+                }
+            }
+
+            return result;
+        }
+
+        // Convert float32 audio data to PCM16
+        function convertToPCM16(float32Array) {
+            const pcm = new Int16Array(float32Array.length);
+            for (let i = 0; i < float32Array.length; i++) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return pcm.buffer;
         }
 
         // Load available audio devices
@@ -277,7 +360,6 @@
                 const constraints = {
                     audio: {
                         deviceId: audioInputSelect.value ? { exact: audioInputSelect.value } : undefined,
-                        sampleRate: 24000,
                         channelCount: 1,
                         echoCancellation: true,
                         noiseSuppression: true
@@ -288,20 +370,20 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 console.log('Got media stream');
 
-                testAudioContext = new AudioContext({ sampleRate: 24000 });
+                // Create AudioContext without specifying sample rate
+                testAudioContext = new AudioContext();
                 const source = testAudioContext.createMediaStreamSource(stream);
                 const analyser = testAudioContext.createAnalyser();
-                analyser.fftSize = 1024; // Increased for better resolution
+                analyser.fftSize = 1024;
                 source.connect(analyser);
 
                 const dataArray = new Uint8Array(analyser.frequencyBinCount);
                 testMicButton.textContent = 'Stop Test';
-                micLevelDiv.style.backgroundColor = '#4CAF50'; // Default green color
+                micLevelDiv.style.backgroundColor = '#4CAF50';
 
                 micTestInterval = setInterval(() => {
-                    analyser.getByteTimeDomainData(dataArray); // Using time domain for better volume indication
+                    analyser.getByteTimeDomainData(dataArray);
 
-                    // Calculate RMS value for better volume representation
                     let rms = 0;
                     for (let i = 0; i < dataArray.length; i++) {
                         const sample = (dataArray[i] - 128) / 128;
@@ -309,7 +391,6 @@
                     }
                     rms = Math.sqrt(rms / dataArray.length);
 
-                    // Convert to percentage with increased sensitivity
                     const level = Math.min(100, Math.round(rms * 400));
 
                     micLevelDiv.style.width = `${level}%`;
