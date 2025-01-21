@@ -209,7 +209,7 @@ class VoiceManager:
             # Find the voice in our loaded voices
             if language_code in self.voices:
                 for voice in self.voices[language_code]:
-                    if voice.name == override_voice_name:
+                    if voice.voice_id == override_voice_name:
                         return voice
 
         # If no voices available at all, return dummy
