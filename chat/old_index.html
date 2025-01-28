@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>OpenAI RTC Connection</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+</head>
+
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-6">OpenAI RTC Connection</h1>
+
+        <!-- Connection Status -->
+        <div id="status" class="mb-4 p-2 bg-gray-200 rounded"></div>
+
+        <!-- Audio Device Selection -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="audioInput">Microphone:</label>
+            <select id="audioInput"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
+                <option value="">Loading devices...</option>
+            </select>
+            <button id="testMic"
+                class="bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Test Microphone
+            </button>
+            <div class="h-4 bg-gray-200 rounded mt-2 border border-gray-300">
+                <div id="micLevel" class="h-full bg-green-500 rounded transition-all duration-100" style="width: 0%">
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="audioOutput">Speakers:</label>
+            <select id="audioOutput"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2">
+                <option value="">Loading devices...</option>
+            </select>
+            <button id="testSpeaker"
+                class="bg-gray-500 text-white px-4 py-1 rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Test Speakers
+            </button>
+        </div>
+
+        <!-- API Key Input -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="sk-...">
+        </div>
+
+        <!-- Instructions Input -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="instructions">Model Instructions:</label>
+            <textarea id="instructions"
+                class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" rows="3"
+                placeholder="Enter instructions for the model..."></textarea>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex space-x-4">
+            <button id="startSession"
+                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Start Session
+            </button>
+            <button id="endSession"
+                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                disabled>
+                End Session
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let testAudioContext = null;
+        let micTestInterval = null;
+        let audioHandler = null;
+        let mediaStream = null;
+        let audioContext = null;
+
+        const statusDiv = document.getElementById('status');
+        const startButton = document.getElementById('startSession');
+        const endButton = document.getElementById('endSession');
+        const audioInputSelect = document.getElementById('audioInput');
+        const audioOutputSelect = document.getElementById('audioOutput');
+        const testMicButton = document.getElementById('testMic');
+        const testSpeakerButton = document.getElementById('testSpeaker');
+        const micLevelDiv = document.getElementById('micLevel');
+
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+        }
+
+        class AudioStreamHandler {
+            constructor() {
+                // Create context without forcing sample rate
+                this.audioContext = new AudioContext();
+                this.audioQueue = [];
+                this.isPlaying = false;
+                this.currentBuffer = new Float32Array(0);
+                this.targetSampleRate = 24000; // Target sample rate for OpenAI
+            }
+
+            appendAudioData(base64Data) {
+                try {
+                    const audioData = atob(base64Data);
+                    const audioArray = new Uint8Array(audioData.length);
+                    for (let i = 0; i < audioData.length; i++) {
+                        audioArray[i] = audioData.charCodeAt(i);
+                    }
+
+                    const pcmData = new Int16Array(audioArray.buffer);
+                    const floatData = new Float32Array(pcmData.length);
+                    for (let i = 0; i < pcmData.length; i++) {
+                        floatData[i] = pcmData[i] / 32768.0;
+                    }
+
+                    const newBuffer = new Float32Array(this.currentBuffer.length + floatData.length);
+                    newBuffer.set(this.currentBuffer);
+                    newBuffer.set(floatData, this.currentBuffer.length);
+                    this.currentBuffer = newBuffer;
+
+                    const samplesPerChunk = this.targetSampleRate / 10;
+                    if (this.currentBuffer.length >= samplesPerChunk) {
+                        this.queueAudioBuffer(this.currentBuffer);
+                        this.currentBuffer = new Float32Array(0);
+                    }
+                } catch (error) {
+                    console.error('Error processing audio data:', error);
+                }
+            }
+
+            queueAudioBuffer(floatData) {
+                try {
+                    const audioBuffer = this.audioContext.createBuffer(1, floatData.length, this.targetSampleRate);
+                    const channelData = audioBuffer.getChannelData(0);
+                    channelData.set(floatData);
+
+                    this.audioQueue.push(audioBuffer);
+
+                    if (!this.isPlaying) {
+                        this.playNextBuffer();
+                    }
+                } catch (error) {
+                    console.error('Error creating audio buffer:', error);
+                }
+            }
+
+            playNextBuffer() {
+                if (this.audioQueue.length === 0) {
+                    this.isPlaying = false;
+                    return;
+                }
+
+                this.isPlaying = true;
+                const audioBuffer = this.audioQueue.shift();
+                const source = this.audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(this.audioContext.destination);
+
+                source.onended = () => {
+                    this.playNextBuffer();
+                };
+
+                source.start();
+            }
+
+            reset() {
+                this.audioQueue = [];
+                this.currentBuffer = new Float32Array(0);
+                this.isPlaying = false;
+            }
+
+            close() {
+                this.reset();
+                if (this.audioContext) {
+                    this.audioContext.close();
+                }
+            }
+        }
+
+        // Updated audio processing setup function
+        async function setupAudioProcessing() {
+            try {
+                const constraints = {
+                    audio: {
+                        deviceId: audioInputSelect.value ? { exact: audioInputSelect.value } : undefined,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                };
+
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // Create audio context without forcing sample rate
+                audioContext = new AudioContext();
+                console.log('Audio context sample rate:', audioContext.sampleRate);
+
+                const source = audioContext.createMediaStreamSource(mediaStream);
+
+                // Create offline context for resampling
+                const bufferSize = 4096;
+                const processor = audioContext.createScriptProcessor(bufferSize, 1, 1);
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+
+                // Process and resample audio data
+                processor.onaudioprocess = (e) => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        const inputData = e.inputBuffer.getChannelData(0);
+
+                        // Resample to 24000 Hz if needed
+                        const resampledData = resampleAudio(inputData, audioContext.sampleRate, 24000);
+                        const pcmData = convertToPCM16(resampledData);
+
+                        const message = {
+                            type: 'input_audio_buffer.append',
+                            audio: btoa(String.fromCharCode.apply(null, new Uint8Array(pcmData)))
+                        };
+                        ws.send(JSON.stringify(message));
+                    }
+                };
+
+                return true;
+            } catch (error) {
+                console.error('Error setting up audio:', error);
+                updateStatus('Error setting up audio: ' + error.message);
+                return false;
+            }
+        }
+
+        // Helper function to resample audio
+        function resampleAudio(audioData, fromSampleRate, toSampleRate) {
+            if (fromSampleRate === toSampleRate) {
+                return audioData;
+            }
+
+            const ratio = fromSampleRate / toSampleRate;
+            const newLength = Math.round(audioData.length / ratio);
+            const result = new Float32Array(newLength);
+
+            for (let i = 0; i < newLength; i++) {
+                const position = i * ratio;
+                const index = Math.floor(position);
+                const fraction = position - index;
+
+                if (index + 1 < audioData.length) {
+                    result[i] = audioData[index] * (1 - fraction) + audioData[index + 1] * fraction;
+                } else {
+                    result[i] = audioData[index];
+                }
+            }
+
+            return result;
+        }
+
+        // Convert float32 audio data to PCM16
+        function convertToPCM16(float32Array) {
+            const pcm = new Int16Array(float32Array.length);
+            for (let i = 0; i < float32Array.length; i++) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return pcm.buffer;
+        }
+
+        // Load available audio devices
+        async function loadAudioDevices() {
+            try {
+                console.log('Loading audio devices...');
+
+                // Get initial permission
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                console.log('Available devices:', devices);
+
+                // Clear existing options
+                audioInputSelect.innerHTML = '';
+                audioOutputSelect.innerHTML = '';
+
+                // Add input devices
+                const inputDevices = devices.filter(device => device.kind === 'audioinput');
+                console.log('Input devices:', inputDevices);
+
+                if (inputDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.text = 'No microphones found';
+                    audioInputSelect.appendChild(option);
+                } else {
+                    inputDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Microphone ${audioInputSelect.length + 1}`;
+                        audioInputSelect.appendChild(option);
+                        console.log('Added input device:', device.label);
+                    });
+                }
+
+                // Add output devices
+                const outputDevices = devices.filter(device => device.kind === 'audiooutput');
+                console.log('Output devices:', outputDevices);
+
+                if (outputDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.text = 'No speakers found';
+                    audioOutputSelect.appendChild(option);
+                } else {
+                    outputDevices.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Speaker ${audioOutputSelect.length + 1}`;
+                        audioOutputSelect.appendChild(option);
+                        console.log('Added output device:', device.label);
+                    });
+                }
+
+                // After loading devices, update the status
+                const inputCount = inputDevices.length;
+                const outputCount = outputDevices.length;
+                updateStatus(`Found ${inputCount} microphone(s) and ${outputCount} speaker(s)`);
+
+                // Log the current selections
+                console.log('Selected input:', audioInputSelect.value);
+                console.log('Selected output:', audioOutputSelect.value);
+
+            } catch (error) {
+                console.error('Error loading audio devices:', error);
+                updateStatus('Error loading audio devices: ' + error.message);
+            }
+        }
+
+        // Initialize audio devices on page load
+        loadAudioDevices();
+
+        // Test microphone
+        async function testMicrophone() {
+            if (micTestInterval) {
+                clearInterval(micTestInterval);
+                micTestInterval = null;
+                testMicButton.textContent = 'Test Microphone';
+                micLevelDiv.style.width = '0%';
+                if (testAudioContext) {
+                    testAudioContext.close();
+                    testAudioContext = null;
+                }
+                return;
+            }
+
+            try {
+                console.log('Starting microphone test...');
+                console.log('Selected input device:', audioInputSelect.value);
+
+                const constraints = {
+                    audio: {
+                        deviceId: audioInputSelect.value ? { exact: audioInputSelect.value } : undefined,
+                        channelCount: 1,
+                        echoCancellation: true,
+                        noiseSuppression: true
+                    }
+                };
+
+                console.log('Using constraints:', constraints);
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                console.log('Got media stream');
+
+                // Create AudioContext without specifying sample rate
+                testAudioContext = new AudioContext();
+                const source = testAudioContext.createMediaStreamSource(stream);
+                const analyser = testAudioContext.createAnalyser();
+                analyser.fftSize = 1024;
+                source.connect(analyser);
+
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                testMicButton.textContent = 'Stop Test';
+                micLevelDiv.style.backgroundColor = '#4CAF50';
+
+                micTestInterval = setInterval(() => {
+                    analyser.getByteTimeDomainData(dataArray);
+
+                    let rms = 0;
+                    for (let i = 0; i < dataArray.length; i++) {
+                        const sample = (dataArray[i] - 128) / 128;
+                        rms += sample * sample;
+                    }
+                    rms = Math.sqrt(rms / dataArray.length);
+
+                    const level = Math.min(100, Math.round(rms * 400));
+
+                    micLevelDiv.style.width = `${level}%`;
+                    micLevelDiv.style.transition = 'width 100ms';
+                    console.log('Current audio level:', level);
+                }, 100);
+
+            } catch (error) {
+                console.error('Error testing microphone:', error);
+                updateStatus('Error testing microphone: ' + error.message);
+            }
+        }
+
+        // Test speakers
+        async function testSpeakers() {
+            try {
+                const testContext = new AudioContext();
+                const oscillator = testContext.createOscillator();
+                const gainNode = testContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(testContext.destination);
+
+                oscillator.frequency.value = 440; // A4 note
+                gainNode.gain.value = 0.1;
+
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                    testContext.close();
+                }, 500);
+
+                updateStatus('Playing test tone');
+            } catch (error) {
+                console.error('Error testing speakers:', error);
+                updateStatus('Error testing speakers: ' + error.message);
+            }
+        }
+
+        // Set up audio processing
+        async function setupAudioProcessing() {
+            try {
+                const constraints = {
+                    audio: {
+                        deviceId: audioInputSelect.value ? { exact: audioInputSelect.value } : undefined,
+                        sampleRate: 24000,
+                        channelCount: 1
+                    }
+                };
+
+                // Request microphone access
+                mediaStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+                // Create audio context
+                audioContext = new AudioContext({ sampleRate: 24000 });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+
+                // Process audio data
+                processor.onaudioprocess = (e) => {
+                    if (ws && ws.readyState === WebSocket.OPEN) {
+                        const inputData = e.inputBuffer.getChannelData(0);
+                        const pcmData = convertToPCM16(inputData);
+
+                        const message = {
+                            type: 'input_audio_buffer.append',
+                            audio: btoa(String.fromCharCode.apply(null, new Uint8Array(pcmData)))
+                        };
+                        ws.send(JSON.stringify(message));
+                    }
+                };
+
+                return true;
+            } catch (error) {
+                console.error('Error setting up audio:', error);
+                updateStatus('Error setting up audio: ' + error.message);
+                return false;
+            }
+        }
+
+        // Convert float32 audio data to PCM16
+        function convertToPCM16(float32Array) {
+            const pcm = new Int16Array(float32Array.length);
+            for (let i = 0; i < float32Array.length; i++) {
+                const s = Math.max(-1, Math.min(1, float32Array[i]));
+                pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            }
+            return pcm.buffer;
+        }
+
+        async function startSession() {
+            const apiKey = document.getElementById('apiKey').value;
+            const instructions = document.getElementById('instructions').value;
+
+            if (!apiKey) {
+                updateStatus('Please enter an API key');
+                return;
+            }
+
+            try {
+                // Clean up any existing audio resources
+                if (audioHandler) {
+                    audioHandler.close();
+                }
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+                if (audioContext) {
+                    await audioContext.close();
+                }
+
+                // Initialize new audio resources
+                updateStatus('Setting up audio...');
+                const audioSuccess = await setupAudioProcessing();
+                if (!audioSuccess) {
+                    throw new Error('Failed to set up audio');
+                }
+
+                // Initialize audio handler
+                audioHandler = new AudioStreamHandler();
+
+                const API_ENDPOINT = {
+                    prod: 'https://create-realtime-chat-session-307643465852.europe-west2.run.app',
+                    local: 'http://localhost:8080'
+                };
+
+                // You can then switch between them using this variable
+                const CURRENT_ENDPOINT = API_ENDPOINT.prod;  // Switch to .local for local development
+
+                // Then in your fetch call:
+                updateStatus('Getting ephemeral token...');
+                const tokenResponse = await fetch(CURRENT_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        model: 'gpt-4o-realtime-preview-2024-12-17',
+                        voice: 'verse',
+                        instructions: instructions,
+                        modalities: ['text', 'audio'],
+                        input_audio_format: 'pcm16',
+                        output_audio_format: 'pcm16'
+                    })
+                });
+
+                if (!tokenResponse.ok) {
+                    throw new Error('Failed to get session token');
+                }
+
+                const data = await tokenResponse.json();
+                const EPHEMERAL_KEY = data.client_secret.value;
+
+                // Connect WebSocket using ephemeral key
+                ws = new WebSocket(
+                    "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
+                    [
+                        "realtime",
+                        "openai-insecure-api-key." + EPHEMERAL_KEY,
+                        "openai-beta.realtime-v1"
+                    ]
+                );
+
+                ws.onopen = () => {
+                    updateStatus('Connected to OpenAI');
+                    startButton.disabled = true;
+                    endButton.disabled = false;
+
+                    if (instructions) {
+                        const event = {
+                            type: "session.update",
+                            session: {
+                                instructions: instructions
+                            }
+                        };
+                        ws.send(JSON.stringify(event));
+                    }
+                };
+
+                ws.onmessage = async (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log('Received:', data);
+
+                    if (data.type === 'response.audio.delta' && data.delta) {
+                        audioHandler.appendAudioData(data.delta);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateStatus('Error: ' + error.message);
+                };
+
+                ws.onclose = () => {
+                    updateStatus('Disconnected');
+                    startButton.disabled = false;
+                    endButton.disabled = true;
+
+                    // Clean up audio
+                    if (mediaStream) {
+                        mediaStream.getTracks().forEach(track => track.stop());
+                        mediaStream = null;
+                    }
+                    if (audioContext) {
+                        audioContext.close();
+                        audioContext = null;
+                    }
+                    if (audioHandler) {
+                        audioHandler.close();
+                        audioHandler = null;
+                    }
+                    ws = null;
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('Error: ' + error.message);
+
+                // Clean up on error
+                if (audioHandler) {
+                    audioHandler.close();
+                    audioHandler = null;
+                }
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                    mediaStream = null;
+                }
+                if (audioContext) {
+                    audioContext.close();
+                    audioContext = null;
+                }
+            }
+        }
+
+
+
+        function endSession() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        // Event Listeners
+        startButton.addEventListener('click', startSession);
+        endButton.addEventListener('click', endSession);
+        testMicButton.addEventListener('click', testMicrophone);
+        testSpeakerButton.addEventListener('click', testSpeakers);
+        audioInputSelect.addEventListener('change', loadAudioDevices);
+        audioOutputSelect.addEventListener('change', loadAudioDevices);
+    </script>
+</body>
+
+</html>
