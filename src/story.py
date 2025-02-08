@@ -183,11 +183,6 @@ def add_index_navigation_to_story(story_html_path: str, language: str) -> None:
             f.write(content)
 
 
-# Example usage:
-# index_path = generate_index_html()
-# print(f"Generated index.html at {index_path}")
-
-
 def create_html_story(
     story_data_dict: Dict,
     image_dir: str,

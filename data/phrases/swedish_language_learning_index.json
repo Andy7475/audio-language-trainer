@@ -1,0 +1,2337 @@
+{
+  "verb_index": {
+    "be": [
+      1,
+      2,
+      41,
+      44,
+      46,
+      47,
+      48,
+      49,
+      50,
+      19,
+      23
+    ],
+    "recommend": [
+      10,
+      5
+    ],
+    "can": [
+      5,
+      6,
+      23
+    ],
+    "suggest": [
+      6
+    ],
+    "meetup": [
+      8
+    ],
+    "could": [
+      9,
+      10
+    ],
+    "explain": [
+      9
+    ],
+    "page": [
+      12
+    ],
+    "handcraft": [
+      13
+    ],
+    "have": [
+      19,
+      14
+    ],
+    "visit": [
+      14
+    ],
+    "hoist": [
+      15
+    ],
+    "join": [
+      16
+    ],
+    "do": [
+      43,
+      45,
+      16,
+      17,
+      18,
+      20
+    ],
+    "spend": [
+      17
+    ],
+    "say": [
+      18
+    ],
+    "learn": [
+      19,
+      46,
+      23
+    ],
+    "meet": [
+      49,
+      20
+    ],
+    "travel": [
+      22
+    ],
+    "practise": [
+      23
+    ],
+    "light": [
+      25
+    ],
+    "eat": [
+      29
+    ],
+    "sleep": [
+      30
+    ],
+    "starry": [
+      32
+    ],
+    "steam": [
+      33
+    ],
+    "graze": [
+      38
+    ],
+    "wear": [
+      40
+    ],
+    "bring": [
+      42
+    ],
+    "mean": [
+      43
+    ],
+    "trend": [
+      44
+    ],
+    "live": [
+      45
+    ],
+    "find": [
+      45
+    ]
+  },
+  "vocab_index": {
+    "a": [
+      0,
+      5,
+      7,
+      10,
+      49,
+      25,
+      27,
+      30
+    ],
+    "friendly": [
+      0
+    ],
+    "swedish": [
+      0,
+      1,
+      2,
+      4,
+      5,
+      6,
+      9,
+      10,
+      12,
+      15,
+      18,
+      19,
+      21,
+      23,
+      24,
+      31,
+      33,
+      35,
+      37,
+      39,
+      40,
+      41,
+      46,
+      48
+    ],
+    "partner": [
+      0
+    ],
+    "conversation": [
+      0
+    ],
+    "any": [
+      1,
+      2,
+      6
+    ],
+    "nearby": [
+      1
+    ],
+    "event": [
+      1
+    ],
+    "there": [
+      1,
+      2
+    ],
+    "soon": [
+      2
+    ],
+    "holiday": [
+      2
+    ],
+    "aromatic": [
+      3
+    ],
+    "bun": [
+      3
+    ],
+    "cinnamon": [
+      3
+    ],
+    "for": [
+      11,
+      3
+    ],
+    "fika": [
+      3
+    ],
+    "practice": [
+      4
+    ],
+    "authentic": [
+      4
+    ],
+    "pronunciation": [
+      4
+    ],
+    "book": [
+      5
+    ],
+    "you": [
+      5,
+      6,
+      9,
+      10,
+      42,
+      45,
+      14,
+      18,
+      19,
+      50
+    ],
+    "film": [
+      6
+    ],
+    "in": [
+      7,
+      43,
+      44,
+      45,
+      47,
+      18,
+      51,
+      30
+    ],
+    "sunny": [
+      7
+    ],
+    "meadow": [
+      7
+    ],
+    "wildflower": [
+      7
+    ],
+    "colourful": [
+      7
+    ],
+    "exchange": [
+      8
+    ],
+    "language": [
+      8
+    ],
+    "cosy": [
+      8
+    ],
+    "phrase": [
+      9
+    ],
+    "this": [
+      9,
+      42,
+      16,
+      18,
+      20
+    ],
+    "podcast": [
+      10
+    ],
+    "chilly": [
+      11
+    ],
+    "woollen": [
+      11
+    ],
+    "jumper": [
+      11
+    ],
+    "fluffy": [
+      11
+    ],
+    "evening": [
+      11
+    ],
+    "magazine": [
+      12
+    ],
+    "glossy": [
+      12
+    ],
+    "lifestyle": [
+      12
+    ],
+    "horse": [
+      13
+    ],
+    "wooden": [
+      13
+    ],
+    "dala": [
+      13
+    ],
+    "ornament": [
+      13
+    ],
+    "before": [
+      14
+    ],
+    "sweden": [
+      50,
+      44,
+      45,
+      14
+    ],
+    "archipelago": [
+      15
+    ],
+    "by": [
+      25,
+      15
+    ],
+    "flag": [
+      15
+    ],
+    "the": [
+      46,
+      47,
+      15,
+      51,
+      22,
+      29
+    ],
+    "group": [
+      16,
+      20
+    ],
+    "i": [
+      16,
+      30,
+      22,
+      23
+    ],
+    "how": [
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "typically": [
+      17
+    ],
+    "weekend": [
+      17
+    ],
+    "swede": [
+      17,
+      49
+    ],
+    "long": [
+      26,
+      19
+    ],
+    "often": [
+      20
+    ],
+    "dictionary": [
+      21
+    ],
+    "page": [
+      21
+    ],
+    "hundred": [
+      21
+    ],
+    "of": [
+      33,
+      50,
+      27,
+      21
+    ],
+    "english": [
+      43,
+      21
+    ],
+    "via": [
+      22
+    ],
+    "train": [
+      22
+    ],
+    "night": [
+      32,
+      22
+    ],
+    "we": [
+      23
+    ],
+    "on": [
+      24
+    ],
+    "phrasebook": [
+      24
+    ],
+    "informative": [
+      24
+    ],
+    "shelf": [
+      24
+    ],
+    "campfire": [
+      25
+    ],
+    "deserted": [
+      25
+    ],
+    "lake": [
+      25
+    ],
+    "island": [
+      26
+    ],
+    "route": [
+      26
+    ],
+    "hiking": [
+      26
+    ],
+    "distance": [
+      26
+    ],
+    "across": [
+      26
+    ],
+    "centre": [
+      27
+    ],
+    "stockholm": [
+      27,
+      47
+    ],
+    "city": [
+      27
+    ],
+    "map": [
+      27
+    ],
+    "morning": [
+      28
+    ],
+    "misty": [
+      28
+    ],
+    "over": [
+      32,
+      28
+    ],
+    "fog": [
+      28
+    ],
+    "water": [
+      28
+    ],
+    "still": [
+      28
+    ],
+    "to": [
+      49,
+      42,
+      29,
+      46
+    ],
+    "pickled": [
+      29
+    ],
+    "scared": [
+      29
+    ],
+    "appetiser": [
+      29
+    ],
+    "too": [
+      29
+    ],
+    "herring": [
+      29
+    ],
+    "peaceful": [
+      30
+    ],
+    "forest": [
+      36,
+      30
+    ],
+    "hammock": [
+      30
+    ],
+    "snowy": [
+      31
+    ],
+    "ski": [
+      31
+    ],
+    "brochure": [
+      31
+    ],
+    "resort": [
+      31
+    ],
+    "wilderness": [
+      32
+    ],
+    "sky": [
+      32
+    ],
+    "silent": [
+      32
+    ],
+    "coffee": [
+      33
+    ],
+    "cup": [
+      33
+    ],
+    "essential": [
+      34
+    ],
+    "with": [
+      34,
+      35,
+      36,
+      38
+    ],
+    "backpack": [
+      34
+    ],
+    "supply": [
+      34
+    ],
+    "sturdy": [
+      34
+    ],
+    "lingonberry": [
+      35
+    ],
+    "meatball": [
+      35
+    ],
+    "pine": [
+      36
+    ],
+    "thick": [
+      36
+    ],
+    "bird": [
+      36
+    ],
+    "chirping": [
+      36
+    ],
+    "traditional": [
+      37
+    ],
+    "costume": [
+      37
+    ],
+    "display": [
+      37
+    ],
+    "folk": [
+      37
+    ],
+    "tranquil": [
+      38
+    ],
+    "reindeer": [
+      38
+    ],
+    "lakeside": [
+      38
+    ],
+    "trendy": [
+      39
+    ],
+    "pop": [
+      39
+    ],
+    "music": [
+      39
+    ],
+    "playlist": [
+      39
+    ],
+    "textbook": [
+      40
+    ],
+    "well": [
+      40
+    ],
+    "grammar": [
+      40
+    ],
+    "what": [
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48
+    ],
+    "thing": [
+      41
+    ],
+    "favourite": [
+      48,
+      41
+    ],
+    "your": [
+      48,
+      41
+    ],
+    "culture": [
+      41
+    ],
+    "about": [
+      41,
+      45
+    ],
+    "community": [
+      42
+    ],
+    "that": [
+      43
+    ],
+    "word": [
+      43
+    ],
+    "now": [
+      44
+    ],
+    "most": [
+      45
+    ],
+    "difficult": [
+      45
+    ],
+    "way": [
+      46
+    ],
+    "good": [
+      49,
+      46
+    ],
+    "winter": [
+      47
+    ],
+    "like": [
+      47
+    ],
+    "weather": [
+      47
+    ],
+    "tradition": [
+      48
+    ],
+    "where": [
+      49
+    ],
+    "place": [
+      49
+    ],
+    "which": [
+      50
+    ],
+    "from": [
+      50
+    ],
+    "region": [
+      50
+    ],
+    "baltic": [
+      51
+    ],
+    "cold": [
+      51
+    ],
+    "swimming": [
+      51
+    ],
+    "sea": [
+      51
+    ],
+    "freezing": [
+      51
+    ],
+    "wild": [
+      51
+    ]
+  },
+  "word_counts": [
+    {
+      "verb_count": 0,
+      "vocab_count": 5,
+      "words": [
+        [
+          "conversation",
+          "NOUN"
+        ],
+        [
+          "partner",
+          "NOUN"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "friendly",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "nearby",
+          "ADV"
+        ],
+        [
+          "there",
+          "PRON"
+        ],
+        [
+          "event",
+          "NOUN"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "any",
+          "DET"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "holiday",
+          "NOUN"
+        ],
+        [
+          "there",
+          "PRON"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "any",
+          "DET"
+        ],
+        [
+          "soon",
+          "ADV"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 5,
+      "words": [
+        [
+          "fika",
+          "PROPN"
+        ],
+        [
+          "bun",
+          "NOUN"
+        ],
+        [
+          "for",
+          "ADP"
+        ],
+        [
+          "cinnamon",
+          "NOUN"
+        ],
+        [
+          "aromatic",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 4,
+      "words": [
+        [
+          "authentic",
+          "ADJ"
+        ],
+        [
+          "practice",
+          "NOUN"
+        ],
+        [
+          "pronunciation",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "book",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "can",
+          "AUX"
+        ],
+        [
+          "recommend",
+          "VERB"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "film",
+          "NOUN"
+        ],
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "any",
+          "DET"
+        ],
+        [
+          "suggest",
+          "VERB"
+        ],
+        [
+          "can",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 6,
+      "words": [
+        [
+          "meadow",
+          "NOUN"
+        ],
+        [
+          "sunny",
+          "ADJ"
+        ],
+        [
+          "wildflower",
+          "NOUN"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "colourful",
+          "ADJ"
+        ],
+        [
+          "in",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 3,
+      "words": [
+        [
+          "meetup",
+          "VERB"
+        ],
+        [
+          "exchange",
+          "NOUN"
+        ],
+        [
+          "cosy",
+          "ADJ"
+        ],
+        [
+          "language",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "this",
+          "DET"
+        ],
+        [
+          "phrase",
+          "NOUN"
+        ],
+        [
+          "explain",
+          "VERB"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "could",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "could",
+          "AUX"
+        ],
+        [
+          "podcast",
+          "NOUN"
+        ],
+        [
+          "recommend",
+          "VERB"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 6,
+      "words": [
+        [
+          "chilly",
+          "ADJ"
+        ],
+        [
+          "woollen",
+          "ADJ"
+        ],
+        [
+          "fluffy",
+          "ADJ"
+        ],
+        [
+          "for",
+          "ADP"
+        ],
+        [
+          "jumper",
+          "NOUN"
+        ],
+        [
+          "evening",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 4,
+      "words": [
+        [
+          "magazine",
+          "NOUN"
+        ],
+        [
+          "lifestyle",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "glossy",
+          "ADJ"
+        ],
+        [
+          "page",
+          "VERB"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 4,
+      "words": [
+        [
+          "horse",
+          "NOUN"
+        ],
+        [
+          "ornament",
+          "NOUN"
+        ],
+        [
+          "handcraft",
+          "VERB"
+        ],
+        [
+          "wooden",
+          "ADJ"
+        ],
+        [
+          "dala",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 3,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "visit",
+          "VERB"
+        ],
+        [
+          "sweden",
+          "PROPN"
+        ],
+        [
+          "before",
+          "ADP"
+        ],
+        [
+          "have",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "flag",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "hoist",
+          "VERB"
+        ],
+        [
+          "archipelago",
+          "NOUN"
+        ],
+        [
+          "by",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "this",
+          "DET"
+        ],
+        [
+          "how",
+          "SCONJ"
+        ],
+        [
+          "group",
+          "NOUN"
+        ],
+        [
+          "i",
+          "PRON"
+        ],
+        [
+          "join",
+          "VERB"
+        ],
+        [
+          "do",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "weekend",
+          "NOUN"
+        ],
+        [
+          "how",
+          "SCONJ"
+        ],
+        [
+          "spend",
+          "VERB"
+        ],
+        [
+          "typically",
+          "ADV"
+        ],
+        [
+          "swede",
+          "NOUN"
+        ],
+        [
+          "do",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 5,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "swedish",
+          "PROPN"
+        ],
+        [
+          "how",
+          "SCONJ"
+        ],
+        [
+          "say",
+          "VERB"
+        ],
+        [
+          "in",
+          "ADP"
+        ],
+        [
+          "do",
+          "AUX"
+        ],
+        [
+          "this",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 3,
+      "vocab_count": 4,
+      "words": [
+        [
+          "learn",
+          "VERB"
+        ],
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "swedish",
+          "PROPN"
+        ],
+        [
+          "long",
+          "ADV"
+        ],
+        [
+          "how",
+          "SCONJ"
+        ],
+        [
+          "have",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "this",
+          "DET"
+        ],
+        [
+          "how",
+          "SCONJ"
+        ],
+        [
+          "group",
+          "NOUN"
+        ],
+        [
+          "meet",
+          "VERB"
+        ],
+        [
+          "often",
+          "ADV"
+        ],
+        [
+          "do",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 6,
+      "words": [
+        [
+          "english",
+          "ADJ"
+        ],
+        [
+          "dictionary",
+          "NOUN"
+        ],
+        [
+          "hundred",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "page",
+          "NOUN"
+        ],
+        [
+          "of",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "night",
+          "NOUN"
+        ],
+        [
+          "travel",
+          "VERB"
+        ],
+        [
+          "train",
+          "NOUN"
+        ],
+        [
+          "i",
+          "PRON"
+        ],
+        [
+          "via",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 4,
+      "vocab_count": 3,
+      "words": [
+        [
+          "we",
+          "PRON"
+        ],
+        [
+          "learn",
+          "VERB"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "practise",
+          "VERB"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "i",
+          "PRON"
+        ],
+        [
+          "can",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 5,
+      "words": [
+        [
+          "on",
+          "ADP"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "phrasebook",
+          "NOUN"
+        ],
+        [
+          "shelf",
+          "NOUN"
+        ],
+        [
+          "informative",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "lake",
+          "NOUN"
+        ],
+        [
+          "campfire",
+          "NOUN"
+        ],
+        [
+          "light",
+          "VERB"
+        ],
+        [
+          "deserted",
+          "ADJ"
+        ],
+        [
+          "by",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 6,
+      "words": [
+        [
+          "island",
+          "NOUN"
+        ],
+        [
+          "distance",
+          "NOUN"
+        ],
+        [
+          "long",
+          "ADJ"
+        ],
+        [
+          "across",
+          "ADP"
+        ],
+        [
+          "hiking",
+          "NOUN"
+        ],
+        [
+          "route",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 6,
+      "words": [
+        [
+          "city",
+          "NOUN"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "stockholm",
+          "PROPN"
+        ],
+        [
+          "map",
+          "NOUN"
+        ],
+        [
+          "centre",
+          "NOUN"
+        ],
+        [
+          "of",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 6,
+      "words": [
+        [
+          "misty",
+          "PROPN"
+        ],
+        [
+          "morning",
+          "PROPN"
+        ],
+        [
+          "still",
+          "ADV"
+        ],
+        [
+          "water",
+          "NOUN"
+        ],
+        [
+          "fog",
+          "NOUN"
+        ],
+        [
+          "over",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 7,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "pickled",
+          "ADJ"
+        ],
+        [
+          "eat",
+          "VERB"
+        ],
+        [
+          "herring",
+          "NOUN"
+        ],
+        [
+          "too",
+          "ADV"
+        ],
+        [
+          "to",
+          "PART"
+        ],
+        [
+          "appetiser",
+          "NOUN"
+        ],
+        [
+          "scared",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 6,
+      "words": [
+        [
+          "forest",
+          "NOUN"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "i",
+          "PRON"
+        ],
+        [
+          "hammock",
+          "NOUN"
+        ],
+        [
+          "sleep",
+          "VERB"
+        ],
+        [
+          "peaceful",
+          "ADJ"
+        ],
+        [
+          "in",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 5,
+      "words": [
+        [
+          "ski",
+          "NOUN"
+        ],
+        [
+          "resort",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "brochure",
+          "NOUN"
+        ],
+        [
+          "snowy",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "night",
+          "NOUN"
+        ],
+        [
+          "starry",
+          "VERB"
+        ],
+        [
+          "silent",
+          "ADJ"
+        ],
+        [
+          "sky",
+          "NOUN"
+        ],
+        [
+          "wilderness",
+          "NOUN"
+        ],
+        [
+          "over",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 4,
+      "words": [
+        [
+          "cup",
+          "NOUN"
+        ],
+        [
+          "coffee",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "steam",
+          "VERB"
+        ],
+        [
+          "of",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 5,
+      "words": [
+        [
+          "with",
+          "ADP"
+        ],
+        [
+          "essential",
+          "ADJ"
+        ],
+        [
+          "sturdy",
+          "ADJ"
+        ],
+        [
+          "supply",
+          "NOUN"
+        ],
+        [
+          "backpack",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 4,
+      "words": [
+        [
+          "lingonberry",
+          "NOUN"
+        ],
+        [
+          "meatball",
+          "NOUN"
+        ],
+        [
+          "with",
+          "ADP"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 6,
+      "words": [
+        [
+          "pine",
+          "NOUN"
+        ],
+        [
+          "forest",
+          "NOUN"
+        ],
+        [
+          "with",
+          "ADP"
+        ],
+        [
+          "bird",
+          "NOUN"
+        ],
+        [
+          "thick",
+          "ADJ"
+        ],
+        [
+          "chirping",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 5,
+      "words": [
+        [
+          "display",
+          "NOUN"
+        ],
+        [
+          "traditional",
+          "ADJ"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "folk",
+          "NOUN"
+        ],
+        [
+          "costume",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 4,
+      "words": [
+        [
+          "with",
+          "ADP"
+        ],
+        [
+          "graze",
+          "VERB"
+        ],
+        [
+          "lakeside",
+          "NOUN"
+        ],
+        [
+          "reindeer",
+          "NOUN"
+        ],
+        [
+          "tranquil",
+          "PROPN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 5,
+      "words": [
+        [
+          "trendy",
+          "ADJ"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "playlist",
+          "NOUN"
+        ],
+        [
+          "pop",
+          "NOUN"
+        ],
+        [
+          "music",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 4,
+      "words": [
+        [
+          "well",
+          "ADV"
+        ],
+        [
+          "grammar",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "wear",
+          "VERB"
+        ],
+        [
+          "textbook",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 7,
+      "words": [
+        [
+          "about",
+          "ADP"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "your",
+          "PRON"
+        ],
+        [
+          "culture",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "favourite",
+          "ADJ"
+        ],
+        [
+          "thing",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "this",
+          "DET"
+        ],
+        [
+          "to",
+          "ADP"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "bring",
+          "VERB"
+        ],
+        [
+          "community",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 5,
+      "words": [
+        [
+          "word",
+          "NOUN"
+        ],
+        [
+          "mean",
+          "VERB"
+        ],
+        [
+          "that",
+          "DET"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "in",
+          "ADP"
+        ],
+        [
+          "english",
+          "PROPN"
+        ],
+        [
+          "do",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 4,
+      "words": [
+        [
+          "trend",
+          "VERB"
+        ],
+        [
+          "now",
+          "ADV"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "sweden",
+          "PROPN"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "in",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 3,
+      "vocab_count": 7,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "difficult",
+          "ADJ"
+        ],
+        [
+          "about",
+          "ADP"
+        ],
+        [
+          "live",
+          "VERB"
+        ],
+        [
+          "sweden",
+          "PROPN"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "find",
+          "VERB"
+        ],
+        [
+          "in",
+          "ADP"
+        ],
+        [
+          "most",
+          "ADV"
+        ],
+        [
+          "do",
+          "AUX"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 6,
+      "words": [
+        [
+          "good",
+          "ADJ"
+        ],
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "learn",
+          "VERB"
+        ],
+        [
+          "way",
+          "NOUN"
+        ],
+        [
+          "swedish",
+          "PROPN"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "to",
+          "PART"
+        ],
+        [
+          "what",
+          "PRON"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 7,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "winter",
+          "NOUN"
+        ],
+        [
+          "weather",
+          "NOUN"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "like",
+          "ADP"
+        ],
+        [
+          "stockholm",
+          "PROPN"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "in",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 5,
+      "words": [
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "your",
+          "PRON"
+        ],
+        [
+          "swedish",
+          "ADJ"
+        ],
+        [
+          "tradition",
+          "NOUN"
+        ],
+        [
+          "what",
+          "PRON"
+        ],
+        [
+          "favourite",
+          "ADJ"
+        ]
+      ]
+    },
+    {
+      "verb_count": 2,
+      "vocab_count": 6,
+      "words": [
+        [
+          "good",
+          "ADJ"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "a",
+          "DET"
+        ],
+        [
+          "to",
+          "PART"
+        ],
+        [
+          "meet",
+          "VERB"
+        ],
+        [
+          "where",
+          "SCONJ"
+        ],
+        [
+          "swede",
+          "NOUN"
+        ],
+        [
+          "place",
+          "NOUN"
+        ]
+      ]
+    },
+    {
+      "verb_count": 1,
+      "vocab_count": 6,
+      "words": [
+        [
+          "you",
+          "PRON"
+        ],
+        [
+          "be",
+          "AUX"
+        ],
+        [
+          "region",
+          "NOUN"
+        ],
+        [
+          "sweden",
+          "PROPN"
+        ],
+        [
+          "which",
+          "DET"
+        ],
+        [
+          "from",
+          "ADP"
+        ],
+        [
+          "of",
+          "ADP"
+        ]
+      ]
+    },
+    {
+      "verb_count": 0,
+      "vocab_count": 8,
+      "words": [
+        [
+          "the",
+          "DET"
+        ],
+        [
+          "swimming",
+          "NOUN"
+        ],
+        [
+          "freezing",
+          "ADJ"
+        ],
+        [
+          "sea",
+          "PROPN"
+        ],
+        [
+          "baltic",
+          "PROPN"
+        ],
+        [
+          "cold",
+          "ADJ"
+        ],
+        [
+          "in",
+          "ADP"
+        ],
+        [
+          "wild",
+          "ADJ"
+        ]
+      ]
+    }
+  ],
+  "phrases": [
+    "a friendly Swedish conversation partner",
+    "Are there any Swedish events nearby?",
+    "Are there any Swedish holidays soon?",
+    "aromatic cinnamon buns for fika",
+    "authentic Swedish pronunciation practice",
+    "Can you recommend a Swedish book?",
+    "Can you suggest any Swedish films?",
+    "colourful wildflowers in a sunny meadow",
+    "cosy language exchange meetup",
+    "Could you explain this Swedish phrase?",
+    "Could you recommend a Swedish podcast?",
+    "fluffy woollen jumpers for chilly evenings",
+    "glossy Swedish lifestyle magazine pages",
+    "handcrafted wooden Dala horse ornament",
+    "Have you visited Sweden before?",
+    "hoisting the Swedish flag by the archipelago",
+    "How do I join this group?",
+    "How do Swedes typically spend weekends?",
+    "How do you say this in Swedish?",
+    "How long have you been learning Swedish?",
+    "How often does this group meet?",
+    "hundreds of Swedish-English dictionary pages",
+    "I travelled via the night train",
+    "I'm learning Swedish, can we practise?",
+    "informative Swedish phrasebooks on shelves",
+    "lighting a campfire by a deserted lake",
+    "long-distance hiking route across islands",
+    "A map of Stockholm city centre",
+    "misty morning fog over still water",
+    "too scared to eat the pickled herring appetiser",
+    "I slept in a hammock in a peaceful forest",
+    "snowy Swedish ski resort brochure",
+    "starry night sky over silent wilderness",
+    "steaming cups of Swedish coffee",
+    "sturdy backpack with essential supplies",
+    "Swedish meatballs with lingonberries",
+    "thick pine forest with chirping birds",
+    "traditional Swedish folk costume display",
+    "tranquil lakeside with grazing reindeer",
+    "trendy Swedish pop music playlist",
+    "well-worn Swedish grammar textbook",
+    "What are your favourite things about Swedish culture?",
+    "What brought you to this community?",
+    "What does that word mean in English?",
+    "What is trending now in Sweden?",
+    "What do you find most difficult about living in Sweden?",
+    "What's the best way to learn Swedish?",
+    "What's the weather like in Stockholm in the winter?",
+    "What's your favourite Swedish tradition?",
+    "Where's a good place to meet Swedes?",
+    "Which region of Sweden are you from?",
+    "wild swimming in the freezing cold Baltic Sea"
+  ]
+}

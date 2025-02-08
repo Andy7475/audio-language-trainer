@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Basic OpenAI RTC</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-6">OpenAI RTC Connection</h1>
+        
+        <div id="status" class="mb-4 p-2 bg-gray-200 rounded"></div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey" class="w-full p-2 border rounded" placeholder="sk-...">
+        </div>
+
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-2" for="instructions">Instructions:</label>
+            <textarea id="instructions" class="w-full p-2 border rounded" rows="3"></textarea>
+        </div>
+
+        <div class="flex space-x-4">
+            <button id="startSession" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Start Session
+            </button>
+            <button id="endSession" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600" disabled>
+                End Session
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let mediaStream = null;
+        let audioContext = null;
+        let playbackContext = null;
+        let isPlaying = false;
+        let audioQueue = [];
+
+        const statusDiv = document.getElementById('status');
+        const startButton = document.getElementById('startSession');
+        const endButton = document.getElementById('endSession');
+
+        function updateStatus(message) {
+            statusDiv.textContent = message;
+        }
+
+        function cleanupAudio() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            if (playbackContext) {
+                playbackContext.close();
+                playbackContext = null;
+            }
+            audioQueue = [];
+            isPlaying = false;
+        }
+
+        async function setupAudio() {
+            try {
+                // Request microphone access with specific constraints
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    audio: {
+                        channelCount: 1,
+                        sampleRate: 24000,
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+
+                // Create audio contexts
+                audioContext = new AudioContext({ sampleRate: 24000 });
+                playbackContext = new AudioContext({ sampleRate: 24000 });
+                
+                // Create and connect nodes
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                const analyser = audioContext.createAnalyser();
+                const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+                // Connect the audio graph
+                source.connect(analyser);
+                analyser.connect(processor);
+                processor.connect(audioContext.destination);
+
+                // Add volume meter
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                // Handle audio processing
+                processor.onaudioprocess = (e) => {
+                    if (ws?.readyState === WebSocket.OPEN) {
+                        const inputData = e.inputBuffer.getChannelData(0);
+                        
+                        // Check if we're getting audio input
+                        analyser.getByteTimeDomainData(dataArray);
+                        let sum = 0;
+                        for (let i = 0; i < dataArray.length; i++) {
+                            sum += Math.abs(dataArray[i] - 128);
+                        }
+                        const average = sum / dataArray.length;
+                        
+                        // Log audio levels every second (reduce this for more frequent logging)
+                        if (Date.now() % 1000 < 100) {
+                            console.log('Audio input level:', average);
+                        }
+
+                        // Convert to PCM16
+                        const pcmData = new Int16Array(inputData.length);
+                        for (let i = 0; i < inputData.length; i++) {
+                            const s = Math.max(-1, Math.min(1, inputData[i]));
+                            pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+                        }
+
+                        // Send to WebSocket
+                        const message = {
+                            type: 'input_audio_buffer.append',
+                            audio: btoa(String.fromCharCode.apply(null, new Uint8Array(pcmData.buffer)))
+                        };
+                        
+                        // Log message size occasionally
+                        if (Date.now() % 1000 < 100) {
+                            console.log('Sending audio chunk, size:', message.audio.length);
+                        }
+                        
+                        ws.send(JSON.stringify(message));
+                    }
+                };
+
+                return true;
+            } catch (error) {
+                console.error('Audio setup error:', error);
+                updateStatus('Audio setup error: ' + error.message);
+                return false;
+            }
+        }
+
+        function createWavHeader(length, sampleRate = 24000) {
+            const buffer = new ArrayBuffer(44);
+            const view = new DataView(buffer);
+            
+            view.setUint8(0, 'R'.charCodeAt(0));
+            view.setUint8(1, 'I'.charCodeAt(0));
+            view.setUint8(2, 'F'.charCodeAt(0));
+            view.setUint8(3, 'F'.charCodeAt(0));
+            view.setUint32(4, 36 + length * 2, true);
+            view.setUint8(8, 'W'.charCodeAt(0));
+            view.setUint8(9, 'A'.charCodeAt(0));
+            view.setUint8(10, 'V'.charCodeAt(0));
+            view.setUint8(11, 'E'.charCodeAt(0));
+            view.setUint8(12, 'f'.charCodeAt(0));
+            view.setUint8(13, 'm'.charCodeAt(0));
+            view.setUint8(14, 't'.charCodeAt(0));
+            view.setUint8(15, ' '.charCodeAt(0));
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            view.setUint8(36, 'd'.charCodeAt(0));
+            view.setUint8(37, 'a'.charCodeAt(0));
+            view.setUint8(38, 't'.charCodeAt(0));
+            view.setUint8(39, 'a'.charCodeAt(0));
+            view.setUint32(40, length * 2, true);
+            
+            return buffer;
+        }
+
+        async function playNextInQueue() {
+            if (audioQueue.length === 0 || isPlaying) {
+                return;
+            }
+
+            isPlaying = true;
+            const audioData = audioQueue.shift();
+
+            try {
+                const audioBuffer = await playbackContext.decodeAudioData(audioData);
+                const source = playbackContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.connect(playbackContext.destination);
+                
+                source.onended = () => {
+                    isPlaying = false;
+                    playNextInQueue();
+                };
+
+                source.start();
+            } catch (error) {
+                console.error('Error playing audio:', error);
+                isPlaying = false;
+                playNextInQueue();
+            }
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function startSession() {
+            const apiKey = document.getElementById('apiKey').value;
+            const instructions = document.getElementById('instructions').value;
+
+            if (!apiKey) {
+                updateStatus('Please enter an API key');
+                return;
+            }
+
+            // Clean up any existing session
+            if (ws) {
+                ws.close();
+            }
+            cleanupAudio();
+
+            try {
+                updateStatus('Setting up audio...');
+                const audioSuccess = await setupAudio();
+                if (!audioSuccess) throw new Error('Audio setup failed');
+
+                updateStatus('Getting session token...');
+                const tokenResponse = await fetch('https://create-realtime-chat-session-307643465852.europe-west2.run.app', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api_key: apiKey,
+                        model: 'gpt-4o-realtime-preview-2024-12-17',
+                        voice: 'verse',
+                        instructions: instructions,
+                        modalities: ['text', 'audio'],
+                        input_audio_format: 'pcm16',
+                        output_audio_format: 'pcm16'
+                    })
+                });
+
+                if (!tokenResponse.ok) throw new Error('Failed to get session token');
+                
+                const data = await tokenResponse.json();
+                const ephemeralKey = data.client_secret.value;
+
+                ws = new WebSocket(
+                    "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
+                    ["realtime", "openai-insecure-api-key." + ephemeralKey, "openai-beta.realtime-v1"]
+                );
+
+                ws.onopen = () => {
+                    updateStatus('Connected');
+                    startButton.disabled = true;
+                    endButton.disabled = false;
+
+                    if (instructions) {
+                        ws.send(JSON.stringify({
+                            type: "session.update",
+                            session: { instructions: instructions }
+                        }));
+                    }
+                };
+
+                ws.onmessage = async (event) => {
+                    const data = JSON.parse(event.data);
+                    console.log('Received:', data);
+
+                    if (data.type === 'response.audio.delta' && data.delta) {
+                        try {
+                            const pcmBuffer = base64ToArrayBuffer(data.delta);
+                            const pcmLength = pcmBuffer.byteLength / 2;
+                            const wavHeader = createWavHeader(pcmLength);
+                            
+                            const wavBuffer = new ArrayBuffer(wavHeader.byteLength + pcmBuffer.byteLength);
+                            new Uint8Array(wavBuffer).set(new Uint8Array(wavHeader), 0);
+                            new Uint8Array(wavBuffer).set(new Uint8Array(pcmBuffer), wavHeader.byteLength);
+                            
+                            audioQueue.push(wavBuffer);
+                            playNextInQueue();
+                        } catch (error) {
+                            console.error('Error processing audio:', error);
+                        }
+                    }
+                };
+
+                ws.onclose = () => {
+                    updateStatus('Disconnected');
+                    startButton.disabled = false;
+                    endButton.disabled = true;
+                    cleanupAudio();
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateStatus('Connection error');
+                };
+
+            } catch (error) {
+                console.error('Error:', error);
+                updateStatus('Error: ' + error.message);
+                cleanupAudio();
+            }
+        }
+
+        function endSession() {
+            if (ws) ws.close();
+        }
+
+        startButton.addEventListener('click', startSession);
+        endButton.addEventListener('click', endSession);
+    </script>
+</body>
+</html>

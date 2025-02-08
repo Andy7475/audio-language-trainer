@@ -344,24 +344,21 @@ def generate_image_imagen(
         return None
 
 
-def resize_image(generated_image, height=500, width=500):
+def resize_image(image: Image.Image, height=500, width=500) -> Image.Image:
+    """
+    Resize a PIL Image to specified dimensions if needed.
 
-    # Get the image bytes directly
-    image_data = generated_image._image_bytes
+    Args:
+        image: PIL Image object
+        height: Desired height (default 500)
+        width: Desired width (default 500)
 
-    # Convert the image to PIL Image for potential resizing
-    image = Image.open(io.BytesIO(image_data))
-
-    # Resize the image if it's not 500x500
-    if image.size != (height, width):
-        image = image.resize((height, width))
-
-        # If we resized, convert the resized image back to bytes
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format="JPEG")
-        image_data = img_byte_arr.getvalue()
-
-    return image_data
+    Returns:
+        PIL Image object with desired dimensions
+    """
+    if image.size != (width, height):
+        image = image.resize((width, height))
+    return image
 
 
 def generate_image(
