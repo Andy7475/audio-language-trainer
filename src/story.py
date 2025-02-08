@@ -56,17 +56,22 @@ def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
     """
 
 
-def process_bucket_contents(
-    bucket_name: str = None,
-) -> Tuple[Dict[str, List[Dict]], List[Dict]]:
+def process_bucket_contents(bucket_name: str, exclude_patterns: list = None) -> tuple:
     """
-    Process bucket contents to organize stories by language and find special pages.
+    Process bucket contents, excluding specified patterns.
+
+    Args:
+        bucket_name: Name of the GCS bucket
+        exclude_patterns: List of patterns to exclude (e.g., ['challenges.html'])
 
     Returns:
-        Tuple containing:
-        - Dictionary of stories organized by language
-        - List of special pages
+        tuple: (stories_by_language, special_pages)
     """
+    if exclude_patterns is None:
+        exclude_patterns = []
+
+    stories_by_language = defaultdict(list)
+    special_pages = []
 
     # default to public bucket
     if bucket_name is None:
@@ -75,10 +80,9 @@ def process_bucket_contents(
     bucket = client.bucket(bucket_name)
     blobs = bucket.list_blobs()
 
-    stories_by_language = defaultdict(list)
-    special_pages = []
-
     for blob in blobs:
+        if any(pattern in blob.name for pattern in exclude_patterns):
+            continue
         path = Path(blob.name)
         parts = path.parts
 
@@ -126,8 +130,12 @@ def generate_index_html(
 
     if bucket_name is None:
         bucket_name = config.GCS_PUBLIC_BUCKET
-    # Process bucket contents
-    stories_by_language, special_pages = process_bucket_contents(bucket_name)
+
+    # Process bucket contents - we'll need to modify this function
+    stories_by_language, special_pages = process_bucket_contents(
+        bucket_name,
+        exclude_patterns=["challenges.html"],  # Add parameter to exclude certain files
+    )
 
     # Generate sections HTML
     language_sections = ""
