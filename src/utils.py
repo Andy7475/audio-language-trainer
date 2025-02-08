@@ -102,7 +102,7 @@ def upload_to_gcs(
     # Construct blob path
     blob_name = Path(file_path).name
     if bucket_prefix:
-        blob_name = f"{bucket_prefix.rstrip('/')}/{blob_name}"
+        blob_name = f"{bucket_prefix.rstrip('/').lower()}/{blob_name}"
 
     # Create and upload blob
     blob = bucket.blob(blob_name)

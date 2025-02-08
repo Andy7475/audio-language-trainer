@@ -183,50 +183,6 @@ def add_index_navigation_to_story(story_html_path: str, language: str) -> None:
             f.write(content)
 
 
-def create_html_challenges(
-    challenges: List[Dict[str, str]],
-    output_dir: Path,
-    title: str,
-    language: str,
-    component_path: str = "ChallengeViewer.js",
-    template_path: str = "challenge_template.html",
-) -> None:
-    """
-    Create a standalone HTML file for language challenges using string.Template.
-
-    Args:
-        challenges: List of dictionaries, each containing:
-            - challenge_description: Description of the challenge
-            - llm_prompt: Prompt to send to the LLM (hidden from user)
-            - answer: The answer to reveal
-        output_dir: Directory where the HTML file will be saved
-        title: Title of the challenge page
-        language: Target language name
-        component_path: Path to the React component file
-        template_path: Path to the HTML template file
-    """
-    # Load the React component
-    react_component = load_template(component_path)
-    template = Template(load_template(template_path))
-
-    # Create the HTML content
-    html_content = template.substitute(
-        title=title,
-        challenge_data=json.dumps(challenges),
-        language=language,
-        react_component=react_component,
-    )
-
-    # Create output directory if it doesn't exist
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create the HTML file
-    output_path = output_dir / f"{title.lower().replace(' ', '_')}.html"
-    output_path.write_text(html_content, encoding="utf-8")
-
-    print(f"HTML challenges created at: {output_path}")
-
-
 def create_html_story(
     story_data_dict: Dict,
     image_dir: str,

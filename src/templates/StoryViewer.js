@@ -236,13 +236,24 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
     // Header with global controls
     React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
       React.createElement('div', { className: 'flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4' },
-        React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
+        React.createElement('div', { className: 'flex justify-between items-center' },
+          // Left side - existing title hierarchy
+          React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
+            React.createElement('a', {
+              href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
+              className: 'hover:text-blue-500 transition-colors'
+            }, `${targetLanguage} Stories`),
+            React.createElement('span', { className: 'text-gray-400' }, '>'),
+            title || 'Language Learning Story'
+          ),
+          // Right side - speaking challenges button
           React.createElement('a', {
-            href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
-            className: 'hover:text-blue-500 transition-colors'
-          }, `${targetLanguage} Stories`),
-          React.createElement('span', { className: 'text-gray-400' }, '>'),
-          title || 'Language Learning Story'
+            href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/story_${title.toLowerCase().replace(/\s+/g, '_')}/challenges/${title.toLowerCase().replace(/\s+/g, '_')}_speaking_challenges.html`,
+            className: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2'
+          },
+            React.createElement('span', null, '🎤'),
+            'Speaking Challenges'
+          )
         ),
         React.createElement('div', { className: 'flex items-center gap-4' },
           React.createElement('div', { className: 'flex items-center gap-2' },

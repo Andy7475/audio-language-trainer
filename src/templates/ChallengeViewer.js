@@ -12,6 +12,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
     const audioQueueRefs = React.useRef({});
     const isPlayingRefs = React.useRef({});
 
+    const story_folder = "story_" + title.replace(/\s+/g, '_').toLowerCase();
     const InfoPanel = () => {
         const [isExpanded, setIsExpanded] = React.useState(false);
     
@@ -339,7 +340,14 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
         // Header with API key input
         React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
             React.createElement('div', { className: 'max-w-4xl mx-auto' },
-                React.createElement('h1', { className: 'text-2xl font-bold mb-4' }, title),
+                React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
+                    React.createElement('a', {
+                      href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${story_folder}/${story_folder}.html`,
+                      className: 'hover:text-blue-500 transition-colors'
+                    }, `${title} Story`),
+                    React.createElement('span', { className: 'text-gray-400' }, '>'),
+                    'Speaking Challenges'
+                  ),
                 React.createElement('div', { className: 'flex items-center gap-4' },
                     React.createElement('label', { className: 'text-sm font-medium' }, 'OpenAI API Key:'),
                     React.createElement('input', {
