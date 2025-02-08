@@ -202,15 +202,42 @@ def process_scenario(scenario: dict) -> list:
 
 
 def get_html_challenge_inputs(scenario_dicts: dict) -> list:
-    """Takes a scenario dictionary of 5 challenges, each with 3 complications, and returns a list of challenge dictionaries
-    to feed into create_html_challenges()
+    """Takes a scenario dictionary of 5 challenges, each with 3 complications, and returns a list
+    where each item is a group of related challenges (base scenario + complications)
     """
-
-    all_challenges = []
+    all_challenge_groups = []
     for scenario in scenario_dicts.get("scenarios"):
-        all_challenges.extend(process_scenario(scenario))
+        challenge_group = []
 
-    return all_challenges
+        # Base description for all variants
+        base_description = f"Setting: {scenario['context']}, speaking with {scenario['role']}.\nYou must {scenario['challenge']} and find out: {scenario['information_task']}"
+
+        # Add base scenario (no complications)
+        challenge_group.append(
+            {
+                "challenge_description": base_description,
+                "llm_prompt": generate_roleplay_prompt(scenario),
+                "answer": "No complications to uncover - ask the AI assistant for the answer",
+                "variant": "Base Scenario",
+            }
+        )
+
+        # Add complication variants
+        for i, complication in enumerate(scenario.get("complications", [])):
+            challenge_group.append(
+                {
+                    "challenge_description": base_description,
+                    "llm_prompt": generate_roleplay_prompt(scenario, i),
+                    "answer": f"The complication was: {complication}",
+                    "variant": f"Complication {i+1}",
+                }
+            )
+
+        all_challenge_groups.append(
+            {"group_description": base_description, "variants": challenge_group}
+        )
+
+    return all_challenge_groups
 
 
 def create_html_challenges(
@@ -252,7 +279,7 @@ def create_html_challenges(
     # Create output directory if it doesn't exist
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    output_file = title.lower().replace(" ", "_") + "_speaking_challenges.html"
+    output_file = "challenges.html"
     # Create the HTML file
     output_path = output_dir / output_file
     output_path.write_text(html_content, encoding="utf-8")

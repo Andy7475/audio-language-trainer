@@ -248,7 +248,7 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
           ),
           // Right side - speaking challenges button
           React.createElement('a', {
-            href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/story_${title.toLowerCase().replace(/\s+/g, '_')}/challenges/${title.toLowerCase().replace(/\s+/g, '_')}_speaking_challenges.html`,
+            href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/story_${title.toLowerCase().replace(/\s+/g, '_')}/challenges.html`,
             className: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2'
           },
             React.createElement('span', null, '🎤'),

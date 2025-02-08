@@ -3,6 +3,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
     const [activeSessions, setActiveSessions] = React.useState({});
     const [showAnswers, setShowAnswers] = React.useState({});
     const [connectionStatus, setConnectionStatus] = React.useState({});
+    const [expandedGroups, setExpandedGroups] = React.useState({});
     
     const audioRefs = React.useRef({});
     const wsRefs = React.useRef({});
@@ -13,6 +14,14 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
     const isPlayingRefs = React.useRef({});
 
     const story_folder = "story_" + title.replace(/\s+/g, '_').toLowerCase();
+
+    const toggleGroup = (groupIndex) => {
+        setExpandedGroups(prev => ({
+            ...prev,
+            [groupIndex]: !prev[groupIndex]
+        }));
+    };
+
     const InfoPanel = () => {
         const [isExpanded, setIsExpanded] = React.useState(false);
     
@@ -337,17 +346,17 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
     };
 
     return React.createElement('div', { className: 'min-h-screen bg-gray-100' },
-        // Header with API key input
+        // Keep existing header with API key input
         React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
             React.createElement('div', { className: 'max-w-4xl mx-auto' },
                 React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
                     React.createElement('a', {
-                      href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${story_folder}/${story_folder}.html`,
-                      className: 'hover:text-blue-500 transition-colors'
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${story_folder}/${story_folder}.html`,
+                        className: 'hover:text-blue-500 transition-colors'
                     }, `${title} Story`),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
                     'Speaking Challenges'
-                  ),
+                ),
                 React.createElement('div', { className: 'flex items-center gap-4' },
                     React.createElement('label', { className: 'text-sm font-medium' }, 'OpenAI API Key:'),
                     React.createElement('input', {
@@ -358,62 +367,106 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                         placeholder: 'sk-...'
                     })
                 )
-            ),
-            
+            )
         ),
+
+        // Keep existing InfoPanel component
         React.createElement(InfoPanel),
 
-        // Main content
+        // Main content with grouped challenges
         React.createElement('main', { className: 'max-w-4xl mx-auto p-4' },
-            challengeData.map((challenge, index) => 
+            challengeData.map((group, groupIndex) => 
                 React.createElement('div', {
-                    key: index,
-                    className: 'mb-6 bg-white rounded-lg shadow-md p-6'
+                    key: groupIndex,
+                    className: 'mb-6 bg-white rounded-lg shadow-md overflow-hidden'
                 },
-                    React.createElement('h2', { 
-                        className: 'text-xl font-semibold mb-4'
-                    }, challenge.challenge_description),
-                    
-                    React.createElement('div', { 
-                        className: 'flex flex-col sm:grid sm:grid-cols-4 gap-2 sm:gap-4 mb-4 p-2 bg-gray-50 rounded-lg'
+                    // Group header
+                    React.createElement('div', {
+                        className: 'p-4 bg-gray-50 cursor-pointer hover:bg-gray-100',
+                        onClick: () => toggleGroup(groupIndex)
                     },
-                        React.createElement('button', {
-                            onClick: () => startSession(index, challenge.llm_prompt),
-                            disabled: activeSessions[index],
-                            className: `px-4 py-2 rounded ${
-                                activeSessions[index]
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
-                            }`
-                        }, activeSessions[index] ? 'Session Active' : 'Start Challenge'),
-                        
-                        React.createElement('button', {
-                            onClick: () => endSession(index),
-                            disabled: !activeSessions[index],
-                            className: `px-4 py-2 rounded ${
-                                !activeSessions[index]
-                                    ? 'bg-gray-400 cursor-not-allowed'
-                                    : 'bg-red-600 hover:bg-red-700 text-white'
-                            }`
-                        }, 'End Session'),
-                        
-                        React.createElement('button', {
-                            onClick: () => toggleAnswer(index),
-                            className: 'px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white'
-                        }, showAnswers[index] ? 'Hide Answer' : 'Show Answer')
+                        React.createElement('div', { 
+                            className: 'flex justify-between items-center'
+                        },
+                            React.createElement('h2', { 
+                                className: 'text-xl font-semibold'
+                            }, `Scenario ${groupIndex + 1}`),
+                            React.createElement('span', null, 
+                                expandedGroups[groupIndex] ? '▼' : '▶'
+                            )
+                        ),
+                        React.createElement('p', { 
+                            className: 'mt-2 text-gray-600'
+                        }, group.group_description)
                     ),
                     
-                    connectionStatus[index] && React.createElement('div', {
-                        className: 'mb-4 p-2 bg-gray-100 rounded'
-                    }, connectionStatus[index]),
-                    
-                    showAnswers[index] && React.createElement('div', {
-                        className: 'mt-4 p-4 bg-gray-50 rounded-lg'
+                    // Variants section
+                    expandedGroups[groupIndex] && React.createElement('div', { 
+                        className: 'p-4'
                     },
-                        React.createElement('h3', { 
-                            className: 'font-medium mb-2'
-                        }, 'Answer:'),
-                        React.createElement('p', null, challenge.answer)
+                        group.variants.map((variant, variantIndex) => 
+                            React.createElement('div', {
+                                key: variantIndex,
+                                className: 'mb-4 last:mb-0 p-4 bg-gray-50 rounded-lg'
+                            },
+                                React.createElement('h3', { 
+                                    className: 'font-medium mb-2 text-lg'
+                                }, variant.variant),
+                                
+                                React.createElement('div', { 
+                                    className: 'flex flex-col sm:flex-row gap-2'
+                                },
+                                    React.createElement('button', {
+                                        onClick: () => startSession(
+                                            `${groupIndex}-${variantIndex}`, 
+                                            variant.llm_prompt
+                                        ),
+                                        disabled: activeSessions[`${groupIndex}-${variantIndex}`],
+                                        className: `px-4 py-2 rounded ${
+                                            activeSessions[`${groupIndex}-${variantIndex}`]
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                        }`
+                                    }, activeSessions[`${groupIndex}-${variantIndex}`] 
+                                        ? 'Session Active' 
+                                        : 'Start Challenge'
+                                    ),
+                                    
+                                    React.createElement('button', {
+                                        onClick: () => endSession(`${groupIndex}-${variantIndex}`),
+                                        disabled: !activeSessions[`${groupIndex}-${variantIndex}`],
+                                        className: `px-4 py-2 rounded ${
+                                            !activeSessions[`${groupIndex}-${variantIndex}`]
+                                                ? 'bg-gray-400 cursor-not-allowed'
+                                                : 'bg-red-600 hover:bg-red-700 text-white'
+                                        }`
+                                    }, 'End Session'),
+                                    
+                                    React.createElement('button', {
+                                        onClick: () => toggleAnswer(`${groupIndex}-${variantIndex}`),
+                                        className: 'px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white'
+                                    }, showAnswers[`${groupIndex}-${variantIndex}`] 
+                                        ? 'Hide Answer' 
+                                        : 'Show Answer'
+                                    )
+                                ),
+                                
+                                connectionStatus[`${groupIndex}-${variantIndex}`] && 
+                                    React.createElement('div', {
+                                        className: 'mt-2 p-2 bg-gray-100 rounded'
+                                    }, connectionStatus[`${groupIndex}-${variantIndex}`]),
+                                
+                                showAnswers[`${groupIndex}-${variantIndex}`] && 
+                                    React.createElement('div', {
+                                        className: 'mt-4 p-4 bg-gray-100 rounded-lg'
+                                    },
+                                        React.createElement('h4', { 
+                                            className: 'font-medium mb-2'
+                                        }, 'Answer:'),
+                                        React.createElement('p', null, variant.answer)
+                                    )
+                            )
+                        )
                     )
                 )
             )
