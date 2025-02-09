@@ -118,6 +118,7 @@ Context: {scenario_data['context']}
 [LEARNER'S TASK]
 The learner needs to: {scenario_data['challenge']}
 They must also find out (FIND_OUT): {scenario_data['information_task']}
+DO NOT provide them with this unless they ask. But be flexible on how they ask - they don't have to be perfect.
 
 [CORRECT INFORMATION TO PROVIDE]
 When the learner asks appropriately, you should create a suitable answer to what they are trying to find out (FIND_OUT) - remembering this answer to reveal at the end of the role-play.
@@ -126,7 +127,7 @@ When the learner asks appropriately, you should create a suitable answer to what
 
 [SCENARIO FLOW]
 1. You should begin by greeting the learner in character
-2. You should respond naturally to the learner, in character, gently guiding them to find out the answers to their questions if they are struggling.
+2. You should respond naturally to the learner, in character, allow the learner to extend or expand the roleplay - the aim is for them to practice!
 {complication_instruction}
 
 [CHALLENGE: SUCCESS CONDITIONS]
@@ -138,10 +139,10 @@ ROLEPLAY GUIDELINES:
    - Provide relevant phrases or vocabulary in English
    - Explain the current expectation
    - Then resume the roleplay in {config.TARGET_LANGUAGE_NAME}
-3. If the learner is struggling, provide subtle hints while maintaining the roleplay
+3. Let the learner extend the roleplay if they want, you don't have to stick rigidly to the learner's task.
 4. Use simple, clear {config.TARGET_LANGUAGE_NAME} appropriate for the learner's level
-5. Stay in {config.TARGET_LANGUAGE_NAME} until the success conditions are met
-6. Once success conditions are met, provide constructive feedback in English about:
+5. Stay in {config.TARGET_LANGUAGE_NAME} until the success conditions are met, or the learner says 'END SESSION'.
+6. Once success conditions are met, provide constructive feedback in British English about:
    - Successful language usage
    - Reveal the answer to what they had to find out (FIND_OUT)
    - Areas for improvement

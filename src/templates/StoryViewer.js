@@ -246,13 +246,14 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
             React.createElement('span', { className: 'text-gray-400' }, '>'),
             title || 'Language Learning Story'
           ),
-          // Right side - speaking challenges button
+          // In StoryViewer.js, update the speaking challenges button
           React.createElement('a', {
             href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/story_${title.toLowerCase().replace(/\s+/g, '_')}/challenges.html`,
-            className: 'px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2'
+            // Added ml-4 for left margin
+            className: 'ml-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-2 font-medium'
           },
             React.createElement('span', null, '🎤'),
-            'Speaking Challenges'
+            'Try Speaking Practice'
           )
         ),
         React.createElement('div', { className: 'flex items-center gap-4' },

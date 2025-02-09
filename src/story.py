@@ -198,7 +198,7 @@ def create_html_story(
     language: str = None,
     component_path: str = "StoryViewer.js",
     template_path: str = "story_template.html",
-) -> None:
+) -> Path:
     """
     Create a standalone HTML file from the story data dictionary using string.Template.
 
@@ -209,6 +209,9 @@ def create_html_story(
         language: Target language name for Wiktionary links (defaults to config.TARGET_LANGUAGE_NAME)
         component_path: Path to the React component file..uses default parent folder in load_template()
         template_path: Path to the HTML template file..uses default parent folder in load_template()
+
+    Returns:
+        The html file path
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME
@@ -246,6 +249,7 @@ def create_html_story(
     html_path.write_text(html_content, encoding="utf-8")
 
     print(f"HTML story created at: {html_path}")
+    return html_path
 
 
 def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
