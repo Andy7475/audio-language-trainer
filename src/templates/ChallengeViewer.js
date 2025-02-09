@@ -351,9 +351,13 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
             React.createElement('div', { className: 'max-w-4xl mx-auto' },
                 React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
                     React.createElement('a', {
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
+                        className: 'hover:text-blue-500 transition-colors'
+                      }, `${targetLanguage} Stories`),
+                    React.createElement('a', {
                         href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${story_folder}/${story_folder}.html`,
                         className: 'hover:text-blue-500 transition-colors'
-                    }, `${title} Story`),
+                    }, `> ${title} `),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
                     'Speaking Challenges'
                 ),
