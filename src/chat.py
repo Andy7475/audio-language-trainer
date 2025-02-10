@@ -211,7 +211,9 @@ def get_html_challenge_inputs(scenario_dicts: dict) -> list:
         challenge_group = []
 
         # Base description for all variants
-        base_description = f"Setting: {scenario['context']}, speaking with {scenario['role']}.\nYou must {scenario['challenge']} and find out: {scenario['information_task']}"
+        base_description = f"""Setting: {scenario['context']}<br>
+Speaking with: {scenario['role']}<br>
+Task: <span class='font-bold'>{scenario['challenge']}</span> and find out: <span class='font-bold'>{scenario['information_task']}</span>"""
 
         # Add base scenario (no complications)
         challenge_group.append(

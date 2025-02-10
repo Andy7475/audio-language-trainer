@@ -4,7 +4,8 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
     const [showAnswers, setShowAnswers] = React.useState({});
     const [connectionStatus, setConnectionStatus] = React.useState({});
     const [expandedGroups, setExpandedGroups] = React.useState({});
-    
+    const [showPrompts, setShowPrompts] = React.useState({});
+    const [editablePrompts, setEditablePrompts] = React.useState({});
     const audioRefs = React.useRef({});
     const wsRefs = React.useRef({});
     const mediaStreamRefs = React.useRef({});
@@ -22,6 +23,16 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
         }));
     };
 
+    const togglePrompt = (challengeId, prompt) => {
+        setShowPrompts(prev => ({ ...prev, [challengeId]: !prev[challengeId] }));
+        if (!editablePrompts[challengeId]) {
+            setEditablePrompts(prev => ({ ...prev, [challengeId]: prompt }));
+        }
+    };
+    
+    const copyPrompt = (challengeId) => {
+        navigator.clipboard.writeText(editablePrompts[challengeId]);
+    };
     const InfoPanel = () => {
         const [isExpanded, setIsExpanded] = React.useState(false);
     
@@ -152,7 +163,8 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
         }
     };
 
-    const startSession = async (challengeId, prompt) => {
+    const startSession = async (challengeId, defaultPrompt) => {
+        const prompt = editablePrompts[challengeId] || defaultPrompt;
         if (!apiKey) {
             setConnectionStatus(prev => ({ ...prev, [challengeId]: 'Please enter an API key' }));
             return;
@@ -400,8 +412,9 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                             )
                         ),
                         React.createElement('p', { 
-                            className: 'mt-2 text-gray-600'
-                        }, group.group_description)
+                            className: 'mt-2 text-gray-600',
+                            dangerouslySetInnerHTML: { __html: group.group_description }
+                        })
                     ),
                     
                     // Variants section
@@ -452,6 +465,29 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                                     }, showAnswers[`${groupIndex}-${variantIndex}`] 
                                         ? 'Hide Answer' 
                                         : 'Show Answer'
+                                    )
+                                ),
+                                React.createElement('div', { className: 'mt-2' },
+                                    React.createElement('button', {
+                                        onClick: () => togglePrompt(`${groupIndex}-${variantIndex}`, variant.llm_prompt),
+                                        className: 'text-sm text-gray-500 hover:text-gray-700'
+                                    }, showPrompts[`${groupIndex}-${variantIndex}`] ? 'Hide Prompt' : 'View/Edit Prompt'),
+                                    
+                                    showPrompts[`${groupIndex}-${variantIndex}`] && 
+                                    React.createElement('div', { className: 'mt-2' },
+                                        React.createElement('textarea', {
+                                            value: editablePrompts[`${groupIndex}-${variantIndex}`],
+                                            onChange: (e) => setEditablePrompts(prev => ({
+                                                ...prev,
+                                                [`${groupIndex}-${variantIndex}`]: e.target.value
+                                            })),
+                                            className: 'w-full p-2 border rounded text-sm font-mono',
+                                            rows: 4
+                                        }),
+                                        React.createElement('button', {
+                                            onClick: () => copyPrompt(`${groupIndex}-${variantIndex}`),
+                                            className: 'mt-1 text-sm text-blue-600 hover:text-blue-800'
+                                        }, 'Copy Prompt')
                                     )
                                 ),
                                 
