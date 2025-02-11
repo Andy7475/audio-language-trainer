@@ -795,17 +795,16 @@ def analyze_sequence(df: pd.DataFrame) -> Dict:
     return stats
 
 
-def optimize_vocab_sequence(
-    phrases: List[str], window_size: int = 5
-) -> Tuple[pd.DataFrame, Dict]:
+def optimise_phrase_list(phrases: List[str], window_size: int = 5) -> List[str]:
     """Main function to optimize phrase sequence for vocabulary acquisition.
+    It evens out the new words learnt per phrase
 
     Args:
         phrases: List of phrases to optimize
         window_size: Size of rolling window for local optimization
 
     Returns:
-        Tuple of (optimized DataFrame, statistics dictionary)
+        Reordered list of phrases
     """
     # Prepare data
     df = prepare_phrase_dataframe(phrases)
@@ -813,7 +812,4 @@ def optimize_vocab_sequence(
     # Optimize sequence
     optimized_df = optimize_sequence(df, window_size)
 
-    # Analyze results
-    stats = analyze_sequence(optimized_df)
-
-    return optimized_df, stats
+    return list(optimized_df["phrase"])
