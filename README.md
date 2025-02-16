@@ -55,8 +55,8 @@ Client:
 * install FFMPEG for audio generation and fonts for the PDF system to work
   
 # Road Map:
-* Finish linking stories with flash cards using the Anki ecosystem
-* Embed a real-time conversation challenge in the web (for more open-ended speech practice)
+* Finish linking stories with flash cards using the Anki ecosystem - DONE! Feb 2025
+* Embed a real-time conversation challenge in the web (for more open-ended speech practice) - DONE! Feb 2025
 * Learning new alphabets - I have some ideas of linking each new letter with an image, using some custom AI services; could be particuarly useful for Chinese.
   
 # Acknowledgements
