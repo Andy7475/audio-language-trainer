@@ -775,10 +775,11 @@ def create_anki_deck_from_english_phrase_list(
                 translated_phrases_dict_audio, image_dir
             )
             export_to_anki_with_images(
-                translated_phrases_dict_audio,
-                output_dir,
-                f"{anki_filename_prefix}_{from_index}",
+                story_data_dict=translated_phrases_dict_audio,
+                output_dir=output_dir,
+                story_name=f"{anki_filename_prefix}_{from_index}",
                 deck_name=deck_name,
+                index_position=from_index,
             )
         else:
             raise ValueError("Missing an image directory (image_dir)")
@@ -942,12 +943,29 @@ def load_template(filename, parent_path: str = "../src/templates"):
         return f.read()
 
 
+def get_sort_field(order: int, target_text: str) -> str:
+    """Create a unique sort field using order and truncated guid.
+
+    Args:
+        order: Integer for primary sort order (0-9999)
+        target_text: The target language text used to generate guid
+
+    Returns:
+        String like '0001-3f4a9' that will sort correctly in Anki
+    """
+    guid = string_to_large_int(target_text + "image")
+    # Take first 5 chars of hex representation (20 bits)
+    truncated_guid = hex(guid)[2:10]
+    return f"{order:04d}-{truncated_guid}"
+
+
 def export_to_anki_with_images(
     story_data_dict: Dict[str, Dict],
     output_dir: str,
     story_name: str,
     deck_name: str = None,
-):
+    index_position: int = 0,
+) -> None:
     """
     Export story data to an Anki deck, including images for each card. Use add_image_paths
     with story_data_dict first to get image data.
@@ -955,13 +973,19 @@ def export_to_anki_with_images(
     The story_name is used as a prefix for the anki file only
     if you want these merged with other decks, ensure the deck_name matches exactly
     as this is used to generate the deck id.
+
+    index_position is used to correctly allocate the right card_position index, so that
+    the cards are served in the order they were generated, which will be an optimised order
+    based on evening out the number of words per phrase, otherwise Anki will sort alphabetically on the
+    first field in the list
     """
     os.makedirs(output_dir, exist_ok=True)
 
     language_practice_model = genanki.Model(
-        1607392313 + 121,
-        "Language Practice With Images",
+        1607392313 + 121 + 999,  # adding 999 to try sort order
+        "Language Practice With Images Sort Order",
         fields=[
+            {"name": "SortOrder"},
             {"name": "TargetText"},
             {"name": "TargetAudio"},
             {"name": "TargetAudioSlow"},
@@ -1010,6 +1034,7 @@ def export_to_anki_with_images(
         )  # Default to None if missing
 
         # Zip all three lists together
+
         for (english, target), audio_segment, image_path in tqdm(
             zip(phrase_pairs, audio_segments, image_paths),
             desc="generating image and sound files",
@@ -1020,7 +1045,7 @@ def export_to_anki_with_images(
                     image_filename = f"{uuid.uuid4()}.png"
                     output_path = os.path.join(output_dir, image_filename)
                     with Image.open(image_path) as img:
-                        img = img.resize((400, 400))  # Simple and direct!
+                        img = img.resize((400, 400))
                         img.save(output_path, "PNG", optimize=True)
                     media_files.append(image_filename)
                 except Exception as e:
@@ -1056,6 +1081,7 @@ def export_to_anki_with_images(
             note = genanki.Note(
                 model=language_practice_model,
                 fields=[
+                    get_sort_field(index_position, target),
                     target,
                     f"[sound:{target_audio_normal}]",
                     f"[sound:{target_audio_slow}]",
@@ -1067,12 +1093,7 @@ def export_to_anki_with_images(
                 guid=string_to_large_int(target + "image"),
             )
             notes.append(note)
-
-    # Sort and shuffle notes
-    shuffle(notes)
-    notes.sort(
-        key=lambda note: len(note.fields[3].split())
-    )  # Sort by English text length
+            index_position += 1
 
     # Add notes to deck
     for note in tqdm(notes, desc="adding notes to deck"):

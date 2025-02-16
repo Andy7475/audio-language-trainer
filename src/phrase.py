@@ -15,6 +15,45 @@ from src.nlp import (
 )
 
 
+def remove_phrases_with_no_new_words(
+    known_phrases: List[str], new_phrases: List[str]
+) -> List[str]:
+    """
+    Filter phrases from new_phrases that contain only words already present in known_phrases.
+
+    Args:
+        known_phrases: List of phrases containing already known words
+        new_phrases: List of phrases to check for new words
+
+    Returns:
+        List of phrases from new_phrases that contain new words not in known_phrases
+
+    Example:
+        >>> known = ["the cat sat", "on the mat"]
+        >>> new = ["the cat jumped", "a new day", "the mat sat"]
+        >>> filter_phrases_with_new_words(known, new)
+        ['the cat jumped', 'a new day']  # 'the mat sat' only uses known words
+    """
+    # Get set of known words by splitting phrases and converting to lowercase
+    known_words = set()
+    for phrase in known_phrases:
+        known_words.update(word.lower() for word in phrase.split())
+
+    # Filter phrases that contain at least one new word
+    filtered_phrases = []
+    for phrase in new_phrases:
+        # Get set of words in this phrase
+        phrase_words = {word.lower() for word in phrase.split()}
+
+        # Check if phrase contains any new words
+        if (
+            phrase_words - known_words
+        ):  # If there are words in phrase_words not in known_words
+            filtered_phrases.append(phrase)
+
+    return filtered_phrases
+
+
 def get_phrase_indices(known_phrases: list[str], all_phrases: list[str]) -> set[int]:
     """
     Get the indices of known phrases within a list of all phrases, skipping any that aren't found.

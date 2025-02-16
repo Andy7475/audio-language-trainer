@@ -92,24 +92,23 @@ def generate_roleplay_prompt(
     Args:
         scenario_data (dict): Dictionary containing scenario information including
                             role, context, challenges, and complications.
-        complication_index (int): Index of the complication to use (defaults to 0)
+        complication_index (int): Index of the complication to use (defaults to None)
 
     Returns:
         str: Formatted prompt template with placeholders for dynamic content
     """
-
     complication_text = ""
     complication_instruction = ""
 
-    if complication_index:
-        complication_text = """[COMPLICATION TO HANDLE]
+    if complication_index is not None:
+        complication_text = f"""[COMPLICATION TO HANDLE]
 The roleplay has a complication for the learner.
 You should explain: {scenario_data['complications'][complication_index]}"""
         complication_instruction = (
             "3. If there is a complication, introduce it at the appropriate moment"
         )
 
-    prompt_template = f"""You are a helpful {config.TARGET_LANGUAGE_NAME} language learning assistant. You will engage in roleplay scenarios to help users practice their {config.TARGET_LANGUAGE_NAME} conversation skills. Here are the details for this challenge:
+    return f"""You are a helpful {config.TARGET_LANGUAGE_NAME} language learning assistant. You will engage in roleplay scenarios to help users practice their {config.TARGET_LANGUAGE_NAME} conversation skills. Here are the details for this challenge:
 
 [ROLEPLAY SCENARIO]
 You are playing the role of: {scenario_data['role']}
@@ -149,8 +148,6 @@ ROLEPLAY GUIDELINES:
    - Alternative phrases they could have used
 
 Start by introducing yourself in character, in {config.TARGET_LANGUAGE_NAME} appropriate to the challenge context and specified role."""
-
-    return prompt_template
 
 
 def process_scenario(scenario: dict) -> list:
