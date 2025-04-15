@@ -57,7 +57,7 @@ def get_story_prompt(verbs: list, vocab: list) -> str:
     parts_description = "\n   - ".join(f"{k} ({v})" for k, v in parts.items())
 
     prompt = f"""Create a story named in the format {{story_name: "descriptive title here"}} followed by dialogue between Alex and Sam.
-The story_name must be no more than 6 words long and clearly describe the main theme or setting.
+The story_name must be 3 words long and describe the main theme or setting, yet be engaging.
 
 Story Requirements:
 1. The story should have {len(parts)} part(s):
@@ -78,7 +78,7 @@ Story Requirements:
 
 4. Output Format:
 {{
-    "story_name": "Brief Title (1-6 words)",
+    "story_name": "Engaging Title (3 words long)",
     {','.join(f'''
     "{part}": {{
         "dialogue": [
