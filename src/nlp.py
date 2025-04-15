@@ -360,16 +360,15 @@ def find_candidate_cards(
     return candidate_cards
 
 
-def remove_unknown_index_values(known_index_values: set, index_dict: dict) -> dict:
-    """Returns a modified dictionary with index values (integers) removed that are not known,
-    this is so when we find matching flash cards for vocab we only select those we already known.
+def get_index_subset(index_subset_indicies: set, index_dict: dict) -> dict:
+    """Returns a modified dictionary based on the subset of indicies - removing any that are not present.
 
-    index_dict will be something like phrase_index['vocab_index'] or pharse_index['verb_index']
+    index_dict will be something like phrase_index['vocab_index'] or phrase_index['verb_index']
     """
 
     modified_index_dict = deepcopy(index_dict)
     for word, indicies in modified_index_dict.items():
-        new_indicies = list(set(indicies).intersection(known_index_values))
+        new_indicies = list(set(indicies).intersection(index_subset_indicies))
         modified_index_dict[word] = new_indicies
 
     return modified_index_dict
