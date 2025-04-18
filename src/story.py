@@ -300,8 +300,9 @@ def create_album_files(
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
 
     ALBUM_NAME = clean_story_name(story_name)
-    TOTAL_TRACKS = len(story_data_dict)
+    TOTAL_TRACKS = len(story_data_dict) * 2  # 1 track normal, 1 track fast
 
+    # first generate the story tracks for each story sectino
     for track_number, (story_part, data) in enumerate(
         tqdm(story_data_dict.items(), desc="creating album"), start=1
     ):
@@ -319,8 +320,29 @@ def create_album_files(
         audio_list.extend(dialogue_audio_list)
         captions_list.extend(dialogue_list)
 
+        # Create M4A file
+        create_m4a_with_timed_lyrics(
+            audio_segments=audio_list,
+            phrases=captions_list,
+            output_file=f"{output_dir}/{config.TARGET_LANGUAGE_NAME}_{story_name}_{story_part}.m4a",
+            album_name=ALBUM_NAME,
+            track_title=story_part,
+            track_number=track_number,
+            total_tracks=TOTAL_TRACKS,
+            cover_image=cover_image,
+        )
+        print(f"Saved M4A file track number {track_number}")
+
+    # Now generate fast versions
+    for track_number, (story_part, data) in enumerate(
+        tqdm(story_data_dict.items(), desc="creating fast tracks for album"),
+        start=len(story_data_dict) + 1,
+    ):
+        audio_list = []
+        captions_list = []
+
         # Fast dialogue section
-        audio_list.append(GAP_BETWEEN_PHRASES)
+
         captions_list.append(f"{story_part} - Fast Dialogue Practice")
 
         # Add fast dialogue (there are 10 repeats in the audio)
@@ -330,25 +352,18 @@ def create_album_files(
             audio_list.append(GAP_BETWEEN_PHRASES)
             captions_list.append(PAUSE_TEXT)
 
-        # Final dialogue at normal speed again
-        audio_list.append(GAP_BETWEEN_PHRASES)
-        captions_list.append(f"{story_part} - Final Dialogue")
-
-        audio_list.extend(dialogue_audio_list)
-        captions_list.extend(dialogue_list)
-
         # Create M4A file
         create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
             phrases=captions_list,
-            output_file=f"{output_dir}/{story_name}_{story_part}.m4a",
+            output_file=f"{output_dir}/{config.TARGET_LANGUAGE_NAME}_{story_name}_{story_part}_FAST.m4a",
             album_name=ALBUM_NAME,
-            track_title=story_part,
+            track_title=story_part + " (fast)",
             track_number=track_number,
             total_tracks=TOTAL_TRACKS,
             cover_image=cover_image,
         )
-        print(f"Saved M4A file track number {track_number}")
+        print(f"Saved M4A file track number {track_number}...{output_dir}")
 
 
 def clean_story_name(story_name: str) -> str:
