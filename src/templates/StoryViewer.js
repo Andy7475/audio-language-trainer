@@ -14,6 +14,11 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
   const [playbackMode, setPlaybackMode] = React.useState(null);
   const [showCopyNotification, setShowCopyNotification] = React.useState(false);
 
+  // for play all dialgoue
+  const [isPlayingAll, setIsPlayingAll] = React.useState(false);
+  const normalAudioQueue = React.useRef([]);
+  const currentNormalAudioIndex = React.useRef(0);
+
   const audioRef = React.useRef(null);
   const audioQueue = React.useRef([]);
   const fastAudioQueue = React.useRef([]);
@@ -30,13 +35,63 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current.onended = null;
     }
     audioQueue.current = [];
     fastAudioQueue.current = [];
     activeSectionAudio.current = null;
+    currentNormalAudioIndex.current = 0;
     setIsPlaying({});
     setPlaybackMode(null);
+    setIsPlayingAll(false);
     setRemainingLoops(0);
+  };
+
+  const playNextNormalAudio = () => {
+    if (audioQueue.current.length === 0) {
+      setIsPlayingAll(false);
+      setPlaybackMode(null);
+      return;
+    }
+  
+    const nextAudio = audioQueue.current.shift();
+    playAudioData(nextAudio);
+  };
+  
+
+  const playAllNormal = () => {
+    if (isPlayingAll) {
+      // Stop playback if already playing
+      stopPlayback();
+      setIsPlayingAll(false);
+      return;
+    }
+
+    stopPlayback();
+    setIsPlayingAll(true);
+    setPlaybackMode('normal');
+
+    audioQueue.current = resetNormalAudioQueue();
+    playNextNormalAudio();
+  };
+
+  // 3. Function to play next audio in queue
+  const playNextInNormalQueue = () => {
+    if (!isPlayingAll || currentNormalAudioIndex.current >= normalAudioQueue.current.length) {
+      setIsPlayingAll(false);
+      return;
+    }
+
+    const current = normalAudioQueue.current[currentNormalAudioIndex.current];
+    audioRef.current.src = `data:audio/mp3;base64,${current.audioData}`;
+    audioRef.current.onended = () => {
+      currentNormalAudioIndex.current++;
+      playNextInNormalQueue();
+    };
+    audioRef.current.play().catch(error => {
+      console.error('PlayAllNormal playback error:', error);
+      setIsPlayingAll(false);
+    });
   };
 
   const copyToClipboard = async (text) => {
@@ -92,6 +147,17 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
       setIsPlaying({});
       setPlaybackMode(null);
     }
+  };
+
+  const resetNormalAudioQueue = () => {
+    const queue = [];
+    Object.keys(storyData).forEach(part => {
+      const dialogueAudios = storyData[part].audio_data?.dialogue || [];
+      dialogueAudios.forEach(audioData => {
+        queue.push(audioData); // Just base64 strings
+      });
+    });
+    return queue;
   };
 
   const resetFastAudioQueue = (mode = 'single') => {
@@ -156,12 +222,11 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
     if (audioRef.current) {
       const handleEnded = () => {
         if (playbackMode === 'normal') {
-          playNextInQueue();
+          playNextNormalAudio();
         } else if (playbackMode === 'fast' || playbackMode === 'all') {
           playNextFastAudio();
         }
       };
-
       audioRef.current.addEventListener('ended', handleEnded);
       return () => {
         audioRef.current.removeEventListener('ended', handleEnded);
@@ -245,16 +310,34 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
             })
           ),
           React.createElement('button', {
-            onClick: () => playAllFastAudio(loopCount),
-            disabled: playbackMode !== null,
-            className: `px-4 py-2 rounded-lg ${playbackMode !== null
+            onClick: () => {
+              if (playbackMode === 'all') {
+                stopPlayback();
+              } else {
+                playAllFastAudio(loopCount);
+              }
+            },
+            className: `px-4 py-2 rounded-lg ${
+              playbackMode === 'normal'
                 ? 'bg-gray-400 cursor-not-allowed'
                 : 'bg-green-600 hover:bg-green-700'
-              } text-white`
-          }, playbackMode !== null
-            ? `Playing (${remainingLoops + 1} loops left)`
-            : 'Play All Fast')
-        ),
+            } text-white`
+          }, playbackMode === 'all' ? '■ Stop' : `Play All Fast`),
+
+        React.createElement('button', {
+          onClick: () => {
+            if (playbackMode === 'normal') {
+              stopPlayback();
+            } else {
+              playAllNormal();
+            }
+          },
+          className: `px-4 py-2 rounded-lg mr-2 ${
+            playbackMode === 'fast'
+              ? 'bg-gray-400 cursor-not-allowed'
+              : 'bg-green-800 hover:bg-green-900'
+          } text-white`
+        }, playbackMode === 'normal' ? '■ Stop' : 'Play All'),),
         // Add this to the header section of StoryViewer
         React.createElement('div', { className: 'flex items-center gap-4' },
           React.createElement('a', {
@@ -326,8 +409,8 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                 onClick: () => playAllDialogue(sectionIndex, section.audio_data.dialogue),
                 disabled: playbackMode !== null,
                 className: `w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base ${playbackMode !== null
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-600 hover:bg-blue-700'
                   } text-white`
               }, playbackMode === 'normal' ? 'Playing...' : 'Play Dialogue'),
 
@@ -335,8 +418,8 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                 onClick: () => playFastAudio(sectionIndex, loopCount),
                 disabled: playbackMode !== null,
                 className: `w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base ${playbackMode !== null
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-green-600 hover:bg-green-700'
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-600 hover:bg-green-700'
                   } text-white`
               }, playbackMode !== null
                 ? `Playing (${remainingLoops + 1} loops left)`
