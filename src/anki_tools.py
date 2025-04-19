@@ -10,7 +10,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
 import pandas as pd
-import pysnooper
 import requests
 from anki.collection import Collection
 from bs4 import BeautifulSoup
@@ -433,6 +432,8 @@ def get_deck_contents(
 
             if include_stats:
                 df = add_knowledge_score(df)
+
+            reader.close()
             return df
 
     except Exception as e:
