@@ -2,8 +2,8 @@
     "SOURCE_LANGUAGE_CODE": "en-GB",
     "TARGET_LANGUAGE_CODE": "es-ES",
     "SOURCE_LANGUAGE_MALE_VOICE": null,
-    "TARGET_LANGUAGE_FEMALE_VOICE": "es-ES-Neural2-A",
-    "TARGET_LANGUAGE_MALE_VOICE": "es-ES-Chirp-HD-D",
+    "TARGET_LANGUAGE_FEMALE_VOICE": "fr-FR-Neural2-G",
+    "TARGET_LANGUAGE_MALE_VOICE": "fr-FR-Neural2-G",
     "ANTHROPIC_MODEL_NAME":"claude-3-5-sonnet@20240620",
     "ANTHROPIC_SMALL_MODEL_NAME":"claude-3-haiku@20240307",
     "ANTHROPIC_REGION":"europe-west1",
@@ -17,5 +17,6 @@
     "MAX_TTS_REQUESTS_PER_MINUTE":20,
     "API_DELAY_SECONDS":20,
     "GCS_PUBLIC_BUCKET":"audio-language-trainer-stories",
+    "GCS_PRIVATE_BUCKET":"andy7475-audio-language-trainer",
     "IMAGE_STYLE" : "default"
 }
