@@ -812,3 +812,187 @@ def optimise_phrase_list(phrases: List[str], window_size: int = 5) -> List[str]:
     optimized_df = optimize_sequence(df, window_size)
 
     return list(optimized_df["phrase"])
+
+
+def optimize_stories_and_phrases(
+    df: pd.DataFrame, sorted_stories: list
+) -> pd.DataFrame:
+    """
+    Optimise both the order of stories and the order of phrases within each story.
+
+    Args:
+        df: DataFrame with 'story' and 'EnglishText' columns
+        sorted_stories: A list of story_names ('story_underwater_adventure' etc) in the order we want them to be
+
+    Returns:
+        DataFrame with optimised story and phrase order
+    """
+
+    # Group phrases by story
+    story_groups = df.groupby("story")
+
+    # Process each story to calculate vocabulary statistics
+    print("Processing stories...")
+    story_data = {}
+    for name, group in tqdm(story_groups):
+        phrases = group["EnglishText"].tolist()
+        phrase_df = prepare_phrase_dataframe(phrases)
+
+        # Calculate total vocabulary for this story
+        story_vocab = set()
+        for _, row in phrase_df.iterrows():
+            story_vocab.update(row["content_words"])
+
+        story_data[name] = {
+            "phrases": phrases,
+            "phrase_df": phrase_df,
+            "vocab": story_vocab,
+            "vocab_size": len(story_vocab),
+        }
+
+    # Optimise phrases for each story in sequence
+    known_vocab = set()
+    optimised_results = []
+
+    print("Optimising phrases within stories...")
+    for story in tqdm(sorted_stories):
+        # Get story data
+        story_info = story_data[story]
+        phrase_df = story_info["phrase_df"]
+
+        # Optimise this story's phrases with knowledge from previous stories
+        optimised_df = optimize_sequence_with_known(phrase_df, known_vocab)
+
+        # Add to results
+        for _, row in optimised_df.iterrows():
+            optimised_results.append(
+                {
+                    "story": story,
+                    "EnglishText": row["phrase"],
+                    "new_words": row.get(
+                        "new_words", 0
+                    ),  # Number of new words this phrase introduces
+                    "sequence_position": len(optimised_results),
+                }
+            )
+
+        # Update known vocabulary for next story
+        for _, row in phrase_df.iterrows():
+            known_vocab.update(row["content_words"])
+
+    return pd.DataFrame(optimised_results)
+
+
+def optimize_sequence_with_known(
+    df: pd.DataFrame, known_vocab: Set = None, window_size: int = 15
+) -> pd.DataFrame:
+    """
+    Optimise the sequence of phrases, taking into account pre-existing knowledge.
+
+    Args:
+        df: DataFrame with processed phrases
+        known_vocab: Set of words already known from previous stories
+        window_size: Size of rolling window for local optimisation
+
+    Returns:
+        DataFrame with optimised phrase sequence
+    """
+
+    if known_vocab is None:
+        known_vocab = set()
+    else:
+        known_vocab = known_vocab.copy()  # Create a copy to not modify the original
+
+    # Calculate ideal rate for remaining vocabulary to learn
+    total_vocab = set()
+    for _, content_words in df["content_words"].items():
+        total_vocab.update(content_words)
+
+    remaining_vocab = total_vocab - known_vocab
+    ideal_rate = len(remaining_vocab) / len(df) if len(df) > 0 else 0
+
+    # Initialise sequence building variables
+    result_indices = []
+    available_indices = set(df.index)
+
+    # Choose initial phrase closest to ideal rate
+    initial_metrics = df.apply(
+        lambda row: calculate_new_words(row, known_vocab), axis=1
+    ).apply(pd.Series)
+
+    if available_indices:
+        best_start_idx = (initial_metrics["new_ratio"] - ideal_rate).abs().idxmin()
+        result_indices.append(best_start_idx)
+        available_indices.remove(best_start_idx)
+        known_vocab.update(df.loc[best_start_idx, "content_words"])
+
+    # Build rest of sequence
+    while available_indices:
+        # Calculate rolling mean of recent phrases for local smoothness
+        if len(result_indices) >= window_size:
+            recent_indices = result_indices[-window_size:]
+            recent_new_words = np.mean(
+                [
+                    len(df.loc[idx, "content_words"] - known_vocab)
+                    for idx in recent_indices
+                ]
+            )
+        else:
+            recent_new_words = ideal_rate
+
+        # Score remaining phrases
+        candidates = []
+        for idx in available_indices:
+            metrics = calculate_new_words(df.loc[idx], known_vocab)
+            score = abs(metrics["new_words"] - ideal_rate)
+            local_penalty = abs(metrics["new_words"] - recent_new_words)
+            score += local_penalty * 0.5  # Weight local smoothness
+            candidates.append((idx, metrics, score))
+
+        # Select best candidate
+        best_idx = min(candidates, key=lambda x: x[2])[0]
+        result_indices.append(best_idx)
+        available_indices.remove(best_idx)
+        known_vocab.update(df.loc[best_idx, "content_words"])
+
+    # Create result DataFrame
+    result_df = df.loc[result_indices].copy()
+    result_df["sequence_position"] = range(len(result_df))
+
+    # Calculate final metrics
+    metrics = []
+    current_known = known_vocab.copy()
+
+    for _, row in result_df.iterrows():
+        m = calculate_new_words(row, current_known)
+        metrics.append(m)
+        current_known.update(row["content_words"])
+
+    metrics_df = pd.DataFrame(metrics)
+    result_df = pd.concat([result_df, metrics_df], axis=1)
+
+    return result_df
+
+
+def optimize_phrase_list_with_known(
+    phrases: List[str], known_vocab: Set = None
+) -> List[str]:
+    """
+    Optimise phrase sequence considering pre-existing known vocabulary.
+    Wrapper around the existing functions.
+
+    Args:
+        phrases: List of phrases to optimise
+        known_vocab: Set of words already known
+
+    Returns:
+        Reordered list of phrases
+    """
+
+    # Prepare data
+    df = prepare_phrase_dataframe(phrases)
+
+    # Optimise sequence with known vocabulary
+    optimised_df = optimize_sequence_with_known(df, known_vocab)
+
+    return list(optimised_df["phrase"])
