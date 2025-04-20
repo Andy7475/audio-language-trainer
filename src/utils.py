@@ -3,6 +3,7 @@ import hashlib
 import inspect
 import io
 import json
+import mimetypes
 import os
 import pickle
 import re
@@ -81,22 +82,24 @@ def construct_gcs_path(
 
 
 def upload_to_gcs(
-    file_path: str,
-    bucket_name: str = None,
-    bucket_prefix: Optional[str] = None,
+    obj: Any,
+    bucket_name: str,
+    file_name: str,
+    base_prefix: str = "",
     content_type: Optional[str] = None,
 ) -> str:
     """
-    Upload a file to Google Cloud Storage.
+    Upload various file types directly to Google Cloud Storage without writing to local disk.
 
     Args:
-        file_path: Local path to file to upload
+        obj: The object to upload (bytes, dict, PIL Image, AudioSegment, etc.)
         bucket_name: Name of the GCS bucket
-        bucket_prefix: Optional prefix/path within bucket (e.g. "folder/subfolder")
-        content_type: Optional content type (e.g. "text/html")
+        file_name: Name of the file to upload
+        base_prefix: Prefix/folder path in the bucket. Defaults to ''.
+        content_type: MIME content type. If None, will be inferred.
 
     Returns:
-        str: Public URL of the uploaded file
+        GCS URI of the uploaded file
 
     Raises:
         ValueError: If unsupported object type is provided
@@ -188,18 +191,12 @@ def upload_to_gcs(
     return f"gs://{bucket_name}/{full_path}"
 
 
-def get_first_n_items(d: dict, n: int) -> dict:
-    """
-    Get the first n items from a dictionary.
-
-    Args:
-        d: Dictionary to slice
-        n: Number of items to take
-
-    Returns:
-        A new dictionary containing the first n items
-    """
-    return dict(itertools.islice(d.items(), n))
+from google.cloud import storage
+import io
+import json
+from typing import Any, Optional, Union
+from PIL import Image
+from pydub import AudioSegment
 
 
 def read_from_gcs(
@@ -229,18 +226,56 @@ def read_from_gcs(
     # Initialize storage client
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(file_path)
 
-    # Construct blob path
-    blob_name = Path(file_path).name
-    if bucket_prefix:
-        blob_name = f"{bucket_prefix.rstrip('/').lower()}/{blob_name}"
+    # Check if file exists
+    if not blob.exists():
+        raise FileNotFoundError(f"File not found in GCS: {bucket_name}/{file_path}")
 
-    # Create and upload blob
-    blob = bucket.blob(blob_name)
-    blob.upload_from_filename(file_path, content_type=content_type, timeout=120)
+    # Download file into memory
+    content = blob.download_as_bytes()
 
-    # Return public URL
-    return f"https://storage.googleapis.com/{bucket_name}/{blob_name}"
+    # Determine file type from extension if not explicitly provided
+    if expected_type is None:
+        file_extension = file_path.lower().split(".")[-1]
+
+        # Map extension to type
+        if file_extension in ["mp3", "wav", "ogg"]:
+            expected_type = "audio"
+        elif file_extension == "m4a":
+            expected_type = "audio"
+        elif file_extension in ["png", "jpg", "jpeg", "gif", "webp", "bmp"]:
+            expected_type = "image"
+        elif file_extension == "json":
+            expected_type = "json"
+        elif file_extension in ["txt", "html", "css", "js", "csv"]:
+            expected_type = "text"
+        else:
+            expected_type = "bytes"
+
+    # Convert to the appropriate type
+    try:
+        if expected_type == "audio":
+            buffer = io.BytesIO(content)
+            return AudioSegment.from_file(buffer)
+
+        elif expected_type == "image":
+            buffer = io.BytesIO(content)
+            return Image.open(buffer)
+
+        elif expected_type == "json":
+            return json.loads(content)
+
+        elif expected_type == "text":
+            return content.decode("utf-8")
+
+        else:  # Default to bytes
+            return content
+
+    except Exception as e:
+        raise ValueError(
+            f"Error processing file {file_path} as {expected_type}: {str(e)}"
+        )
 
 
 def upload_story_to_gcs(html_file_path: str, bucket_name: Optional[str] = None) -> str:
@@ -249,28 +284,46 @@ def upload_story_to_gcs(html_file_path: str, bucket_name: Optional[str] = None) 
 
     Args:
         html_file_path: Path to the story HTML file
-        language_name: Language name (e.g. "Swedish", "French")
         bucket_name: Optional bucket name (defaults to config.GCS_PUBLIC_BUCKET)
 
     Returns:
         str: Public URL of the uploaded file
+
+    Raises:
+        FileNotFoundError: If the HTML file doesn't exist
     """
+    if not os.path.exists(html_file_path):
+        raise FileNotFoundError(f"HTML file not found: {html_file_path}")
+
     if bucket_name is None:
         bucket_name = config.GCS_PUBLIC_BUCKET
 
     language_name = config.TARGET_LANGUAGE_NAME
 
-    # Get story name and construct path
+    # Get story name for bucket prefix
     story_name = Path(html_file_path).stem
+    file_name = Path(html_file_path).name
     language_folder = sanitize_path_component(language_name.lower())
-    bucket_prefix = f"{language_folder}/{story_name}"
+    base_prefix = f"{language_folder}/{story_name}"
 
-    return upload_to_gcs(
-        file_path=html_file_path,
+    # Read the HTML file content
+    with open(html_file_path, "rb") as f:
+        html_content = f.read()
+
+    # Upload the content using the new upload_to_gcs function
+    gcs_uri = upload_to_gcs(
+        obj=html_content,
         bucket_name=bucket_name,
-        bucket_prefix=bucket_prefix,
+        file_name=file_name,
+        base_prefix=base_prefix,
         content_type="text/html",
     )
+
+    # Convert GCS URI to public URL
+    # Format: gs://bucket-name/path/file.html -> https://storage.googleapis.com/bucket-name/path/file.html
+    public_url = gcs_uri.replace("gs://", "https://storage.googleapis.com/")
+
+    return public_url
 
 
 def clean_filename(phrase: str) -> str:

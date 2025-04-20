@@ -1,0 +1,20 @@
+{
+    "fr-FR": {"phrases" : {
+        "TARGET_LANGUAGE_FEMALE_VOICE": "fr-FR-Neural2-G",
+        "TARGET_LANGUAGE_MALE_VOICE": "fr-FR-Neural2-G"
+    }},
+    "story" : {
+        "TARGET_LANGUAGE_FEMALE_VOICE": "fr-FR-Chirp3-HD-Zephyr",
+        "TARGET_LANGUAGE_MALE_VOICE": "fr-FR-Chirp3-HD-Puck"
+    },
+    "sv-SE" : {
+        "phrases" : {
+            "TARGET_LANGUAGE_FEMALE_VOICE": "sv-SE-SofieNeural",
+            "TARGET_LANGUAGE_MALE_VOICE": "sv-SE-MattiasNeural"
+        },
+        "story" : {
+            "TARGET_LANGUAGE_FEMALE_VOICE": "sv-SE-SofieNeural",
+            "TARGET_LANGUAGE_MALE_VOICE": "sv-SE-MattiasNeural"
+        }
+    }
+}
