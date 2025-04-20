@@ -15,7 +15,7 @@ import IPython.display as ipd
 import librosa
 import numpy as np
 import soundfile as sf
-from google.cloud import texttospeech, texttospeech_v1
+from google.cloud import texttospeech, storage
 from mutagen.mp4 import MP4, MP4Cover
 from pydub import AudioSegment
 import azure.cognitiveservices.speech as speechsdk
@@ -102,7 +102,7 @@ def clean_tts_text(text: str) -> str:
 
 
 def clean_translated_content(
-    content: Union[str, Tuple[str, str], List[Dict[str, str]]]
+    content: Union[str, Tuple[str, str], List[Dict[str, str]]],
 ) -> Union[str, Tuple[str, str], List[Dict[str, str]]]:
     """
     Clean translated content in various formats:
@@ -593,9 +593,12 @@ def create_m4a_with_timed_lyrics(
     track_number: int,
     total_tracks: int = 6,
     cover_image: Optional[Image.Image] = None,
-) -> None:
+    output_dir: Optional[str] = None,
+    gcs_bucket_name: Optional[str] = None,
+    gcs_base_prefix: str = "",
+) -> Union[str, tuple]:
     """
-    Create an M4A file with timed lyrics and metadata.
+    Create an M4A file with timed lyrics and metadata, saving locally and/or uploading to GCS.
 
     Args:
         audio_segments: List of AudioSegment objects to combine
@@ -606,58 +609,114 @@ def create_m4a_with_timed_lyrics(
         track_number: Number of this track in the album
         total_tracks: Total number of tracks in album
         cover_image: Optional cover artwork as PIL Image
+        output_dir: Optional local directory to save the file
+        gcs_bucket_name: Optional GCS bucket to upload the file
+        gcs_base_prefix: Prefix/folder path in the GCS bucket. Defaults to ""
+
+    Returns:
+        If saving locally only: Local file path
+        If uploading to GCS only: GCS URI
+        If both: Tuple of (local_path, gcs_uri)
+
+    Raises:
+        ValueError: If neither output_dir nor gcs_bucket_name is provided
     """
-    # Ensure the output directory exists
-    output_dir = "../outputs/"
-    os.makedirs(output_dir, exist_ok=True)
+    if not output_dir and not gcs_bucket_name:
+        raise ValueError("Either output_dir or gcs_bucket_name must be provided")
 
-    # Prepare the full output path
-    full_output_path = os.path.join(output_dir, output_file)
+    # Create a temporary file
+    with io.BytesIO() as temp_buffer:
+        # Concatenate audio segments
+        combined_audio = AudioSegment.empty()
+        current_time = 0
+        timed_lyrics = []
 
-    # Concatenate audio segments
-    combined_audio = AudioSegment.empty()
-    current_time = 0
-    timed_lyrics = []
+        for segment, phrase in zip(audio_segments, phrases):
+            # Add to the combined audio
+            combined_audio += segment
 
-    for segment, phrase in zip(audio_segments, phrases):
-        # Add to the combined audio
-        combined_audio += segment
+            # Calculate timestamp
+            minutes, seconds = divmod(current_time / 1000, 60)
+            timestamp = f"[{int(minutes):02d}:{seconds:05.2f}]"
 
-        # Calculate timestamp
-        minutes, seconds = divmod(current_time / 1000, 60)
-        timestamp = f"[{int(minutes):02d}:{seconds:05.2f}]"
+            # Add to timed lyrics
+            timed_lyrics.append(f"{timestamp}{phrase}")
 
-        # Add to timed lyrics
-        timed_lyrics.append(f"{timestamp}{phrase}")
+            # Update current time
+            current_time += len(segment)
 
-        # Update current time
-        current_time += len(segment)
+        # Export combined audio to M4A in memory
+        combined_audio.export(temp_buffer, format="ipod")
+        temp_buffer.seek(0)
 
-    # Export combined audio to M4A
-    temp_m4a = full_output_path + "_temp"
-    combined_audio.export(temp_m4a, format="ipod")
+        # Add metadata to the M4A file
+        temp_file_path = (
+            f"/tmp/{output_file}_temp"
+            if os.path.exists("/tmp")
+            else f"{output_file}_temp"
+        )
+        with open(temp_file_path, "wb") as f:
+            f.write(temp_buffer.read())
 
-    # Add metadata to the M4A file
-    audio = MP4(temp_m4a)
+        audio = MP4(temp_file_path)
 
-    # Join all lyrics into a single string
-    lyrics_text = "\n".join(timed_lyrics)
+        # Join all lyrics into a single string
+        lyrics_text = "\n".join(timed_lyrics)
 
-    # Add metadata
-    audio["\xa9nam"] = track_title  # Track Title
-    audio["\xa9alb"] = album_name  # Album Name
-    audio["trkn"] = [(track_number, total_tracks)]  # Track Number
-    audio["\xa9day"] = str(datetime.now().year)  # Year
-    audio["aART"] = "Audio Language Trainer"  # Album Artist
-    audio["\xa9lyr"] = lyrics_text  # Lyrics
-    audio["\xa9gen"] = "Education"  # Genre set to Education
-    audio["pcst"] = True  # Podcast flag set to True
+        # Add metadata
+        audio["\xa9nam"] = track_title  # Track Title
+        audio["\xa9alb"] = album_name  # Album Name
+        audio["trkn"] = [(track_number, total_tracks)]  # Track Number
+        audio["\xa9day"] = str(datetime.now().year)  # Year
+        audio["aART"] = "Audio Language Trainer"  # Album Artist
+        audio["\xa9lyr"] = lyrics_text  # Lyrics
+        audio["\xa9gen"] = "Education"  # Genre set to Education
+        audio["pcst"] = True  # Podcast flag set to True
 
-    if cover_image:
-        jpeg_bytes = cover_image.convert("RGB").tobytes("jpeg", "RGB")
-        audio["covr"] = [MP4Cover(jpeg_bytes, imageformat=MP4Cover.FORMAT_JPEG)]
+        if cover_image:
+            # Convert PIL Image to JPEG bytes
+            image_bytes = io.BytesIO()
+            cover_image.convert("RGB").save(image_bytes, format="JPEG")
+            image_bytes.seek(0)
+            audio["covr"] = [
+                MP4Cover(image_bytes.read(), imageformat=MP4Cover.FORMAT_JPEG)
+            ]
 
-    audio.save()
+        audio.save()
 
-    # Rename the temp file to the desired output name
-    os.replace(temp_m4a, full_output_path)
+        # Get the final file with metadata
+        with open(temp_file_path, "rb") as f:
+            final_audio_data = f.read()
+
+        # Remove the temporary file
+        os.remove(temp_file_path)
+
+        results = []
+
+        # Save locally if output_dir is provided
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+            local_path = os.path.join(output_dir, output_file)
+            with open(local_path, "wb") as f:
+                f.write(final_audio_data)
+            results.append(local_path)
+
+        # Upload to GCS if bucket_name is provided
+        if gcs_bucket_name:
+            storage_client = storage.Client()
+            bucket = storage_client.bucket(gcs_bucket_name)
+
+            # Construct full blob path
+            full_path = f"{gcs_base_prefix.rstrip('/')}/{output_file}".lstrip("/")
+            blob = bucket.blob(full_path)
+
+            # Upload the file
+            blob.upload_from_string(final_audio_data, content_type="audio/mp4")
+
+            gcs_uri = f"gs://{gcs_bucket_name}/{full_path}"
+            results.append(gcs_uri)
+
+        # Return appropriate result
+        if len(results) == 1:
+            return results[0]
+        return tuple(results)
