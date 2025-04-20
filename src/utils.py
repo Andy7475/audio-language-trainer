@@ -191,12 +191,18 @@ def upload_to_gcs(
     return f"gs://{bucket_name}/{full_path}"
 
 
-from google.cloud import storage
-import io
-import json
-from typing import Any, Optional, Union
-from PIL import Image
-from pydub import AudioSegment
+def get_first_n_items(d: dict, n: int) -> dict:
+    """
+    Get the first n items from a dictionary.
+
+    Args:
+        d: Dictionary to slice
+        n: Number of items to take
+
+    Returns:
+        A new dictionary containing the first n items
+    """
+    return dict(itertools.islice(d.items(), n))
 
 
 def read_from_gcs(
