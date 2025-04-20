@@ -8,10 +8,10 @@ import pickle
 import re
 import time
 from collections import defaultdict
-from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional
 
+import itertools
 from anthropic import AnthropicVertex
 from dotenv import load_dotenv
 from google.cloud import storage
@@ -99,15 +99,133 @@ def upload_to_gcs(
         str: Public URL of the uploaded file
 
     Raises:
-        FileNotFoundError: If the file doesn't exist
-        google.cloud.exceptions.NotFound: If the bucket doesn't exist
+        ValueError: If unsupported object type is provided
     """
+    # Create a client
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
 
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
+    # Construct full blob path
+    full_path = f"{base_prefix.rstrip('/')}/{file_name}".lstrip("/")
+    blob = bucket.blob(full_path)
 
+    # Determine content type if not provided
+    if content_type is None:
+        # Infer content type from file extension
+        content_type, _ = mimetypes.guess_type(file_name)
+
+    # Handle different object types
+    if isinstance(obj, bytes):
+        # Direct bytes upload
+        blob.upload_from_string(obj, content_type=content_type)
+
+    elif isinstance(obj, dict):
+        # JSON object upload
+        json_str = json.dumps(obj)
+        blob.upload_from_string(json_str, content_type="application/json")
+
+    elif str(type(obj)).endswith("AudioSegment'>"):  # For pydub AudioSegment
+        buffer = io.BytesIO()
+        format_name = file_name.split(".")[-1].lower()
+
+        # Default to mp3 if format can't be determined
+        if not format_name or format_name not in ["mp3", "m4a", "wav", "ogg"]:
+            format_name = "mp3"
+
+        if format_name == "m4a":
+            format_name = "ipod"  # pydub uses 'ipod' for m4a format
+
+        obj.export(buffer, format=format_name)
+        buffer.seek(0)
+
+        # Set content type based on format
+        format_content_types = {
+            "mp3": "audio/mpeg",
+            "ipod": "audio/mp4",
+            "wav": "audio/wav",
+            "ogg": "audio/ogg",
+        }
+        audio_content_type = format_content_types.get(format_name, "audio/mpeg")
+
+        blob.upload_from_file(buffer, content_type=content_type or audio_content_type)
+
+    elif hasattr(obj, "save") and hasattr(obj, "mode"):  # For PIL Image
+        # Get format from filename or default to PNG
+        try:
+            format_name = file_name.split(".")[-1].upper()
+            if format_name not in ["PNG", "JPEG", "JPG", "GIF", "WEBP", "BMP"]:
+                format_name = "PNG"
+
+            # Normalize JPEG format name
+            if format_name == "JPG":
+                format_name = "JPEG"
+
+            buffer = io.BytesIO()
+            obj.save(buffer, format=format_name)
+            buffer.seek(0)
+
+            # Set appropriate content type
+            image_content_types = {
+                "PNG": "image/png",
+                "JPEG": "image/jpeg",
+                "GIF": "image/gif",
+                "WEBP": "image/webp",
+                "BMP": "image/bmp",
+            }
+            img_content_type = image_content_types.get(format_name, "image/png")
+
+            blob.upload_from_file(buffer, content_type=content_type or img_content_type)
+        except Exception as e:
+            raise ValueError(f"Failed to save image: {e}")
+
+    elif hasattr(obj, "read"):  # For file-like objects
+        blob.upload_from_file(obj, content_type=content_type)
+
+    else:
+        raise ValueError(f"Unsupported object type: {type(obj)}")
+
+    # Return the GCS URI
+    return f"gs://{bucket_name}/{full_path}"
+
+
+def get_first_n_items(d: dict, n: int) -> dict:
+    """
+    Get the first n items from a dictionary.
+
+    Args:
+        d: Dictionary to slice
+        n: Number of items to take
+
+    Returns:
+        A new dictionary containing the first n items
+    """
+    return dict(itertools.islice(d.items(), n))
+
+
+def read_from_gcs(
+    bucket_name: str, file_path: str, expected_type: Optional[str] = None
+) -> Any:
+    """
+    Download a file from Google Cloud Storage and return it as the appropriate object type.
+
+    Args:
+        bucket_name: Name of the GCS bucket
+        file_path: Path to the file within the bucket
+        expected_type: Optional type hint to force a specific return type
+                      ('audio', 'image', 'json', 'bytes', 'text')
+
+    Returns:
+        The file content as an appropriate Python object:
+        - AudioSegment for audio files (.mp3, .m4a, .wav, .ogg)
+        - PIL.Image for image files (.png, .jpg, .jpeg, .gif, .webp)
+        - dict for JSON files (.json)
+        - bytes for binary files (if type cannot be determined)
+        - str for text files (.txt, .html, .css, .csv)
+
+    Raises:
+        FileNotFoundError: If the file doesn't exist in the bucket
+        ValueError: If the file type is unsupported or there's an error processing the file
+    """
     # Initialize storage client
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)

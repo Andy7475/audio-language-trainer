@@ -1,10 +1,235 @@
-import copy
-from typing import Dict, List, Tuple, Union
-from google.cloud import translate_v2 as translate
-from src.config_loader import config
-from tqdm import tqdm
+import json
+import os
+import re
+import time
+from typing import Any, Dict, List, Tuple, Union
+from dotenv import load_dotenv
+from anthropic import Anthropic
 from google.cloud import language_v1
-from google.api_core import retry
+from google.cloud import translate_v2 as translate
+from tqdm import tqdm
+
+from src.config_loader import config
+
+
+def review_translations_with_anthropic(
+    phrase_pairs: List[Dict[str, str]],
+    target_language: str = None,
+    model: str = "claude-3-5-sonnet-latest",
+) -> List[Dict[str, Any]]:
+    """
+    Use Anthropic API to review and improve translations using the tool interface.
+
+    Args:
+        phrase_pairs: List of dictionaries containing {'english': 'phrase', 'translation': 'current translation'}
+        target_language: The target language for translations (defaults to config.TARGET_LANGUAGE_NAME)
+        model: Anthropic model to use
+
+    Returns:
+        List of dictionaries with {'english': str, 'translation': str, 'modified': bool}
+    """
+    # Default to config target language if not specified
+    if target_language is None:
+        target_language = config.TARGET_LANGUAGE_NAME.lower()
+
+    # Set up the Anthropic client
+    load_dotenv()
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+
+    client = Anthropic(api_key=api_key)
+
+    # Define the translation review tool
+    tools = [
+        {
+            "name": "review_translations",
+            "description": f"Review and improve translations from {config.SOURCE_LANGUAGE_NAME} to {target_language}",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "translations": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "english": {"type": "string"},
+                                "translation": {"type": "string"},
+                                "modified": {"type": "boolean"},
+                            },
+                            "required": ["english", "translation", "modified"],
+                        },
+                    }
+                },
+                "required": ["translations"],
+            },
+        }
+    ]
+
+    # Construct the prompt
+    system_prompt = f"""You are a professional translator specializing in natural-sounding {target_language}.
+Review the provided {config.SOURCE_LANGUAGE_NAME} phrases and their {target_language} translations.
+Improve translations to sound more natural for everyday spoken {target_language}.
+You are supporting a language learner, so keep to the source vocabulary fairly closely, but use a natural word choice or phrase that a native speaker would use.
+
+For each translation pair:
+1. Assess if the current translation sounds natural in {target_language}
+2. If it doesn't sound natural for speech, provide an improved translation
+3. Set 'modified' to true if you changed the translation, false if original was good
+
+Only change translations that need improvement to sound more natural in speech - maintain the exact meaning.
+You MUST use the review_translations tool to provide your response."""
+
+    # Convert phrase pairs to the format expected in the prompt
+    formatted_pairs = "\n".join(
+        [
+            f"English: {pair['english']}\n{target_language}: {pair['translation']}\n"
+            for pair in phrase_pairs
+        ]
+    )
+
+    user_prompt = f"""Review these translation pairs and return your assessment using the review_translations tool:
+<phrases>{formatted_pairs}</phrases>
+
+For each translation, determine if it needs improvement and provide a more natural-sounding translation if needed."""
+
+    # Make the API call
+    try:
+        response = client.messages.create(
+            model=model,
+            system=system_prompt,
+            messages=[{"role": "user", "content": user_prompt}],
+            max_tokens=4000,
+            temperature=0.2,
+            tools=tools,
+            tool_choice={
+                "type": "tool",
+                "name": "review_translations",
+            },  # Explicitly require tool use
+        )
+
+        # Extract the tool use from the response
+        for content in response.content:
+            if content.type == "tool_use":
+                if content.name == "review_translations":
+                    return content.input["translations"]
+
+        # If we didn't get a tool response, try to parse from text
+        print("Warning: No tool response found, attempting to parse JSON from text")
+        for content in response.content:
+            if content.type == "text":
+                # Try to extract JSON from text response
+                text = content.text
+                json_match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
+                if json_match:
+                    try:
+                        return json.loads(json_match.group(0))
+                    except json.JSONDecodeError:
+                        pass
+
+        print("Could not extract valid translation data from response")
+        return []
+
+    except Exception as e:
+        print(f"API call error: {e}")
+        return []
+
+
+def process_translations_in_batches(
+    translations_dict: Dict[str, Dict[str, str]],
+    batch_size: int = 25,
+    target_language_name: str = None,
+    model: str = "claude-3-5-sonnet-latest",
+    verbose: bool = False,
+) -> Dict[str, Dict[str, str]]:
+    """
+    Process translations in batches and update the original dictionary.
+
+    Args:
+        translations_dict: Dictionary of translations in the format:
+            {phrase_key: {'english': str, target_language_field: str}}
+        batch_size: Number of translations to process in each batch
+        target_language_name: The human-readable language name for prompting
+            (defaults to config.TARGET_LANGUAGE_NAME.lower())
+        model: Anthropic model to use
+
+    Returns:
+        Updated dictionary with improved translations
+    """
+    # Set defaults from config if not specified
+    if target_language_name is None:
+        target_language_name = config.TARGET_LANGUAGE_NAME.lower()
+
+    # Create a copy of the original dictionary to update
+    updated_dict = translations_dict.copy()
+
+    # Extract all phrase pairs into a list
+    all_pairs = []
+    key_to_index_map = {}  # To track which index corresponds to which key
+
+    for i, (key, data) in enumerate(translations_dict.items()):
+        all_pairs.append(
+            {"english": data["english"], "translation": data[target_language_name]}
+        )
+        key_to_index_map[i] = key
+
+    # Process in batches
+    results = []
+    for i in tqdm(
+        range(0, len(all_pairs), batch_size), desc="Processing translation batches"
+    ):
+        batch = all_pairs[i : i + batch_size]
+
+        # Add delay to avoid API rate limits
+        if i > 0:
+            time.sleep(2)
+
+        # Process batch
+        print(
+            f"Processing batch {i//batch_size + 1}/{(len(all_pairs) + batch_size - 1)//batch_size}"
+        )
+        batch_results = review_translations_with_anthropic(
+            batch, target_language=target_language_name, model=model
+        )
+
+        results.extend(batch_results)
+
+        # Sanity check - if we didn't get results, print a warning but continue
+        if not batch_results:
+            print(f"WARNING: No results for batch starting at index {i}")
+
+    # Update the original dictionary with improved translations
+    modified_count = 0
+    for i, result in enumerate(results):
+        if i in key_to_index_map:
+            key = key_to_index_map[i]
+
+            # Verify the English phrases match to avoid mistakes
+            if result["english"] == updated_dict[key]["english"]:
+                # Update only if modified flag is True
+                if result.get("modified", False):
+                    if verbose:
+                        print(f"Source: {result['english']}")
+                        print(
+                            f"Old: {updated_dict[key][target_language_name]}\nto New: {result['translation']}"
+                        )
+                    updated_dict[key][target_language_name] = result["translation"]
+                    modified_count += 1
+
+                # Sanity check - if not modified, translations should match
+                elif result["translation"] != updated_dict[key][target_language_name]:
+                    print(
+                        f"Warning: Translation marked as not modified but differs from original for: {key}"
+                    )
+                    print(f"Original: {updated_dict[key][target_language_name]}")
+                    print(f"New: {result['translation']}")
+            else:
+                print(f"Warning: English phrase mismatch for key {key}")
+                print(f"Original: {updated_dict[key]['english']}")
+                print(f"Response: {result['english']}")
+
+    print(f"Updated {modified_count} translations out of {len(results)}")
+    return updated_dict
 
 
 def batch_translate(texts, batch_size=128):
@@ -13,7 +238,10 @@ def batch_translate(texts, batch_size=128):
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
         result = translate.Client().translate(
-            batch, target_language=config.TARGET_LANGUAGE_ALPHA2, source_language="en"
+            batch,
+            target_language=config.TARGET_LANGUAGE_ALPHA2,
+            source_language="en",
+            format_="text",
         )
         translated_texts.extend([item["translatedText"] for item in result])
     return translated_texts
