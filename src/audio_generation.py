@@ -1,28 +1,24 @@
 import asyncio
-from datetime import datetime
 import html
 import io
-import multiprocessing
 import os
-import re
-import sys
-import time
 import uuid
-from functools import partial
-from typing import Dict, List, Literal, Optional, Tuple, Union
-from PIL import Image
-import IPython.display as ipd
+from datetime import datetime
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+
+import azure.cognitiveservices.speech as speechsdk
 import librosa
 import numpy as np
 import soundfile as sf
-from google.cloud import texttospeech, storage
+from google.cloud import storage, texttospeech
 from mutagen.mp4 import MP4, MP4Cover
+from PIL import Image
 from pydub import AudioSegment
-import azure.cognitiveservices.speech as speechsdk
-from src.config_loader import VoiceProvider, config, VoiceInfo
-from src.translation import tokenize_text
-from src.utils import clean_filename
 from tqdm import tqdm
+
+from src.config_loader import VoiceInfo, VoiceProvider, config
+from src.translation import tokenize_text
+from src.utils import clean_filename, ok_to_query_api, upload_to_gcs
 
 
 def generate_translated_phrase_audio(
@@ -436,31 +432,6 @@ def export_audio(final_audio: AudioSegment, filename: str = None) -> str:
     return filename
 
 
-def play_audio(segment: AudioSegment, filename: str = None, autoplay: bool = False):
-    """
-    Plays an MP3 clip in the Jupyter notebook.
-
-    Args:
-        segment (AudioSegment): The audio segment to play.
-        filename (str, optional): The filename to save the audio as. If not provided, a temporary file will be created.
-        autoplay (bool, optional): Whether to autoplay the audio. Defaults to False.
-
-    Returns:
-        IPython.display.Audio: An IPython Audio widget for playing the audio.
-    """
-    temp_file = filename is None
-    filename = export_audio(segment, filename)
-
-    audio = ipd.Audio(filename, autoplay=autoplay)
-
-    if temp_file:
-        # Schedule the temporary file for deletion after it's played
-        audio._repr_html_()  # This triggers the audio to load in the notebook
-        os.remove(filename)
-
-    return audio
-
-
 def join_audio_segments(audio_segments: list[AudioSegment], gap_ms=100) -> AudioSegment:
     """Joins audio segments together with a tiny gap between each one in ms
     Returns a single joined up audio segment"""
@@ -720,3 +691,150 @@ def create_m4a_with_timed_lyrics(
         if len(results) == 1:
             return results[0]
         return tuple(results)
+
+
+def upload_phrases_audio_to_gcs(
+    phrase_dict: Dict[str, Dict[str, str]],
+    bucket_name: Optional[str] = None,
+    upload_english_audio: bool = False,
+    overwrite: bool = False,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Generate audio for translated phrases one by one and immediately upload to GCS.
+
+    Args:
+        phrase_dict: Dictionary with phrase_key as keys and values containing
+                    'english' and target language phrases
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
+        upload_english_audio: Whether to upload English audio (default: False)
+        overwrite: Whether to overwrite existing files in GCS (default: False)
+
+    Returns:
+        Dictionary with the same structure as input but with added 'audio_urls' containing GCS URLs
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    target_language = config.TARGET_LANGUAGE_NAME
+    target_language_lower = target_language.lower()
+
+    # Create a copy of the input dictionary for results
+    result_dict = {k: v.copy() for k, v in phrase_dict.items()}
+
+    # Initialize GCS client for checking if files exist
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+
+    # Process each phrase one at a time
+    for phrase_key, phrase_data in tqdm(phrase_dict.items(), desc="Processing phrases"):
+        english_text = phrase_data.get("english")
+        target_text = phrase_data.get(target_language_lower)
+
+        # Skip if either text is missing
+        if not english_text:
+            print(f"Skipping phrase {phrase_key} because 'english' is missing")
+            continue
+
+        if not target_text:
+            print(
+                f"Skipping phrase {phrase_key} because '{target_language}' translation is missing"
+            )
+            continue
+
+        # Create base filename for the audio files
+        clean_key = clean_filename(english_text)
+
+        # Define paths for normal and slow audio
+        normal_path = (
+            f"multimedia/audio/phrases/{target_language_lower}/normal/{clean_key}.mp3"
+        )
+        slow_path = (
+            f"multimedia/audio/phrases/{target_language_lower}/slow/{clean_key}.mp3"
+        )
+
+        # Check if files already exist (if not overwriting)
+        if not overwrite:
+            normal_exists = bucket.blob(normal_path).exists()
+            slow_exists = bucket.blob(slow_path).exists()
+
+            if normal_exists and slow_exists:
+                print(
+                    f"Skipping phrase {phrase_key} - audio files already exist (use overwrite=True to replace)"
+                )
+
+                # Add the existing GCS URLs to the result
+                if "audio_urls" not in result_dict[phrase_key]:
+                    result_dict[phrase_key]["audio_urls"] = {}
+
+                result_dict[phrase_key]["audio_urls"][
+                    "normal"
+                ] = f"gs://{bucket_name}/{normal_path}"
+                result_dict[phrase_key]["audio_urls"][
+                    "slow"
+                ] = f"gs://{bucket_name}/{slow_path}"
+                continue
+
+        try:
+            # Make sure we don't hit API rate limits
+            # ok_to_query_api()
+
+            # Generate audio for this single phrase
+            translated_phrase = (english_text, target_text)
+            audio_segments = generate_translated_phrase_audio([translated_phrase])[0]
+
+            # Get the audio segments
+            english_audio = audio_segments[0]
+            slow_audio = audio_segments[1]
+            normal_audio = audio_segments[2]
+
+            # Upload normal and slow target audio to GCS
+            normal_url = upload_to_gcs(
+                normal_audio,
+                bucket_name,
+                f"{clean_key}.mp3",
+                base_prefix=f"multimedia/audio/phrases/{target_language_lower}/normal",
+            )
+
+            slow_url = upload_to_gcs(
+                slow_audio,
+                bucket_name,
+                f"{clean_key}.mp3",
+                base_prefix=f"multimedia/audio/phrases/{target_language_lower}/slow",
+            )
+
+            # Store results
+            if "audio_urls" not in result_dict[phrase_key]:
+                result_dict[phrase_key]["audio_urls"] = {}
+
+            result_dict[phrase_key]["audio_urls"]["normal"] = normal_url
+            result_dict[phrase_key]["audio_urls"]["slow"] = slow_url
+
+            # Optionally upload English audio
+            if upload_english_audio:
+                english_path = f"multimedia/audio/phrases/english/{clean_key}.mp3"
+
+                # Check if English audio exists if not overwriting
+                if not overwrite and bucket.blob(english_path).exists():
+                    print(
+                        f"Skipping English audio for phrase {phrase_key} - file already exists"
+                    )
+                    result_dict[phrase_key]["audio_urls"][
+                        "english"
+                    ] = f"gs://{bucket_name}/{english_path}"
+                else:
+                    english_url = upload_to_gcs(
+                        english_audio,
+                        bucket_name,
+                        f"{clean_key}.mp3",
+                        base_prefix=f"multimedia/audio/phrases/english",
+                    )
+                    result_dict[phrase_key]["audio_urls"]["english"] = english_url
+
+            print(f"Successfully processed and uploaded audio for phrase: {phrase_key}")
+
+        except Exception as e:
+            print(f"Error processing phrase {phrase_key}: {str(e)}")
+            # Continue with the next phrase
+            continue
+
+    return result_dict
