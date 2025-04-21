@@ -77,8 +77,7 @@ For each translation pair:
 2. If it doesn't sound natural for speech, provide an improved translation
 3. Set 'modified' to true if you changed the translation, false if original was good
 
-Only change translations that need improvement to sound more natural in speech - maintain the exact meaning.
-You MUST use the review_translations tool to provide your response."""
+Only change translations that need improvement to sound more natural in speech - maintain the exact meaning."""
 
     # Convert phrase pairs to the format expected in the prompt
     formatted_pairs = "\n".join(
