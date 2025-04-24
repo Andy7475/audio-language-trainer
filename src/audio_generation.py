@@ -18,7 +18,7 @@ from tqdm import tqdm
 
 from src.config_loader import VoiceInfo, VoiceProvider, config
 from src.translation import tokenize_text
-from src.utils import clean_filename, ok_to_query_api, upload_to_gcs
+from src.utils import clean_filename, check_blob_exists, upload_to_gcs
 
 
 def generate_translated_phrase_audio(
@@ -826,7 +826,7 @@ def upload_phrases_audio_to_gcs(
                         english_audio,
                         bucket_name,
                         f"{clean_key}.mp3",
-                        base_prefix=f"multimedia/audio/phrases/english",
+                        base_prefix="multimedia/audio/phrases/english",
                     )
                     result_dict[phrase_key]["audio_urls"]["english"] = english_url
 
@@ -838,3 +838,138 @@ def upload_phrases_audio_to_gcs(
             continue
 
     return result_dict
+
+
+def generate_and_upload_audio_for_utterance(
+    utterance: Dict,
+    story_part: str,
+    utterance_index: int,
+    story_name: str,
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+) -> str:
+    """
+    Generate audio for a single utterance and upload it to GCS.
+
+    Args:
+        utterance: Dictionary with 'speaker' and 'text' keys
+        story_part: Part of the story (e.g., 'introduction')
+        utterance_index: Index of the utterance in the dialogue list
+        language_name: Target language name
+        story_name: Name of the story
+        collection: Collection name (e.g., 'LM1000', 'LM2000')
+        bucket_name: Optional bucket name
+        config_language: Whether to use source or target language config
+
+    Returns:
+        GCS URI of the uploaded audio file
+    """
+    if bucket_name is None:
+
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    language_name = config.TARGET_LANGUAGE_NAME.lower()
+    # Ensure story_name is properly formatted
+    story_name = (
+        f"story_{story_name}" if not story_name.startswith("story_") else story_name
+    )
+
+    # Determine gender based on speaker
+    gender = "MALE" if utterance["speaker"] == "Sam" else "FEMALE"
+
+    # Generate audio for this utterance
+    audio = text_to_speech(
+        utterance["text"],
+        config_language="target",
+        gender=gender,
+        speaking_rate=1.0,
+    )
+
+    # Create filename and base prefix
+    filename = f"part_{utterance_index}_{utterance['speaker'].lower()}.mp3"
+    base_prefix = (
+        f"{collection}/stories/{story_name}/audio/{language_name}/{story_part}"
+    )
+
+    # Upload the audio
+    gcs_uri = upload_to_gcs(
+        obj=audio, bucket_name=bucket_name, file_name=filename, base_prefix=base_prefix
+    )
+
+    return gcs_uri
+
+
+def generate_dialogue_audio_and_upload(
+    translated_dialogue_dict: Dict,
+    story_name: str,
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+) -> Dict[str, List[str]]:
+    """
+    Generate audio for a translated dialogue dictionary and upload to GCS.
+
+    Args:
+        translated_dialogue_dict: Dictionary containing the translated dialogue
+        story_name: Name of the story
+        language_name: Target language name
+        collection: Collection name (e.g., 'LM1000', 'LM2000')
+        bucket_name: Optional bucket name
+        config_language: Whether to use source or target language config
+
+    Returns:
+        Dictionary mapping story parts to lists of GCS URIs for the audio files
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    # Ensure story_name is properly formatted
+    story_name = (
+        f"story_{story_name}" if not story_name.startswith("story_") else story_name
+    )
+    language_name = config.TARGET_LANGUAGE_NAME.lower()
+
+    # Generate and upload audio for each utterance in each story part
+    audio_uris = {}
+
+    for story_part, part_data in tqdm(
+        translated_dialogue_dict.items(), desc="Processing story parts"
+    ):
+        if "translated_dialogue" in part_data:
+            # Create a directory structure if it doesn't exist
+            audio_dir_path = (
+                f"{collection}/stories/{story_name}/audio/{language_name}/{story_part}"
+            )
+            audio_uris[story_part] = []
+
+            # Process each utterance in the dialogue
+            for i, utterance in enumerate(
+                tqdm(
+                    part_data["translated_dialogue"],
+                    desc=f"Generating translated audio for {story_part}",
+                    leave=False,
+                )
+            ):
+                # First check if this audio file already exists
+                filename = f"part_{i}_{utterance['speaker'].lower()}.mp3"
+                audio_blob_path = f"{audio_dir_path}/{filename}"
+
+                if check_blob_exists(bucket_name, audio_blob_path):
+                    print(
+                        f"Audio file already exists: gs://{bucket_name}/{audio_blob_path}"
+                    )
+                    audio_uri = f"gs://{bucket_name}/{audio_blob_path}"
+                else:
+                    # Generate and upload audio
+                    audio_uri = generate_and_upload_audio_for_utterance(
+                        utterance,
+                        story_part,
+                        i,
+                        story_name,
+                        collection,
+                        bucket_name,
+                    )
+                    print(f"Generated and uploaded: {audio_uri}")
+
+                audio_uris[story_part].append(audio_uri)
+
+    return audio_uris

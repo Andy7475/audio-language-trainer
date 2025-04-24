@@ -1,4 +1,3 @@
-import base64
 import hashlib
 import inspect
 import io
@@ -613,6 +612,23 @@ def ok_to_query_api() -> bool:
 
     config.update_api_timestamp()
     return True
+
+
+def check_blob_exists(bucket_name: str, blob_path: str) -> bool:
+    """
+    Check if a blob exists in a GCS bucket.
+
+    Args:
+        bucket_name: Name of the GCS bucket
+        blob_path: Path to the blob within the bucket
+
+    Returns:
+        True if the blob exists, False otherwise
+    """
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blob = bucket.blob(blob_path)
+    return blob.exists()
 
 
 def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:

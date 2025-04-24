@@ -1,21 +1,16 @@
 import json
-import os
-import random
-import re
-import subprocess
-import sys
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional
 
-import pysnooper
-import spacy
 from dotenv import load_dotenv
 
 from src.config_loader import config
+from src.translation import translate_dialogue
 from src.utils import (
     anthropic_generate,
+    upload_to_gcs,
     extract_json_from_llm_response,
 )
-
+from src.generate import add_translations
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -176,3 +171,94 @@ def add_usage_to_words(word_list: List[str], category: str) -> str:
     )
 
     return formatted_string
+
+
+def upload_dialogue_to_gcs(
+    dialogue_dict: Dict,
+    story_name: str,
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+) -> str:
+    """
+    Upload the dialogue.json file to Google Cloud Storage.
+
+    Args:
+        dialogue_dict: Dictionary containing the dialogue data
+        story_name: Name of the story (e.g., 'murder_mystery')
+        collection: Collection name (e.g., 'LM1000', 'LM2000')
+        bucket_name: Optional bucket name. Defaults to config.GCS_PRIVATE_BUCKET
+
+    Returns:
+        GCS URI of the uploaded file
+    """
+    if bucket_name is None:
+        from src.config_loader import config
+
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    # Ensure story_name is properly formatted
+    story_name = (
+        f"story_{story_name}" if not story_name.startswith("story_") else story_name
+    )
+
+    # Create the base prefix and filename
+    base_prefix = f"{collection}/stories/{story_name}"
+    file_name = "dialogue.json"
+
+    # Upload the JSON data using the utility function
+    gcs_uri = upload_to_gcs(
+        obj=dialogue_dict,
+        bucket_name=bucket_name,
+        file_name=file_name,
+        base_prefix=base_prefix,
+    )
+
+    print(f"Dialogue uploaded to {gcs_uri}")
+    return gcs_uri
+
+
+def translate_and_upload_dialogue(
+    dialogue_dict: Dict,
+    story_name: str,
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+) -> str:
+    """
+    Translate dialogue and upload the translated JSON to GCS.
+
+    Args:
+        dialogue_dict: Dictionary containing the dialogue data
+        story_name: Name of the story
+        language_name: Name of the target language (e.g., 'french')
+        collection: Collection name (e.g., 'LM1000', 'LM2000')
+        bucket_name: Optional bucket name
+
+    Returns:
+        GCS URI of the uploaded translated file
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    # Ensure story_name is properly formatted
+    story_name = (
+        f"story_{story_name}" if not story_name.startswith("story_") else story_name
+    )
+
+    # Translate the dialogue
+    translated_dict = add_translations(dialogue_dict)
+
+    # Create the base prefix and filename
+    language_name = config.TARGET_LANGUAGE_NAME.lower()
+    base_prefix = f"{collection}/stories/{story_name}/dialogue/{language_name}"
+    file_name = "translated_dialogue.json"
+
+    # Upload the translated JSON data
+    gcs_uri = upload_to_gcs(
+        obj=translated_dict,
+        bucket_name=bucket_name,
+        file_name=file_name,
+        base_prefix=base_prefix,
+    )
+
+    print(f"Translated dialogue uploaded to {gcs_uri}")
+    return gcs_uri

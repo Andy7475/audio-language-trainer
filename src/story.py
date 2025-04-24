@@ -15,8 +15,7 @@ from src.config_loader import config
 
 from collections import defaultdict
 from pathlib import Path
-from string import Template
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from google.cloud import storage
 
