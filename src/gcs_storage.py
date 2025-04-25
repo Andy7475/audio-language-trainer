@@ -404,7 +404,7 @@ def get_image_path(story_name: str, story_part: str, collection: str = "LM1000")
 
 def process_bucket_contents(bucket_name: str, exclude_patterns: list = None) -> tuple:
     """
-    Process bucket contents, excluding specified patterns.
+    Process bucket contents - extract html files to populate the story index, excluding specified patterns.
 
     Args:
         bucket_name: Name of the GCS bucket
