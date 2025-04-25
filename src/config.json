@@ -17,6 +17,6 @@
     "MAX_TTS_REQUESTS_PER_MINUTE":20,
     "API_DELAY_SECONDS":20,
     "GCS_PUBLIC_BUCKET":"audio-language-trainer-stories",
-    "GCS_PRIVATE_BUCKET":"andy7475-audio-language-trainer",
+    "GCS_PRIVATE_BUCKET":"audio-language-trainer-private-content",
     "IMAGE_STYLE" : "default"
 }

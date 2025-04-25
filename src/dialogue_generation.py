@@ -202,7 +202,7 @@ def upload_dialogue_to_gcs(
     )
 
     # Create the base prefix and filename
-    base_prefix = f"{collection}/stories/{story_name}"
+    base_prefix = f"collections/{collection}/stories/{story_name}"
     file_name = "dialogue.json"
 
     # Upload the JSON data using the utility function
@@ -249,7 +249,9 @@ def translate_and_upload_dialogue(
 
     # Create the base prefix and filename
     language_name = config.TARGET_LANGUAGE_NAME.lower()
-    base_prefix = f"{collection}/stories/{story_name}/dialogue/{language_name}"
+    base_prefix = (
+        f"collections/{collection}/stories/{story_name}/dialogue/{language_name}"
+    )
     file_name = "translated_dialogue.json"
 
     # Upload the translated JSON data
