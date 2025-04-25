@@ -1,5 +1,4 @@
 import base64
-import io
 import json
 import os
 from collections import defaultdict
@@ -15,13 +14,11 @@ from tqdm import tqdm
 from src.anki_tools import generate_wiktionary_links, load_template
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.config_loader import config
-from src.utils import (
-    convert_bytes_to_base64,
-    convert_PIL_image_to_base64,
+from src.convert import convert_audio_to_base64, convert_PIL_image_to_base64
+from src.gcs_storage import (
     get_image_path,
     get_story_dialogue_path,
     get_utterance_audio_path,
-    get_story_collection_path,
     read_from_gcs,
     upload_to_gcs,
 )
@@ -60,152 +57,6 @@ def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
         {links_html}
     </div>
     """
-
-
-def process_bucket_contents(bucket_name: str, exclude_patterns: list = None) -> tuple:
-    """
-    Process bucket contents, excluding specified patterns.
-
-    Args:
-        bucket_name: Name of the GCS bucket
-        exclude_patterns: List of patterns to exclude (e.g., ['challenges.html'])
-
-    Returns:
-        tuple: (stories_by_language, special_pages)
-    """
-    if exclude_patterns is None:
-        exclude_patterns = []
-
-    stories_by_language = defaultdict(list)
-    special_pages = []
-
-    # default to public bucket
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blobs = bucket.list_blobs()
-
-    for blob in blobs:
-        if any(pattern in blob.name for pattern in exclude_patterns):
-            continue
-        path = Path(blob.name)
-        parts = path.parts
-
-        # Skip non-HTML files
-        if not blob.name.endswith(".html"):
-            continue
-
-        # Handle special pages at root level
-        if len(parts) == 1:
-            if parts[0] != "index.html":
-                special_pages.append(
-                    {
-                        "name": parts[0].replace(".html", "").replace("_", " ").title(),
-                        "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
-                    }
-                )
-            continue
-
-        # Process story pages
-        if len(parts) >= 3 and parts[1].startswith("story_"):
-            language = parts[0].title()
-            story_name = parts[1].replace("story_", "").replace("_", " ").title()
-            url = f"https://storage.googleapis.com/{bucket_name}/{blob.name}"
-
-            stories_by_language[language].append({"name": story_name, "url": url})
-
-    return dict(stories_by_language), special_pages
-
-
-def generate_and_update_index_html(
-    output_dir: str = "../outputs/stories",
-    bucket_name: str = None,
-    template_path: str = "index_template.html",
-    m4a_template_path: str = "m4a_index_template.html",
-    upload: bool = True,
-) -> tuple:
-    """
-    Generate index.html and m4a_downloads.html files from GCS bucket contents and upload them.
-
-    Args:
-        output_dir: Directory where the HTML files will be saved locally
-        bucket_name: Name of the GCS bucket containing stories (defaults to config.GCS_PUBLIC_BUCKET)
-        template_path: Path to the main index HTML template file
-        m4a_template_path: Path to the M4A index HTML template file
-        upload: Whether to upload the generated files to GCS
-
-    Returns:
-        tuple: (main_index_path, m4a_index_path, main_index_url, m4a_index_url)
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-
-    # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
-
-    # 1. Generate main index.html
-    # Process bucket contents
-    stories_by_language, special_pages = process_bucket_contents(
-        bucket_name,
-        exclude_patterns=["challenges.html", "m4a_downloads.html"],
-    )
-
-    # Add M4A downloads link to special pages
-    special_pages.append(
-        {
-            "name": "Audio Downloads",
-            "url": f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html",
-        }
-    )
-
-    # Generate sections HTML
-    language_sections = ""
-    for language, stories in sorted(stories_by_language.items()):
-        language_sections += generate_language_section(language, stories)
-
-    # Generate special pages HTML
-    special_pages_html = generate_special_pages_section(special_pages)
-
-    # Load and fill template
-    template = Template(load_template(template_path))
-    html_content = template.substitute(
-        language_sections=language_sections, special_pages=special_pages_html
-    )
-
-    # Write to file
-    main_index_path = os.path.join(output_dir, "index.html")
-    with open(main_index_path, "w", encoding="utf-8") as f:
-        f.write(html_content)
-
-    # 2. Generate M4A index
-    m4a_index_path = generate_m4a_index_html(
-        bucket_name=bucket_name, output_dir=output_dir, template_path=m4a_template_path
-    )
-
-    # 3. Upload files to GCS if requested
-    main_index_url = None
-    m4a_index_url = None
-
-    if upload:
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-
-        # Upload main index
-        main_blob = bucket.blob("index.html")
-        main_blob.upload_from_filename(main_index_path, content_type="text/html")
-        main_index_url = f"https://storage.googleapis.com/{bucket_name}/index.html"
-        print(f"Main index uploaded to: {main_index_url}")
-
-        # Upload M4A index
-        m4a_blob = bucket.blob("m4a_downloads.html")
-        m4a_blob.upload_from_filename(m4a_index_path, content_type="text/html")
-        m4a_index_url = (
-            f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html"
-        )
-        print(f"M4A downloads index uploaded to: {m4a_index_url}")
-
-    return (main_index_path, m4a_index_path, main_index_url, m4a_index_url)
 
 
 def create_html_story(
@@ -267,39 +118,6 @@ def create_html_story(
 
     print(f"HTML story created at: {html_path}")
     return html_path
-
-
-def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
-    """Convert an AudioSegment to a base64 encoded string."""
-    buffer = io.BytesIO()
-    audio_segment.export(buffer, format="mp3")
-    buffer.seek(0)
-    audio_bytes = buffer.read()
-    return base64.b64encode(audio_bytes).decode("utf-8")
-
-
-def convert_m4a_file_to_base64(m4a_file_path: str) -> str:
-    """
-    Convert an M4A file to a base64 encoded string.
-
-    Args:
-        m4a_file_path: Path to the M4A file
-
-    Returns:
-        str: Base64 encoded string representation of the M4A file
-
-    Raises:
-        FileNotFoundError: If the M4A file doesn't exist
-        IOError: If there's an error reading the file
-    """
-    try:
-        with open(m4a_file_path, "rb") as audio_file:
-            audio_bytes = audio_file.read()
-            return base64.b64encode(audio_bytes).decode("utf-8")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"M4A file not found at: {m4a_file_path}")
-    except IOError as e:
-        raise IOError(f"Error reading M4A file: {str(e)}")
 
 
 def create_album_files(
@@ -679,111 +497,6 @@ def generate_m4a_index_html(
     return output_path
 
 
-def generate_and_upload_m4a_index(bucket_name=None, output_dir="../outputs/stories"):
-    """
-    Generate the M4A index page and upload it to Google Cloud Storage.
-
-    Args:
-        bucket_name: Optional GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
-        output_dir: Directory where the HTML file will be saved locally
-
-    Returns:
-        str: Public URL of the uploaded file
-    """
-    # First generate the index
-    local_path = generate_m4a_index_html(bucket_name, output_dir)
-
-    # Initialize storage client
-    storage_client = storage.Client()
-
-    # Get bucket
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-    bucket = storage_client.bucket(bucket_name)
-
-    # Upload directly to the root of the bucket
-    blob = bucket.blob("m4a_downloads.html")
-    blob.upload_from_filename(local_path, content_type="text/html")
-
-    print("M4A index uploaded to GCS: m4a_downloads.html")
-
-    # Return the public URL
-    return f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html"
-
-
-def update_all_index_pages(
-    output_dir: str = "../outputs/stories",
-    bucket_name: str = None,
-    force_upload: bool = True,
-    verbose: bool = True,
-) -> dict:
-    """
-    Update all index pages for the language learning platform.
-
-    This function generates and uploads:
-    - Main story index (index.html)
-    - Audio downloads index (m4a_downloads.html)
-
-    Args:
-        output_dir: Directory where HTML files will be saved locally
-        bucket_name: Name of the GCS bucket (defaults to config.GCS_PUBLIC_BUCKET)
-        force_upload: Whether to upload generated files even if they exist
-        verbose: Whether to print detailed progress information
-
-    Returns:
-        dict: Dictionary with paths and URLs for all generated index pages
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-
-    if verbose:
-        print(f"Starting index page updates for bucket: {bucket_name}")
-
-    results = {}
-
-    try:
-        # Generate and update main and M4A indices
-        if verbose:
-            print("Generating main index and M4A downloads index...")
-
-        main_path, m4a_path, main_url, m4a_url = generate_and_update_index_html(
-            output_dir=output_dir, bucket_name=bucket_name, upload=force_upload
-        )
-
-        results.update(
-            {
-                "main_index": {"local_path": main_path, "url": main_url},
-                "m4a_index": {"local_path": m4a_path, "url": m4a_url},
-            }
-        )
-
-        if verbose:
-            print(f"✅ Main index updated: {main_url}")
-            print(f"✅ M4A downloads index updated: {m4a_url}")
-
-        # Check if either URL is None (indicating upload failure)
-        if force_upload and (main_url is None or m4a_url is None):
-            print("⚠️ Warning: Upload was requested but one or more URLs are missing.")
-
-        if verbose:
-            print("All index pages updated successfully.")
-
-        return results
-
-    except Exception as e:
-        error_msg = f"Error updating index pages: {str(e)}"
-        print(f"❌ {error_msg}")
-
-        # Try to include as much information as possible despite the error
-        if "main_path" in locals():
-            results["main_index"] = {"local_path": main_path, "url": None}
-        if "m4a_path" in locals():
-            results["m4a_index"] = {"local_path": m4a_path, "url": None}
-
-        results["error"] = error_msg
-        return results
-
-
 def upload_story_image(
     image_file: str,
     story_part: str,
@@ -913,26 +626,3 @@ def prepare_story_data_from_gcs(
             print(f"Warning: Image not found for {section_name}: {str(e)}")
 
     return prepared_data
-
-
-def get_stories_from_collection(
-    bucket_name: str = config.GCS_PRIVATE_BUCKET, collection: str = "LM1000"
-) -> List[str]:
-    """
-    Get list of story names from a collection file.
-
-    Args:
-        bucket_name: GCS bucket name
-        collection: Collection name
-
-    Returns:
-        List[str]: List of story names
-    """
-    collection_path = get_story_collection_path(collection)
-    try:
-        collection_data = read_from_gcs(bucket_name, collection_path, "json")
-        # Assuming the collection file has story names as keys
-        return list(collection_data.keys())
-    except Exception as e:
-        print(f"Error loading collection {collection}: {str(e)}")
-        return []

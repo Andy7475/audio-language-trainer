@@ -4,7 +4,6 @@ from typing import Dict, List, Optional
 from dotenv import load_dotenv
 
 from src.config_loader import config
-from src.translation import translate_dialogue
 from src.utils import (
     anthropic_generate,
     upload_to_gcs,
