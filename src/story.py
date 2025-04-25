@@ -12,6 +12,7 @@ from tqdm import tqdm
 from src.anki_tools import generate_wiktionary_links, load_template
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.config_loader import config
+from src.utils import upload_to_gcs
 
 from collections import defaultdict
 from pathlib import Path
@@ -806,3 +807,53 @@ def update_all_index_pages(
 
         results["error"] = error_msg
         return results
+
+
+def upload_story_image(
+    image_file: str,
+    story_part: str,
+    story_name: str,
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+) -> str:
+    """
+    Upload an image file for a story part to GCS.
+
+    Args:
+        image_file: Path to the image file
+        story_part: Part of the story (e.g., 'introduction')
+        story_name: Name of the story
+        collection: Collection name (e.g., 'LM1000', 'LM2000')
+        bucket_name: Optional bucket name
+
+    Returns:
+        GCS URI of the uploaded image file
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    # Ensure story_name is properly formatted
+    story_name = (
+        f"story_{story_name}" if not story_name.startswith("story_") else story_name
+    )
+
+    # Create the GCS path
+    file_extension = os.path.splitext(image_file)[1]
+    filename = f"{story_part}{file_extension}"
+    base_prefix = f"collections/{collection}/stories/{story_name}/images"
+
+    # Read the image file
+    with open(image_file, "rb") as f:
+        image_data = f.read()
+
+    # Upload the image file
+    gcs_uri = upload_to_gcs(
+        obj=image_data,
+        bucket_name=bucket_name,
+        file_name=filename,
+        base_prefix=base_prefix,
+        content_type=f"image/{file_extension[1:]}",
+    )
+
+    print(f"Image uploaded to {gcs_uri}")
+    return gcs_uri
