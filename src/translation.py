@@ -1,13 +1,11 @@
 import json
 import os
 import re
-import time
 from typing import Any, Dict, List, Tuple, Union
 from dotenv import load_dotenv
 from anthropic import Anthropic
 from google.cloud import language_v1
 from google.cloud import translate_v2 as translate
-from tqdm import tqdm
 
 from src.config_loader import config
 
@@ -132,103 +130,6 @@ For each translation, determine if it needs improvement and provide a more natur
     except Exception as e:
         print(f"API call error: {e}")
         return []
-
-
-def process_translations_in_batches(
-    translations_dict: Dict[str, Dict[str, str]],
-    batch_size: int = 25,
-    target_language_name: str = None,
-    model: str = "claude-3-5-sonnet-latest",
-    verbose: bool = False,
-) -> Dict[str, Dict[str, str]]:
-    """
-    Process translations in batches and update the original dictionary.
-
-    Args:
-        translations_dict: Dictionary of translations in the format:
-            {phrase_key: {'english': str, target_language_field: str}}
-        batch_size: Number of translations to process in each batch
-        target_language_name: The human-readable language name for prompting
-            (defaults to config.TARGET_LANGUAGE_NAME.lower())
-        model: Anthropic model to use
-
-    Returns:
-        Updated dictionary with improved translations
-    """
-    # Set defaults from config if not specified
-    if target_language_name is None:
-        target_language_name = config.TARGET_LANGUAGE_NAME.lower()
-
-    # Create a copy of the original dictionary to update
-    updated_dict = translations_dict.copy()
-
-    # Extract all phrase pairs into a list
-    all_pairs = []
-    key_to_index_map = {}  # To track which index corresponds to which key
-
-    for i, (key, data) in enumerate(translations_dict.items()):
-        all_pairs.append(
-            {"english": data["english"], "translation": data[target_language_name]}
-        )
-        key_to_index_map[i] = key
-
-    # Process in batches
-    results = []
-    for i in tqdm(
-        range(0, len(all_pairs), batch_size), desc="Processing translation batches"
-    ):
-        batch = all_pairs[i : i + batch_size]
-
-        # Add delay to avoid API rate limits
-        if i > 0:
-            time.sleep(2)
-
-        # Process batch
-        print(
-            f"Processing batch {i//batch_size + 1}/{(len(all_pairs) + batch_size - 1)//batch_size}"
-        )
-        batch_results = review_translations_with_anthropic(
-            batch, target_language=target_language_name, model=model
-        )
-
-        results.extend(batch_results)
-
-        # Sanity check - if we didn't get results, print a warning but continue
-        if not batch_results:
-            print(f"WARNING: No results for batch starting at index {i}")
-
-    # Update the original dictionary with improved translations
-    modified_count = 0
-    for i, result in enumerate(results):
-        if i in key_to_index_map:
-            key = key_to_index_map[i]
-
-            # Verify the English phrases match to avoid mistakes
-            if result["english"] == updated_dict[key]["english"]:
-                # Update only if modified flag is True
-                if result.get("modified", False):
-                    if verbose:
-                        print(f"Source: {result['english']}")
-                        print(
-                            f"Old: {updated_dict[key][target_language_name]}\nto New: {result['translation']}"
-                        )
-                    updated_dict[key][target_language_name] = result["translation"]
-                    modified_count += 1
-
-                # Sanity check - if not modified, translations should match
-                elif result["translation"] != updated_dict[key][target_language_name]:
-                    print(
-                        f"Warning: Translation marked as not modified but differs from original for: {key}"
-                    )
-                    print(f"Original: {updated_dict[key][target_language_name]}")
-                    print(f"New: {result['translation']}")
-            else:
-                print(f"Warning: English phrase mismatch for key {key}")
-                print(f"Original: {updated_dict[key]['english']}")
-                print(f"Response: {result['english']}")
-
-    print(f"Updated {modified_count} translations out of {len(results)}")
-    return updated_dict
 
 
 def batch_translate(texts, batch_size=128):
