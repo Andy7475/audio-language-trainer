@@ -1,6 +1,8 @@
+import base64
 import hashlib
 import inspect
 import io
+import itertools
 import json
 import mimetypes
 import os
@@ -9,16 +11,17 @@ import re
 import time
 from collections import defaultdict
 from pathlib import Path
+from string import Template
 from typing import Any, Dict, List, Literal, Optional
 
-import itertools
 from anthropic import AnthropicVertex
 from dotenv import load_dotenv
 from google.cloud import storage
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
-
+from src.anki_tools import load_template
+from src.story import clean_story_name
 from src.config_loader import config
 
 load_dotenv()  # so we can use environment variables for various global settings
@@ -331,6 +334,83 @@ def upload_story_to_gcs(html_file_path: str, bucket_name: Optional[str] = None) 
     return public_url
 
 
+def create_and_upload_html_story(
+    prepared_data: Dict,
+    story_name: str,
+    bucket_name: str = config.GCS_PUBLIC_BUCKET,
+    component_path: str = "StoryViewer.js",
+    template_path: str = "story_template.html",
+    output_dir: str = "outputs/stories/",
+) -> str:
+    """
+    Create a standalone HTML file from prepared story data and upload it to GCS.
+
+    Args:
+        prepared_data: Dictionary containing prepared story data with base64 encoded assets
+        story_name: Name of the story
+        bucket_name: GCS bucket name for upload
+        language: Target language name (defaults to config.TARGET_LANGUAGE_NAME)
+        component_path: Path to the React component file
+        template_path: Path to the HTML template file
+        output_dir: Local directory to save HTML file before upload
+
+    Returns:
+        str: Public URL of the uploaded HTML file
+    """
+
+    language = config.TARGET_LANGUAGE_NAME
+
+    # Clean the story name for display
+    story_title = clean_story_name(story_name)
+
+    # Read the React component
+    react_component = load_template(component_path)
+
+    # Read the HTML template
+    template = Template(load_template(template_path))
+
+    # Substitute the template variables
+    html_content = template.substitute(
+        title=story_title,
+        story_data=json.dumps(prepared_data),
+        language=language,
+        react_component=react_component,
+    )
+
+    # Create local file path for temporary storage
+    local_dir = Path(output_dir) / story_name / language
+    local_dir.mkdir(parents=True, exist_ok=True)
+    local_html_path = local_dir / f"{story_name}.html"
+
+    # Write the HTML file locally
+    local_html_path.write_text(html_content, encoding="utf-8")
+    print(f"HTML story created locally at: {local_html_path}")
+
+    # Upload to GCS
+    try:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+
+        # Create the GCS blob path
+        language_folder = sanitize_path_component(language.lower())
+        story_folder = sanitize_path_component(story_name)
+        blob_path = f"{language_folder}/{story_folder}/{story_name}.html"
+
+        # Create the blob and upload
+        blob = bucket.blob(blob_path)
+        blob.upload_from_filename(str(local_html_path), content_type="text/html")
+
+        # Generate the public URL
+        public_url = f"https://storage.googleapis.com/{bucket_name}/{blob_path}"
+        print(f"Uploaded HTML story to: {public_url}")
+
+        return public_url
+
+    except Exception as e:
+        print(f"Error uploading to GCS: {str(e)}")
+        return str(local_html_path)  # Return local path if upload fails
+
+
 def clean_filename(phrase: str) -> str:
     """Convert a phrase to a clean filename-safe string."""
     # Convert to lowercase
@@ -344,6 +424,43 @@ def clean_filename(phrase: str) -> str:
     # Trim any leading/trailing underscores
     clean = clean.strip("_")
     return clean
+
+
+def get_story_collection_path(collection: str = "LM1000") -> str:
+    """Get the GCS path for a story collection file."""
+    return f"collections/{collection}/{collection}.json"
+
+
+def get_story_dialogue_path(
+    story_name: str, language: str, collection: str = "LM1000"
+) -> str:
+    """Get the GCS path for a story's translated dialogue file."""
+    return f"collections/{collection}/stories/{story_name}/dialogue/{language}/translated_dialogue.json"
+
+
+def get_utterance_audio_path(
+    story_name: str,
+    story_part: str,
+    index: int,
+    speaker: str,
+    language: str,
+    collection: str = "LM1000",
+) -> str:
+    """Get the GCS path for an utterance audio file."""
+    filename = f"part_{index}_{speaker.lower()}.mp3"
+    return f"collections/{collection}/stories/{story_name}/audio/{language}/{story_part}/{filename}"
+
+
+def get_fast_audio_path(
+    story_name: str, story_part: str, language: str, collection: str = "LM1000"
+) -> str:
+    """Get the GCS path for a fast audio file."""
+    return f"collections/{collection}/stories/{story_name}/audio/{language}/{story_part}/fast.mp3"
+
+
+def get_image_path(story_name: str, story_part: str, collection: str = "LM1000") -> str:
+    """Get the GCS path for a story part image."""
+    return f"collections/{collection}/stories/{story_name}/images/{story_part}.png"
 
 
 def string_to_large_int(s: str) -> int:
@@ -684,3 +801,26 @@ def extract_json_from_llm_response(response):
     else:
         print("No JSON-like structure found in the response")
         return None
+
+
+def convert_bytes_to_base64(data: bytes) -> str:
+    """Convert bytes to a base64 encoded string."""
+    return base64.b64encode(data).decode("utf-8")
+
+
+def convert_PIL_image_to_base64(pil_image, format="PNG") -> str:
+    """
+    Convert a PIL Image to a base64 encoded string.
+
+    Args:
+        pil_image: PIL Image object
+        format: Image format to use (default: "PNG")
+
+    Returns:
+        str: Base64 encoded string representation of the image
+    """
+    buffer = io.BytesIO()
+    pil_image.save(buffer, format=format)
+    buffer.seek(0)
+    image_bytes = buffer.read()
+    return convert_bytes_to_base64(image_bytes)

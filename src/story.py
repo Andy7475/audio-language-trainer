@@ -2,9 +2,12 @@ import base64
 import io
 import json
 import os
+from collections import defaultdict
+from pathlib import Path
 from string import Template
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
+from google.cloud import storage
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
@@ -12,13 +15,16 @@ from tqdm import tqdm
 from src.anki_tools import generate_wiktionary_links, load_template
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.config_loader import config
-from src.utils import upload_to_gcs
-
-from collections import defaultdict
-from pathlib import Path
-from typing import Dict, List
-
-from google.cloud import storage
+from src.utils import (
+    convert_bytes_to_base64,
+    convert_PIL_image_to_base64,
+    get_image_path,
+    get_story_dialogue_path,
+    get_utterance_audio_path,
+    get_story_collection_path,
+    read_from_gcs,
+    upload_to_gcs,
+)
 
 
 def generate_language_section(langauge: str, stories: List[Dict[str, str]]) -> str:
@@ -200,37 +206,6 @@ def generate_and_update_index_html(
         print(f"M4A downloads index uploaded to: {m4a_index_url}")
 
     return (main_index_path, m4a_index_path, main_index_url, m4a_index_url)
-
-
-def add_index_navigation_to_story(story_html_path: str, language: str) -> None:
-    """
-    Add navigation link back to index.html for a story page.
-
-    Args:
-        story_html_path: Path to the story HTML file
-        language: Language section to link back to
-    """
-    with open(story_html_path, "r", encoding="utf-8") as f:
-        content = f.read()
-
-    # Create navigation link HTML
-    nav_html = f"""
-    <div style="position: fixed; top: 20px; left: 20px; z-index: 1000;">
-        <a href="/index.html#{language.lower()}" 
-           style="background: white; padding: 10px 20px; border-radius: 5px; 
-                  box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-decoration: none; 
-                  color: #2980b9; display: inline-flex; align-items: center; gap: 5px;">
-            ← Back to {language} Stories
-        </a>
-    </div>
-    """
-
-    # Insert navigation before closing body tag
-    if "</body>" in content:
-        content = content.replace("</body>", f"{nav_html}</body>")
-
-        with open(story_html_path, "w", encoding="utf-8") as f:
-            f.write(content)
 
 
 def create_html_story(
@@ -730,7 +705,7 @@ def generate_and_upload_m4a_index(bucket_name=None, output_dir="../outputs/stori
     blob = bucket.blob("m4a_downloads.html")
     blob.upload_from_filename(local_path, content_type="text/html")
 
-    print(f"M4A index uploaded to GCS: m4a_downloads.html")
+    print("M4A index uploaded to GCS: m4a_downloads.html")
 
     # Return the public URL
     return f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html"
@@ -857,3 +832,107 @@ def upload_story_image(
 
     print(f"Image uploaded to {gcs_uri}")
     return gcs_uri
+
+
+def prepare_story_data_from_gcs(
+    story_name: str,
+    bucket_name: str = config.GCS_PRIVATE_BUCKET,
+    collection: str = "LM1000",
+) -> Dict:
+    """
+    Prepare story data for HTML by downloading required files from GCS.
+
+    Args:
+        bucket_name: GCS bucket name
+        story_name: Name of the story (e.g., "story_a_fishing_trip")
+        language: Target language (e.g., "french")
+        collection: Collection name (default: "LM1000")
+
+    Returns:
+        Dict: Prepared data for HTML rendering
+    """
+
+    language_name = config.TARGET_LANGUAGE_NAME.lower()
+    # Get story dialogue
+    dialogue_path = get_story_dialogue_path(story_name, language_name, collection)
+    try:
+        story_dialogue = read_from_gcs(bucket_name, dialogue_path, "json")
+    except FileNotFoundError:
+        print(f"Dialogue not found for {story_name} in {language_name}")
+        return {}
+
+    prepared_data = {}
+
+    # Process each section of the story (introduction, development, etc.)
+    for section_name, section_data in tqdm(
+        story_dialogue.items(), desc=f"Preparing {story_name} in {language_name}"
+    ):
+        # Initialize the section data structure
+        prepared_data[section_name] = {
+            "dialogue": section_data.get("dialogue", []),
+            "translated_dialogue": prepare_dialogue_with_wiktionary(
+                section_data.get("translated_dialogue", []), config.TARGET_LANGUAGE_NAME
+            ),
+            "audio_data": {
+                "dialogue": [],
+            },
+        }
+
+        # Process audio for each dialogue utterance
+        for i, utterance in tqdm(
+            enumerate(section_data.get("translated_dialogue", [])),
+            colour="red",
+            desc="Downloading utterance audio",
+        ):
+            try:
+                audio_path = get_utterance_audio_path(
+                    story_name,
+                    section_name,
+                    i,
+                    utterance["speaker"],
+                    language_name,
+                    collection,
+                )
+                audio_segment = read_from_gcs(bucket_name, audio_path, "audio")
+                audio_base64 = convert_audio_to_base64(audio_segment)
+                prepared_data[section_name]["audio_data"]["dialogue"].append(
+                    audio_base64
+                )
+            except (FileNotFoundError, ValueError) as e:
+                print(
+                    f"Warning: Audio not found for utterance {i} in {section_name}: {str(e)}"
+                )
+
+        # Add image data
+        try:
+            image_path = get_image_path(story_name, section_name, collection)
+            image_data = read_from_gcs(bucket_name, image_path, "image")
+            image_base64 = convert_PIL_image_to_base64(image_data)
+            prepared_data[section_name]["image_data"] = image_base64
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Warning: Image not found for {section_name}: {str(e)}")
+
+    return prepared_data
+
+
+def get_stories_from_collection(
+    bucket_name: str = config.GCS_PRIVATE_BUCKET, collection: str = "LM1000"
+) -> List[str]:
+    """
+    Get list of story names from a collection file.
+
+    Args:
+        bucket_name: GCS bucket name
+        collection: Collection name
+
+    Returns:
+        List[str]: List of story names
+    """
+    collection_path = get_story_collection_path(collection)
+    try:
+        collection_data = read_from_gcs(bucket_name, collection_path, "json")
+        # Assuming the collection file has story names as keys
+        return list(collection_data.keys())
+    except Exception as e:
+        print(f"Error loading collection {collection}: {str(e)}")
+        return []
