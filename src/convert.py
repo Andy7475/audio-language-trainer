@@ -20,6 +20,28 @@ def clean_filename(phrase: str) -> str:
     return clean
 
 
+def clean_story_name(story_name: str) -> str:
+    """
+    Clean a story name by removing 'story' and underscores, returning in title case.
+
+    Args:
+        story_name: Input story name (e.g. "story_community_park")
+
+    Returns:
+        str: Cleaned story name in title case (e.g. "Community Park")
+
+    Example:
+        >>> clean_story_name("story_community_park")
+        'Community Park'
+    """
+    # Remove 'story' and split on underscores
+    name = story_name.replace("story_", "")
+    words = name.split("_")
+
+    # Convert to title case and join with spaces
+    return " ".join(word.title() for word in words)
+
+
 def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
     """Convert an AudioSegment to a base64 encoded string."""
     buffer = io.BytesIO()

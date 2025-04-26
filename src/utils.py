@@ -234,6 +234,13 @@ def save_json(data, file_path):
         json.dump(data, file, indent=2)
 
 
+def load_template(filename, parent_path: str = "../src/templates"):
+    # print(os.listdir())
+    filename = os.path.join(parent_path, filename)
+    with open(filename, "r", encoding="utf-8") as f:
+        return f.read()
+
+
 def get_caller_name():
     """Method 1: Using inspect.stack()"""
     # Get the frame 2 levels up (1 would be this function, 2 is the caller)

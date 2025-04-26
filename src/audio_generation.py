@@ -1,4 +1,3 @@
-import asyncio
 import html
 import io
 import os
@@ -10,7 +9,7 @@ import azure.cognitiveservices.speech as speechsdk
 import librosa
 import numpy as np
 import soundfile as sf
-from google.cloud import storage, texttospeech
+from google.cloud import texttospeech
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from pydub import AudioSegment
@@ -18,7 +17,8 @@ from tqdm import tqdm
 
 from src.config_loader import VoiceInfo, VoiceProvider, config
 from src.translation import tokenize_text
-from src.utils import clean_filename, check_blob_exists, upload_to_gcs
+from src.convert import clean_filename
+from src.gcs_storage import check_blob_exists, upload_to_gcs
 
 
 def generate_translated_phrase_audio(
@@ -674,17 +674,10 @@ def create_m4a_with_timed_lyrics(
 
         # Upload to GCS if bucket_name is provided
         if gcs_bucket_name:
-            storage_client = storage.Client()
-            bucket = storage_client.bucket(gcs_bucket_name)
-
-            # Construct full blob path
             full_path = f"{gcs_base_prefix.rstrip('/')}/{output_file}".lstrip("/")
-            blob = bucket.blob(full_path)
-
-            # Upload the file
-            blob.upload_from_string(final_audio_data, content_type="audio/mp4")
-
-            gcs_uri = f"gs://{gcs_bucket_name}/{full_path}"
+            gcs_uri = upload_to_gcs(
+                final_audio_data, gcs_bucket_name, full_path, content_type="audio/mp4"
+            )
             results.append(gcs_uri)
 
         # Return appropriate result
@@ -721,10 +714,6 @@ def upload_phrases_audio_to_gcs(
     # Create a copy of the input dictionary for results
     result_dict = {k: v.copy() for k, v in phrase_dict.items()}
 
-    # Initialize GCS client for checking if files exist
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-
     # Process each phrase one at a time
     for phrase_key, phrase_data in tqdm(phrase_dict.items(), desc="Processing phrases"):
         english_text = phrase_data.get("english")
@@ -754,8 +743,8 @@ def upload_phrases_audio_to_gcs(
 
         # Check if files already exist (if not overwriting)
         if not overwrite:
-            normal_exists = bucket.blob(normal_path).exists()
-            slow_exists = bucket.blob(slow_path).exists()
+            normal_exists = check_blob_exists(bucket_name, normal_path)
+            slow_exists = check_blob_exists(bucket_name, slow_path)
 
             if normal_exists and slow_exists:
                 print(
@@ -814,7 +803,7 @@ def upload_phrases_audio_to_gcs(
                 english_path = f"multimedia/audio/phrases/english/{clean_key}.mp3"
 
                 # Check if English audio exists if not overwriting
-                if not overwrite and bucket.blob(english_path).exists():
+                if not overwrite and check_blob_exists(bucket_name, english_path):
                     print(
                         f"Skipping English audio for phrase {phrase_key} - file already exists"
                     )
