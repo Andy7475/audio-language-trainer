@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from string import Template
 from typing import Dict, List, Tuple
-from src.convert import clean_story_name
+from src.convert import get_story_title
 from src.anki_tools import load_template
 from src.config_loader import config
 

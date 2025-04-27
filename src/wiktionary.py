@@ -46,21 +46,23 @@ def generate_wiktionary_links(
     links: List[str] = []
 
     for word in words:
-        clean_word = "".join(char for char in word if char.isalnum())
+        # Remove any trailing punctuation that shouldn't be part of the lookup
+        clean_word = word.rstrip(",.;:!?")
         if not clean_word:
             links.append(word)
             continue
 
-        # Check cache first
-        lowercase_word = clean_word.lower()
-        if lowercase_word in word_link_cache:
-            # Replace the word with the cached link or word
-            links.append(word_link_cache[lowercase_word].replace(lowercase_word, word))
+        # Use the word as is for cache lookup (preserves case)
+        if clean_word in word_link_cache:
+            links.append(word_link_cache[clean_word].replace(clean_word, word))
             continue
 
         # No cache hit, try to create wiktionary link
         try:
-            encoded_word = urllib.parse.quote(lowercase_word)
+            # Use lowercase for URL but keep original case for display
+            lookup_word = clean_word.lower()
+            # Properly encode the word for URL - this handles apostrophes and other special chars
+            encoded_word = urllib.parse.quote(lookup_word)
             url = f"https://en.wiktionary.org/wiki/{encoded_word}"
 
             response = requests.get(url)
@@ -69,19 +71,19 @@ def generate_wiktionary_links(
                 if section_name := find_language_section(soup, language_name):
                     link = f'<a href="{url}#{section_name}">{word}</a>'
                     links.append(link)
-                    # Cache with the lowercase version but the full HTML
-                    word_link_cache[lowercase_word] = link.replace(word, lowercase_word)
+                    # Cache with the original case
+                    word_link_cache[clean_word] = link.replace(word, clean_word)
                     continue
 
             # If any step fails, fall back to original word
             links.append(word)
             # Cache the failure case too (as the word itself)
-            word_link_cache[lowercase_word] = lowercase_word
+            word_link_cache[clean_word] = clean_word
 
         except requests.RequestException:
             links.append(word)
             # Cache the failure case
-            word_link_cache[lowercase_word] = lowercase_word
+            word_link_cache[clean_word] = clean_word
 
     if return_cache:
         return " ".join(links), word_link_cache
