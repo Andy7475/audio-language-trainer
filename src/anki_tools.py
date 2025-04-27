@@ -18,9 +18,9 @@ from src.generate import add_audio, add_translations
 from src.images import add_image_paths
 from src.utils import (
     create_test_story_dict,
-    string_to_large_int,
     load_template,
 )
+from src.convert import string_to_large_int
 from src.wiktionary import generate_wiktionary_links
 
 

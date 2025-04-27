@@ -308,6 +308,25 @@ def get_story_collection_path(collection: str = "LM1000") -> str:
     return f"collections/{collection}/{collection}.json"
 
 
+def get_story_challenges_path(story_name: str, collection: str = "LM1000") -> str:
+    """Get the GCS path for a story's challenges JSON file (dictionary of scenarios).
+    audio-language-trainer-private-content/
+    collections/
+    LM1000/
+    stories/
+    story_a_fishing_trip/
+    challenges.json"""
+
+    return f"collections/{collection}/stories/{story_name}/challenges.json"
+
+
+def get_story_translated_challenges_path(story_name: str) -> str:
+    """Get the GCS path for a story's challenges webpage
+    e.g: audio-language-trainer-stories/swedish/story_birthday_party_planning_mishap/challenges.html
+    """
+    return f"{config.TARGET_LANGUAGE_NAME.lower()}/{story_name}/challenges.html"
+
+
 def get_m4a_file_path(story_name: str, story_part: str, fast: bool = False) -> str:
     """Get the GCS path for a story part's m4a file. Each story part has its own m4a file."""
     language = config.TARGET_LANGUAGE_NAME.lower()
