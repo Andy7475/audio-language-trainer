@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from string import Template
 from typing import Dict, List, Tuple
-from src.story import clean_story_name
+from src.convert import get_story_title
 from src.anki_tools import load_template
 from src.config_loader import config
 
@@ -262,12 +262,12 @@ def create_html_challenges(
         template_path: Path to the HTML template file
 
     Returns:
-        The output path (where html file saved)
+        The HTML content as a string
     """
     # Load the React component
     react_component = load_template(component_path)
     template = Template(load_template(template_path))
-    title = clean_story_name(story_name)
+    title = get_story_title(story_name)
     # Create the HTML content
     html_content = template.substitute(
         title=title,
@@ -285,4 +285,4 @@ def create_html_challenges(
     output_path.write_text(html_content, encoding="utf-8")
 
     print(f"HTML challenges created at: {output_path}")
-    return str(output_path)
+    return html_content

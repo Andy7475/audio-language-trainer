@@ -7,21 +7,300 @@ from string import Template
 from typing import Dict, List, Optional
 
 from google.cloud import storage
-from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
 
-from src.anki_tools import generate_wiktionary_links, load_template
 from src.audio_generation import create_m4a_with_timed_lyrics
 from src.config_loader import config
-from src.convert import convert_audio_to_base64, convert_PIL_image_to_base64
+from src.convert import (
+    convert_audio_to_base64,
+    convert_base64_list_to_audio_segments,
+    convert_base64_to_audio,
+    convert_PIL_image_to_base64,
+    get_story_title,
+)
 from src.gcs_storage import (
+    check_blob_exists,
+    get_fast_audio_path,
     get_image_path,
-    get_story_dialogue_path,
+    get_m4a_blob_prefix,
+    get_m4a_filename,
+    get_public_story_path,
+    get_story_translated_dialogue_path,
     get_utterance_audio_path,
+    get_wiktionary_cache_path,
+    process_bucket_contents,
     read_from_gcs,
     upload_to_gcs,
 )
+from src.utils import load_template
+from src.wiktionary import generate_wiktionary_links
+
+
+def generate_and_upload_m4a_index(bucket_name=None, output_dir="../outputs/stories"):
+    """
+    Generate the M4A index page and upload it to Google Cloud Storage.
+
+    Args:
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
+        output_dir: Directory where the HTML file will be saved locally
+
+    Returns:
+        str: Public URL of the uploaded file
+    """
+    # First generate the index
+    local_path = generate_m4a_index_html(bucket_name, output_dir)
+
+    # Initialize storage client
+    storage_client = storage.Client()
+
+    # Get bucket
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+    bucket = storage_client.bucket(bucket_name)
+
+    # Upload directly to the root of the bucket
+    blob = bucket.blob("m4a_downloads.html")
+    blob.upload_from_filename(local_path, content_type="text/html")
+
+    print("M4A index uploaded to GCS: m4a_downloads.html")
+
+    # Return the public URL
+    return f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html"
+
+
+def update_all_index_pages(
+    output_dir: str = "../outputs/stories",
+    bucket_name: str = None,
+    force_upload: bool = True,
+    verbose: bool = True,
+) -> dict:
+    """
+    Update all index pages for the language learning platform.
+
+    This function generates and uploads:
+    - Main story index (index.html)
+    - Audio downloads index (m4a_downloads.html)
+
+    Args:
+        output_dir: Directory where HTML files will be saved locally
+        bucket_name: Name of the GCS bucket (defaults to config.GCS_PUBLIC_BUCKET)
+        force_upload: Whether to upload generated files even if they exist
+        verbose: Whether to print detailed progress information
+
+    Returns:
+        dict: Dictionary with paths and URLs for all generated index pages
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+
+    if verbose:
+        print(f"Starting index page updates for bucket: {bucket_name}")
+
+    results = {}
+
+    try:
+        # Generate and update main and M4A indices
+        if verbose:
+            print("Generating main index and M4A downloads index...")
+
+        main_path, m4a_path, main_url, m4a_url = generate_and_update_index_html(
+            output_dir=output_dir, bucket_name=bucket_name, upload=force_upload
+        )
+
+        results.update(
+            {
+                "main_index": {"local_path": main_path, "url": main_url},
+                "m4a_index": {"local_path": m4a_path, "url": m4a_url},
+            }
+        )
+
+        if verbose:
+            print(f"✅ Main index updated: {main_url}")
+            print(f"✅ M4A downloads index updated: {m4a_url}")
+
+        # Check if either URL is None (indicating upload failure)
+        if force_upload and (main_url is None or m4a_url is None):
+            print("⚠️ Warning: Upload was requested but one or more URLs are missing.")
+
+        if verbose:
+            print("All index pages updated successfully.")
+
+        return results
+
+    except Exception as e:
+        error_msg = f"Error updating index pages: {str(e)}"
+        print(f"❌ {error_msg}")
+
+        # Try to include as much information as possible despite the error
+        if "main_path" in locals():
+            results["main_index"] = {"local_path": main_path, "url": None}
+        if "m4a_path" in locals():
+            results["m4a_index"] = {"local_path": m4a_path, "url": None}
+
+        results["error"] = error_msg
+        return results
+
+
+def generate_and_update_index_html(
+    output_dir: str = "../outputs/stories",
+    bucket_name: str = None,
+    template_path: str = "index_template.html",
+    m4a_template_path: str = "m4a_index_template.html",
+    upload: bool = True,
+) -> tuple:
+    """
+    Generate index.html and m4a_downloads.html files from GCS bucket contents and upload them.
+
+    Args:
+        output_dir: Directory where the HTML files will be saved locally
+        bucket_name: Name of the GCS bucket containing stories (defaults to config.GCS_PUBLIC_BUCKET)
+        template_path: Path to the main index HTML template file
+        m4a_template_path: Path to the M4A index HTML template file
+        upload: Whether to upload the generated files to GCS
+
+    Returns:
+        tuple: (main_index_path, m4a_index_path, main_index_url, m4a_index_url)
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 1. Generate main index.html
+    # Process bucket contents
+    stories_by_language, special_pages = process_bucket_contents(
+        bucket_name,
+        exclude_patterns=["challenges.html", "m4a_downloads.html"],
+    )
+
+    # Add M4A downloads link to special pages
+    special_pages.append(
+        {
+            "name": "Audio Downloads",
+            "url": f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html",
+        }
+    )
+
+    # Generate sections HTML
+    language_sections = ""
+    for language, stories in sorted(stories_by_language.items()):
+        language_sections += generate_language_section(language, stories)
+
+    # Generate special pages HTML
+    special_pages_html = generate_special_pages_section(special_pages)
+
+    # Load and fill template
+    template = Template(load_template(template_path))
+    html_content = template.substitute(
+        language_sections=language_sections, special_pages=special_pages_html
+    )
+
+    # Write to file
+    main_index_path = os.path.join(output_dir, "index.html")
+    with open(main_index_path, "w", encoding="utf-8") as f:
+        f.write(html_content)
+
+    # 2. Generate M4A index
+    m4a_index_path = generate_m4a_index_html(
+        bucket_name=bucket_name, output_dir=output_dir, template_path=m4a_template_path
+    )
+
+    # 3. Upload files to GCS if requested
+    main_index_url = None
+    m4a_index_url = None
+
+    if upload:
+        storage_client = storage.Client()
+        bucket = storage_client.bucket(bucket_name)
+
+        # Upload main index
+        main_blob = bucket.blob("index.html")
+        main_blob.upload_from_filename(main_index_path, content_type="text/html")
+        main_index_url = f"https://storage.googleapis.com/{bucket_name}/index.html"
+        print(f"Main index uploaded to: {main_index_url}")
+
+        # Upload M4A index
+        m4a_blob = bucket.blob("m4a_downloads.html")
+        m4a_blob.upload_from_filename(m4a_index_path, content_type="text/html")
+        m4a_index_url = (
+            f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html"
+        )
+        print(f"M4A downloads index uploaded to: {m4a_index_url}")
+
+    return (main_index_path, m4a_index_path, main_index_url, m4a_index_url)
+
+
+def create_and_upload_html_story(
+    prepared_data: Dict,
+    story_name: str,
+    bucket_name: str = config.GCS_PUBLIC_BUCKET,
+    component_path: str = "StoryViewer.js",
+    template_path: str = "story_template.html",
+    output_dir: str = "../outputs/stories/",
+) -> str:
+    """
+    Create a standalone HTML file from prepared story data and upload it to GCS.
+
+    Args:
+        prepared_data: Dictionary containing prepared story data with base64 encoded assets
+        story_name: Name of the story
+        bucket_name: GCS bucket name for upload
+        language: Target language name (defaults to config.TARGET_LANGUAGE_NAME)
+        component_path: Path to the React component file
+        template_path: Path to the HTML template file
+        output_dir: Local directory to save HTML file before upload
+
+    Returns:
+        str: Public URL of the uploaded HTML file
+    """
+
+    language = config.TARGET_LANGUAGE_NAME
+
+    # Clean the story name for display
+    story_title = get_story_title(story_name)
+
+    # Read the React component
+    react_component = load_template(component_path)
+
+    # Read the HTML template
+    template = Template(load_template(template_path))
+
+    # Substitute the template variables
+    html_content = template.substitute(
+        title=story_title,
+        story_data=json.dumps(prepared_data),
+        language=language,
+        react_component=react_component,
+    )
+
+    # Create local file path for temporary storage
+    local_dir = Path(output_dir) / story_name / language
+    local_dir.mkdir(parents=True, exist_ok=True)
+    local_html_path = local_dir / f"{story_name}.html"
+
+    # Write the HTML file locally
+    local_html_path.write_text(html_content, encoding="utf-8")
+    print(f"HTML story created locally at: {local_html_path}")
+
+    try:
+
+        blob_path = get_public_story_path(story_name)
+
+        public_url = upload_to_gcs(
+            obj=html_content,
+            bucket_name=bucket_name,
+            file_name=blob_path,
+            content_type="text/html",
+        )
+        print(f"Uploaded HTML story to: {public_url}")
+
+        return public_url
+
+    except Exception as e:
+        print(f"Error uploading to GCS: {str(e)}")
+        return str(local_html_path)  # Return local path if upload fails
 
 
 def generate_language_section(langauge: str, stories: List[Dict[str, str]]) -> str:
@@ -83,7 +362,7 @@ def create_html_story(
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME
-    story_title = clean_story_name(story_name)
+    story_title = get_story_title(story_name)
 
     # Process the story data and convert audio to base64
     prepared_data = prepare_story_data_for_html(
@@ -122,9 +401,8 @@ def create_html_story(
 
 def create_album_files(
     story_data_dict: dict,
-    cover_image: Image.Image,
-    output_dir: str,
     story_name: str,
+    output_dir: str = "../outputs/stories",
     upload_to_gcs: bool = True,
 ):
     """Creates and saves M4A files for the story, with album artwork.
@@ -134,11 +412,21 @@ def create_album_files(
     PAUSE_TEXT = "---------"
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
 
-    ALBUM_NAME = clean_story_name(story_name)
+    ALBUM_NAME = get_story_title(story_name)
     TOTAL_TRACKS = len(story_data_dict) * 2  # 1 track normal, 1 track fast
 
     m4a_file_paths = []
 
+    story_data_first_key = list(story_data_dict.keys())[
+        0
+    ]  # this probably will pick 'introduction'
+    cover_image_base64 = story_data_dict[story_data_first_key]["image_data"]
+    output_dir = os.path.join(output_dir, story_name, config.TARGET_LANGUAGE_NAME)
+    # this controls if files are uploaded to GCS or not
+    if upload_to_gcs:
+        gcs_bucket_name = config.GCS_PUBLIC_BUCKET
+    else:
+        gcs_bucket_name = None
     # Create the story tracks for each story section
     for track_number, (story_part, data) in enumerate(
         tqdm(story_data_dict.items(), desc="creating album"), start=1
@@ -148,7 +436,9 @@ def create_album_files(
 
         # Get dialogue texts and audio
         dialogue_list = [utterance["text"] for utterance in data["translated_dialogue"]]
-        dialogue_audio_list = data["translated_dialogue_audio"]
+        dialogue_audio_list = convert_base64_list_to_audio_segments(
+            data["audio_data"]["dialogue"]
+        )
 
         # Initial dialogue at normal speed
         audio_list.append(GAP_BETWEEN_PHRASES)
@@ -158,18 +448,23 @@ def create_album_files(
         captions_list.extend(dialogue_list)
 
         # Create M4A file
-        m4a_filename = f"{config.TARGET_LANGUAGE_NAME}_{story_name}_{story_part}.m4a"
+
+        m4a_filename = get_m4a_filename(story_name, story_part, fast=False)
+
         m4a_path = os.path.join(output_dir, m4a_filename)
 
         create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
             phrases=captions_list,
-            output_file=m4a_path,
+            output_file=m4a_filename,
+            output_dir=output_dir,
             album_name=ALBUM_NAME,
             track_title=story_part,
             track_number=track_number,
             total_tracks=TOTAL_TRACKS,
-            cover_image=cover_image,
+            cover_image_base64=cover_image_base64,
+            gcs_bucket_name=gcs_bucket_name,
+            gcs_base_prefix=get_m4a_blob_prefix(story_name),
         )
         m4a_file_paths.append(m4a_path)
         print(f"Saved M4A file track number {track_number}")
@@ -184,83 +479,47 @@ def create_album_files(
 
         # Fast dialogue section
         captions_list.append(f"{story_part} - Fast Dialogue Practice")
-
+        fast_dialogue_audio = convert_base64_to_audio(
+            data["audio_data"]["fast_dialogue"]
+        )
         # Add fast dialogue (there are 10 repeats in the audio)
         for i in range(REPEATS_OF_FAST_DIALOGUE):
-            audio_list.append(data["translated_dialogue_audio_fast"])
+            audio_list.append(fast_dialogue_audio)
             captions_list.append(f"Fast Dialogue - Repetition {i+1}")
             audio_list.append(GAP_BETWEEN_PHRASES)
             captions_list.append(PAUSE_TEXT)
 
         # Create M4A file
-        m4a_filename = (
-            f"{config.TARGET_LANGUAGE_NAME}_{story_name}_{story_part}_FAST.m4a"
+        m4a_filename_fast = get_m4a_filename(
+            story_name=story_name, story_part=story_part, fast=True
         )
         m4a_path = os.path.join(output_dir, m4a_filename)
-
         create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
             phrases=captions_list,
-            output_file=m4a_path,
+            output_file=m4a_filename_fast,
+            output_dir=output_dir,
             album_name=ALBUM_NAME,
             track_title=story_part + " (fast)",
             track_number=track_number,
             total_tracks=TOTAL_TRACKS,
-            cover_image=cover_image,
+            cover_image_base64=cover_image_base64,
+            gcs_bucket_name=gcs_bucket_name,
+            gcs_base_prefix=get_m4a_blob_prefix(story_name),
         )
         m4a_file_paths.append(m4a_path)
         print(f"Saved M4A file track number {track_number}")
 
-    # Upload files to GCS if required
-    if upload_to_gcs:
-        client = storage.Client()
-        bucket = client.bucket(config.GCS_PUBLIC_BUCKET)
-
-        for m4a_path in tqdm(m4a_file_paths, desc="Uploading M4A files to GCS"):
-            # Extract the filename from the path
-            filename = os.path.basename(m4a_path)
-
-            # Create a GCS path for the file
-            # Format: language/story_name/filename.m4a
-            gcs_path = f"{config.TARGET_LANGUAGE_NAME.lower()}/{story_name}/{filename}"
-
-            # Upload the file to GCS
-            blob = bucket.blob(gcs_path)
-            blob.upload_from_filename(m4a_path)
-
-            print(f"Uploaded {filename} to gs://{config.GCS_PUBLIC_BUCKET}/{gcs_path}")
-
     return m4a_file_paths
 
 
-def clean_story_name(story_name: str) -> str:
-    """
-    Clean a story name by removing 'story' and underscores, returning in title case.
-
-    Args:
-        story_name: Input story name (e.g. "story_community_park")
-
-    Returns:
-        str: Cleaned story name in title case (e.g. "Community Park")
-
-    Example:
-        >>> clean_story_name("story_community_park")
-        'Community Park'
-    """
-    # Remove 'story' and split on underscores
-    name = story_name.replace("story_", "")
-    words = name.split("_")
-
-    # Convert to title case and join with spaces
-    return " ".join(word.title() for word in words)
-
-
-def prepare_dialogue_with_wiktionary(dialogue, language_name: str = None):
+def prepare_dialogue_with_wiktionary(story_data_dict: dict, language_name: str = None):
     """
     Process dialogue utterances to include Wiktionary links for the target language text.
-
+    We will try and read the existing wiktionary links cache from GCS first. As this
+    will probably already have data in it from processing the flashcard phrases.
     Args:
-        dialogue: List of dialogue utterances with text and speaker
+        story_data_dict: Dictionary of story_part :dialogue : [list of utternaces]
         language_name: Name of target language for Wiktionary links
 
     Returns:
@@ -268,17 +527,42 @@ def prepare_dialogue_with_wiktionary(dialogue, language_name: str = None):
     """
     if language_name is None:
         language_name = config.TARGET_LANGUAGE_NAME
-    processed_dialogue = []
-    for utterance in dialogue:
-        # Create a copy of the utterance to avoid modifying the original
-        processed_utterance = utterance.copy()
-        # Generate Wiktionary links for the target language text
-        wiktionary_links = generate_wiktionary_links(
-            utterance["text"], language_name=language_name
+
+    word_link_cache_path = get_wiktionary_cache_path()
+
+    if check_blob_exists(config.GCS_PRIVATE_BUCKET, word_link_cache_path):
+        word_link_cache = read_from_gcs(
+            config.GCS_PRIVATE_BUCKET, word_link_cache_path, "json"
         )
-        processed_utterance["wiktionary_links"] = wiktionary_links
-        processed_dialogue.append(processed_utterance)
-    return processed_dialogue
+        print(f"Got word link cache of size {len(word_link_cache)} from GCS")
+    else:
+        word_link_cache = {}
+
+    story_data_dict_copy = story_data_dict.copy()
+    for story_part in tqdm(
+        story_data_dict_copy, desc="Getting dialogue links for story_parts"
+    ):
+        dialogue = story_data_dict_copy[story_part].get("translated_dialogue", [])
+        # Process each utterance in the dialogue
+        for utterance in dialogue:
+            # Generate Wiktionary links for the target language text
+
+            wiktionary_links, word_link_cache = generate_wiktionary_links(
+                utterance["text"],
+                language_name=language_name,
+                word_link_cache=word_link_cache,
+                return_cache=True,
+            )
+            utterance["wiktionary_links"] = wiktionary_links
+
+    # upload the additional word_link cache to GCS
+    upload_to_gcs(
+        obj=word_link_cache,
+        bucket_name=config.GCS_PRIVATE_BUCKET,
+        file_name=word_link_cache_path,
+    )
+
+    return story_data_dict_copy
 
 
 def prepare_story_data_for_html(
@@ -374,7 +658,7 @@ def generate_m4a_index_html(
             # Expected format: language/story_name/story_name_part.m4a
             if len(parts) >= 3:
                 language = parts[0].capitalize()
-                story_name = clean_story_name(parts[1])
+                story_name = get_story_title(parts[1])
 
                 # Get file size in MB
                 size_mb = blob.size / (1024 * 1024)
@@ -566,8 +850,8 @@ def prepare_story_data_from_gcs(
     """
 
     language_name = config.TARGET_LANGUAGE_NAME.lower()
-    # Get story dialogue
-    dialogue_path = get_story_dialogue_path(story_name, language_name, collection)
+    # Get story translated dialogue, this will have wiktionary links already
+    dialogue_path = get_story_translated_dialogue_path(story_name, collection)
     try:
         story_dialogue = read_from_gcs(bucket_name, dialogue_path, "json")
     except FileNotFoundError:
@@ -577,30 +861,37 @@ def prepare_story_data_from_gcs(
     prepared_data = {}
 
     # Process each section of the story (introduction, development, etc.)
-    for section_name, section_data in tqdm(
+    for story_part, dialogue in tqdm(
         story_dialogue.items(), desc=f"Preparing {story_name} in {language_name}"
     ):
         # Initialize the section data structure
-        prepared_data[section_name] = {
-            "dialogue": section_data.get("dialogue", []),
-            "translated_dialogue": prepare_dialogue_with_wiktionary(
-                section_data.get("translated_dialogue", []), config.TARGET_LANGUAGE_NAME
-            ),
+        fast_audio_segment = read_from_gcs(
+            config.GCS_PRIVATE_BUCKET,
+            get_fast_audio_path(story_name, story_part, collection=collection),
+            "audio",
+        )
+
+        prepared_data[story_part] = {
+            "dialogue": dialogue.get("dialogue", []),
+            "translated_dialogue": dialogue.get("translated_dialogue", []),
             "audio_data": {
                 "dialogue": [],
+                "fast_dialogue": convert_audio_to_base64(
+                    fast_audio_segment
+                ),  # will be base64 encoded audio for whole story part
             },
         }
 
         # Process audio for each dialogue utterance
         for i, utterance in tqdm(
-            enumerate(section_data.get("translated_dialogue", [])),
+            enumerate(dialogue.get("translated_dialogue", [])),
             colour="red",
             desc="Downloading utterance audio",
         ):
             try:
                 audio_path = get_utterance_audio_path(
                     story_name,
-                    section_name,
+                    story_part,
                     i,
                     utterance["speaker"],
                     language_name,
@@ -608,21 +899,19 @@ def prepare_story_data_from_gcs(
                 )
                 audio_segment = read_from_gcs(bucket_name, audio_path, "audio")
                 audio_base64 = convert_audio_to_base64(audio_segment)
-                prepared_data[section_name]["audio_data"]["dialogue"].append(
-                    audio_base64
-                )
+                prepared_data[story_part]["audio_data"]["dialogue"].append(audio_base64)
             except (FileNotFoundError, ValueError) as e:
                 print(
-                    f"Warning: Audio not found for utterance {i} in {section_name}: {str(e)}"
+                    f"Warning: Audio not found for utterance {i} in {story_part}: {str(e)}"
                 )
 
         # Add image data
         try:
-            image_path = get_image_path(story_name, section_name, collection)
+            image_path = get_image_path(story_name, story_part, collection)
             image_data = read_from_gcs(bucket_name, image_path, "image")
             image_base64 = convert_PIL_image_to_base64(image_data)
-            prepared_data[section_name]["image_data"] = image_base64
+            prepared_data[story_part]["image_data"] = image_base64
         except (FileNotFoundError, ValueError) as e:
-            print(f"Warning: Image not found for {section_name}: {str(e)}")
+            print(f"Warning: Image not found for {story_part}: {str(e)}")
 
     return prepared_data

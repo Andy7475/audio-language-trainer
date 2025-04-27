@@ -1,17 +1,13 @@
 import os
 import re
 import tempfile
-import urllib.parse
 import uuid
 from collections import defaultdict
-from random import shuffle
 from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
 import pandas as pd
-import requests
 from anki.collection import Collection
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from PIL import Image
 from pydub import AudioSegment
@@ -20,11 +16,12 @@ from tqdm import tqdm
 from src.config_loader import config
 from src.generate import add_audio, add_translations
 from src.images import add_image_paths
-from src.translation import tokenize_text, translate_from_english
 from src.utils import (
     create_test_story_dict,
-    string_to_large_int,
+    load_template,
 )
+from src.convert import string_to_large_int
+from src.wiktionary import generate_wiktionary_links
 
 
 def convert_anki_to_story_dict(collection_path: str, deck_name: str) -> Dict[str, Dict]:
@@ -531,163 +528,6 @@ def create_anki_deck_from_english_phrase_list(
         else:
             raise ValueError("Missing an image directory (image_dir)")
     return translated_phrases_dict_audio
-
-
-def generate_wiktionary_links_non_english(
-    phrase: str, native_language_code: str = "uk"
-) -> str:
-    """
-    Generate Wiktionary links for native speakers of other languages learning English.
-    Similar format to the original generate_wiktionary_links function.
-
-    Args:
-        phrase: The English phrase to generate links for
-        native_language_code: The two-letter language code (e.g., 'uk' for Ukrainian)
-
-    Returns:
-        HTML string with Wiktionary links in the native language
-    """
-    words = phrase.split()
-    links: List[str] = []
-
-    # Get translation of "English" in target language
-    try:
-        english_in_target = translate_from_english("English", native_language_code)
-        if isinstance(english_in_target, list):
-            english_in_target = english_in_target[0]
-        english_in_target = english_in_target.capitalize()
-    except Exception:
-        # Fallback to "English" if translation fails
-        english_in_target = "English"
-
-    for word in words:
-        clean_word = "".join(char for char in word if char.isalnum())
-        if clean_word:
-            # Lowercase the word for URL and search, but keep original for display
-            lowercase_word = clean_word.lower()
-            # URL encode the lowercase word to handle non-ASCII characters
-            encoded_word = urllib.parse.quote(lowercase_word)
-            # First try native language Wiktionary
-            native_url = (
-                f"https://{native_language_code}.wiktionary.org/wiki/{encoded_word}"
-            )
-            print(f"native url is: {native_url}")
-
-            try:
-                response = requests.get(native_url)
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.content, "html.parser")
-                    # Look for the English section using h2 tag
-                    language_section = None
-                    for heading_level in range(1, 7):
-                        if soup.find(f"h{heading_level}", {"id": english_in_target}):
-                            language_section = True
-                            break
-
-                    if language_section:
-                        # If found, create a link with the anchor to the specific language section
-                        link = f'<a href="{native_url}#{english_in_target}">{word}</a>'
-                        links.append(link)
-                    else:
-                        # If not found in native Wiktionary, try English Wiktionary
-                        english_url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-                        link = f'<a href="{english_url}#English">{word}</a>'
-                        links.append(link)
-                else:
-                    # If native Wiktionary fails, use English Wiktionary
-                    english_url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-                    link = f'<a href="{english_url}#English">{word}</a>'
-                    links.append(link)
-            except requests.RequestException:
-                # If request fails, add without link
-                links.append(word)
-        else:
-            links.append(word)
-
-    return " ".join(links)
-
-
-def get_wiktionary_language_name(language_name: str) -> str:
-    """Map standard language names to Wiktionary header names"""
-    wiktionary_mapping = {
-        "Mandarin Chinese": "Chinese",
-        "Modern Greek": "Greek",
-        "Standard Arabic": "Arabic",
-        "Brazilian Portuguese": "Portuguese",
-        # Add more mappings as discovered
-    }
-    return wiktionary_mapping.get(language_name, language_name)
-
-
-def find_language_section(soup: BeautifulSoup, language_name: str) -> Optional[str]:
-    """Try different strategies to find the language section"""
-    # Try exact match with mapping
-    wiktionary_name = get_wiktionary_language_name(language_name)
-    if section := soup.find("h2", {"id": wiktionary_name}):
-        return wiktionary_name
-
-    # Try words in reverse order (longest to shortest)
-    words = language_name.split()
-    for i in range(len(words), 0, -1):
-        partial_name = " ".join(words[:i])
-        if section := soup.find("h2", {"id": partial_name}):
-            return partial_name
-
-    # If still not found, try individual words
-    for word in words:
-        if section := soup.find("h2", {"id": word}):
-            return word
-
-    return None
-
-
-def generate_wiktionary_links(
-    phrase: str,
-    language_name: str = None,
-    language_code: str = None,
-) -> str:
-
-    if language_name is None:
-        language_name = config.TARGET_LANGUAGE_NAME
-    if language_code is None:
-        language_code = config.TARGET_LANGUAGE_CODE
-    words = tokenize_text(text=phrase, language_code=language_code)
-    links: List[str] = []
-
-    for word in words:
-        clean_word = "".join(char for char in word if char.isalnum())
-        if not clean_word:
-            links.append(word)
-            continue
-
-        # Try to create wiktionary link
-        try:
-            # Lowercase the word for URL and search, but keep original for display
-            lowercase_word = clean_word.lower()
-            encoded_word = urllib.parse.quote(lowercase_word)
-            url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-
-            response = requests.get(url)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, "html.parser")
-                if section_name := find_language_section(soup, language_name):
-                    links.append(f'<a href="{url}#{section_name}">{word}</a>')
-                    continue
-
-            # If any step fails, fall back to original word
-            links.append(word)
-
-        except requests.RequestException:
-            links.append(word)
-
-    return " ".join(links)
-
-
-def load_template(filename, parent_path: str = "../src/templates"):
-    # print(os.listdir())
-    filename = os.path.join(parent_path, filename)
-    with open(filename, "r", encoding="utf-8") as f:
-        return f.read()
 
 
 def get_sort_field(order: int, target_text: str) -> str:

@@ -1,4 +1,3 @@
-import asyncio
 import html
 import io
 import os
@@ -10,15 +9,23 @@ import azure.cognitiveservices.speech as speechsdk
 import librosa
 import numpy as np
 import soundfile as sf
-from google.cloud import storage, texttospeech
+from google.cloud import texttospeech
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
-
+import base64
 from src.config_loader import VoiceInfo, VoiceProvider, config
 from src.translation import tokenize_text
-from src.utils import clean_filename, check_blob_exists, upload_to_gcs
+from src.convert import clean_filename
+from src.gcs_storage import (
+    check_blob_exists,
+    upload_to_gcs,
+    get_utterance_audio_path,
+    get_story_translated_dialogue_path,
+    get_fast_audio_path,
+    read_from_gcs,
+)
 
 
 def generate_translated_phrase_audio(
@@ -555,6 +562,99 @@ def generate_audio_from_dialogue(
     return audio_segments
 
 
+def generate_and_upload_fast_audio(
+    story_name: str,
+    bucket_name: str = config.GCS_PRIVATE_BUCKET,
+    collection: str = "LM1000",
+    overwrite: bool = False,
+) -> Dict[str, str]:
+    """
+    Generate fast audio versions for each story part and upload them to GCS.
+
+    Args:
+        story_name: Name of the story
+        bucket_name: GCS bucket name
+        collection: Collection name (e.g., 'LM1000')
+        overwrite: Whether to overwrite existing files
+
+    Returns:
+        Dictionary mapping story parts to GCS URIs of uploaded fast audio files
+    """
+    language_name = config.TARGET_LANGUAGE_NAME.lower()
+
+    # Get story dialogue
+    dialogue_path = get_story_translated_dialogue_path(story_name, collection)
+    try:
+        story_dialogue = read_from_gcs(bucket_name, dialogue_path, "json")
+    except FileNotFoundError:
+        print(f"Dialogue not found for {story_name} in {language_name}")
+        return {}
+
+    # Store the GCS URIs of uploaded fast audio files
+    fast_audio_uris = {}
+
+    # Process each section of the story
+    for story_part, dialogue in tqdm(
+        story_dialogue.items(), desc=f"Processing {story_name} in {language_name}"
+    ):
+        # Check if fast audio already exists and we're not overwriting
+        fast_audio_path = get_fast_audio_path(story_name, story_part, collection)
+
+        if not overwrite and check_blob_exists(bucket_name, fast_audio_path):
+            print(f"Fast audio for {story_part} already exists, skipping.")
+            fast_audio_uris[story_part] = f"gs://{bucket_name}/{fast_audio_path}"
+            continue
+
+        # Collect audio segments for this story part
+        audio_segments = []
+
+        for i, utterance in tqdm(
+            enumerate(dialogue.get("translated_dialogue", [])),
+            desc=f"Collecting utterance audio for {story_part}",
+        ):
+            try:
+                audio_path = get_utterance_audio_path(
+                    story_name,
+                    story_part,
+                    i,
+                    utterance["speaker"],
+                    language_name,
+                    collection,
+                )
+
+                audio_segment = read_from_gcs(bucket_name, audio_path, "audio")
+                audio_segments.append(audio_segment)
+            except (FileNotFoundError, ValueError) as e:
+                print(
+                    f"Warning: Audio not found for utterance {i} in {story_part}: {str(e)}"
+                )
+
+        if not audio_segments:
+            print(f"No audio segments found for {story_part}, skipping.")
+            continue
+
+        # Generate fast audio for this story part
+        print(f"Generating fast audio for {story_part}...")
+        normal_audio, fast_audio = generate_normal_and_fast_audio(audio_segments)
+
+        # Upload fast audio to GCS
+        filename = os.path.basename(fast_audio_path)
+        base_prefix = os.path.dirname(fast_audio_path)
+
+        uri = upload_to_gcs(
+            obj=fast_audio,
+            bucket_name=bucket_name,
+            file_name=filename,
+            base_prefix=base_prefix,
+            content_type="audio/mpeg",
+        )
+
+        fast_audio_uris[story_part] = uri
+        print(f"Uploaded fast audio for {story_part} to {uri}")
+
+    return fast_audio_uris
+
+
 def create_m4a_with_timed_lyrics(
     audio_segments: List[AudioSegment],
     phrases: List[str],
@@ -563,7 +663,7 @@ def create_m4a_with_timed_lyrics(
     track_title: str,
     track_number: int,
     total_tracks: int = 6,
-    cover_image: Optional[Image.Image] = None,
+    cover_image_base64: Optional[str] = None,  # Base64 string of the cover image
     output_dir: Optional[str] = None,
     gcs_bucket_name: Optional[str] = None,
     gcs_base_prefix: str = "",
@@ -644,14 +744,21 @@ def create_m4a_with_timed_lyrics(
         audio["\xa9gen"] = "Education"  # Genre set to Education
         audio["pcst"] = True  # Podcast flag set to True
 
-        if cover_image:
-            # Convert PIL Image to JPEG bytes
-            image_bytes = io.BytesIO()
-            cover_image.convert("RGB").save(image_bytes, format="JPEG")
-            image_bytes.seek(0)
-            audio["covr"] = [
-                MP4Cover(image_bytes.read(), imageformat=MP4Cover.FORMAT_JPEG)
-            ]
+        if cover_image_base64:
+            # Decode base64 string to image data
+            try:
+                # Remove potential header from base64 string
+                if "," in cover_image_base64:
+                    cover_image_base64 = cover_image_base64.split(",", 1)[1]
+
+                # Decode base64 to bytes
+                image_data = base64.b64decode(cover_image_base64)
+
+                # For M4A cover art, we can use PNG directly for better quality
+                # The MP4Cover class accepts raw bytes and can handle PNG format
+                audio["covr"] = [MP4Cover(image_data, imageformat=MP4Cover.FORMAT_PNG)]
+            except Exception as e:
+                print(f"Error processing cover image: {e}")
 
         audio.save()
 
@@ -674,17 +781,11 @@ def create_m4a_with_timed_lyrics(
 
         # Upload to GCS if bucket_name is provided
         if gcs_bucket_name:
-            storage_client = storage.Client()
-            bucket = storage_client.bucket(gcs_bucket_name)
-
-            # Construct full blob path
             full_path = f"{gcs_base_prefix.rstrip('/')}/{output_file}".lstrip("/")
-            blob = bucket.blob(full_path)
-
-            # Upload the file
-            blob.upload_from_string(final_audio_data, content_type="audio/mp4")
-
-            gcs_uri = f"gs://{gcs_bucket_name}/{full_path}"
+            gcs_uri = upload_to_gcs(
+                final_audio_data, gcs_bucket_name, full_path, content_type="audio/mp4"
+            )
+            print(f"Uploaded to GCS: {gcs_uri}")
             results.append(gcs_uri)
 
         # Return appropriate result
@@ -721,10 +822,6 @@ def upload_phrases_audio_to_gcs(
     # Create a copy of the input dictionary for results
     result_dict = {k: v.copy() for k, v in phrase_dict.items()}
 
-    # Initialize GCS client for checking if files exist
-    storage_client = storage.Client()
-    bucket = storage_client.bucket(bucket_name)
-
     # Process each phrase one at a time
     for phrase_key, phrase_data in tqdm(phrase_dict.items(), desc="Processing phrases"):
         english_text = phrase_data.get("english")
@@ -754,8 +851,8 @@ def upload_phrases_audio_to_gcs(
 
         # Check if files already exist (if not overwriting)
         if not overwrite:
-            normal_exists = bucket.blob(normal_path).exists()
-            slow_exists = bucket.blob(slow_path).exists()
+            normal_exists = check_blob_exists(bucket_name, normal_path)
+            slow_exists = check_blob_exists(bucket_name, slow_path)
 
             if normal_exists and slow_exists:
                 print(
@@ -814,7 +911,7 @@ def upload_phrases_audio_to_gcs(
                 english_path = f"multimedia/audio/phrases/english/{clean_key}.mp3"
 
                 # Check if English audio exists if not overwriting
-                if not overwrite and bucket.blob(english_path).exists():
+                if not overwrite and check_blob_exists(bucket_name, english_path):
                     print(
                         f"Skipping English audio for phrase {phrase_key} - file already exists"
                     )

@@ -1,7 +1,6 @@
 import copy
 import io
 import os
-import time
 from io import BytesIO
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
 import requests
@@ -11,7 +10,8 @@ from PIL import Image
 from tqdm import tqdm
 from vertexai.preview.vision_models import ImageGenerationModel
 from src.config_loader import config
-from src.utils import anthropic_generate, clean_filename, ok_to_query_api, load_json
+from src.utils import anthropic_generate, ok_to_query_api, load_json
+from src.convert import clean_filename
 from pathlib import Path
 
 load_dotenv()  # so we can use environment variables for various global settings
