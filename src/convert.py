@@ -3,6 +3,7 @@ import hashlib
 import base64
 import io
 from pydub import AudioSegment
+from typing import List
 
 
 def clean_filename(phrase: str) -> str:
@@ -20,7 +21,7 @@ def clean_filename(phrase: str) -> str:
     return clean
 
 
-def clean_story_name(story_name: str) -> str:
+def get_story_title(story_name: str) -> str:
     """
     Clean a story name by removing 'story' and underscores, returning in title case.
 
@@ -31,7 +32,7 @@ def clean_story_name(story_name: str) -> str:
         str: Cleaned story name in title case (e.g. "Community Park")
 
     Example:
-        >>> clean_story_name("story_community_park")
+        >>> get_story_title("story_community_park")
         'Community Park'
     """
     # Remove 'story' and split on underscores
@@ -49,6 +50,66 @@ def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
     buffer.seek(0)
     audio_bytes = buffer.read()
     return base64.b64encode(audio_bytes).decode("utf-8")
+
+
+def convert_base64_to_audio(base64_string: str, format: str = "mp3") -> AudioSegment:
+    """Convert a base64 encoded string back to an AudioSegment.
+
+    Args:
+        base64_string: A base64 encoded string of audio data
+        format: Audio format of the encoded data (default: "mp3")
+
+    Returns:
+        AudioSegment object containing the audio data
+
+    Raises:
+        ValueError: If the base64 string is invalid or the audio format is unsupported
+    """
+    try:
+        # Remove potential data URI prefix if present
+        if "," in base64_string:
+            base64_string = base64_string.split(",", 1)[1]
+
+        # Decode base64 string to bytes
+        audio_bytes = base64.b64decode(base64_string)
+
+        # Create a BytesIO object from the bytes
+        buffer = io.BytesIO(audio_bytes)
+
+        # Load the audio data into an AudioSegment
+        audio_segment = AudioSegment.from_file(buffer, format=format)
+
+        return audio_segment
+
+    except Exception as e:
+        raise ValueError(f"Failed to convert base64 to AudioSegment: {str(e)}")
+
+
+def convert_base64_list_to_audio_segments(
+    base64_strings: List[str], format: str = "mp3"
+) -> List[AudioSegment]:
+    """Convert a list of base64 encoded strings to a list of AudioSegment objects.
+
+    Args:
+        base64_strings: List of base64 encoded strings of audio data
+        format: Audio format of the encoded data (default: "mp3")
+
+    Returns:
+        List of AudioSegment objects containing the audio data
+
+    Raises:
+        ValueError: If any base64 string is invalid or the audio format is unsupported
+    """
+    audio_segments = []
+
+    for i, base64_string in enumerate(base64_strings):
+        try:
+            audio_segment = convert_base64_to_audio(base64_string, format)
+            audio_segments.append(audio_segment)
+        except ValueError as e:
+            raise ValueError(f"Failed to convert base64 string at index {i}: {str(e)}")
+
+    return audio_segments
 
 
 def convert_m4a_file_to_base64(m4a_file_path: str) -> str:

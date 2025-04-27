@@ -267,7 +267,7 @@ def create_html_challenges(
     # Load the React component
     react_component = load_template(component_path)
     template = Template(load_template(template_path))
-    title = clean_story_name(story_name)
+    title = get_story_title(story_name)
     # Create the HTML content
     html_content = template.substitute(
         title=title,

@@ -38,7 +38,7 @@ def upload_to_gcs(
     Upload various file types directly to Google Cloud Storage without writing to local disk.
 
     Args:
-        obj: The object to upload (bytes, dict, PIL Image, AudioSegment, etc.)
+        obj: The object to upload (bytes, dict, str, PIL Image, AudioSegment, etc.)
         bucket_name: Name of the GCS bucket
         file_name: Name of the file to upload
         base_prefix: Prefix/folder path in the bucket. Defaults to ''.
@@ -66,6 +66,28 @@ def upload_to_gcs(
     # Handle different object types
     if isinstance(obj, bytes):
         # Direct bytes upload
+        blob.upload_from_string(obj, content_type=content_type)
+
+    elif isinstance(obj, str):
+        # Handle string content (including HTML)
+        if file_name.lower().endswith((".html", ".htm")):
+            # For HTML files
+            if content_type is None:
+                content_type = "text/html"
+        elif file_name.lower().endswith(".css"):
+            # For CSS files
+            if content_type is None:
+                content_type = "text/css"
+        elif file_name.lower().endswith(".js"):
+            # For JavaScript files
+            if content_type is None:
+                content_type = "application/javascript"
+        elif file_name.lower().endswith(".txt"):
+            # For plain text files
+            if content_type is None:
+                content_type = "text/plain"
+
+        # Upload the string directly
         blob.upload_from_string(obj, content_type=content_type)
 
     elif isinstance(obj, dict):
@@ -286,11 +308,71 @@ def get_story_collection_path(collection: str = "LM1000") -> str:
     return f"collections/{collection}/{collection}.json"
 
 
-def get_story_dialogue_path(
-    story_name: str, language: str, collection: str = "LM1000"
+def get_m4a_file_path(story_name: str, story_part: str, fast: bool = False) -> str:
+    """Get the GCS path for a story part's m4a file. Each story part has its own m4a file."""
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    story_part = sanitize_path_component(story_part)
+    if fast:
+        filename = get_m4a_filename(story_name, story_part, fast=True)
+        return f"{language}/{story_name}/{filename}"
+    else:
+        filename = get_m4a_filename(story_name, story_part, fast=False)
+        return f"{language}/{story_name}/{filename}"
+
+
+def get_m4a_blob_prefix(story_name: str) -> str:
+    """Get the GCS bucket prefix for a story part's m4a file.
+    Each story part has its own m4a file.
+
+    the pattern is bucket_name/blob_prefix/filename.m4a.
+    Such that get_m4a_file_path = get_m4a_blob_prefix + get_m4a_filename."""
+
+    language = config.TARGET_LANGUAGE_NAME.lower()
+
+    return f"{language}/{story_name}/"
+
+
+def get_m4a_filename(story_name: str, story_part: str, fast: bool = False) -> str:
+    """Get the GCS path for a story part's m4a file. Each story part has its own m4a file."""
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    story_part = sanitize_path_component(story_part)
+    if fast:
+        return f"{language}_{story_name}_{story_part}_FAST.m4a"
+    else:
+        return f"{language}_{story_name}_{story_part}.m4a"
+
+
+def get_story_dialogue_path(story_name: str, collection: str = "LM1000") -> str:
+    """Get the GCS path for a story's dialogue file (initial English only)."""
+    return f"collections/{collection}/stories/{story_name}/dialogue.json"
+
+
+def get_public_story_path(story_name: str) -> str:
+    """Get the GCS blob path for a story's public HTML file.
+    Meant to go to the GCS public bucket which is for holding stories."""
+
+    language = config.TARGET_LANGUAGE_NAME
+    language_folder = sanitize_path_component(language.lower())
+    story_folder = sanitize_path_component(story_name)
+    blob_path = f"{language_folder}/{story_folder}/{story_name}.html"
+    return blob_path
+
+
+def get_story_translated_dialogue_path(
+    story_name: str, collection: str = "LM1000"
 ) -> str:
+
+    language = config.TARGET_LANGUAGE_NAME.lower()
     """Get the GCS path for a story's translated dialogue file."""
     return f"collections/{collection}/stories/{story_name}/dialogue/{language}/translated_dialogue.json"
+
+
+def get_wiktionary_cache_path() -> str:
+    """Get the GCS path for the Wiktionary link cache. The cache is a JSON dictionary of words and their links.
+    The key is the lowercase word, and the value is a link (str)."""
+
+    WORD_LINK_CACHE = f"resources/{config.TARGET_LANGUAGE_NAME.lower()}/{config.TARGET_LANGUAGE_NAME.lower()}_wiktionary_cache.json"
+    return WORD_LINK_CACHE
 
 
 def get_utterance_audio_path(
@@ -307,8 +389,9 @@ def get_utterance_audio_path(
 
 
 def get_fast_audio_path(
-    story_name: str, story_part: str, language: str, collection: str = "LM1000"
+    story_name: str, story_part: str, collection: str = "LM1000"
 ) -> str:
+    language = config.TARGET_LANGUAGE_NAME.lower()
     """Get the GCS path for a fast audio file."""
     return f"collections/{collection}/stories/{story_name}/audio/{language}/{story_part}/fast.mp3"
 
