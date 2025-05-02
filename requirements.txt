@@ -20,7 +20,6 @@ ipywidgets
 librosa                         #for speeding up dialogue
 matplotlib
 mutagen
-numpy==1.24.3
 pandas
 proto-plus==1.24.0.dev1         # fix update bug in gcloud components update
 pycountry
@@ -33,6 +32,3 @@ reportlab
 requests
 soundfile                       #for speeding up dialogue
 spacy==3.5.3
-transformers
-uvicorn
-flask-cors==5.0.0
