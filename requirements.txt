@@ -22,6 +22,7 @@ proto-plus==1.24.0.dev1         # fix update bug in gcloud components update
 pycountry
 pydantic
 pydub
+plotly              #for visualizing the vocab growth   
 pysnooper
 pytest
 python-dotenv
