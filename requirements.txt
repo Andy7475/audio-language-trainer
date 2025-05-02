@@ -1,10 +1,8 @@
-accelerate
 altair
-anki
+anki                           #for connecting to anki database
 anthropic                      #for querying the Anthropic models hosted on Google Cloud
 azure-cognitiveservices-speech #as google TTS does not have some voices like Persian
 beautifulsoup4
-diffusers
 fastapi
 genanki
 google-auth
@@ -27,7 +25,6 @@ pydub
 pysnooper
 pytest
 python-dotenv
-reportlab
 requests
 soundfile                       #for speeding up dialogue
 spacy>=3.8.0
