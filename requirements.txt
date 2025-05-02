@@ -31,4 +31,4 @@ python-dotenv
 reportlab
 requests
 soundfile                       #for speeding up dialogue
-spacy==3.5.3
+spacy>=3.8.0
