@@ -13,7 +13,6 @@ google-cloud-core
 google-cloud-language
 google-cloud-texttospeech
 google-cloud-translate
-h5py==3.8.0
 httpx
 ipykernel                       #for jupyter notebook
 ipywidgets
