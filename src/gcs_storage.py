@@ -5,7 +5,7 @@ import os
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 
 from google.cloud import storage
 from PIL import Image
@@ -386,6 +386,13 @@ def get_story_translated_dialogue_path(
     return f"collections/{collection}/stories/{story_name}/dialogue/{language}/translated_dialogue.json"
 
 
+def get_translated_phrases_path(collection: str = "LM1000") -> str:
+    """Get the GCS path for a story's translated phrases file. These are dictionaries keyed of the phrase key
+    and contain translations and wiktionary links."""
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    return f"collections/{collection}/translations/{language}.json"
+
+
 def get_wiktionary_cache_path() -> str:
     """Get the GCS path for the Wiktionary link cache. The cache is a JSON dictionary of words and their links.
     The key is the lowercase word, and the value is a link (str)."""
@@ -497,3 +504,57 @@ def get_stories_from_collection(
     except Exception as e:
         print(f"Error loading collection {collection}: {str(e)}")
         return []
+
+
+def get_phrase_audio_path(
+    phrase_key: str, speed: Literal["normal", "slow"] = "normal"
+) -> str:
+    """
+    Get the GCS path for a phrase's audio file.
+
+    Args:
+        phrase_key: Key identifying the phrase
+        speed: "normal" or "slow" speed version
+
+    Returns:
+        str: Path to the audio file in GCS
+    """
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    return f"multimedia/audio/phrases/{language}/{speed}/{phrase_key}.mp3"
+
+
+def get_phrase_image_path(phrase_key: str) -> str:
+    """
+    Get the GCS path for a phrase's image file.
+
+    Args:
+        phrase_key: Key identifying the phrase
+
+    Returns:
+        str: Path to the image file in GCS
+    """
+    return f"multimedia/images/core/{phrase_key}.png"
+
+
+def get_anki_deck_path(
+    story_name: str, collection: str = "LM1000", language: Optional[str] = None
+) -> str:
+    """
+    Get the GCS path for an Anki deck file.
+
+    Args:
+        story_name: Name of the story
+        collection: Collection name (default: "LM1000")
+        language: Optional language code (defaults to config.TARGET_LANGUAGE_NAME)
+
+    Returns:
+        str: Path to the Anki deck file in GCS
+        Format: collections/{collection}/anki/{language}/{story_name}.apkg
+    """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+
+    # Sanitize the story name for use in paths
+    sanitized_story = sanitize_path_component(story_name)
+
+    return f"collections/{collection}/anki/{language}/{sanitized_story}.apkg"
