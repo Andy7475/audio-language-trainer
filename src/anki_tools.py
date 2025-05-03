@@ -19,7 +19,7 @@ from src.utils import (
 )
 from src.convert import string_to_large_int, clean_filename, get_deck_name
 from src.wiktionary import generate_wiktionary_links
-from src.phrase import build_phrase_dict_from_gcs
+from src.phrase import build_phrase_dict_from_gcs, get_phrase_keys
 from src.gcs_storage import get_story_collection_path, read_from_gcs
 
 
@@ -617,12 +617,11 @@ def export_to_anki_with_images(
 
 
 def create_anki_deck_from_gcs(
-    deck_name: str,
-    output_dir: str,
-    story_name: Optional[str] = None,
+    story_name: Optional[str | list[str]] = None,
+    deck_name: Optional[str] = None,
+    output_dir: Optional[str] = "../outputs/flashcards",
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
-    image_dir: Optional[str] = None,
 ) -> None:
     """
     Create an Anki deck from translated phrase data stored in GCS.
@@ -630,7 +629,7 @@ def create_anki_deck_from_gcs(
     Args:
         deck_name: Name of the Anki deck
         output_dir: Directory to save the Anki deck
-        story_name: Optional name of the story to filter phrases by
+        story_name: Optional name of the story to filter phrases by. Can be a single story name or a list of story names.
         collection: Collection name (default: "LM1000")
         bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
         image_dir: Optional directory containing images for the deck
@@ -645,35 +644,39 @@ def create_anki_deck_from_gcs(
     except Exception as e:
         raise ValueError(f"Failed to read story collection: {str(e)}")
 
-    # Get phrase keys for the story if specified
-    phrase_keys = None
-    if story_name:
-        # Get phrases for this story from the collection
-        story_phrases = collection_data.get(story_name, {}).get("phrases", [])
-        if not story_phrases:
-            raise ValueError(f"No phrases found for story: {story_name}")
+    # Convert single story_name to list for consistent handling
+    story_names = [story_name] if isinstance(story_name, str) else story_name
 
-        # Convert phrases to phrase keys
-        phrase_keys = [clean_filename(phrase) for phrase in story_phrases]
+    # If no specific stories requested, get all stories from collection
+    if not story_names:
+        story_names = list(collection_data.keys())
 
-    # Build the phrase dictionary from GCS with filtering
-    phrase_dict = build_phrase_dict_from_gcs(
-        collection=collection, bucket_name=bucket_name, phrase_keys=phrase_keys
-    )
+    # Process each story
+    for story_position, current_story_name in enumerate(story_names, start=1):
+        # Get phrase keys for this story
+        phrase_keys = get_phrase_keys(current_story_name, collection)
+        if not phrase_keys:
+            print(f"No phrases found for story: {current_story_name}")
+            continue
 
-    if not phrase_dict:
-        if story_name:
-            raise ValueError(f"No matching phrases found for story: {story_name}")
-        else:
-            raise ValueError("Failed to build phrase dictionary")
+        # Build the phrase dictionary from GCS with filtering
+        phrase_dict = build_phrase_dict_from_gcs(
+            collection=collection, bucket_name=bucket_name, phrase_keys=phrase_keys
+        )
 
-    # Create Anki deck
-    export_phrases_to_anki(
-        phrase_dict=phrase_dict,
-        output_dir=output_dir,
-        deck_name=deck_name,
-        image_dir=image_dir,
-    )
+        if not phrase_dict:
+            print(f"No matching phrases found for story: {current_story_name}")
+            continue
+
+        # Create Anki deck for this story
+        export_phrases_to_anki(
+            phrase_dict=phrase_dict,
+            output_dir=output_dir,
+            deck_name=deck_name,
+            story_name=current_story_name,
+            collection=collection,
+            story_position=story_position,
+        )
 
 
 def export_phrases_to_anki(
@@ -716,7 +719,6 @@ def export_phrases_to_anki(
             story_name, collection, story_position, language
         )
     else:
-
         formatted_deck_name = f"{language_cap}::{collection}::Phrases"
 
     # Create package filename in snake case
