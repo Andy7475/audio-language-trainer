@@ -54,7 +54,7 @@ def generate_wiktionary_links(
 
         # Use the word as is for cache lookup (preserves case)
         if clean_word in word_link_cache:
-            links.append(word_link_cache[clean_word].replace(clean_word, word))
+            links.append(word_link_cache[clean_word])
             continue
 
         # No cache hit, try to create wiktionary link
@@ -93,7 +93,7 @@ def generate_wiktionary_links(
 
 def add_wiktionary_links(
     phrase_translations: dict, word_link_cache: dict = {}, overwrite: bool = False
-) -> None:
+) -> Tuple[dict, dict]:
     """
     Add wiktionary links to the phrase translations dictionary, using a cache to avoid
     duplicate queries for common words.
@@ -117,8 +117,9 @@ def add_wiktionary_links(
             )
 
             phrase_translations[phrase_key]["wiktionary_links"] = links
+            print(f"modified {phrase_key}")
 
-    return word_link_cache
+    return phrase_translations, word_link_cache
 
 
 def generate_wiktionary_links_non_english(

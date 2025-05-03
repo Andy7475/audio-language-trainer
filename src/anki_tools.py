@@ -1,8 +1,5 @@
 import os
-import re
-import tempfile
 import uuid
-from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
@@ -20,95 +17,10 @@ from src.utils import (
     create_test_story_dict,
     load_template,
 )
-from src.convert import string_to_large_int
+from src.convert import string_to_large_int, clean_filename, get_deck_name
 from src.wiktionary import generate_wiktionary_links
-
-
-def convert_anki_to_story_dict(collection_path: str, deck_name: str) -> Dict[str, Dict]:
-    """
-    Read an Anki deck and convert it to the story_data_dict format used by export_anki_with_images
-
-    Args:
-        collection_path: Path to the .anki2 collection file
-        deck_name: Name of the deck to convert
-
-    Returns:
-        Dictionary in the story_data_dict format with phrases and audio
-    """
-    story_data_dict = defaultdict(lambda: defaultdict(list))
-
-    # Create a temporary directory for media files
-    with tempfile.TemporaryDirectory() as temp_dir:
-        with AnkiCollectionReader(collection_path) as reader:
-            # Get the media files mapping
-            media_dir = reader.get_media_dir()
-
-            # Get notes from the deck
-            notes = reader.get_notes_for_deck(deck_name)
-
-            # Process each note
-            phrase_list = []
-            audio_segments = []
-
-            for note in tqdm(notes):
-                # Extract fields from note
-                fields = note["fields"]
-
-                # Get target and English text
-                target_text = fields.get("TargetText", "").strip()
-                english_text = fields.get("EnglishText", "").strip()
-
-                if not target_text or not english_text:
-                    continue
-
-                # Extract audio filenames from the audio field
-                target_audio = fields.get("TargetAudio", "")
-                target_audio_slow = fields.get("TargetAudioSlow", "")
-
-                # Extract sound filenames using regex
-                audio_pattern = r"\[sound:(.*?)\]"
-                normal_audio_match = re.search(audio_pattern, target_audio)
-                slow_audio_match = re.search(audio_pattern, target_audio_slow)
-
-                if normal_audio_match and slow_audio_match:
-                    normal_audio_file = normal_audio_match.group(1)
-                    slow_audio_file = slow_audio_match.group(1)
-
-                    # Get the full paths for the audio files
-                    normal_audio_path = os.path.join(media_dir, normal_audio_file)
-                    slow_audio_path = os.path.join(media_dir, slow_audio_file)
-
-                    # Load audio segments if files exist
-                    try:
-                        normal_segment = AudioSegment.from_file(normal_audio_path)
-                        slow_segment = AudioSegment.from_file(slow_audio_path)
-
-                        # Add phrase and audio to lists
-                        phrase_list.append((english_text, target_text))
-                        audio_segments.append([None, slow_segment, normal_segment])
-
-                    except Exception as e:
-                        print(f"Error loading audio for note {note['id']}: {str(e)}")
-                        continue
-
-            # Add all phrases and audio to the story dict under a single part
-            english_phrases = [english for (english, target) in phrase_list]
-            if phrase_list and audio_segments:
-                story_data_dict["part_1"]["translated_phrase_list"] = phrase_list
-                story_data_dict["part_1"][
-                    "translated_phrase_list_audio"
-                ] = audio_segments
-                story_data_dict["part_1"]["corrected_phrase_list"] = english_phrases
-
-    return dict(story_data_dict)
-
-
-def extract_audio_filename(field_value: str) -> str:
-    """Extract the audio filename from an Anki field value containing [sound:] tags"""
-    match = re.search(r"\[sound:(.*?)\]", field_value)
-    if match:
-        return match.group(1)
-    return None
+from src.phrase import build_phrase_dict_from_gcs, get_phrase_keys
+from src.gcs_storage import get_story_collection_path, read_from_gcs
 
 
 def get_anki_path() -> str:
@@ -690,6 +602,235 @@ def export_to_anki_with_images(
     package = genanki.Package(deck)
     package.media_files = [os.path.join(output_dir, file) for file in media_files]
     output_filename = os.path.join(output_dir, f"{story_name}_anki_deck.apkg")
+    package.write_to_file(output_filename)
+    print(f"Anki deck exported to {output_filename}")
+
+    # Clean up temporary files
+    for media_file in tqdm(media_files, desc="deleting temp files"):
+        file_path = os.path.join(output_dir, media_file)
+        try:
+            os.remove(file_path)
+        except OSError as e:
+            print(f"Error deleting file {file_path}: {e}")
+
+    print("Cleanup of temporary files completed.")
+
+
+def create_anki_deck_from_gcs(
+    story_name: Optional[str | list[str]] = None,
+    deck_name: Optional[str] = None,
+    output_dir: Optional[str] = "../outputs/flashcards",
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+) -> None:
+    """
+    Create an Anki deck from translated phrase data stored in GCS.
+
+    Args:
+        deck_name: Name of the Anki deck
+        output_dir: Directory to save the Anki deck
+        story_name: Optional name of the story to filter phrases by. Can be a single story name or a list of story names.
+        collection: Collection name (default: "LM1000")
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
+        image_dir: Optional directory containing images for the deck
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    # Get the story collection to map phrases to their keys
+    collection_path = get_story_collection_path(collection)
+    try:
+        collection_data = read_from_gcs(bucket_name, collection_path, "json")
+    except Exception as e:
+        raise ValueError(f"Failed to read story collection: {str(e)}")
+
+    # Convert single story_name to list for consistent handling
+    story_names = [story_name] if isinstance(story_name, str) else story_name
+
+    # If no specific stories requested, get all stories from collection
+    if not story_names:
+        story_names = list(collection_data.keys())
+
+    # Process each story
+    for story_position, current_story_name in enumerate(story_names, start=1):
+        # Get phrase keys for this story
+        phrase_keys = get_phrase_keys(current_story_name, collection)
+        if not phrase_keys:
+            print(f"No phrases found for story: {current_story_name}")
+            continue
+
+        # Build the phrase dictionary from GCS with filtering
+        phrase_dict = build_phrase_dict_from_gcs(
+            collection=collection, bucket_name=bucket_name, phrase_keys=phrase_keys
+        )
+
+        if not phrase_dict:
+            print(f"No matching phrases found for story: {current_story_name}")
+            continue
+
+        # Create Anki deck for this story
+        export_phrases_to_anki(
+            phrase_dict=phrase_dict,
+            output_dir=output_dir,
+            deck_name=deck_name,
+            story_name=current_story_name,
+            collection=collection,
+            story_position=story_position,
+        )
+
+
+def export_phrases_to_anki(
+    phrase_dict: Dict[str, Dict[str, Any]],
+    output_dir: str = "../outputs/flashcards",
+    language: str = config.TARGET_LANGUAGE_NAME.lower(),
+    story_name: Optional[str] = None,
+    deck_name: Optional[str] = None,
+    collection: str = "LM1000",
+    story_position: Optional[int] = None,
+) -> None:
+    """
+    Export phrase data to an Anki deck.
+
+    Args:
+        phrase_dict: Dictionary of phrase data in format:
+            {
+                "phrase_key": {
+                    "english_text": str,
+                    "target_text": str,
+                    "audio_normal": AudioSegment or None,
+                    "audio_slow": AudioSegment or None,
+                    "image": Image or None,
+                    "wiktionary_links": str or None
+                },
+                ...
+            }
+        output_dir: Directory to save the Anki deck
+        deck_name: Name of the Anki deck (if left out one will be generated based off language, collection and story_name)
+        language: Target language name (e.g. 'french')
+        story_name: Optional name of the story (e.g. 'story_community_park')
+        collection: Collection name (default: "LM1000")
+        story_position: Optional position of story in sequence (e.g. 1 becomes "01")
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    language_cap = language.title()
+    # Format deck name with proper hierarchy
+    if story_name:
+        formatted_deck_name = get_deck_name(
+            story_name, collection, story_position, language
+        )
+    else:
+        formatted_deck_name = f"{language_cap}::{collection}::Phrases"
+
+    # Create package filename in snake case
+    package_name_parts = [language.lower()]
+    if collection != "LM1000":
+        package_name_parts.append(collection.lower())
+    if story_name:
+        package_name_parts.append(story_name.replace("story_", ""))
+    package_filename = f"{'_'.join(package_name_parts)}_anki_deck.apkg"
+
+    # Create Anki model
+    language_practice_model = genanki.Model(
+        1607392313,  # Model ID
+        "Language Practice With Images",
+        fields=[
+            {"name": "SortOrder"},
+            {"name": "TargetText"},
+            {"name": "TargetAudio"},
+            {"name": "TargetAudioSlow"},
+            {"name": "EnglishText"},
+            {"name": "WiktionaryLinks"},
+            {"name": "Picture"},
+            {"name": "TargetLanguageName"},
+        ],
+        templates=[
+            {
+                "name": "Listening Card",
+                "qfmt": load_template("listening_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
+            },
+            {
+                "name": "Reading Card",
+                "qfmt": load_template("reading_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
+            },
+            {
+                "name": "Speaking Card",
+                "qfmt": load_template("speaking_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
+            },
+        ],
+        css=load_template("card_styles.css"),
+    )
+
+    media_files = []
+    notes = []
+
+    if deck_name is not None:
+        formatted_deck_name = deck_name
+    # Set up deck
+    deck_id = string_to_large_int(formatted_deck_name + "TurboPhrase")
+    deck = genanki.Deck(deck_id, formatted_deck_name)
+
+    # Process each phrase
+    for index, (phrase_key, phrase_data) in tqdm(
+        enumerate(phrase_dict.items()), desc="processing phrases"
+    ):
+        # Handle image
+        image_filename = None
+        if phrase_data["image"] is not None:
+            try:
+                image_filename = f"{uuid.uuid4()}.png"
+                output_path = os.path.join(output_dir, image_filename)
+                # Resize and save the PIL Image directly
+                resized_img = phrase_data["image"].resize((400, 400))
+                resized_img.save(output_path, "PNG", optimize=True)
+                media_files.append(image_filename)
+            except Exception as e:
+                print(f"Error processing image for {phrase_key}: {str(e)}")
+                image_filename = None
+
+        # Handle audio
+        target_audio_normal = f"{uuid.uuid4()}.mp3"
+        target_audio_slow = f"{uuid.uuid4()}.mp3"
+
+        if phrase_data["audio_normal"] is not None:
+            phrase_data["audio_normal"].export(
+                os.path.join(output_dir, target_audio_normal), format="mp3"
+            )
+            media_files.append(target_audio_normal)
+
+        if phrase_data["audio_slow"] is not None:
+            phrase_data["audio_slow"].export(
+                os.path.join(output_dir, target_audio_slow), format="mp3"
+            )
+            media_files.append(target_audio_slow)
+
+        # Create note
+        note = genanki.Note(
+            model=language_practice_model,
+            fields=[
+                get_sort_field(index, phrase_data["target_text"]),
+                phrase_data["target_text"],
+                f"[sound:{target_audio_normal}]" if phrase_data["audio_normal"] else "",
+                f"[sound:{target_audio_slow}]" if phrase_data["audio_slow"] else "",
+                phrase_data["english_text"],
+                phrase_data["wiktionary_links"] or "",
+                f'<img src="{image_filename}">' if image_filename else "",
+                language_cap,
+            ],
+            guid=string_to_large_int(phrase_data["target_text"] + "image"),
+        )
+        notes.append(note)
+
+    # Add notes to deck
+    for note in tqdm(notes, desc="adding notes to deck"):
+        deck.add_note(note)
+
+    # Create and save the package
+    package = genanki.Package(deck)
+    package.media_files = [os.path.join(output_dir, file) for file in media_files]
+    output_filename = os.path.join(output_dir, package_filename)
     package.write_to_file(output_filename)
     print(f"Anki deck exported to {output_filename}")
 

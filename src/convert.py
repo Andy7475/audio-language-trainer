@@ -3,7 +3,7 @@ import hashlib
 import base64
 import io
 from pydub import AudioSegment
-from typing import List
+from typing import List, Optional
 
 
 def clean_filename(phrase: str) -> str:
@@ -161,6 +161,35 @@ def string_to_large_int(s: str) -> int:
     large_int = int(truncated_hex, 16)
     # Ensure the value is positive and within SQLite's signed 64-bit integer range
     return large_int & 0x7FFFFFFFFFFFFFFF
+
+
+def get_deck_name(
+    story_name: str, collection: str, story_position: Optional[int], language: str
+) -> str:
+    """
+    Format a deck name in the pattern: Language::Collection::Position Story Title
+
+    Args:
+        story_name: Name of the story (e.g. "story_community_park")
+        collection: Collection name (e.g. "LM1000")
+        story_position: Optional position number (e.g. 1 becomes "01")
+        language: Language name (e.g. "French")
+
+    Returns:
+        str: Formatted deck name (e.g. "French::LM1000::01 Community Park")
+    """
+    # Get the story title without "story_" prefix and with proper capitalization
+    story_title = get_story_title(story_name)
+
+    # Format the position if provided
+    position_str = ""
+    if story_position is not None:
+        position_str = f"{story_position:02d} "
+
+    # Capitalize the language name
+    language_cap = language.title()
+
+    return f"{language_cap}::{collection}::{position_str} {story_title}"
 
 
 def convert_bytes_to_base64(data: bytes) -> str:
