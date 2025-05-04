@@ -13,7 +13,16 @@ from tqdm import tqdm
 from src.config_loader import config
 from src.convert import clean_filename
 from src.gcs_storage import get_phrase_path, get_story_index_path, read_from_gcs
-from src.phrase import get_text_from_dialogue
+
+
+def get_text_from_dialogue(dialogue: List[Dict[str, str]]) -> List[str]:
+    """ignoring the speaker, just gets all the utterances from a dialogue and puts
+    them in a single list"""
+
+    phrases = []
+    for utterance in dialogue:
+        phrases.append(utterance["text"])
+    return phrases
 
 
 def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
@@ -1270,78 +1279,105 @@ def assign_phrases_to_stories(
         story: {"verbs": set(), "vocab": set()} for story in story_index["stories"]
     }
 
-    # Sort phrases by number of unique words to prioritize more complex phrases
-    phrase_complexity = [
-        (len(phrase_index["phrase_vocab"][key]["all_words"]), key)
-        for key in phrase_keys
-    ]
-    phrase_complexity.sort(reverse=True)
-    sorted_phrase_keys = [key for _, key in phrase_complexity]
+    # Assign phrases to stories
+    remaining_phrases = set(phrase_keys)
 
-    # Assign phrases
-    for phrase_key in sorted_phrase_keys:
-        best_story = None
-        best_score = -1
-        best_new_verbs = 0
-        best_new_vocab = 0
+    # Process each story until it has enough phrases or vocab coverage
+    for story in story_index["stories"]:
+        story_verbs = set(story_index["story_vocab"][story]["verbs"])
+        story_vocab = set(story_index["story_vocab"][story]["vocab"])
 
-        # Find best story for this phrase
-        for story in story_index["stories"]:
-            if story_phrase_counts[story] >= max_phrases_per_story:
-                continue
+        while (
+            story_phrase_counts[story] < max_phrases_per_story
+            and len(remaining_phrases) > 0
+        ):
 
-            # Calculate vocabulary overlap score
-            story_verbs = set(story_index["verb_index"].get(story, []))
-            story_vocab = set(story_index["vocab_index"].get(story, []))
+            # Calculate current coverage
+            covered_verbs = len(story_covered_vocab[story]["verbs"])
+            covered_vocab = len(story_covered_vocab[story]["vocab"])
+            verb_coverage = covered_verbs / len(story_verbs) if story_verbs else 1.0
+            vocab_coverage = covered_vocab / len(story_vocab) if story_vocab else 1.0
 
-            # Get new vocabulary this phrase would add
-            new_verbs, new_vocab = get_new_vocabulary_coverage(
-                phrase_key,
-                phrase_index,
-                story_covered_vocab[story]["verbs"],
-                story_covered_vocab[story]["vocab"],
-            )
+            # Stop if we have 90% coverage of both
+            if verb_coverage >= 0.9 and vocab_coverage >= 0.9:
+                break
 
-            # Calculate score based on new vocabulary
-            score = (new_verbs * 2) + new_vocab  # Weight verbs more heavily
-
-            if score > best_score:
-                best_story = story
-                best_score = score
-                best_new_verbs = new_verbs
-                best_new_vocab = new_vocab
-
-        # If no story found with new vocabulary, assign to story with fewest phrases
-        if best_story is None:
-            best_story = min(story_phrase_counts.items(), key=lambda x: x[1])[0]
-            best_score = 0
+            # Find best remaining phrase for this story
+            best_phrase = None
+            best_score = -1
             best_new_verbs = 0
             best_new_vocab = 0
 
-        # Update assignments and tracking
-        assignments[best_story].append(
-            {
-                "phrase": phrases[phrase_keys.index(phrase_key)],
-                "score": best_score,
-                "new_verbs": best_new_verbs,
-                "new_vocab": best_new_vocab,
-            }
-        )
-        story_phrase_counts[best_story] += 1
+            for phrase_key in remaining_phrases:
+                # Get vocab from phrase index and story
+                phrase_verbs = set(phrase_index["phrase_vocab"][phrase_key]["verbs"])
+                phrase_vocab = set(phrase_index["phrase_vocab"][phrase_key]["vocab"])
+                story_verbs = set(story_index["story_vocab"][story]["verbs"])
+                story_vocab = set(story_index["story_vocab"][story]["vocab"])
 
-        # Update covered vocabulary
-        phrase_verbs, phrase_vocab = get_covered_vocabulary(phrase_key, phrase_index)
-        story_covered_vocab[best_story]["verbs"].update(phrase_verbs)
-        story_covered_vocab[best_story]["vocab"].update(phrase_vocab)
+                # Calculate vocabulary overlap between phrase and story
+                new_verbs = len(
+                    phrase_verbs & story_verbs - story_covered_vocab[story]["verbs"]
+                )
+                new_vocab = len(
+                    phrase_vocab & story_vocab - story_covered_vocab[story]["vocab"]
+                )
+
+                # Calculate score based on new vocabulary
+                score = (new_verbs * 2) + new_vocab  # Weight verbs more heavily
+
+                if score > best_score:
+                    best_phrase = phrase_key
+                    best_score = score
+                    best_new_verbs = new_verbs
+                    best_new_vocab = new_vocab
+
+            # If no good phrase found, move to next story
+            if best_score == 0:
+                break
+
+            # Add best phrase to assignments
+            assignments[story].append(
+                {
+                    "phrase": phrases[phrase_keys.index(best_phrase)],
+                    "score": best_score,
+                    "new_verbs": best_new_verbs,
+                    "new_vocab": best_new_vocab,
+                }
+            )
+
+            # Update tracking
+            story_phrase_counts[story] += 1
+            remaining_phrases.remove(best_phrase)
+
+            # Update covered vocabulary
+            phrase_verbs = set(phrase_index["phrase_vocab"][best_phrase]["verbs"])
+            phrase_vocab = set(phrase_index["phrase_vocab"][best_phrase]["vocab"])
+            story_covered_vocab[story]["verbs"].update(phrase_verbs)
+            story_covered_vocab[story]["vocab"].update(phrase_vocab)
 
     # Print assignment statistics
     print("\nAssignment Statistics:")
     print(f"Total phrases: {len(phrases)}")
+    print(f"Remaining unassigned phrases: {len(remaining_phrases)}")
     print("\nPhrases per story:")
-    for story, count in story_phrase_counts.items():
-        print(f"{story}: {count} phrases")
-        print(f"  New verbs covered: {len(story_covered_vocab[story]['verbs'])}")
-        print(f"  New vocab covered: {len(story_covered_vocab[story]['vocab'])}")
+    for story in story_index["stories"]:
+        story_verbs = set(story_index["story_vocab"][story]["verbs"])
+        story_vocab = set(story_index["story_vocab"][story]["vocab"])
+        verb_coverage = (
+            len(story_covered_vocab[story]["verbs"]) / len(story_verbs)
+            if story_verbs
+            else 1.0
+        )
+        vocab_coverage = (
+            len(story_covered_vocab[story]["vocab"]) / len(story_vocab)
+            if story_vocab
+            else 1.0
+        )
+
+        print(f"{story}: {story_phrase_counts[story]} phrases")
+        print(f"  Verb coverage: {verb_coverage:.1%}")
+        print(f"  Vocab coverage: {vocab_coverage:.1%}")
 
     return assignments
 

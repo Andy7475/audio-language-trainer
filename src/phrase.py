@@ -472,16 +472,6 @@ def update_word_usage(data: List[Dict], used_words: List[str]) -> List[Dict]:
     return data
 
 
-def get_text_from_dialogue(dialogue: List[Dict[str, str]]) -> List[str]:
-    """ignoring the speaker, just gets all the utterances from a dialogue and puts
-    them in a single list"""
-
-    phrases = []
-    for utterance in dialogue:
-        phrases.append(utterance["text"])
-    return phrases
-
-
 def get_sentences_from_text(phrases: List[str]) -> List[str]:
     """Splits up phrases which might have more than one sentence per phrase and splits into a list of separate sentences.
     Returns a list of sentences.
