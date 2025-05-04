@@ -1,6 +1,7 @@
 import re
+from collections import defaultdict
 from copy import deepcopy
-from typing import Dict, List, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -8,6 +9,11 @@ import plotly.graph_objects as go
 import spacy
 from plotly.subplots import make_subplots
 from tqdm import tqdm
+
+from src.config_loader import config
+from src.convert import clean_filename
+from src.gcs_storage import get_phrase_path, get_story_index_path, read_from_gcs
+from src.phrase import get_text_from_dialogue
 
 
 def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
@@ -295,17 +301,56 @@ def process_phrase_vocabulary(phrase: str) -> tuple[set, set, set]:
 
 
 def create_flashcard_index(flashcard_phrases: list[str]) -> dict:
-    """Create indexes mapping words to the flashcards containing them."""
+    """Create indexes mapping words to the flashcards containing them.
+    Also stores vocabulary data for each phrase to avoid redundant processing.
+
+    Args:
+        flashcard_phrases: List of phrases to index
+
+    Returns:
+        Dictionary containing:
+        {
+            "verb_index": {word: [flashcard_idx1, flashcard_idx2, ...]},
+            "vocab_index": {word: [flashcard_idx1, flashcard_idx2, ...]},
+            "word_counts": [
+                {
+                    "verb_count": int,
+                    "vocab_count": int,
+                    "words": list of (word, pos) tuples
+                },
+                ...
+            ],
+            "phrases": list of phrases,
+            "phrase_vocab": {
+                "phrase_key1": {
+                    "verbs": [...],
+                    "vocab": [...],
+                    "all_words": [...]
+                },
+                ...
+            }
+        }
+    """
     verb_index = {}  # word -> set of flashcard indices
     vocab_index = {}
     flashcard_word_counts = []
+    phrase_vocab = {}  # phrase_key -> vocabulary data
 
     for idx, phrase in tqdm(
         enumerate(flashcard_phrases),
-        desc="Indexes phrases...",
+        desc="Indexing phrases...",
         total=len(flashcard_phrases),
     ):
+        # Process phrase vocabulary once
         vocab_used, verb_matches, vocab_matches = process_phrase_vocabulary(phrase)
+
+        # Store vocabulary data for this phrase
+        phrase_key = clean_filename(phrase)
+        phrase_vocab[phrase_key] = {
+            "verbs": list(verb_matches),
+            "vocab": list(vocab_matches),
+            "all_words": list(vocab_used),
+        }
 
         # Build indexes
         for word in verb_matches:
@@ -338,7 +383,47 @@ def create_flashcard_index(flashcard_phrases: list[str]) -> dict:
         "vocab_index": vocab_index,
         "word_counts": flashcard_word_counts,
         "phrases": flashcard_phrases,
+        "phrase_vocab": phrase_vocab,
     }
+
+
+def get_covered_vocabulary(phrase_key: str, phrase_index: dict) -> tuple[set, set]:
+    """Get the verbs and vocabulary covered by a specific phrase.
+
+    Args:
+        phrase_key: The key identifying the phrase
+        phrase_index: The phrase index containing vocabulary data
+
+    Returns:
+        Tuple of (verbs, vocab) sets covered by the phrase
+    """
+    if phrase_key not in phrase_index["phrase_vocab"]:
+        return set(), set()
+
+    vocab_data = phrase_index["phrase_vocab"][phrase_key]
+    return set(vocab_data["verbs"]), set(vocab_data["vocab"])
+
+
+def get_new_vocabulary_coverage(
+    phrase_key: str, phrase_index: dict, covered_verbs: set, covered_vocab: set
+) -> tuple[int, int]:
+    """Calculate how many new verbs and vocabulary words a phrase would add.
+
+    Args:
+        phrase_key: The key identifying the phrase
+        phrase_index: The phrase index containing vocabulary data
+        covered_verbs: Set of verbs already covered
+        covered_vocab: Set of vocabulary already covered
+
+    Returns:
+        Tuple of (new_verbs, new_vocab) counts
+    """
+    phrase_verbs, phrase_vocab = get_covered_vocabulary(phrase_key, phrase_index)
+
+    new_verbs = len(phrase_verbs - covered_verbs)
+    new_vocab = len(phrase_vocab - covered_vocab)
+
+    return new_verbs, new_vocab
 
 
 def find_candidate_cards(
@@ -586,34 +671,6 @@ def check_vocab_match(
             if lemma not in vocab_dict.get("vocab", []):
                 return False
     return True
-
-
-def phrase_matches_vocab(
-    english_phrase: str, vocab_dictionary: Dict[str, List[str]]
-) -> bool:
-    """
-    Check if a phrase only uses words from the provided vocabulary dictionary.
-
-    Args:
-        english_phrase: The English phrase to check
-        vocab_dictionary: Dictionary with 'verbs' and 'vocab' lists
-
-    Returns:
-        bool: True if all content words in the phrase are found in the vocabulary lists
-    """
-    nlp = load_spacy_model()
-
-    # Convert vocabulary lists to lowercase for matching
-    vocab_dict = {
-        "verbs": [v.lower() for v in vocab_dictionary.get("verbs", [])],
-        "vocab": [v.lower() for v in vocab_dictionary.get("vocab", [])],
-    }
-
-    # Extract content words from the phrase
-    phrase_words = extract_content_words(english_phrase, nlp)
-
-    # Check if all content words are in the vocabulary
-    return check_vocab_match(phrase_words, vocab_dict)
 
 
 def filter_matching_phrases(
@@ -996,3 +1053,396 @@ def optimize_phrase_list_with_known(
     optimised_df = optimize_sequence_with_known(df, known_vocab)
 
     return list(optimised_df["phrase"])
+
+
+def create_story_index(
+    story_dialogues: Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]],
+) -> Dict[str, Dict]:
+    """
+    Create indexes mapping words to the stories containing them.
+    Similar to create_flashcard_index but for story dialogues.
+
+    Args:
+        story_dialogues: Dictionary mapping story names to story parts, where each part contains a dialogue list
+            Format: {
+                "story_name": {
+                    "part1": {
+                        "dialogue": [
+                            {"speaker": "Alex", "text": "..."},
+                            {"speaker": "Sam", "text": "..."},
+                            ...
+                        ]
+                    },
+                    "part2": {
+                        "dialogue": [...]
+                    },
+                    ...
+                },
+                ...
+            }
+
+    Returns:
+        Dictionary containing:
+        {
+            "verb_index": {word: [story_name1, story_name2, ...]},
+            "vocab_index": {word: [story_name1, story_name2, ...]},
+            "word_counts": {story_name: {"verb_count": int, "vocab_count": int, "words": list}},
+            "stories": list of story names,
+            "story_vocab": {
+                "story_name1": {
+                    "verbs": [...],
+                    "vocab": [...],
+                    "all_words": [...]
+                },
+                ...
+            }
+        }
+    """
+    verb_index = defaultdict(set)  # word -> set of story names
+    vocab_index = defaultdict(set)
+    story_word_counts = {}
+    story_vocab = {}  # story_name -> vocabulary data
+
+    for story_name, story_parts in tqdm(
+        story_dialogues.items(), desc="Indexing stories...", total=len(story_dialogues)
+    ):
+        # Process all parts of the story
+        all_verbs = set()
+        all_vocab = set()
+        all_words = set()
+
+        for part_name, part_data in story_parts.items():
+            # Get dialogue from the part
+            dialogue = part_data["dialogue"]
+            # Get all text from dialogue
+            phrases = get_text_from_dialogue(dialogue)
+
+            # Process all phrases in this part
+            for phrase in phrases:
+                vocab_used, verb_matches, vocab_matches = process_phrase_vocabulary(
+                    phrase
+                )
+
+                # Add to story's word sets
+                all_verbs.update(verb_matches)
+                all_vocab.update(vocab_matches)
+                all_words.update(vocab_used)
+
+                # Add to indexes
+                for word in verb_matches:
+                    verb_index[word].add(story_name)
+                for word in vocab_matches:
+                    vocab_index[word].add(story_name)
+
+        # Store story's word counts
+        story_word_counts[story_name] = {
+            "verb_count": len(all_verbs),
+            "vocab_count": len(all_vocab),
+            "words": list(all_words),
+        }
+
+        # Store vocabulary data for this story
+        story_vocab[story_name] = {
+            "verbs": list(all_verbs),
+            "vocab": list(all_vocab),
+            "all_words": list(all_words),
+        }
+
+    # Convert sets to lists for JSON
+    for word in verb_index:
+        verb_index[word] = list(verb_index[word])
+    for word in vocab_index:
+        vocab_index[word] = list(vocab_index[word])
+
+    return {
+        "verb_index": dict(verb_index),
+        "vocab_index": dict(vocab_index),
+        "word_counts": story_word_counts,
+        "stories": list(story_dialogues.keys()),
+        "story_vocab": story_vocab,
+    }
+
+
+def get_best_story_matches(
+    phrase: str,
+    story_index: Dict,
+    flashcard_index: Optional[Dict] = None,
+    top_n: int = 3,
+) -> Dict[str, float]:
+    """
+    Find the best matching stories for a given phrase based on vocabulary overlap.
+    Optionally uses flashcard_index to weight matches based on phrase frequency.
+
+    Args:
+        phrase: The phrase to match
+        story_index: Story index created by create_story_index
+        flashcard_index: Optional flashcard index to weight matches
+        top_n: Number of top matches to return
+
+    Returns:
+        Dictionary mapping story names to match scores
+    """
+    # Process the phrase to get its vocabulary
+    vocab_used, verb_matches, vocab_matches = process_phrase_vocabulary(phrase)
+
+    # Calculate match scores for each story
+    story_scores = defaultdict(float)
+
+    # Get all unique words in the phrase
+    all_words = {word for word, _ in vocab_used}
+
+    # Calculate base scores based on word overlap
+    for word in all_words:
+        # Check verb index
+        if word in story_index["verb_index"]:
+            for story in story_index["verb_index"][word]:
+                story_scores[story] += 1.0  # Verbs get full weight
+
+        # Check vocab index
+        if word in story_index["vocab_index"]:
+            for story in story_index["vocab_index"][word]:
+                story_scores[story] += 0.5  # Other vocab gets half weight
+
+    # If we have a flashcard index, weight scores by phrase frequency
+    if flashcard_index:
+        for word in all_words:
+            # Get number of phrases containing this word
+            phrase_count = 0
+            if word in flashcard_index["verb_index"]:
+                phrase_count += len(flashcard_index["verb_index"][word])
+            if word in flashcard_index["vocab_index"]:
+                phrase_count += len(flashcard_index["vocab_index"][word])
+
+            # Adjust scores based on word rarity
+            if phrase_count > 0:
+                rarity_factor = 1.0 / phrase_count
+                for story in story_scores:
+                    if word in story_index["verb_index"].get(story, []):
+                        story_scores[story] += rarity_factor
+                    if word in story_index["vocab_index"].get(story, []):
+                        story_scores[story] += rarity_factor * 0.5
+
+    # Normalize scores by story size
+    for story in story_scores:
+        total_words = (
+            story_index["word_counts"][story]["verb_count"]
+            + story_index["word_counts"][story]["vocab_count"]
+        )
+        if total_words > 0:
+            story_scores[story] /= total_words
+
+    # Get top N matches
+    top_matches = dict(
+        sorted(story_scores.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    )
+
+    return top_matches
+
+
+def assign_phrases_to_stories(
+    story_index: Dict[str, Dict],
+    phrase_index: Dict[str, Dict],
+    max_phrases_per_story: int = 50,
+    top_n: int = 5,
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Assign phrases to stories based on vocabulary overlap, tracking covered vocabulary
+    to maximize new word coverage.
+
+    Args:
+        story_index: Pre-built story index from GCS
+        phrase_index: Pre-built phrase index containing vocabulary data
+        max_phrases_per_story: Maximum phrases to assign per story
+        top_n: Number of top matches to consider for each phrase
+
+    Returns:
+        Dictionary mapping story names to lists of assigned phrases with scores
+    """
+
+    # Get all phrases
+    phrases = phrase_index["phrases"]
+    phrase_keys = [clean_filename(p) for p in phrases]
+
+    # Initialize assignments and tracking
+    assignments = {story: [] for story in story_index["stories"]}
+    story_phrase_counts = {story: 0 for story in story_index["stories"]}
+    story_covered_vocab = {
+        story: {"verbs": set(), "vocab": set()} for story in story_index["stories"]
+    }
+
+    # Sort phrases by number of unique words to prioritize more complex phrases
+    phrase_complexity = [
+        (len(phrase_index["phrase_vocab"][key]["all_words"]), key)
+        for key in phrase_keys
+    ]
+    phrase_complexity.sort(reverse=True)
+    sorted_phrase_keys = [key for _, key in phrase_complexity]
+
+    # Assign phrases
+    for phrase_key in sorted_phrase_keys:
+        best_story = None
+        best_score = -1
+        best_new_verbs = 0
+        best_new_vocab = 0
+
+        # Find best story for this phrase
+        for story in story_index["stories"]:
+            if story_phrase_counts[story] >= max_phrases_per_story:
+                continue
+
+            # Calculate vocabulary overlap score
+            story_verbs = set(story_index["verb_index"].get(story, []))
+            story_vocab = set(story_index["vocab_index"].get(story, []))
+
+            # Get new vocabulary this phrase would add
+            new_verbs, new_vocab = get_new_vocabulary_coverage(
+                phrase_key,
+                phrase_index,
+                story_covered_vocab[story]["verbs"],
+                story_covered_vocab[story]["vocab"],
+            )
+
+            # Calculate score based on new vocabulary
+            score = (new_verbs * 2) + new_vocab  # Weight verbs more heavily
+
+            if score > best_score:
+                best_story = story
+                best_score = score
+                best_new_verbs = new_verbs
+                best_new_vocab = new_vocab
+
+        # If no story found with new vocabulary, assign to story with fewest phrases
+        if best_story is None:
+            best_story = min(story_phrase_counts.items(), key=lambda x: x[1])[0]
+            best_score = 0
+            best_new_verbs = 0
+            best_new_vocab = 0
+
+        # Update assignments and tracking
+        assignments[best_story].append(
+            {
+                "phrase": phrases[phrase_keys.index(phrase_key)],
+                "score": best_score,
+                "new_verbs": best_new_verbs,
+                "new_vocab": best_new_vocab,
+            }
+        )
+        story_phrase_counts[best_story] += 1
+
+        # Update covered vocabulary
+        phrase_verbs, phrase_vocab = get_covered_vocabulary(phrase_key, phrase_index)
+        story_covered_vocab[best_story]["verbs"].update(phrase_verbs)
+        story_covered_vocab[best_story]["vocab"].update(phrase_vocab)
+
+    # Print assignment statistics
+    print("\nAssignment Statistics:")
+    print(f"Total phrases: {len(phrases)}")
+    print("\nPhrases per story:")
+    for story, count in story_phrase_counts.items():
+        print(f"{story}: {count} phrases")
+        print(f"  New verbs covered: {len(story_covered_vocab[story]['verbs'])}")
+        print(f"  New vocab covered: {len(story_covered_vocab[story]['vocab'])}")
+
+    return assignments
+
+
+def analyze_phrase_story_vocabulary_overlap(
+    assignments: Dict[str, List[Dict[str, Any]]],
+    story_index: Dict[str, Dict],
+    phrase_index: Dict[str, Dict],
+    bucket_name: Optional[str] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Analyze vocabulary overlap between assigned phrases and their stories.
+    Uses pre-built phrase index for faster analysis.
+
+    Args:
+        assignments: Dictionary mapping story names to lists of assigned phrases with scores
+        story_index: Pre-built story index from GCS
+        phrase_index: Pre-built phrase index containing vocabulary data
+        collection: Collection name (default: "LM1000")
+        bucket_name: Optional GCS bucket name
+
+    Returns:
+        Dictionary containing analysis for each story:
+        {
+            "story_name": {
+                "phrase_vocab": {
+                    "verbs": [...],
+                    "vocab": [...]
+                },
+                "story_vocab": {
+                    "verbs": [...],
+                    "vocab": [...]
+                },
+                "overlap": {
+                    "verbs": [...],
+                    "vocab": [...]
+                },
+                "missing": {
+                    "verbs": [...],
+                    "vocab": [...]
+                },
+                "coverage": {
+                    "verb_coverage": float,
+                    "vocab_coverage": float
+                }
+            },
+            ...
+        }
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    results = {}
+    for story_name, phrase_assignments in assignments.items():
+        # Get phrases assigned to this story
+        story_phrases = [item["phrase"] for item in phrase_assignments]
+        story_phrase_keys = [clean_filename(p) for p in story_phrases]
+
+        # Get vocabulary for these phrases from the index
+        phrase_verbs = set()
+        phrase_vocab = set()
+        for key in story_phrase_keys:
+            if key in phrase_index["phrase_vocab"]:
+                vocab_data = phrase_index["phrase_vocab"][key]
+                phrase_verbs.update(vocab_data["verbs"])
+                phrase_vocab.update(vocab_data["vocab"])
+
+        phrase_vocab_dict = {"verbs": list(phrase_verbs), "vocab": list(phrase_vocab)}
+
+        # Get vocabulary for the story
+        story_vocab = {
+            "verbs": story_index["story_vocab"][story_name]["verbs"],
+            "vocab": story_index["story_vocab"][story_name]["vocab"],
+        }
+
+        # Find missing vocabulary
+        missing = find_missing_vocabulary(phrase_vocab_dict, story_vocab)
+
+        # Calculate overlap
+        overlap = {
+            "verbs": list(phrase_verbs & set(story_vocab["verbs"])),
+            "vocab": list(phrase_vocab & set(story_vocab["vocab"])),
+        }
+
+        # Store results
+        results[story_name] = {
+            "phrase_vocab": phrase_vocab_dict,
+            "story_vocab": story_vocab,
+            "overlap": overlap,
+            "missing": missing["missing_vocab"],
+            "coverage": missing["coverage_stats"],
+        }
+
+        # Print summary for this story
+        print(f"\nVocabulary Analysis for {story_name}:")
+        print(f"Assigned phrases: {len(story_phrases)}")
+        print(f"Verb coverage: {missing['coverage_stats']['verb_coverage']:.1f}%")
+        print(
+            f"Vocabulary coverage: {missing['coverage_stats']['vocab_coverage']:.1f}%"
+        )
+        print(f"Missing verbs: {len(missing['missing_vocab']['verbs'])}")
+        print(f"Missing vocabulary: {len(missing['missing_vocab']['vocab'])}")
+
+    return results

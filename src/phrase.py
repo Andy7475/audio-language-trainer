@@ -671,3 +671,49 @@ def build_phrase_dict_from_gcs(
         return {}
 
     return phrase_dict
+
+
+def build_phrase_to_story_index(
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+) -> Dict[str, List[str]]:
+    """
+    Build a phrase-to-story index by reading the story collection file and creating an inverse mapping.
+    This index maps each phrase key to a list of story names where that phrase appears.
+
+    Args:
+        collection: Collection name (default: "LM1000")
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
+
+    Returns:
+        Dict[str, List[str]]: Mapping of phrase keys to lists of story names
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    try:
+        # Read the story collection file
+        collection_path = get_story_collection_path(collection)
+        story_collection = read_from_gcs(bucket_name, collection_path, "json")
+
+        if not story_collection:
+            print(f"No stories found in collection {collection}")
+            return {}
+
+        # Create inverse mapping
+        phrase_to_stories = defaultdict(list)
+
+        # For each story, process its phrases
+        for story_name, phrases in story_collection.items():
+            for phrase in phrases:
+                # Clean the phrase to create a consistent key
+                phrase_key = clean_filename(phrase)
+                # Add this story to the list for this phrase
+                phrase_to_stories[phrase_key].append(story_name)
+
+        # Convert defaultdict to regular dict for JSON serialization
+        return dict(phrase_to_stories)
+
+    except Exception as e:
+        print(f"Error building phrase-to-story index: {str(e)}")
+        return {}

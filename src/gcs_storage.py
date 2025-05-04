@@ -40,7 +40,7 @@ def upload_to_gcs(
     Upload various file types directly to Google Cloud Storage without writing to local disk.
 
     Args:
-        obj: The object to upload (bytes, dict, str, PIL Image, AudioSegment, etc.)
+        obj: The object to upload (bytes, dict, str, PIL Image, AudioSegment, List[str], etc.)
         bucket_name: Name of the GCS bucket
         file_name: Name of the file to upload
         base_prefix: Prefix/folder path in the bucket. Defaults to ''.
@@ -77,42 +77,35 @@ def upload_to_gcs(
             with open(local_path, "wb") as f:
                 f.write(obj)
 
-    elif isinstance(obj, str):
-        # Handle string content (including HTML)
-        if file_name.lower().endswith((".html", ".htm")):
-            # For HTML files
-            if content_type is None:
+    elif isinstance(obj, (str, dict, list)):
+        # Handle string, dict, or list content
+        if isinstance(obj, list) and all(isinstance(item, str) for item in obj):
+            # For List[str], ensure we save as JSON
+            content_type = "application/json"
+            content = json.dumps(obj)
+        elif isinstance(obj, dict):
+            # For dict, save as JSON
+            content_type = "application/json"
+            content = json.dumps(obj)
+        else:
+            # For string content
+            if file_name.lower().endswith((".html", ".htm")):
                 content_type = "text/html"
-        elif file_name.lower().endswith(".css"):
-            # For CSS files
-            if content_type is None:
+            elif file_name.lower().endswith(".css"):
                 content_type = "text/css"
-        elif file_name.lower().endswith(".js"):
-            # For JavaScript files
-            if content_type is None:
+            elif file_name.lower().endswith(".js"):
                 content_type = "application/javascript"
-        elif file_name.lower().endswith(".txt"):
-            # For plain text files
-            if content_type is None:
+            elif file_name.lower().endswith(".txt"):
                 content_type = "text/plain"
+            content = obj
 
-        # Upload the string directly
-        blob.upload_from_string(obj, content_type=content_type)
+        # Upload the content
+        blob.upload_from_string(content, content_type=content_type)
         if save_local:
             local_path = os.path.join(local_base_dir, bucket_name, full_path)
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "w", encoding="utf-8") as f:
-                f.write(obj)
-
-    elif isinstance(obj, dict):
-        # JSON object upload
-        json_str = json.dumps(obj)
-        blob.upload_from_string(json_str, content_type="application/json")
-        if save_local:
-            local_path = os.path.join(local_base_dir, bucket_name, full_path)
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
-            with open(local_path, "w", encoding="utf-8") as f:
-                f.write(json_str)
+                f.write(content)
 
     elif str(type(obj)).endswith("AudioSegment'>"):  # For pydub AudioSegment
         buffer = io.BytesIO()
@@ -210,6 +203,41 @@ def check_blob_exists(bucket_name: str, blob_path: str) -> bool:
     return blob.exists()
 
 
+def infer_expected_type_from_filename(filename: str) -> str:
+    """
+    Infer the expected type from a filename based on its extension.
+
+    Args:
+        filename: The filename to analyze
+
+    Returns:
+        str: The inferred type ('json', 'image', 'audio', 'text', or 'bytes')
+    """
+    ext = filename.lower().split(".")[-1]
+
+    # Map extensions to expected types
+    extension_to_type = {
+        "json": "json",
+        "png": "image",
+        "jpg": "image",
+        "jpeg": "image",
+        "gif": "image",
+        "webp": "image",
+        "bmp": "image",
+        "mp3": "audio",
+        "wav": "audio",
+        "m4a": "audio",
+        "ogg": "audio",
+        "html": "text",
+        "htm": "text",
+        "txt": "text",
+        "css": "text",
+        "js": "text",
+    }
+
+    return extension_to_type.get(ext, "bytes")
+
+
 def read_from_gcs(
     bucket_name: str,
     file_path: str,
@@ -223,13 +251,18 @@ def read_from_gcs(
     Args:
         bucket_name: Name of the GCS bucket
         file_path: Path to the file within the bucket
-        expected_type: Optional type hint ('audio', 'image', 'json', 'bytes', 'text')
+        expected_type: Optional type hint ('audio', 'image', 'json', 'bytes', 'text', 'list')
+                      If None, will be inferred from file extension
         use_local: Whether to check for a local copy first
         local_base_dir: Base directory for local GCS mirror
 
     Returns:
         The file content as an appropriate Python object
     """
+    # Infer expected_type from filename if not provided
+    if expected_type is None:
+        expected_type = infer_expected_type_from_filename(file_path)
+
     # Check if we should try local file first
     if use_local:
         local_path = os.path.join(local_base_dir, bucket_name, file_path)
@@ -240,7 +273,7 @@ def read_from_gcs(
                     return AudioSegment.from_file(local_path)
                 elif expected_type == "image":
                     return Image.open(local_path)
-                elif expected_type == "json":
+                elif expected_type in ["json", "list"]:
                     with open(local_path, "r") as f:
                         return json.load(f)
                 elif expected_type == "text":
@@ -280,7 +313,7 @@ def read_from_gcs(
         elif expected_type == "image":
             buffer = io.BytesIO(content)
             return Image.open(buffer)
-        elif expected_type == "json":
+        elif expected_type in ["json", "list"]:
             return json.loads(content)
         elif expected_type == "text":
             return content.decode("utf-8")
@@ -596,3 +629,58 @@ def get_anki_deck_path(
     sanitized_story = sanitize_path_component(story_name)
 
     return f"collections/{collection}/anki/{language}/{sanitized_story}.apkg"
+
+
+def get_phrase_path(collection: str = "LM1000") -> str:
+    """Get the GCS path for storing raw English phrases for a collection.
+
+    Args:
+        collection: Collection name (default: "LM1000")
+
+    Returns:
+        str: Path to the phrases file in GCS
+        Format: collections/{collection}/phrases.json
+    """
+    return f"collections/{collection}/phrases.json"
+
+
+def get_phrase_index_path(collection: str = "LM1000") -> str:
+    """Get the GCS path for storing the lemma word index file for a collection.
+
+    Args:
+        collection: Collection name (default: "LM1000")
+
+    Returns:
+        str: Path to the index file in GCS
+        Format: collections/{collection}/index.json
+    """
+    return f"collections/{collection}/index.json"
+
+
+def get_phrase_to_story_index_path(collection: str = "LM1000") -> str:
+    """Get the GCS path for storing the phrase-to-story index file.
+    This file maps each phrase key to a list of story names where that phrase appears.
+
+    Args:
+        collection: Collection name (default: "LM1000")
+
+    Returns:
+        str: Path to the index file in GCS
+        Format: collections/{collection}/phrase_to_story_index.json
+    """
+    return f"collections/{collection}/phrase_to_story_index.json"
+
+
+def get_story_index_path(collection: str = "LM1000") -> str:
+    """Get the GCS path for storing the story index file.
+    This file contains indexes mapping words to the stories containing them,
+    including verb and vocabulary indexes and word counts.
+
+    Args:
+        collection: Collection name (default: "LM1000")
+
+    Returns:
+        str: Path to the index file in GCS
+        Format: collections/{collection}/story_index.json
+    """
+    return f"collections/{collection}/story_index.json"
