@@ -569,7 +569,9 @@ def get_phrase_keys(
             return []
 
         # Get English phrases for this story
-        phrase_keys = [clean_filename(phrase) for phrase in collection_data[story_name]]
+        phrase_keys = [
+            clean_filename(item["phrase"]) for item in collection_data[story_name]
+        ]
 
         # Limit number of phrases if n is specified
         if n is not None:
@@ -694,10 +696,10 @@ def build_phrase_to_story_index(
         phrase_to_stories = defaultdict(list)
 
         # For each story, process its phrases
-        for story_name, phrases in story_collection.items():
-            for phrase in phrases:
+        for story_name, phrase_info in story_collection.items():
+            for phrase in phrase_info:
                 # Clean the phrase to create a consistent key
-                phrase_key = clean_filename(phrase)
+                phrase_key = clean_filename(phrase["phrase"])
                 # Add this story to the list for this phrase
                 phrase_to_stories[phrase_key].append(story_name)
 
