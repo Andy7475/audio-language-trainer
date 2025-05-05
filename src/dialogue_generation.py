@@ -6,11 +6,10 @@ from dotenv import load_dotenv
 from src.config_loader import config
 from src.utils import (
     anthropic_generate,
-    upload_to_gcs,
     extract_json_from_llm_response,
 )
 from src.generate import add_translations
-
+from src.gcs_storage import upload_to_gcs
 load_dotenv()  # so we can use environment variables for various global settings
 
 

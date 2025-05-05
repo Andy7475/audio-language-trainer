@@ -1,11 +1,22 @@
+import asyncio
 import random
 from collections import defaultdict
-from typing import Dict, List, Literal, Set, Tuple
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 
 import spacy
+from tqdm import tqdm
 
 from src.config_loader import config
+from src.convert import clean_filename
 from src.dialogue_generation import anthropic_generate, extract_json_from_llm_response
+from src.gcs_storage import (
+    get_phrase_audio_path,
+    get_phrase_image_path,
+    get_story_collection_path,
+    get_translated_phrases_path,
+    read_from_gcs,
+)
 from src.nlp import (
     extract_spacy_lowercase_words,
     extract_substring_matches,
@@ -484,3 +495,179 @@ def get_sentences_from_text(phrases: List[str]) -> List[str]:
         for sent in doc.sents:
             sentences.append(sent.text)
     return sentences
+
+
+def get_phrase_multimedia(
+    phrase_key: str,
+    language: str = config.TARGET_LANGUAGE_NAME.lower(),
+    bucket_name: str = config.GCS_PRIVATE_BUCKET,
+    collection: str = "LM1000",
+) -> Dict[str, Any]:
+    """
+    Get all multimedia data for a single phrase from GCS.
+
+    Args:
+        phrase_key: Key identifying the phrase
+        language: Target language code (e.g. 'french')
+        bucket_name: GCS bucket name
+        collection: Collection name (default: "LM1000")
+
+    Returns:
+        Dictionary containing:
+        {
+            "normal_audio": AudioSegment or None,
+            "slow_audio": AudioSegment or None,
+            "image": Image or None,
+        }
+    """
+    try:
+        # Get the translated phrases data
+
+        normal_audio = None
+        slow_audio = None
+        try:
+            normal_audio_path = get_phrase_audio_path(phrase_key, "normal")
+            slow_audio_path = get_phrase_audio_path(phrase_key, "slow")
+
+            normal_audio = read_from_gcs(bucket_name, normal_audio_path, "audio")
+            slow_audio = read_from_gcs(bucket_name, slow_audio_path, "audio")
+        except Exception as e:
+            print(f"Error getting audio for phrase {phrase_key}: {str(e)}")
+
+        # Get image
+        image = None
+        try:
+            image_path = get_phrase_image_path(phrase_key)
+            image = read_from_gcs(bucket_name, image_path, "image")
+        except Exception as e:
+            print(f"Error getting image for phrase {phrase_key}: {str(e)}")
+
+        return {
+            "normal_audio": normal_audio,
+            "slow_audio": slow_audio,
+            "image": image,
+        }
+
+    except Exception as e:
+        print(f"Error getting data for phrase {phrase_key}: {str(e)}")
+        return {}
+
+
+def get_phrase_keys(
+    story_name: str, collection: str, n: Optional[int] = None
+) -> List[str]:
+    """
+    Get the list of phrase keys for a given story from the collection's story file.
+
+    Args:
+        story_name: Name of the story to get phrases for
+        collection: Collection name (e.g. "LM1000")
+        n: Optional number of phrases to return. If None, returns all phrases.
+
+    Returns:
+        List of phrase keys for the story
+    """
+    try:
+        # Get the story collection data
+        collection_path = get_story_collection_path(collection=collection)
+        collection_data = read_from_gcs(
+            config.GCS_PRIVATE_BUCKET, collection_path, "json"
+        )
+
+        if not collection_data or story_name not in collection_data:
+            print(f"No story found: {story_name}")
+            return []
+
+        # Get English phrases for this story
+        phrase_keys = [clean_filename(phrase) for phrase in collection_data[story_name]]
+
+        # Limit number of phrases if n is specified
+        if n is not None:
+            phrase_keys = phrase_keys[:n]
+
+        return phrase_keys
+
+    except Exception as e:
+        print(f"Error getting phrase keys for story {story_name}: {str(e)}")
+        return []
+
+
+def build_phrase_dict_from_gcs(
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+    phrase_keys: Optional[List[str]] = None,
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Build a dictionary containing translated phrase data from GCS.
+
+    Args:
+        collection: Collection name (default: "LM1000")
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
+        phrase_keys: Optional list of phrase keys to include. If None, includes all phrases.
+
+    Returns:
+        Dictionary in format:
+        {
+            "phrase_key_1": {
+                "english_text": str,
+                "target_text": str,
+                "audio_normal": AudioSegment or None,
+                "audio_slow": AudioSegment or None,
+                "image": Image or None,
+                "wiktionary_links": str or None
+            },
+            "phrase_key_2": { ... },
+            ...
+        }
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    try:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+        # Get the translated phrases data
+        phrases_path = get_translated_phrases_path(collection=collection)
+        phrases_data = read_from_gcs(bucket_name, phrases_path, "json")
+
+        if not phrases_data:
+            print("No translated phrases found")
+            return {}
+
+        # Filter phrases if keys are provided
+        if phrase_keys is not None:
+            phrases_data = {k: v for k, v in phrases_data.items() if k in phrase_keys}
+            if not phrases_data:
+                print(f"No matching phrases found for keys: {phrase_keys}")
+                return {}
+
+        # Build dictionary of phrase data
+        phrase_dict = {}
+        for phrase_key, phrase_info in tqdm(
+            phrases_data.items(), desc="Building phrase dictionary"
+        ):
+            # Get multimedia data for this phrase
+            multimedia_data = get_phrase_multimedia(
+                phrase_key=phrase_key,
+                language=language,
+                bucket_name=bucket_name,
+                collection=collection,
+            )
+
+            if not multimedia_data:
+                continue
+
+            # Create entry for this phrase
+            phrase_dict[phrase_key] = {
+                "english_text": phrase_info["english"],
+                "target_text": phrase_info[language],
+                "audio_normal": multimedia_data["normal_audio"],
+                "audio_slow": multimedia_data["slow_audio"],
+                "image": multimedia_data["image"],
+                "wiktionary_links": phrase_info.get("wiktionary_links"),
+            }
+
+    except Exception as e:
+        print(f"Error building phrase dictionary: {str(e)}")
+        return {}
+
+    return phrase_dict

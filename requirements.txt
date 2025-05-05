@@ -1,10 +1,8 @@
-accelerate
 altair
-anki
+anki                           #for connecting to anki database
 anthropic                      #for querying the Anthropic models hosted on Google Cloud
 azure-cognitiveservices-speech #as google TTS does not have some voices like Persian
 beautifulsoup4
-diffusers
 fastapi
 elevenlabs
 genanki
@@ -14,25 +12,21 @@ google-cloud-core
 google-cloud-language
 google-cloud-texttospeech
 google-cloud-translate
-h5py==3.8.0
 httpx
 ipykernel                       #for jupyter notebook
 ipywidgets
 librosa                         #for speeding up dialogue
 matplotlib
 mutagen
-numpy
 pandas
 proto-plus==1.24.0.dev1         # fix update bug in gcloud components update
 pycountry
 pydantic
 pydub
+plotly              #for visualizing the vocab growth   
 pysnooper
 pytest
 python-dotenv
-reportlab
 requests
 soundfile                       #for speeding up dialogue
-spacy>=3.0.0
-uvicorn
-flask-cors==5.0.0
+spacy>=3.8.0

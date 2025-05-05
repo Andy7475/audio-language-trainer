@@ -5,7 +5,7 @@ import os
 import re
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 
 from google.cloud import storage
 from PIL import Image
@@ -33,6 +33,8 @@ def upload_to_gcs(
     file_name: str,
     base_prefix: str = "",
     content_type: Optional[str] = None,
+    save_local: bool = True,
+    local_base_dir: str = "../outputs/gcs",
 ) -> str:
     """
     Upload various file types directly to Google Cloud Storage without writing to local disk.
@@ -43,6 +45,8 @@ def upload_to_gcs(
         file_name: Name of the file to upload
         base_prefix: Prefix/folder path in the bucket. Defaults to ''.
         content_type: MIME content type. If None, will be inferred.
+        save_local: Whether to save a local copy of the file (default: True)
+        local_base_dir: Base directory for local GCS mirror (default: "../outputs/gcs")
 
     Returns:
         GCS URI of the uploaded file
@@ -67,6 +71,11 @@ def upload_to_gcs(
     if isinstance(obj, bytes):
         # Direct bytes upload
         blob.upload_from_string(obj, content_type=content_type)
+        if save_local:
+            local_path = os.path.join(local_base_dir, bucket_name, full_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, "wb") as f:
+                f.write(obj)
 
     elif isinstance(obj, str):
         # Handle string content (including HTML)
@@ -89,11 +98,21 @@ def upload_to_gcs(
 
         # Upload the string directly
         blob.upload_from_string(obj, content_type=content_type)
+        if save_local:
+            local_path = os.path.join(local_base_dir, bucket_name, full_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, "w", encoding="utf-8") as f:
+                f.write(obj)
 
     elif isinstance(obj, dict):
         # JSON object upload
         json_str = json.dumps(obj)
         blob.upload_from_string(json_str, content_type="application/json")
+        if save_local:
+            local_path = os.path.join(local_base_dir, bucket_name, full_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, "w", encoding="utf-8") as f:
+                f.write(json_str)
 
     elif str(type(obj)).endswith("AudioSegment'>"):  # For pydub AudioSegment
         buffer = io.BytesIO()
@@ -119,6 +138,11 @@ def upload_to_gcs(
         audio_content_type = format_content_types.get(format_name, "audio/mpeg")
 
         blob.upload_from_file(buffer, content_type=content_type or audio_content_type)
+        if save_local:
+            local_path = os.path.join(local_base_dir, bucket_name, full_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, "wb") as f:
+                f.write(buffer.getvalue())
 
     elif hasattr(obj, "save") and hasattr(obj, "mode"):  # For PIL Image
         # Get format from filename or default to PNG
@@ -146,11 +170,21 @@ def upload_to_gcs(
             img_content_type = image_content_types.get(format_name, "image/png")
 
             blob.upload_from_file(buffer, content_type=content_type or img_content_type)
+            if save_local:
+                local_path = os.path.join(local_base_dir, bucket_name, full_path)
+                os.makedirs(os.path.dirname(local_path), exist_ok=True)
+                with open(local_path, "wb") as f:
+                    f.write(buffer.getvalue())
         except Exception as e:
             raise ValueError(f"Failed to save image: {e}")
 
     elif hasattr(obj, "read"):  # For file-like objects
         blob.upload_from_file(obj, content_type=content_type)
+        if save_local:
+            local_path = os.path.join(local_base_dir, bucket_name, full_path)
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
+            with open(local_path, "wb") as f:
+                f.write(obj.read())
 
     else:
         raise ValueError(f"Unsupported object type: {type(obj)}")
@@ -177,30 +211,49 @@ def check_blob_exists(bucket_name: str, blob_path: str) -> bool:
 
 
 def read_from_gcs(
-    bucket_name: str, file_path: str, expected_type: Optional[str] = None
+    bucket_name: str,
+    file_path: str,
+    expected_type: Optional[str] = None,
+    use_local: bool = True,
+    local_base_dir: str = "../outputs/gcs",
 ) -> Any:
     """
-    Download a file from Google Cloud Storage and return it as the appropriate object type.
+    Download a file from Google Cloud Storage or read from local cache if available.
 
     Args:
         bucket_name: Name of the GCS bucket
         file_path: Path to the file within the bucket
-        expected_type: Optional type hint to force a specific return type
-                      ('audio', 'image', 'json', 'bytes', 'text')
+        expected_type: Optional type hint ('audio', 'image', 'json', 'bytes', 'text')
+        use_local: Whether to check for a local copy first
+        local_base_dir: Base directory for local GCS mirror
 
     Returns:
-        The file content as an appropriate Python object:
-        - AudioSegment for audio files (.mp3, .m4a, .wav, .ogg)
-        - PIL.Image for image files (.png, .jpg, .jpeg, .gif, .webp)
-        - dict for JSON files (.json)
-        - bytes for binary files (if type cannot be determined)
-        - str for text files (.txt, .html, .css, .csv)
-
-    Raises:
-        FileNotFoundError: If the file doesn't exist in the bucket
-        ValueError: If the file type is unsupported or there's an error processing the file
+        The file content as an appropriate Python object
     """
-    # Initialize storage client
+    # Check if we should try local file first
+    if use_local:
+        local_path = os.path.join(local_base_dir, bucket_name, file_path)
+        if os.path.exists(local_path):
+            try:
+                # Handle different file types
+                if expected_type == "audio":
+                    return AudioSegment.from_file(local_path)
+                elif expected_type == "image":
+                    return Image.open(local_path)
+                elif expected_type == "json":
+                    with open(local_path, "r") as f:
+                        return json.load(f)
+                elif expected_type == "text":
+                    with open(local_path, "r") as f:
+                        return f.read()
+                else:  # Default to bytes
+                    with open(local_path, "rb") as f:
+                        return f.read()
+            except Exception as e:
+                print(f"Error reading local file {local_path}: {str(e)}")
+                # Fall back to GCS if local read fails
+
+    # Original GCS implementation
     storage_client = storage.Client()
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(file_path)
@@ -212,43 +265,27 @@ def read_from_gcs(
     # Download file into memory
     content = blob.download_as_bytes()
 
-    # Determine file type from extension if not explicitly provided
-    if expected_type is None:
-        file_extension = file_path.lower().split(".")[-1]
-
-        # Map extension to type
-        if file_extension in ["mp3", "wav", "ogg"]:
-            expected_type = "audio"
-        elif file_extension == "m4a":
-            expected_type = "audio"
-        elif file_extension in ["png", "jpg", "jpeg", "gif", "webp", "bmp"]:
-            expected_type = "image"
-        elif file_extension == "json":
-            expected_type = "json"
-        elif file_extension in ["txt", "html", "css", "js", "csv"]:
-            expected_type = "text"
-        else:
-            expected_type = "bytes"
+    # If use_local is enabled, save a local copy for future use
+    if use_local:
+        local_path = os.path.join(local_base_dir, bucket_name, file_path)
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        with open(local_path, "wb") as f:
+            f.write(content)
 
     # Convert to the appropriate type
     try:
         if expected_type == "audio":
             buffer = io.BytesIO(content)
             return AudioSegment.from_file(buffer)
-
         elif expected_type == "image":
             buffer = io.BytesIO(content)
             return Image.open(buffer)
-
         elif expected_type == "json":
             return json.loads(content)
-
         elif expected_type == "text":
             return content.decode("utf-8")
-
         else:  # Default to bytes
             return content
-
     except Exception as e:
         raise ValueError(
             f"Error processing file {file_path} as {expected_type}: {str(e)}"
@@ -294,6 +331,7 @@ def upload_story_to_gcs(html_file_path: str, bucket_name: Optional[str] = None) 
         file_name=file_name,
         base_prefix=base_prefix,
         content_type="text/html",
+        save_local=True,
     )
 
     # Convert GCS URI to public URL
@@ -384,6 +422,13 @@ def get_story_translated_dialogue_path(
     language = config.TARGET_LANGUAGE_NAME.lower()
     """Get the GCS path for a story's translated dialogue file."""
     return f"collections/{collection}/stories/{story_name}/dialogue/{language}/translated_dialogue.json"
+
+
+def get_translated_phrases_path(collection: str = "LM1000") -> str:
+    """Get the GCS path for a story's translated phrases file. These are dictionaries keyed of the phrase key
+    and contain translations and wiktionary links."""
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    return f"collections/{collection}/translations/{language}.json"
 
 
 def get_wiktionary_cache_path() -> str:
@@ -497,3 +542,57 @@ def get_stories_from_collection(
     except Exception as e:
         print(f"Error loading collection {collection}: {str(e)}")
         return []
+
+
+def get_phrase_audio_path(
+    phrase_key: str, speed: Literal["normal", "slow"] = "normal"
+) -> str:
+    """
+    Get the GCS path for a phrase's audio file.
+
+    Args:
+        phrase_key: Key identifying the phrase
+        speed: "normal" or "slow" speed version
+
+    Returns:
+        str: Path to the audio file in GCS
+    """
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    return f"multimedia/audio/phrases/{language}/{speed}/{phrase_key}.mp3"
+
+
+def get_phrase_image_path(phrase_key: str) -> str:
+    """
+    Get the GCS path for a phrase's image file.
+
+    Args:
+        phrase_key: Key identifying the phrase
+
+    Returns:
+        str: Path to the image file in GCS
+    """
+    return f"multimedia/images/core/{phrase_key}.png"
+
+
+def get_anki_deck_path(
+    story_name: str, collection: str = "LM1000", language: Optional[str] = None
+) -> str:
+    """
+    Get the GCS path for an Anki deck file.
+
+    Args:
+        story_name: Name of the story
+        collection: Collection name (default: "LM1000")
+        language: Optional language code (defaults to config.TARGET_LANGUAGE_NAME)
+
+    Returns:
+        str: Path to the Anki deck file in GCS
+        Format: collections/{collection}/anki/{language}/{story_name}.apkg
+    """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+
+    # Sanitize the story name for use in paths
+    sanitized_story = sanitize_path_component(story_name)
+
+    return f"collections/{collection}/anki/{language}/{sanitized_story}.apkg"
