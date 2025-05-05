@@ -1247,56 +1247,73 @@ def export_phrases_to_anki(
     deck_id = string_to_large_int(formatted_deck_name + "TurboPhrase")
     deck = genanki.Deck(deck_id, formatted_deck_name)
 
-    # Process each phrase
-    for index, (phrase_key, phrase_data) in tqdm(
-        enumerate(phrase_dict.items()), desc="processing phrases"
-    ):
-        # Handle image
-        image_filename = None
-        if phrase_data["image"] is not None:
-            try:
-                image_filename = f"{uuid.uuid4()}.png"
-                output_path = os.path.join(output_dir, image_filename)
-                # Resize and save the PIL Image directly
-                resized_img = phrase_data["image"].resize((400, 400))
-                resized_img.save(output_path, "PNG", optimize=True)
-                media_files.append(image_filename)
-            except Exception as e:
-                print(f"Error processing image for {phrase_key}: {str(e)}")
-                image_filename = None
+    # Get the original phrase keys in order from the story collection
+    if story_name:
+        phrase_keys = get_phrase_keys(story_name, collection)
+    else:
+        phrase_keys = list(phrase_dict.keys())
 
-        # Handle audio
-        target_audio_normal = f"{uuid.uuid4()}.mp3"
-        target_audio_slow = f"{uuid.uuid4()}.mp3"
+    # Process each phrase in the original order
+    for index, phrase_key in enumerate(phrase_keys):
+        if phrase_key not in phrase_dict:
+            continue
 
-        if phrase_data["audio_normal"] is not None:
-            phrase_data["audio_normal"].export(
-                os.path.join(output_dir, target_audio_normal), format="mp3"
+        phrase_data = phrase_dict[phrase_key]
+        try:
+            # Handle image
+            image_filename = None
+            if phrase_data["image"] is not None:
+                try:
+                    image_filename = f"{uuid.uuid4()}.png"
+                    output_path = os.path.join(output_dir, image_filename)
+                    # Resize and save the PIL Image directly
+                    resized_img = phrase_data["image"].resize((400, 400))
+                    resized_img.save(output_path, "PNG", optimize=True)
+                    media_files.append(image_filename)
+                except Exception as e:
+                    print(f"Error processing image for {phrase_key}: {str(e)}")
+                    image_filename = None
+
+            # Handle audio
+            target_audio_normal = f"{uuid.uuid4()}.mp3"
+            target_audio_slow = f"{uuid.uuid4()}.mp3"
+
+            if phrase_data["audio_normal"] is not None:
+                phrase_data["audio_normal"].export(
+                    os.path.join(output_dir, target_audio_normal), format="mp3"
+                )
+                media_files.append(target_audio_normal)
+
+            if phrase_data["audio_slow"] is not None:
+                phrase_data["audio_slow"].export(
+                    os.path.join(output_dir, target_audio_slow), format="mp3"
+                )
+                media_files.append(target_audio_slow)
+
+            # Create note
+            note = genanki.Note(
+                model=language_practice_model,
+                fields=[
+                    get_sort_field(index, phrase_data["target_text"]),
+                    phrase_data["target_text"],
+                    (
+                        f"[sound:{target_audio_normal}]"
+                        if phrase_data["audio_normal"]
+                        else ""
+                    ),
+                    f"[sound:{target_audio_slow}]" if phrase_data["audio_slow"] else "",
+                    phrase_data["english_text"],
+                    phrase_data["wiktionary_links"] or "",
+                    f'<img src="{image_filename}">' if image_filename else "",
+                    language_cap,
+                ],
+                guid=string_to_large_int(phrase_data["target_text"] + "image"),
             )
-            media_files.append(target_audio_normal)
+            notes.append(note)
 
-        if phrase_data["audio_slow"] is not None:
-            phrase_data["audio_slow"].export(
-                os.path.join(output_dir, target_audio_slow), format="mp3"
-            )
-            media_files.append(target_audio_slow)
-
-        # Create note
-        note = genanki.Note(
-            model=language_practice_model,
-            fields=[
-                get_sort_field(index, phrase_data["target_text"]),
-                phrase_data["target_text"],
-                f"[sound:{target_audio_normal}]" if phrase_data["audio_normal"] else "",
-                f"[sound:{target_audio_slow}]" if phrase_data["audio_slow"] else "",
-                phrase_data["english_text"],
-                phrase_data["wiktionary_links"] or "",
-                f'<img src="{image_filename}">' if image_filename else "",
-                language_cap,
-            ],
-            guid=string_to_large_int(phrase_data["target_text"] + "image"),
-        )
-        notes.append(note)
+        except Exception as e:
+            print(f"Error processing phrase {phrase_key}: {str(e)}")
+            continue
 
     # Add notes to deck
     for note in tqdm(notes, desc="adding notes to deck"):
