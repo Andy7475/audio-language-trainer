@@ -6,6 +6,7 @@ azure-cognitiveservices-speech #as google TTS does not have some voices like Per
 beautifulsoup4
 diffusers
 fastapi
+elevenlabs
 genanki
 google-auth
 google-cloud-aiplatform
@@ -20,7 +21,7 @@ ipywidgets
 librosa                         #for speeding up dialogue
 matplotlib
 mutagen
-numpy==1.24.3
+numpy
 pandas
 proto-plus==1.24.0.dev1         # fix update bug in gcloud components update
 pycountry
@@ -32,7 +33,6 @@ python-dotenv
 reportlab
 requests
 soundfile                       #for speeding up dialogue
-spacy==3.5.3
-transformers
+spacy>=3.0.0
 uvicorn
 flask-cors==5.0.0

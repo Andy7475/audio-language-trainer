@@ -15,6 +15,8 @@ from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
 import base64
+from elevenlabs import ElevenLabs
+import re
 from src.config_loader import VoiceInfo, VoiceProvider, config
 from src.translation import tokenize_text
 from src.convert import clean_filename
@@ -322,6 +324,72 @@ def text_to_speech_azure(
     except Exception as e:
         raise Exception(f"Azure speech synthesis error: {str(e)}")
 
+def text_to_speech_elevenlabs(
+    text: str,
+    voice_model: VoiceInfo,
+    speaking_rate: float = 1.0,
+    is_ssml: bool = False,
+) -> AudioSegment:
+    """
+    Convert text to speech using ElevenLabs TTS.
+
+    Args:
+        text: Text to convert to speech (can include <break time="1.0s" /> tags)
+        voice_model: VoiceInfo object containing voice details
+        speaking_rate: Speed of speech (1.0 is normal speed)
+        is_ssml: Whether the input text is standard SSML (will be converted for ElevenLabs)
+
+    Returns:
+        AudioSegment containing the generated speech
+    """
+    # Get ElevenLabs API key from environment variable
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    if not api_key:
+        raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
+
+    # Initialize client
+    client = ElevenLabs(api_key=api_key)
+
+    # If input is standard SSML, convert to ElevenLabs format
+    if is_ssml:
+        # Extract content between <speak> tags
+        if "<speak>" in text and "</speak>" in text:
+            text = re.search(r'<speak>(.*?)</speak>', text, re.DOTALL).group(1).strip()
+        
+        # Convert standard SSML break tags to ElevenLabs format
+        # From: <break time="250ms"/>
+        # To: <break time="0.25s" />
+        text = re.sub(
+            r'<break time="(\d+)ms"/>',
+            lambda m: f'<break time="{int(m.group(1))/1000:.2f}s" />',
+            text
+        )
+        
+        # Remove any other SSML tags
+        text = re.sub(r'<(?!break\s)[^>]+>', '', text)
+
+    try:
+        # Set up voice settings
+        voice_settings = {}
+        
+        # Apply speaking rate if different from 1.0
+        if speaking_rate != 1.0:
+            voice_settings["speed"] = speaking_rate
+        
+        # Generate audio using the ElevenLabs API
+        response = client.text_to_speech(
+            voice_id=voice_model.voice_id,  # Voice ID is the correct parameter name
+            text=text,
+            model_id="eleven_multilingual_v2",  # Use multilingual model for language support
+            voice_settings=voice_settings,  # Correct parameter for voice settings
+        )
+        
+        # Convert response to audio segment
+        audio_bytes = io.BytesIO(response.content)
+        return AudioSegment.from_mp3(audio_bytes)
+        
+    except Exception as e:
+        raise Exception(f"ElevenLabs speech synthesis error: {str(e)}")
 
 def text_to_speech(
     text: str,
@@ -372,19 +440,23 @@ def slow_text_to_speech(
     word_break_ms: int = None,
 ) -> AudioSegment:
     """
-    Generate slowed down text-to-speech audio with breaks between words using SSML.
+    Generate slowed down text-to-speech audio with breaks between words.
+    
+    Uses SSML for Google and Azure voices, and explicit break tags for ElevenLabs voices.
 
     Args:
         text: Text to convert to speech
-        language_code: Language code for TTS (defaults to config's target language code)
-        voice_name: Name of voice to use (defaults to config's target male voice)
+        config_language: Which language configuration to use ("source" or "target")
+        gender: Target voice gender ("MALE" or "FEMALE")
         speaking_rate: Speaking rate (defaults to config.SPEAKING_RATE_SLOW)
         word_break_ms: Break time between words in ms (defaults to config.WORD_BREAK_MS)
 
     Returns:
         AudioSegment containing the generated speech with word breaks
-    """
 
+    Raises:
+        ValueError: If the break duration exceeds ElevenLabs' limit of 3 seconds
+    """
     if config_language == "source":
         language_code = config.SOURCE_LANGUAGE_CODE
     else:
@@ -395,29 +467,66 @@ def slow_text_to_speech(
     if word_break_ms is None:
         word_break_ms = config.WORD_BREAK_MS
 
-    word_break_time = str(word_break_ms) + "ms"
-
     # Clean the text and tokenize it
     cleaned_text = clean_tts_text(text)
     tokens = tokenize_text(cleaned_text, language_code)
+    
+    # Get the voice model to determine the provider
+    voice_models = config.get_voice_models()
 
-    # Create SSML with breaks between words
-    ssml_parts = ["<speak>"]
-    for i, token in enumerate(tokens):
-        ssml_parts.append(token)
-        if i < len(tokens) - 1:
-            ssml_parts.append(f'<break time="{word_break_time}"/>')
-    ssml_parts.append("</speak>")
-    ssml_text = " ".join(ssml_parts)
+    if config_language == "source":
+        voice_model = voice_models[0]
+    elif (config_language == "target") & (gender == "FEMALE"):
+        voice_model = voice_models[1]
+    else:
+        voice_model = voice_models[2]
+    
+    # Handle different providers
+    if voice_model.provider == VoiceProvider.ELEVENLABS:
+        # For ElevenLabs, convert milliseconds to seconds and use their break format
+        break_sec = word_break_ms / 1000.0
+        
+        # Check if break duration exceeds ElevenLabs' limit (3 seconds)
+        if break_sec >= 3.0:
+            raise ValueError(
+                f"Break duration of {break_sec:.2f}s exceeds ElevenLabs' limit of 3 seconds. "
+                f"Please use a word_break_ms value less than 3000."
+            )
+            
+        formatted_break = f' <break time="{break_sec:.2f}s" /> '
+        
+        # Join the tokens with ElevenLabs break format
+        text_with_breaks = formatted_break.join(tokens)
+        
+        # Generate speech with the breaks embedded in the text
+        return text_to_speech(
+            text=text_with_breaks,
+            config_language=config_language,
+            gender=gender,
+            speaking_rate=speaking_rate,
+            is_ssml=False,  # ElevenLabs handles the break tags natively
+        )
+    else:
+        # For Google and Azure, use standard SSML
+        word_break_time = str(word_break_ms) + "ms"
+        
+        # Create SSML with breaks between words
+        ssml_parts = ["<speak>"]
+        for i, token in enumerate(tokens):
+            ssml_parts.append(token)
+            if i < len(tokens) - 1:
+                ssml_parts.append(f'<break time="{word_break_time}"/>')
+        ssml_parts.append("</speak>")
+        ssml_text = " ".join(ssml_parts)
 
-    # Use the main text_to_speech function with SSML
-    return text_to_speech(
-        text=ssml_text,
-        config_language=config_language,
-        gender=gender,
-        speaking_rate=speaking_rate,
-        is_ssml=True,
-    )
+        # Use the main text_to_speech function with SSML
+        return text_to_speech(
+            text=ssml_text,
+            config_language=config_language,
+            gender=gender,
+            speaking_rate=speaking_rate,
+            is_ssml=True,
+        )
 
 
 def export_audio(final_audio: AudioSegment, filename: str = None) -> str:
