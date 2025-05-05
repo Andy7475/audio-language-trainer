@@ -29,4 +29,5 @@ pytest
 python-dotenv
 requests
 soundfile                       #for speeding up dialogue
-spacy>=3.8.0
+tqdm
+#spacy>=3.8.0

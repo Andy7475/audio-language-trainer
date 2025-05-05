@@ -1,6 +1,8 @@
+import base64
 import html
 import io
 import os
+import re
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
@@ -8,26 +10,26 @@ from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import azure.cognitiveservices.speech as speechsdk
 import librosa
 import numpy as np
+import requests
 import soundfile as sf
+from elevenlabs import ElevenLabs
 from google.cloud import texttospeech
 from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
-import base64
-from elevenlabs import ElevenLabs
-import re
+
 from src.config_loader import VoiceInfo, VoiceProvider, config
-from src.translation import tokenize_text
 from src.convert import clean_filename
 from src.gcs_storage import (
     check_blob_exists,
-    upload_to_gcs,
-    get_utterance_audio_path,
-    get_story_translated_dialogue_path,
     get_fast_audio_path,
+    get_story_translated_dialogue_path,
+    get_utterance_audio_path,
     read_from_gcs,
+    upload_to_gcs,
 )
+from src.translation import tokenize_text
 
 
 def generate_translated_phrase_audio(
@@ -331,31 +333,30 @@ def text_to_speech_elevenlabs(
     is_ssml: bool = False,
 ) -> AudioSegment:
     """
-    Convert text to speech using ElevenLabs TTS.
-
+    Convert text to speech using ElevenLabs TTS API directly with requests.
+    
     Args:
         text: Text to convert to speech (can include <break time="1.0s" /> tags)
         voice_model: VoiceInfo object containing voice details
         speaking_rate: Speed of speech (1.0 is normal speed)
         is_ssml: Whether the input text is standard SSML (will be converted for ElevenLabs)
-
+    
     Returns:
         AudioSegment containing the generated speech
     """
+
+
     # Get ElevenLabs API key from environment variable
     api_key = os.getenv("ELEVENLABS_API_KEY")
     if not api_key:
         raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
-
-    # Initialize client
-    client = ElevenLabs(api_key=api_key)
-
+    
     # If input is standard SSML, convert to ElevenLabs format
     if is_ssml:
         # Extract content between <speak> tags
         if "<speak>" in text and "</speak>" in text:
             text = re.search(r'<speak>(.*?)</speak>', text, re.DOTALL).group(1).strip()
-        
+            
         # Convert standard SSML break tags to ElevenLabs format
         # From: <break time="250ms"/>
         # To: <break time="0.25s" />
@@ -364,25 +365,37 @@ def text_to_speech_elevenlabs(
             lambda m: f'<break time="{int(m.group(1))/1000:.2f}s" />',
             text
         )
-        
+            
         # Remove any other SSML tags
         text = re.sub(r'<(?!break\s)[^>]+>', '', text)
-
+    
     try:
-        # Set up voice settings
-        voice_settings = {}
+        # Set up API endpoint
+        url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_model.voice_id}"
+        
+        # Set up headers
+        headers = {
+            "Accept": "audio/mpeg",
+            "Content-Type": "application/json",
+            "xi-api-key": api_key
+        }
+        
+        # Set up request body
+        body = {
+            "text": text,
+            "model_id": "eleven_multilingual_v2"  # Use multilingual model for language support
+        }
         
         # Apply speaking rate if different from 1.0
         if speaking_rate != 1.0:
-            voice_settings["speed"] = speaking_rate
+            body["voice_settings"] = {"stability": 0.5, "similarity_boost": 0.5, "style": 0.0, "speed": speaking_rate}
         
-        # Generate audio using the ElevenLabs API
-        response = client.text_to_speech(
-            voice_id=voice_model.voice_id,  # Voice ID is the correct parameter name
-            text=text,
-            model_id="eleven_multilingual_v2",  # Use multilingual model for language support
-            voice_settings=voice_settings,  # Correct parameter for voice settings
-        )
+        # Make the API request
+        response = requests.post(url, json=body, headers=headers)
+        
+        # Check if request was successful
+        if response.status_code != 200:
+            raise Exception(f"API request failed with status code {response.status_code}: {response.text}")
         
         # Convert response to audio segment
         audio_bytes = io.BytesIO(response.content)
@@ -428,6 +441,8 @@ def text_to_speech(
         return text_to_speech_google(text, voice_model, speaking_rate, is_ssml)
     elif voice_model.provider == VoiceProvider.AZURE:
         return text_to_speech_azure(text, voice_model, speaking_rate, is_ssml)
+    elif voice_model.provider == VoiceProvider.ELEVENLABS:
+        return text_to_speech_elevenlabs(text, voice_model, speaking_rate, is_ssml)
     else:
         raise ValueError(f"Unsupported voice provider: {voice_model.provider}")
 

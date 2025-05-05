@@ -1,25 +1,6 @@
 import json
 import os
 import time
-
-# Assume these imports are available
-from dataclasses import dataclass
-from enum import Enum
-from types import SimpleNamespace
-from typing import Dict, List, Optional, Set, Tuple
-
-import azure.cognitiveservices.speech as speechsdk
-from langcodes import Language, LanguageTagError
-import pycountry
-from google.cloud import texttospeech
-import azure.cognitiveservices.speech as speechsdk
-import pysnooper
-
-# Updated config_loader.py with ElevenLabs integration
-
-import json
-import os
-import time
 from dataclasses import dataclass
 from enum import Enum
 from types import SimpleNamespace
@@ -29,13 +10,12 @@ import azure.cognitiveservices.speech as speechsdk
 from langcodes import Language, LanguageTagError
 import pycountry
 from google.cloud import texttospeech
-from elevenlabs import ElevenLabs  # Import ElevenLabs
 
 
 class VoiceProvider(Enum):
     GOOGLE = "google"
     AZURE = "azure"
-    ELEVENLABS = "elevenlabs"  # Add ElevenLabs as a provider
+    ELEVENLABS = "elevenlabs"
     NONE = "none"  # For when no provider is available
 
 
@@ -94,6 +74,7 @@ class VoiceManager:
         self.voice_overrides: Dict[str, Dict[str, str]] = {}
         self.loaded_languages: Set[str] = set()  # Track which languages we've loaded
         self.elevenlabs_client = None  # Will be initialized when needed
+        self.elevenlabs_voices_loaded = False  # Flag to track if we've tried to load ElevenLabs voices
 
     def _init_elevenlabs_client(self):
         """Initialize the ElevenLabs client if not already done."""
@@ -104,6 +85,8 @@ class VoiceManager:
                 return False
             
             try:
+                # Import here to avoid dependency issues if ElevenLabs is not installed
+                from elevenlabs import ElevenLabs
                 self.elevenlabs_client = ElevenLabs(api_key=api_key)
                 return True
             except Exception as e:
@@ -128,7 +111,7 @@ class VoiceManager:
 
         # Set the override
         self.voice_overrides[language_code][gender.upper()] = voice_name
-        print(f"setting voice override: {voice_name}")
+        print(f"Setting voice override: {voice_name}")
 
     def _lazy_load_voices(self, language_code: str):
         """Only load voices for a language if we haven't already"""
@@ -142,12 +125,8 @@ class VoiceManager:
                 self._load_azure_voices(locale=language_code)
             except Exception as e:
                 print(f"Warning: Failed to load Azure voices: {e}")
-                
-            try:
-                self._load_elevenlabs_voices(language_code=language_code)
-            except Exception as e:
-                print(f"Warning: Failed to load ElevenLabs voices: {e}")
-
+            
+            # Do not load all ElevenLabs voices - we'll check for specific voice_id in get_voice
             self.loaded_languages.add(language_code)
 
     def _load_google_voices(self, language_code: str):
@@ -231,98 +210,79 @@ class VoiceManager:
         except Exception as e:
             print(f"Warning: Unable to initialize Azure TTS: {e}")
 
-    def _load_elevenlabs_voices(self, language_code: str):
-        """Load ElevenLabs voices with proper error handling.
+    def _get_elevenlabs_voice_by_id(self, voice_id: str, language_code: str) -> Optional[VoiceInfo]:
+        """Get a specific ElevenLabs voice by ID without loading all voices.
         
         Args:
+            voice_id: The ElevenLabs voice ID to look up
             language_code: Language code in format "fr-FR"
+            
+        Returns:
+            VoiceInfo if found, None otherwise
         """
         if not self._init_elevenlabs_client():
-            return
+            return None
             
         try:
-            # Extract language code (e.g., "en" from "en-US")
+            # Get language object for metadata
             language_object = Language.get(language_code)
-            language_alpha = language_object.language  # e.g., "en", "fr"
             
-            # Search for voices
-            response = self.elevenlabs_client.voices.search(
-                include_total_count=True,
-                page_size=100,  # Get as many voices as possible
+            # Get voice directly using the client's voices.get() method
+            voice_data = self.elevenlabs_client.voices.get(voice_id)
+            
+            if not voice_data:
+                print(f"Warning: Failed to get ElevenLabs voice {voice_id}")
+                return None
+                
+            # Determine voice type
+            voice_type = VoiceType.STANDARD
+            category = voice_data.category
+            if category == "professional":
+                voice_type = VoiceType.PROFESSIONAL
+            elif category == "premade":
+                voice_type = VoiceType.PREMADE
+            elif category == "cloned":
+                voice_type = VoiceType.CLONED
+            elif category == "generated":
+                voice_type = VoiceType.GENERATED
+            
+            # Determine gender from labels
+            gender = "NEUTRAL"  # Default
+            labels = voice_data.labels
+            if labels and "gender" in labels:
+                gender_label = labels.get("gender", "").upper()
+                if gender_label in ["MALE", "FEMALE"]:
+                    gender = gender_label
+            
+            # Get accent if available
+            accent = None
+            if labels and "accent" in labels:
+                accent = labels.get("accent")
+            
+            # Create voice info object
+            voice_info = VoiceInfo(
+                name=voice_data.name,
+                provider=VoiceProvider.ELEVENLABS,
+                voice_type=voice_type,
+                gender=gender,
+                language_code=language_code,
+                country_code=language_object.territory,
+                voice_id=voice_id,
+                accent=accent,
+                settings=voice_data.settings,
+                description=voice_data.description,
             )
             
-            if not response or not response.get("voices"):
-                print(f"Warning: No ElevenLabs voices found")
-                return
+            # Add to voices dict for caching
+            if language_code not in self.voices:
+                self.voices[language_code] = []
+            self.voices[language_code].append(voice_info)
             
-            voices = response.get("voices", [])
+            return voice_info
             
-            for voice in voices:
-                # Check if this voice supports the requested language
-                verified_languages = voice.get("verified_languages", [])
-                supported_language = False
-                
-                # If no verified languages, skip this voice
-                if not verified_languages:
-                    continue
-                
-                for lang_info in verified_languages:
-                    if lang_info.get("language") == language_alpha:
-                        supported_language = True
-                        break
-                
-                if not supported_language:
-                    continue  # Skip voices that don't support this language
-                
-                # Determine voice type
-                voice_type = VoiceType.STANDARD
-                category = voice.get("category", "").lower()
-                if category == "professional":
-                    voice_type = VoiceType.PROFESSIONAL
-                elif category == "premade":
-                    voice_type = VoiceType.PREMADE
-                elif category == "cloned":
-                    voice_type = VoiceType.CLONED
-                elif category == "generated":
-                    voice_type = VoiceType.GENERATED
-                
-                # Determine gender from labels
-                gender = "NEUTRAL"  # Default
-                labels = voice.get("labels", {})
-                if labels and "gender" in labels:
-                    gender_label = labels.get("gender", "").upper()
-                    if gender_label in ["MALE", "FEMALE"]:
-                        gender = gender_label
-                
-                # Get accent if available
-                accent = None
-                if labels and "accent" in labels:
-                    accent = labels.get("accent")
-                
-                # Get settings if available
-                settings = voice.get("settings")
-                
-                voice_info = VoiceInfo(
-                    name=voice.get("name", "Unknown"),
-                    provider=VoiceProvider.ELEVENLABS,
-                    voice_type=voice_type,
-                    gender=gender,
-                    language_code=language_code,
-                    country_code=language_object.territory,
-                    voice_id=voice.get("voice_id"),
-                    accent=accent,
-                    settings=settings,
-                    description=voice.get("description"),
-                    preview_url=voice.get("preview_url")
-                )
-                
-                if language_code in self.voices:
-                    self.voices[language_code].append(voice_info)
-                else:
-                    self.voices[language_code] = [voice_info]
-                    
         except Exception as e:
-            print(f"Warning: Unable to load ElevenLabs voices: {e}")
+            print(f"Warning: Failed to get ElevenLabs voice {voice_id}: {e}")
+            return None
 
     def get_voice(
         self,
@@ -350,7 +310,17 @@ class VoiceManager:
             and gender in self.voice_overrides[language_code]
         ):
             override_voice_name = self.voice_overrides[language_code][gender]
-            # Find the voice in our loaded voices
+            
+            # Check if this is an ElevenLabs voice ID (they're typically UUIDs)
+            # Try to get the ElevenLabs voice
+            try:
+                elevenlabs_voice = self._get_elevenlabs_voice_by_id(override_voice_name, language_code)
+                if elevenlabs_voice:
+                    return elevenlabs_voice
+            except Exception as e:
+                print(f"Warning: Failed to get ElevenLabs voice {override_voice_name}: {e}")
+            
+            # Find the voice in our loaded voices (Google or Azure)
             if language_code in self.voices:
                 for voice in self.voices[language_code]:
                     if voice.voice_id == override_voice_name:
