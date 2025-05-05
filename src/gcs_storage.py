@@ -375,7 +375,36 @@ def upload_story_to_gcs(html_file_path: str, bucket_name: Optional[str] = None) 
 
 
 def get_story_collection_path(collection: str = "LM1000") -> str:
-    """Get the GCS path for a story collection file."""
+    """Get the GCS path for a story collection file.
+
+    The file contains a dictionary mapping story names to lists of phrase information.
+    Stories are ordered by priority/sequence. For each story, phrases are ordered by
+    their vocabulary coverage score.
+
+    Format:
+    {
+        "story_name": [
+            {
+                "phrase": str,           # The English phrase
+                "score": float,          # Vocabulary coverage score
+                "new_story_verbs": int,  # New verbs for this story
+                "new_story_vocab": int,  # New vocab for this story
+                "new_global_verbs": int, # New verbs across all stories
+                "new_global_vocab": int, # New vocab across all stories
+                "total_new_words": int   # Total new words introduced
+            },
+            ...
+        ],
+        ...
+    }
+
+    Args:
+        collection: Collection name (default: "LM1000")
+
+    Returns:
+        str: Path to the collection file in GCS
+        Format: collections/{collection}/{collection}.json
+    """
     return f"collections/{collection}/{collection}.json"
 
 
