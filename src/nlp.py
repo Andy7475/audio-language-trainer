@@ -22,7 +22,7 @@ def get_text_from_dialogue(dialogue: List[Dict[str, str]]) -> List[str]:
     return phrases
 
 
-def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
+def plot_vocabulary_growth(phrases: List[str], window: int = 15) -> None:
     """
     Plot vocabulary growth with cumulative total, new words per phrase, rolling mean,
     and overall mean.
@@ -65,24 +65,12 @@ def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
         secondary_y=False,
     )
 
-    # Add new words per phrase bars
-    fig.add_trace(
-        go.Bar(
-            x=list(range(1, len(phrases) + 1)),
-            y=new_words_per_phrase,
-            name="New Words per Phrase",
-            opacity=0.3,
-            marker_color="green",
-        ),
-        secondary_y=True,
-    )
-
     # Add rolling mean line
     fig.add_trace(
         go.Scatter(
             x=list(range(1, len(phrases) + 1)),
             y=rolling_mean,
-            name=f"Rolling Mean (window={min(window, len(phrases))})",
+            name="New Words per Phrase\n(rolling mean)",
             line=dict(color="red"),
         ),
         secondary_y=True,
@@ -93,7 +81,7 @@ def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
         go.Scatter(
             x=[1, len(phrases)],
             y=[overall_mean, overall_mean],
-            name="Overall Mean",
+            name="Overall new words per phrase",
             line=dict(color="purple", dash="dot"),
         ),
         secondary_y=True,
