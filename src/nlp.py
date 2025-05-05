@@ -1248,237 +1248,340 @@ def get_best_story_matches(
     return top_matches
 
 
+def determine_story_sequence(story_index: Dict[str, Dict]) -> List[str]:
+    """
+    Determine optimal story sequence based on vocabulary complexity.
+    Stories with smaller vocabulary are placed earlier in the sequence.
+    Verbs are weighted 2x more heavily than regular vocabulary.
+
+    Args:
+        story_index: Pre-built story index from GCS
+
+    Returns:
+        List[str]: Story names sorted from simplest to most complex vocabulary
+    """
+    # Calculate vocabulary complexity score for each story
+    story_scores = []
+
+    for story in story_index["stories"]:
+        # Get vocabulary counts
+        verb_count = len(story_index["story_vocab"][story]["verbs"])
+        vocab_count = len(story_index["story_vocab"][story]["vocab"])
+
+        # Calculate complexity score (verbs weighted 2x)
+        complexity_score = (verb_count * 2) + vocab_count
+
+        # Store story name and score
+        story_scores.append((story, complexity_score, verb_count, vocab_count))
+
+    # Sort stories by complexity score (ascending)
+    story_scores.sort(key=lambda x: x[1])
+
+    # Print story sequence with complexity details
+    print("\nOptimized Story Sequence:")
+    print("-" * 60)
+    print(f"{'Story':<30} {'Score':<10} {'Verbs':<10} {'Vocab':<10}")
+    print("-" * 60)
+    for story, score, verbs, vocab in story_scores:
+        print(f"{story:<30} {score:<10} {verbs:<10} {vocab:<10}")
+
+    # Extract and return just the story names in sorted order
+    return [story[0] for story in story_scores]
+
+
 def assign_phrases_to_stories(
     story_index: Dict[str, Dict],
     phrase_index: Dict[str, Dict],
     max_phrases_per_story: int = 50,
-    top_n: int = 5,
+    target_new_words_per_card: float = 2.0,
+    story_sequence: List[str] = None,
 ) -> Dict[str, List[Dict[str, Any]]]:
     """
-    Assign phrases to stories based on vocabulary overlap, tracking covered vocabulary
-    to maximize new word coverage.
+    Assign phrases to stories in sequence, tracking global vocabulary acquisition
+    to create an optimal learning progression.
 
     Args:
         story_index: Pre-built story index from GCS
         phrase_index: Pre-built phrase index containing vocabulary data
-        max_phrases_per_story: Maximum phrases to assign per story
-        top_n: Number of top matches to consider for each phrase
+        max_phrases_per_story: Target maximum phrases per story
+        target_new_words_per_card: Target average new words per flashcard
+        story_sequence: Optional list of story names in desired learning sequence.
+                      If None, will be determined automatically based on vocabulary size.
 
     Returns:
         Dictionary mapping story names to lists of assigned phrases with scores
     """
+    # Generate story sequence if not provided
+    if story_sequence is None:
+        story_sequence = determine_story_sequence(story_index)
 
     # Get all phrases
     phrases = phrase_index["phrases"]
     phrase_keys = [clean_filename(p) for p in phrases]
 
     # Initialize assignments and tracking
-    assignments = {story: [] for story in story_index["stories"]}
-    story_phrase_counts = {story: 0 for story in story_index["stories"]}
-    story_covered_vocab = {
-        story: {"verbs": set(), "vocab": set()} for story in story_index["stories"]
-    }
+    assignments = {story: [] for story in story_sequence}
+    story_phrase_counts = {story: 0 for story in story_sequence}
 
-    # Assign phrases to stories
+    # Global tracking of accumulated vocabulary knowledge
+    global_known_verbs = set()
+    global_known_vocab = set()
+
+    # Set of remaining phrases
     remaining_phrases = set(phrase_keys)
 
-    # Process each story until it has enough phrases or vocab coverage
-    for story in story_index["stories"]:
+    # Process each story in sequence
+    for story in story_sequence:
+        if story not in story_index["stories"]:
+            raise KeyError(f"Story {story} not found in story index")
+
+        print(f"\nProcessing story: {story}")
+
+        # Get story vocabulary
         story_verbs = set(story_index["story_vocab"][story]["verbs"])
         story_vocab = set(story_index["story_vocab"][story]["vocab"])
 
+        # Calculate remaining vocabulary to learn for this story
+        remaining_story_verbs = story_verbs - global_known_verbs
+        remaining_story_vocab = story_vocab - global_known_vocab
+
+        print(
+            f"Story has {len(remaining_story_verbs)} new verbs and {len(remaining_story_vocab)} new vocabulary words to learn"
+        )
+
+        # Track vocabulary covered by this story's flashcards
+        story_covered_verbs = set()
+        story_covered_vocab = set()
+
+        # Determine target number of phrases based on vocabulary needs
+        total_new_words = len(remaining_story_verbs) + len(remaining_story_vocab)
+        target_phrases = min(
+            max_phrases_per_story,
+            max(10, int(total_new_words / target_new_words_per_card)),
+        )
+
+        print(f"Target number of phrases for this story: {target_phrases}")
+
+        # Assign phrases until we reach target or exhaust options
+        assigned_count = 0
+
         while (
-            story_phrase_counts[story] < max_phrases_per_story
-            and len(remaining_phrases) > 0
+            assigned_count < target_phrases
+            and remaining_phrases
+            and (remaining_story_verbs or remaining_story_vocab)
         ):
-
-            # Calculate current coverage
-            covered_verbs = len(story_covered_vocab[story]["verbs"])
-            covered_vocab = len(story_covered_vocab[story]["vocab"])
-            verb_coverage = covered_verbs / len(story_verbs) if story_verbs else 1.0
-            vocab_coverage = covered_vocab / len(story_vocab) if story_vocab else 1.0
-
-            # Stop if we have 90% coverage of both
-            if verb_coverage >= 0.9 and vocab_coverage >= 0.9:
-                break
-
             # Find best remaining phrase for this story
             best_phrase = None
             best_score = -1
-            best_new_verbs = 0
-            best_new_vocab = 0
+            best_new_words = 0
+            best_info = None
 
             for phrase_key in remaining_phrases:
-                # Get vocab from phrase index and story
+                if phrase_key not in phrase_index["phrase_vocab"]:
+                    continue
+
+                # Get vocab from phrase index
                 phrase_verbs = set(phrase_index["phrase_vocab"][phrase_key]["verbs"])
                 phrase_vocab = set(phrase_index["phrase_vocab"][phrase_key]["vocab"])
-                story_verbs = set(story_index["story_vocab"][story]["verbs"])
-                story_vocab = set(story_index["story_vocab"][story]["vocab"])
 
-                # Calculate vocabulary overlap between phrase and story
-                new_verbs = len(
-                    phrase_verbs & story_verbs - story_covered_vocab[story]["verbs"]
-                )
-                new_vocab = len(
-                    phrase_vocab & story_vocab - story_covered_vocab[story]["vocab"]
-                )
+                # Calculate new words this phrase would teach for this story
+                new_story_verbs = phrase_verbs & remaining_story_verbs
+                new_story_vocab = phrase_vocab & remaining_story_vocab
 
-                # Calculate score based on new vocabulary
-                score = (new_verbs * 2) + new_vocab  # Weight verbs more heavily
+                # Calculate new words globally
+                new_global_verbs = phrase_verbs - global_known_verbs
+                new_global_vocab = phrase_vocab - global_known_vocab
 
-                if score > best_score:
+                # Score formula: prioritize story relevance but consider global learning
+                # Weight verbs higher than regular vocabulary
+                story_score = (len(new_story_verbs) * 3) + len(new_story_vocab)
+                global_score = (len(new_global_verbs) * 2) + len(new_global_vocab)
+
+                # Combined score weights story relevance higher
+                score = (story_score * 2) + global_score
+
+                # Favor phrases with total new words close to target
+                total_new = len(new_global_verbs) + len(new_global_vocab)
+                distance_penalty = abs(total_new - target_new_words_per_card)
+                adjusted_score = score - distance_penalty
+
+                if adjusted_score > best_score:
                     best_phrase = phrase_key
-                    best_score = score
-                    best_new_verbs = new_verbs
-                    best_new_vocab = new_vocab
+                    best_score = adjusted_score
+                    best_new_words = total_new
+                    best_info = {
+                        "phrase": phrases[phrase_keys.index(phrase_key)],
+                        "score": adjusted_score,
+                        "new_story_verbs": len(new_story_verbs),
+                        "new_story_vocab": len(new_story_vocab),
+                        "new_global_verbs": len(new_global_verbs),
+                        "new_global_vocab": len(new_global_vocab),
+                        "total_new_words": total_new,
+                    }
 
-            # If no good phrase found, move to next story
-            if best_score == 0:
+            # If no good phrase found, consider breaking out
+            if best_score <= 0:
+                print(f"No more relevant phrases found for {story}")
                 break
 
             # Add best phrase to assignments
-            assignments[story].append(
-                {
-                    "phrase": phrases[phrase_keys.index(best_phrase)],
-                    "score": best_score,
-                    "new_verbs": best_new_verbs,
-                    "new_vocab": best_new_vocab,
-                }
-            )
-
-            # Update tracking
-            story_phrase_counts[story] += 1
+            assignments[story].append(best_info)
             remaining_phrases.remove(best_phrase)
+            assigned_count += 1
 
-            # Update covered vocabulary
+            # Update vocabulary tracking
             phrase_verbs = set(phrase_index["phrase_vocab"][best_phrase]["verbs"])
             phrase_vocab = set(phrase_index["phrase_vocab"][best_phrase]["vocab"])
-            story_covered_vocab[story]["verbs"].update(phrase_verbs)
-            story_covered_vocab[story]["vocab"].update(phrase_vocab)
 
-    # Print assignment statistics
-    print("\nAssignment Statistics:")
-    print(f"Total phrases: {len(phrases)}")
-    print(f"Remaining unassigned phrases: {len(remaining_phrases)}")
-    print("\nPhrases per story:")
-    for story in story_index["stories"]:
-        story_verbs = set(story_index["story_vocab"][story]["verbs"])
-        story_vocab = set(story_index["story_vocab"][story]["vocab"])
+            # Update story coverage
+            story_covered_verbs.update(phrase_verbs & story_verbs)
+            story_covered_vocab.update(phrase_vocab & story_vocab)
+
+            # Update global knowledge
+            global_known_verbs.update(phrase_verbs)
+            global_known_vocab.update(phrase_vocab)
+
+            # Update remaining vocabulary to learn
+            remaining_story_verbs = story_verbs - global_known_verbs
+            remaining_story_vocab = story_vocab - global_known_vocab
+
+        # Update story phrase count
+        story_phrase_counts[story] = assigned_count
+
+        # Calculate coverage statistics for this story
+        # Calculate story-specific coverage statistics
         verb_coverage = (
-            len(story_covered_vocab[story]["verbs"]) / len(story_verbs)
+            len(story_covered_verbs) / len(story_verbs) if story_verbs else 1.0
+        )
+        vocab_coverage = (
+            len(story_covered_vocab) / len(story_vocab) if story_vocab else 1.0
+        )
+
+        # Calculate how much of this story's vocabulary is already covered by global knowledge
+        story_verb_coverage_by_global = (
+            len(story_verbs & global_known_verbs) / len(story_verbs)
             if story_verbs
             else 1.0
         )
-        vocab_coverage = (
-            len(story_covered_vocab[story]["vocab"]) / len(story_vocab)
+        story_vocab_coverage_by_global = (
+            len(story_vocab & global_known_vocab) / len(story_vocab)
             if story_vocab
             else 1.0
         )
+        story_total_coverage_by_global = (
+            (
+                len(story_verbs & global_known_verbs)
+                + len(story_vocab & global_known_vocab)
+            )
+            / (len(story_verbs) + len(story_vocab))
+            if (story_verbs or story_vocab)
+            else 1.0
+        )
 
-        print(f"{story}: {story_phrase_counts[story]} phrases")
-        print(f"  Verb coverage: {verb_coverage:.1%}")
-        print(f"  Vocab coverage: {vocab_coverage:.1%}")
+        # Print coverage statistics
+        print(f"Assigned {assigned_count} phrases to {story}")
+        print(f"Story verb coverage from this story's flashcards: {verb_coverage:.1%}")
+        print(
+            f"Story vocab coverage from this story's flashcards: {vocab_coverage:.1%}"
+        )
+        print(f"Coverage of this story by global knowledge:")
+        print(
+            f"  Story verb coverage by global knowledge: {story_verb_coverage_by_global:.1%} ({len(story_verbs & global_known_verbs)}/{len(story_verbs)})"
+        )
+        print(
+            f"  Story vocab coverage by global knowledge: {story_vocab_coverage_by_global:.1%} ({len(story_vocab & global_known_vocab)}/{len(story_vocab)})"
+        )
+        print(
+            f"  Story total coverage by global knowledge: {story_total_coverage_by_global:.1%} ({len(story_verbs & global_known_verbs) + len(story_vocab & global_known_vocab)}/{len(story_verbs) + len(story_vocab)})"
+        )
+
+    # After processing all stories, assign any remaining flashcards
+    if remaining_phrases:
+        print(f"\nAssigning {len(remaining_phrases)} remaining phrases")
+
+        # For remaining phrases, assign to most relevant story
+        for phrase_key in list(remaining_phrases):
+            if phrase_key not in phrase_index["phrase_vocab"]:
+                remaining_phrases.remove(phrase_key)
+                continue
+
+            best_story = None
+            best_relevance = -1
+
+            for story in story_sequence:
+                # Skip stories that are already at max
+                if (
+                    story_phrase_counts[story] >= max_phrases_per_story * 1.2
+                ):  # Allow some overflow
+                    continue
+
+                # Get vocabulary
+                phrase_verbs = set(phrase_index["phrase_vocab"][phrase_key]["verbs"])
+                phrase_vocab = set(phrase_index["phrase_vocab"][phrase_key]["vocab"])
+
+                story_verbs = set(story_index["story_vocab"][story]["verbs"])
+                story_vocab = set(story_index["story_vocab"][story]["vocab"])
+
+                # Calculate relevance score
+                verb_overlap = len(phrase_verbs & story_verbs)
+                vocab_overlap = len(phrase_vocab & story_vocab)
+
+                relevance = (verb_overlap * 2) + vocab_overlap
+
+                if relevance > best_relevance:
+                    best_story = story
+                    best_relevance = relevance
+
+            # If we found a relevant story, assign the phrase
+            if best_story and best_relevance > 0:
+                # Get phrase info
+                phrase_verbs = set(phrase_index["phrase_vocab"][phrase_key]["verbs"])
+                phrase_vocab = set(phrase_index["phrase_vocab"][phrase_key]["vocab"])
+
+                # Calculate new words relative to global knowledge
+                new_global_verbs = phrase_verbs - global_known_verbs
+                new_global_vocab = phrase_vocab - global_known_vocab
+
+                # Create info dictionary
+                info = {
+                    "phrase": phrases[phrase_keys.index(phrase_key)],
+                    "score": best_relevance,
+                    "new_story_verbs": 0,  # Not calculated for remaining assignments
+                    "new_story_vocab": 0,
+                    "new_global_verbs": len(new_global_verbs),
+                    "new_global_vocab": len(new_global_vocab),
+                    "total_new_words": len(new_global_verbs) + len(new_global_vocab),
+                }
+
+                # Add to assignments
+                assignments[best_story].append(info)
+                story_phrase_counts[best_story] += 1
+
+                # Update global knowledge
+                global_known_verbs.update(phrase_verbs)
+                global_known_vocab.update(phrase_vocab)
+
+                # Remove from remaining
+                remaining_phrases.remove(phrase_key)
+
+    # Print assignment statistics
+    print("\nFinal Assignment Statistics:")
+    total_assigned = sum(story_phrase_counts.values())
+    print(f"Total phrases: {len(phrases)}")
+    print(f"Total assigned: {total_assigned}")
+    print(f"Remaining unassigned: {len(remaining_phrases)}")
+
+    print("\nPhrases per story:")
+    for story in story_sequence:
+        if story in story_phrase_counts:
+            print(f"{story}: {story_phrase_counts[story]} phrases")
+
+            # Calculate average new words per flashcard for this story
+            if story_phrase_counts[story] > 0:
+                total_new_words = sum(
+                    item["total_new_words"] for item in assignments[story]
+                )
+                avg_new_words = total_new_words / story_phrase_counts[story]
+                print(f"  Average new words per flashcard: {avg_new_words:.2f}")
 
     return assignments
-
-
-def analyze_phrase_story_vocabulary_overlap(
-    assignments: Dict[str, List[Dict[str, Any]]],
-    story_index: Dict[str, Dict],
-    phrase_index: Dict[str, Dict],
-    bucket_name: Optional[str] = None,
-) -> Dict[str, Dict[str, Any]]:
-    """
-    Analyze vocabulary overlap between assigned phrases and their stories.
-    Uses pre-built phrase index for faster analysis.
-
-    Args:
-        assignments: Dictionary mapping story names to lists of assigned phrases with scores
-        story_index: Pre-built story index from GCS
-        phrase_index: Pre-built phrase index containing vocabulary data
-        collection: Collection name (default: "LM1000")
-        bucket_name: Optional GCS bucket name
-
-    Returns:
-        Dictionary containing analysis for each story:
-        {
-            "story_name": {
-                "phrase_vocab": {
-                    "verbs": [...],
-                    "vocab": [...]
-                },
-                "story_vocab": {
-                    "verbs": [...],
-                    "vocab": [...]
-                },
-                "overlap": {
-                    "verbs": [...],
-                    "vocab": [...]
-                },
-                "missing": {
-                    "verbs": [...],
-                    "vocab": [...]
-                },
-                "coverage": {
-                    "verb_coverage": float,
-                    "vocab_coverage": float
-                }
-            },
-            ...
-        }
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PRIVATE_BUCKET
-
-    results = {}
-    for story_name, phrase_assignments in assignments.items():
-        # Get phrases assigned to this story
-        story_phrases = [item["phrase"] for item in phrase_assignments]
-        story_phrase_keys = [clean_filename(p) for p in story_phrases]
-
-        # Get vocabulary for these phrases from the index
-        phrase_verbs = set()
-        phrase_vocab = set()
-        for key in story_phrase_keys:
-            if key in phrase_index["phrase_vocab"]:
-                vocab_data = phrase_index["phrase_vocab"][key]
-                phrase_verbs.update(vocab_data["verbs"])
-                phrase_vocab.update(vocab_data["vocab"])
-
-        phrase_vocab_dict = {"verbs": list(phrase_verbs), "vocab": list(phrase_vocab)}
-
-        # Get vocabulary for the story
-        story_vocab = {
-            "verbs": story_index["story_vocab"][story_name]["verbs"],
-            "vocab": story_index["story_vocab"][story_name]["vocab"],
-        }
-
-        # Find missing vocabulary
-        missing = find_missing_vocabulary(phrase_vocab_dict, story_vocab)
-
-        # Calculate overlap
-        overlap = {
-            "verbs": list(phrase_verbs & set(story_vocab["verbs"])),
-            "vocab": list(phrase_vocab & set(story_vocab["vocab"])),
-        }
-
-        # Store results
-        results[story_name] = {
-            "phrase_vocab": phrase_vocab_dict,
-            "story_vocab": story_vocab,
-            "overlap": overlap,
-            "missing": missing["missing_vocab"],
-            "coverage": missing["coverage_stats"],
-        }
-
-        # Print summary for this story
-        print(f"\nVocabulary Analysis for {story_name}:")
-        print(f"Assigned phrases: {len(story_phrases)}")
-        print(f"Verb coverage: {missing['coverage_stats']['verb_coverage']:.1f}%")
-        print(
-            f"Vocabulary coverage: {missing['coverage_stats']['vocab_coverage']:.1f}%"
-        )
-        print(f"Missing verbs: {len(missing['missing_vocab']['verbs'])}")
-        print(f"Missing vocabulary: {len(missing['missing_vocab']['vocab'])}")
-
-    return results
