@@ -19,6 +19,7 @@
     object-fit: contain;
 }
 
+
 .target-text {
     font-size: 28px;
     margin: 20px 0;
@@ -46,15 +47,9 @@
     opacity: 1;
 }
 
-.insights-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin: 20px auto;
-}
-
 .insights-button {
+    grid-column: 2;
+    justify-self: center;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -137,6 +132,15 @@
     opacity: 0;
     transition: opacity 0.3s, visibility 0.3s;
     z-index: 10;
+}
+.inline-logo {
+    height: 1.5em; /* Slightly smaller height */
+    width: auto;
+    display: inline-block;
+    vertical-align: middle; /* Change from text-bottom to middle */
+    margin: 0 0.1em;
+    position: relative;
+    top: -0.1em; /* Small adjustment to lower the logo slightly */
 }
 .hide-button {
     /* Base styles that apply to the button at all times */
@@ -431,4 +435,43 @@
 .request-story-link:hover {
     background-color: #0255b3;
     text-decoration: none;
+}
+
+.insights-container {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr; /* Three columns with equal space on sides */
+    align-items: center;
+    width: 100%;
+    max-width: 600px; /* Adjust width as needed */
+    margin: 20px auto;
+    gap: 10px;
+}
+
+.logo-link {
+    grid-column: 3;
+    justify-self: start; /* Align toward center */
+    display: flex;
+    align-items: center;
+}
+
+.logo-image {
+    height: 40px;
+    transition: transform 0.2s;
+}
+
+.copy-button {
+    justify-self: end; /* Align toward center */
+    width: 40px; /* Fixed width */
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px; /* Increase emoji size */
+    padding: 0; /* Remove padding to prevent extra space */
+    background: none; /* Remove button background */
+    border: none; /* Remove button border */
+}
+
+.logo-image:hover {
+    transform: scale(1.2);
 }

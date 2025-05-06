@@ -93,68 +93,25 @@
             📋
         </button>
         <a href="https://claude.ai" target="_blank" class="insights-button" onclick="return copyPromptBeforeNavigate(event)">
-            <span class="insights-icon">💡</span>
             Learning Insights
+        </a>
+        <a href="https://storage.googleapis.com/audio-language-trainer-stories/index.html#{{TargetLanguageName}}" target="_blank" class="logo-link"
+        title="FirePhrase - Language Learning Stories and Resources">
+            <img alt="Logo" class="logo-image">
         </a>
     </div>
 
     <!-- Footer info text -->
     <div class="footer-info">
-        Click 📋 to copy the prompt or 💡 to open Claude and automatically copy the prompt for pasting.
+        Click 📋 to copy the prompt or Learning Insights to open Claude and automatically copy the prompt for pasting.
+    </div>
+    
+    <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
+    
+    <div class="footer-info">
+        Click <img alt="Logo" class="inline-logo"> to take you to the FirePhrase home page for online stories and access to more decks.
     </div>
 
-    <!-- Stories Section --> 
-    <div id="stories-section" class="stories-container">
-        <div class="stories-header">
-            <a href="https://storage.googleapis.com/audio-language-trainer-stories/index.html">Stories</a>    
-        </div>
-					<div class="footer-info">
-        Stories will direct to an external website
-    </div>
-        <div class="stories-links">
-            <script>
-                (function() {
-                    const tagString = "{{Tags}}";  // This will get the tags as a string
-                    const tags = tagString ? tagString.split(" ") : [];
-                    const storyTags = tags.filter(tag => tag.startsWith('story_'));
-                    const storiesContainer = document.querySelector('.stories-links');
-                    
-                    if (storyTags && storyTags.length > 0) {
-                        storyTags.forEach(tag => {
-                            const displayName = tag
-                                .replace('story_', '')
-                                .split('_')
-                                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                .join(' ');
-                            
-                            const targetLang = "{{TargetLanguageName}}".toLowerCase();
-                            const bucketUrl = `https://storage.googleapis.com/audio-language-trainer-stories/${targetLang}/${tag}/${tag}.html`;
-                            
-                            const link = document.createElement('a');
-                            link.href = bucketUrl;
-                            link.className = 'story-link';
-                            link.target = '_blank';
-                            link.textContent = displayName;
-                            
-                            storiesContainer.appendChild(link);
-                        });
-                    } else {
-                        const placeholder = document.createElement('div');
-                        placeholder.className = 'story-placeholder';
-                        placeholder.innerHTML = `
-                            <p>No stories available yet for this vocabulary.</p>
-                            <a href="https://github.com/Andy7475/audio-language-trainer/discussions/118" 
-                            target="_blank" 
-                            class="request-story-link">
-                                Request a story in the GitHub discussion →
-                            </a>
-                        `;
-                        storiesContainer.appendChild(placeholder);
-                    }
-                })();
-            </script>
-        </div>
-    </div>
 </div>
 
 <script>
@@ -202,4 +159,19 @@ function copyInsightsTemplate() {
         console.error('Failed to copy text: ', err);
     });
 }
+
+    // Store logo image as a variable to reuse in multiple places
+    const logoImageBase64 = "data:image/png;base64,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";
+    
+    // Function to insert the logo at specific elements
+    function insertLogoImages() {
+        document.querySelectorAll('.logo-image, .inline-logo').forEach(img => {
+            img.src = logoImageBase64;
+        });
+    }
+    
+    // Run when content is loaded
+    document.addEventListener('DOMContentLoaded', insertLogoImages);
+    // Also run immediately (for Anki which might not trigger DOMContentLoaded)
+    setTimeout(insertLogoImages, 0);
 </script>
