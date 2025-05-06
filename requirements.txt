@@ -4,6 +4,7 @@ anthropic                      #for querying the Anthropic models hosted on Goog
 azure-cognitiveservices-speech #as google TTS does not have some voices like Persian
 beautifulsoup4
 fastapi
+elevenlabs
 genanki
 google-auth
 google-cloud-aiplatform
@@ -28,4 +29,5 @@ pytest
 python-dotenv
 requests
 soundfile                       #for speeding up dialogue
-spacy>=3.8.0
+tqdm
+#spacy>=3.8.0
