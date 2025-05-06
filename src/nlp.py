@@ -1,6 +1,6 @@
 import re
-from copy import deepcopy
-from typing import Dict, List, Set, Tuple
+from collections import defaultdict
+from typing import Any, Dict, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -9,8 +9,20 @@ import spacy
 from plotly.subplots import make_subplots
 from tqdm import tqdm
 
+from src.convert import clean_filename
 
-def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
+
+def get_text_from_dialogue(dialogue: List[Dict[str, str]]) -> List[str]:
+    """ignoring the speaker, just gets all the utterances from a dialogue and puts
+    them in a single list"""
+
+    phrases = []
+    for utterance in dialogue:
+        phrases.append(utterance["text"])
+    return phrases
+
+
+def plot_vocabulary_growth(phrases: List[str], window: int = 15) -> None:
     """
     Plot vocabulary growth with cumulative total, new words per phrase, rolling mean,
     and overall mean.
@@ -53,24 +65,12 @@ def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
         secondary_y=False,
     )
 
-    # Add new words per phrase bars
-    fig.add_trace(
-        go.Bar(
-            x=list(range(1, len(phrases) + 1)),
-            y=new_words_per_phrase,
-            name="New Words per Phrase",
-            opacity=0.3,
-            marker_color="green",
-        ),
-        secondary_y=True,
-    )
-
     # Add rolling mean line
     fig.add_trace(
         go.Scatter(
             x=list(range(1, len(phrases) + 1)),
             y=rolling_mean,
-            name=f"Rolling Mean (window={min(window, len(phrases))})",
+            name="New Words per Phrase\n(rolling mean)",
             line=dict(color="red"),
         ),
         secondary_y=True,
@@ -81,7 +81,7 @@ def plot_vocabulary_growth(phrases: List[str], window: int = 10) -> None:
         go.Scatter(
             x=[1, len(phrases)],
             y=[overall_mean, overall_mean],
-            name="Overall Mean",
+            name="Overall new words per phrase",
             line=dict(color="purple", dash="dot"),
         ),
         secondary_y=True,
@@ -295,17 +295,56 @@ def process_phrase_vocabulary(phrase: str) -> tuple[set, set, set]:
 
 
 def create_flashcard_index(flashcard_phrases: list[str]) -> dict:
-    """Create indexes mapping words to the flashcards containing them."""
+    """Create indexes mapping words to the flashcards containing them.
+    Also stores vocabulary data for each phrase to avoid redundant processing.
+
+    Args:
+        flashcard_phrases: List of phrases to index
+
+    Returns:
+        Dictionary containing:
+        {
+            "verb_index": {word: [flashcard_idx1, flashcard_idx2, ...]},
+            "vocab_index": {word: [flashcard_idx1, flashcard_idx2, ...]},
+            "word_counts": [
+                {
+                    "verb_count": int,
+                    "vocab_count": int,
+                    "words": list of (word, pos) tuples
+                },
+                ...
+            ],
+            "phrases": list of phrases,
+            "phrase_vocab": {
+                "phrase_key1": {
+                    "verbs": [...],
+                    "vocab": [...],
+                    "all_words": [...]
+                },
+                ...
+            }
+        }
+    """
     verb_index = {}  # word -> set of flashcard indices
     vocab_index = {}
     flashcard_word_counts = []
+    phrase_vocab = {}  # phrase_key -> vocabulary data
 
     for idx, phrase in tqdm(
         enumerate(flashcard_phrases),
-        desc="Indexes phrases...",
+        desc="Indexing phrases...",
         total=len(flashcard_phrases),
     ):
+        # Process phrase vocabulary once
         vocab_used, verb_matches, vocab_matches = process_phrase_vocabulary(phrase)
+
+        # Store vocabulary data for this phrase
+        phrase_key = clean_filename(phrase)
+        phrase_vocab[phrase_key] = {
+            "verbs": list(verb_matches),
+            "vocab": list(vocab_matches),
+            "all_words": list(vocab_used),
+        }
 
         # Build indexes
         for word in verb_matches:
@@ -338,133 +377,7 @@ def create_flashcard_index(flashcard_phrases: list[str]) -> dict:
         "vocab_index": vocab_index,
         "word_counts": flashcard_word_counts,
         "phrases": flashcard_phrases,
-    }
-
-
-def find_candidate_cards(
-    remaining_verbs: set, remaining_vocab: set, flashcard_index: dict
-) -> set:
-    """Find all cards that contain any remaining words"""
-    candidate_cards = set()
-
-    # Get all cards containing remaining verbs
-    for word in remaining_verbs:
-        if word in flashcard_index["verb_index"]:
-            candidate_cards.update(flashcard_index["verb_index"][word])
-
-    # Get all cards containing remaining vocab
-    for word in remaining_vocab:
-        if word in flashcard_index["vocab_index"]:
-            candidate_cards.update(flashcard_index["vocab_index"][word])
-
-    return candidate_cards
-
-
-def get_index_subset(index_subset_indicies: set, index_dict: dict) -> dict:
-    """Returns a modified dictionary based on the subset of indicies - removing any that are not present.
-
-    index_dict will be something like phrase_index['vocab_index'] or phrase_index['verb_index']
-    """
-
-    modified_index_dict = deepcopy(index_dict)
-    for word, indicies in modified_index_dict.items():
-        new_indicies = list(set(indicies).intersection(index_subset_indicies))
-        modified_index_dict[word] = new_indicies
-
-    return modified_index_dict
-
-
-def find_best_card(
-    candidate_cards: set,
-    remaining_verbs: set,
-    remaining_vocab: set,
-    flashcard_index: dict,
-) -> tuple[int, dict]:
-    """Find card with most matches from candidates
-
-    Returns:
-        tuple of (best_card_index, match_info)
-        where match_info contains verb and vocab matches
-    """
-    best_card_idx = None
-    best_score = 0
-    best_matches = None
-
-    for card_idx in candidate_cards:
-        card_words = flashcard_index["word_counts"][card_idx]["words"]
-
-        # Count matches with remaining words
-        verb_matches = {
-            word
-            for word, pos in card_words
-            if pos in ["VERB", "AUX"] and word in remaining_verbs
-        }
-        vocab_matches = {
-            word
-            for word, pos in card_words
-            if pos not in ["VERB", "AUX"] and word in remaining_vocab
-        }
-
-        score = len(verb_matches) + len(vocab_matches)
-        if score > best_score:
-            best_score = score
-            best_card_idx = card_idx
-            best_matches = {"verbs": verb_matches, "vocab": vocab_matches}
-
-    return best_card_idx, best_matches
-
-
-def get_matching_flashcards_indexed(vocab_dict: dict, flashcard_index: dict) -> dict:
-    """Find minimal set of flashcards that cover the vocabulary.
-
-    Prioritizes cards that contain the most uncovered words to minimize
-    the total number of cards needed.
-
-    Args:
-        vocab_dict: Dictionary with 'verbs' and 'vocab' lists to cover
-        flashcard_index: Pre-computed index mapping words to flashcard indices
-
-    Returns:
-        Dictionary containing:
-        - selected_cards: List of selected flashcards with match info
-        - remaining_vocab: Words not found in any flashcard
-    """
-    remaining_verbs = set(vocab_dict["verbs"])
-    remaining_vocab = set(vocab_dict["vocab"])
-    selected_cards = []
-
-    while remaining_verbs or remaining_vocab:
-        # Find all cards containing any remaining words
-        candidate_cards = find_candidate_cards(
-            remaining_verbs, remaining_vocab, flashcard_index
-        )
-        if not candidate_cards:
-            break
-
-        # Find card with most matches
-        best_card_idx, best_matches = find_best_card(
-            candidate_cards, remaining_verbs, remaining_vocab, flashcard_index
-        )
-        if not best_matches:
-            break
-
-        # Add best card to selection
-        selected_cards.append(
-            {
-                "phrase": flashcard_index["phrases"][best_card_idx],
-                "new_matches": len(best_matches["verbs"]) + len(best_matches["vocab"]),
-                "verb_matches": best_matches["verbs"],
-                "vocab_matches": best_matches["vocab"],
-            }
-        )
-
-        # Remove covered words
-        remaining_verbs -= best_matches["verbs"]
-        remaining_vocab -= best_matches["vocab"]
-
-    return {
-        "selected_cards": selected_cards,
-        "remaining_vocab": {"verbs": remaining_verbs, "vocab": remaining_vocab},
+        "phrase_vocab": phrase_vocab,
     }
 
 
@@ -538,461 +451,448 @@ def get_verb_and_vocab_lists(used_words: Set[Tuple[str, str]]) -> Dict[str, List
     return {"verbs": verb_list, "vocab": vocab_list}
 
 
-def extract_content_words(phrase: str, nlp) -> Set[Tuple[str, str]]:
+def create_story_index(
+    story_dialogues: Dict[str, Dict[str, Dict[str, List[Dict[str, str]]]]],
+) -> Dict[str, Dict]:
     """
-    Extract content words (verbs and meaningful vocabulary) from a phrase.
-    Returns set of (lemma, pos) tuples.
-    """
-    doc = nlp(phrase.lower())
-
-    # Define parts of speech to exclude
-    exclude_pos = {
-        "DET",
-        "PUNCT",
-        "SPACE",
-        "PART",
-        "CCONJ",
-        "SCONJ",
-        "ADP",
-        "PRON",
-        "PROPN",
-    }
-
-    content_words = set()
-    for token in doc:
-        # Only include if:
-        # 1. Not in excluded POS tags
-        # 2. Not a stop word (unless it's a verb)
-        if token.pos_ not in exclude_pos and (
-            not token.is_stop or token.pos_ == "VERB"
-        ):
-            content_words.add((token.lemma_.lower(), token.pos_))
-
-    return content_words
-
-
-def check_vocab_match(
-    phrase_words: Set[Tuple[str, str]], vocab_dict: Dict[str, List[str]]
-) -> bool:
-    """
-    Check if the content words from the phrase match the vocabulary dictionary.
-    Returns True if all content words are found in the vocabulary lists.
-    """
-    for lemma, pos in phrase_words:
-        if pos in ["VERB", "AUX"]:
-            if lemma not in vocab_dict.get("verbs", []):
-                return False
-        else:
-            if lemma not in vocab_dict.get("vocab", []):
-                return False
-    return True
-
-
-def phrase_matches_vocab(
-    english_phrase: str, vocab_dictionary: Dict[str, List[str]]
-) -> bool:
-    """
-    Check if a phrase only uses words from the provided vocabulary dictionary.
+    Create indexes mapping words to the stories containing them.
+    Similar to create_flashcard_index but for story dialogues.
 
     Args:
-        english_phrase: The English phrase to check
-        vocab_dictionary: Dictionary with 'verbs' and 'vocab' lists
+        story_dialogues: Dictionary mapping story names to story parts, where each part contains a dialogue list
+            Format: {
+                "story_name": {
+                    "part1": {
+                        "dialogue": [
+                            {"speaker": "Alex", "text": "..."},
+                            {"speaker": "Sam", "text": "..."},
+                            ...
+                        ]
+                    },
+                    "part2": {
+                        "dialogue": [...]
+                    },
+                    ...
+                },
+                ...
+            }
 
     Returns:
-        bool: True if all content words in the phrase are found in the vocabulary lists
-    """
-    nlp = load_spacy_model()
-
-    # Convert vocabulary lists to lowercase for matching
-    vocab_dict = {
-        "verbs": [v.lower() for v in vocab_dictionary.get("verbs", [])],
-        "vocab": [v.lower() for v in vocab_dictionary.get("vocab", [])],
-    }
-
-    # Extract content words from the phrase
-    phrase_words = extract_content_words(english_phrase, nlp)
-
-    # Check if all content words are in the vocabulary
-    return check_vocab_match(phrase_words, vocab_dict)
-
-
-def filter_matching_phrases(
-    phrases: List[str], vocab_dictionary: Dict[str, List[str]]
-) -> List[str]:
-    """
-    Filter a list of phrases to only include those that match the vocabulary.
-
-    Args:
-        phrases: List of English phrases to check
-        vocab_dictionary: Dictionary with 'verbs' and 'vocab' lists
-
-    Returns:
-        List[str]: Filtered list of phrases that only use words from the vocabulary
-    """
-    nlp = load_spacy_model()
-
-    # Convert vocabulary lists to lowercase for matching
-    vocab_dict = {
-        "verbs": [v.lower() for v in vocab_dictionary.get("verbs", [])],
-        "vocab": [v.lower() for v in vocab_dictionary.get("vocab", [])],
-    }
-
-    matching_phrases = []
-    for phrase in phrases:
-        phrase_words = extract_content_words(phrase, nlp)
-        if check_vocab_match(phrase_words, vocab_dict):
-            matching_phrases.append(phrase)
-
-    return matching_phrases
-
-
-def prepare_phrase_dataframe(phrases: List[str]) -> pd.DataFrame:
-    """Create DataFrame with parsed phrases and extract content words.
-
-    Args:
-        phrases: List of phrases to analyze
-
-    Returns:
-        DataFrame with columns:
-            - phrase: Original phrase
-            - doc: Spacy Doc object
-            - content_words: Set of lemmatized content words
-    """
-    nlp = spacy.load("en_core_web_sm")
-
-    # Create base dataframe
-    df = pd.DataFrame({"phrase": phrases})
-
-    # Parse phrases
-    df["doc"] = [
-        nlp(phrase.lower()) for phrase in tqdm(phrases, desc="Parsing phrases")
-    ]
-
-    # Extract content words
-    df["content_words"] = df["doc"].apply(
-        lambda doc: {
-            token.lemma_ for token in doc if not token.is_stop and token.pos_ != "PUNCT"
+        Dictionary containing:
+        {
+            "verb_index": {word: [story_name1, story_name2, ...]},
+            "vocab_index": {word: [story_name1, story_name2, ...]},
+            "word_counts": {story_name: {"verb_count": int, "vocab_count": int, "words": list}},
+            "stories": list of story names,
+            "story_vocab": {
+                "story_name1": {
+                    "verbs": [...],
+                    "vocab": [...],
+                    "all_words": [...]
+                },
+                ...
+            }
         }
-    )
-
-    # Calculate total words per phrase
-    df["total_words"] = df["content_words"].apply(len)
-
-    return df
-
-
-def calculate_new_words(row: pd.Series, known_vocab: Set[str]) -> Dict:
-    """Calculate new vocabulary metrics for a row."""
-    new_words = row["content_words"] - known_vocab
-    return {
-        "new_words": len(new_words),
-        "new_vocab": new_words,
-        "new_ratio": (
-            len(new_words) / row["total_words"] if row["total_words"] > 0 else 0
-        ),
-    }
-
-
-def optimize_sequence(df: pd.DataFrame, window_size: int = 5) -> pd.DataFrame:
-    """Optimize the sequence of phrases for steady vocabulary acquisition.
-
-    Args:
-        df: DataFrame with parsed phrases (from prepare_phrase_dataframe)
-        window_size: Size of rolling window for local optimization
-
-    Returns:
-        DataFrame with optimized sequence and metrics
     """
-    # Calculate ideal rate
-    total_vocab = set().union(*df["content_words"].values)
-    ideal_rate = len(total_vocab) / len(df)
+    verb_index = defaultdict(set)  # word -> set of story names
+    vocab_index = defaultdict(set)
+    story_word_counts = {}
+    story_vocab = {}  # story_name -> vocabulary data
 
-    # Initialize result storage
-    result_indices = []
-    known_vocab = set()
-    available_indices = set(df.index)
+    for story_name, story_parts in tqdm(
+        story_dialogues.items(), desc="Indexing stories...", total=len(story_dialogues)
+    ):
+        # Process all parts of the story
+        all_verbs = set()
+        all_vocab = set()
+        all_words = set()
 
-    # Choose initial phrase closest to ideal rate
-    initial_metrics = df.apply(
-        lambda row: calculate_new_words(row, known_vocab), axis=1
-    ).apply(pd.Series)
+        for part_name, part_data in story_parts.items():
+            # Get dialogue from the part
+            dialogue = part_data["dialogue"]
+            # Get all text from dialogue
+            phrases = get_text_from_dialogue(dialogue)
 
-    best_start_idx = (initial_metrics["new_ratio"] - ideal_rate).abs().idxmin()
-    result_indices.append(best_start_idx)
-    available_indices.remove(best_start_idx)
-    known_vocab.update(df.loc[best_start_idx, "content_words"])
-
-    # Build rest of sequence
-    with tqdm(total=len(df) - 1, desc="Optimizing sequence") as pbar:
-        while available_indices:
-            # Calculate rolling mean of recent phrases
-            if len(result_indices) >= window_size:
-                recent_indices = result_indices[-window_size:]
-                recent_new_words = np.mean(
-                    [
-                        len(df.loc[idx, "content_words"] - known_vocab)
-                        for idx in recent_indices
-                    ]
+            # Process all phrases in this part
+            for phrase in phrases:
+                vocab_used, verb_matches, vocab_matches = process_phrase_vocabulary(
+                    phrase
                 )
-            else:
-                recent_new_words = ideal_rate
 
-            # Score remaining phrases
-            candidates = []
-            for idx in available_indices:
-                metrics = calculate_new_words(df.loc[idx], known_vocab)
-                score = abs(metrics["new_words"] - ideal_rate)
-                # Add penalty for big deviations from recent average
-                local_penalty = abs(metrics["new_words"] - recent_new_words)
-                score += local_penalty * 0.5  # Weight local smoothness
-                candidates.append((idx, metrics, score))
+                # Add to story's word sets
+                all_verbs.update(verb_matches)
+                all_vocab.update(vocab_matches)
+                all_words.update(vocab_used)
 
-            # Select best candidate
-            best_idx = min(candidates, key=lambda x: x[2])[0]
-            result_indices.append(best_idx)
-            available_indices.remove(best_idx)
-            known_vocab.update(df.loc[best_idx, "content_words"])
-            pbar.update(1)
+                # Add to indexes
+                for word in verb_matches:
+                    verb_index[word].add(story_name)
+                for word in vocab_matches:
+                    vocab_index[word].add(story_name)
 
-    # Create result DataFrame
-    result_df = df.loc[result_indices].copy()
-    result_df["sequence_position"] = range(len(result_df))
-
-    # Calculate final metrics
-    metrics = []
-    known = set()
-    for _, row in result_df.iterrows():
-        m = calculate_new_words(row, known)
-        metrics.append(m)
-        known.update(row["content_words"])
-
-    metrics_df = pd.DataFrame(metrics)
-    result_df = pd.concat([result_df, metrics_df], axis=1)
-
-    return result_df
-
-
-def analyze_sequence(df: pd.DataFrame) -> Dict:
-    """Analyze and print statistics about the optimized sequence."""
-    stats = {
-        "avg_new_words": df["new_words"].mean(),
-        "std_new_words": df["new_words"].std(),
-        "min_new_words": df["new_words"].min(),
-        "max_new_words": df["new_words"].max(),
-        "total_phrases": len(df),
-        "cumulative_vocab": len(set().union(*df["content_words"].values)),
-    }
-
-    print("\nSequence Analysis:")
-    print(f"Total phrases: {stats['total_phrases']}")
-    print(f"Total vocabulary: {stats['cumulative_vocab']}")
-    print(f"Average new words per phrase: {stats['avg_new_words']:.2f}")
-    print(f"Standard deviation: {stats['std_new_words']:.2f}")
-    print(f"Min new words: {stats['min_new_words']}")
-    print(f"Max new words: {stats['max_new_words']}")
-
-    return stats
-
-
-def optimise_phrase_list(phrases: List[str], window_size: int = 5) -> List[str]:
-    """Main function to optimize phrase sequence for vocabulary acquisition.
-    It evens out the new words learnt per phrase
-
-    Args:
-        phrases: List of phrases to optimize
-        window_size: Size of rolling window for local optimization
-
-    Returns:
-        Reordered list of phrases
-    """
-    # Prepare data
-    df = prepare_phrase_dataframe(phrases)
-
-    # Optimize sequence
-    optimized_df = optimize_sequence(df, window_size)
-
-    return list(optimized_df["phrase"])
-
-
-def optimize_stories_and_phrases(
-    df: pd.DataFrame, sorted_stories: list
-) -> pd.DataFrame:
-    """
-    Optimise both the order of stories and the order of phrases within each story.
-
-    Args:
-        df: DataFrame with 'story' and 'EnglishText' columns
-        sorted_stories: A list of story_names ('story_underwater_adventure' etc) in the order we want them to be
-
-    Returns:
-        DataFrame with optimised story and phrase order
-    """
-
-    # Group phrases by story
-    story_groups = df.groupby("story")
-
-    # Process each story to calculate vocabulary statistics
-    print("Processing stories...")
-    story_data = {}
-    for name, group in tqdm(story_groups):
-        phrases = group["EnglishText"].tolist()
-        phrase_df = prepare_phrase_dataframe(phrases)
-
-        # Calculate total vocabulary for this story
-        story_vocab = set()
-        for _, row in phrase_df.iterrows():
-            story_vocab.update(row["content_words"])
-
-        story_data[name] = {
-            "phrases": phrases,
-            "phrase_df": phrase_df,
-            "vocab": story_vocab,
-            "vocab_size": len(story_vocab),
+        # Store story's word counts
+        story_word_counts[story_name] = {
+            "verb_count": len(all_verbs),
+            "vocab_count": len(all_vocab),
+            "words": list(all_words),
         }
 
-    # Optimise phrases for each story in sequence
-    known_vocab = set()
-    optimised_results = []
+        # Store vocabulary data for this story
+        story_vocab[story_name] = {
+            "verbs": list(all_verbs),
+            "vocab": list(all_vocab),
+            "all_words": list(all_words),
+        }
 
-    print("Optimising phrases within stories...")
-    for story in tqdm(sorted_stories):
-        # Get story data
-        story_info = story_data[story]
-        phrase_df = story_info["phrase_df"]
+    # Convert sets to lists for JSON
+    for word in verb_index:
+        verb_index[word] = list(verb_index[word])
+    for word in vocab_index:
+        vocab_index[word] = list(vocab_index[word])
 
-        # Optimise this story's phrases with knowledge from previous stories
-        optimised_df = optimize_sequence_with_known(phrase_df, known_vocab)
+    return {
+        "verb_index": dict(verb_index),
+        "vocab_index": dict(vocab_index),
+        "word_counts": story_word_counts,
+        "stories": list(story_dialogues.keys()),
+        "story_vocab": story_vocab,
+    }
 
-        # Add to results
-        for _, row in optimised_df.iterrows():
-            optimised_results.append(
-                {
-                    "story": story,
-                    "EnglishText": row["phrase"],
-                    "new_words": row.get(
-                        "new_words", 0
-                    ),  # Number of new words this phrase introduces
-                    "sequence_position": len(optimised_results),
+
+def determine_story_sequence(story_index: Dict[str, Dict]) -> List[str]:
+    """
+    Determine optimal story sequence based on vocabulary complexity.
+    Stories with smaller vocabulary are placed earlier in the sequence.
+    Verbs are weighted 2x more heavily than regular vocabulary.
+
+    Args:
+        story_index: Pre-built story index from GCS
+
+    Returns:
+        List[str]: Story names sorted from simplest to most complex vocabulary
+    """
+    # Calculate vocabulary complexity score for each story
+    story_scores = []
+
+    for story in story_index["stories"]:
+        # Get vocabulary counts
+        verb_count = len(story_index["story_vocab"][story]["verbs"])
+        vocab_count = len(story_index["story_vocab"][story]["vocab"])
+
+        # Calculate complexity score (verbs weighted 2x)
+        complexity_score = (verb_count * 2) + vocab_count
+
+        # Store story name and score
+        story_scores.append((story, complexity_score, verb_count, vocab_count))
+
+    # Sort stories by complexity score (ascending)
+    story_scores.sort(key=lambda x: x[1])
+
+    # Print story sequence with complexity details
+    print("\nOptimized Story Sequence:")
+    print("-" * 60)
+    print(f"{'Story':<30} {'Score':<10} {'Verbs':<10} {'Vocab':<10}")
+    print("-" * 60)
+    for story, score, verbs, vocab in story_scores:
+        print(f"{story:<30} {score:<10} {verbs:<10} {vocab:<10}")
+
+    # Extract and return just the story names in sorted order
+    return [story[0] for story in story_scores]
+
+
+def assign_phrases_to_stories(
+    story_index: Dict[str, Dict],
+    phrase_index: Dict[str, Dict],
+    max_phrases_per_story: int = 50,
+    target_new_words_per_card: float = 2.0,
+    story_sequence: List[str] = None,
+) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Assign phrases to stories in sequence, tracking global vocabulary acquisition
+    to create an optimal learning progression.
+
+    Args:
+        story_index: Pre-built story index from GCS
+        phrase_index: Pre-built phrase index containing vocabulary data
+        max_phrases_per_story: Target maximum phrases per story
+        target_new_words_per_card: Target average new words per flashcard
+        story_sequence: Optional list of story names in desired learning sequence.
+                      If None, will be determined automatically based on vocabulary size.
+
+    Returns:
+        Dictionary mapping story names to lists of assigned phrases with scores
+    """
+    # Generate story sequence if not provided
+    if story_sequence is None:
+        story_sequence = determine_story_sequence(story_index)
+
+    # Get all phrases
+    phrases = phrase_index["phrases"]
+    phrase_keys = [clean_filename(p) for p in phrases]
+
+    # Initialize assignments and tracking
+    assignments = {story: [] for story in story_sequence}
+    story_phrase_counts = {story: 0 for story in story_sequence}
+
+    # Global tracking of accumulated vocabulary knowledge
+    global_known_verbs = set()
+    global_known_vocab = set()
+
+    # Set of remaining phrases
+    remaining_phrases = set(phrase_keys)
+
+    # Process each story in sequence
+    for story in story_sequence:
+        if story not in story_index["stories"]:
+            raise KeyError(f"Story {story} not found in story index")
+
+        print(f"\nProcessing story: {story}")
+
+        # Get story vocabulary
+        story_verbs = set(story_index["story_vocab"][story]["verbs"])
+        story_vocab = set(story_index["story_vocab"][story]["vocab"])
+
+        # Calculate remaining vocabulary to learn for this story
+        remaining_story_verbs = story_verbs - global_known_verbs
+        remaining_story_vocab = story_vocab - global_known_vocab
+
+        print(
+            f"Story has {len(remaining_story_verbs)} new verbs and {len(remaining_story_vocab)} new vocabulary words to learn"
+        )
+
+        # Track vocabulary covered by this story's flashcards
+        story_covered_verbs = set()
+        story_covered_vocab = set()
+
+        # Determine target number of phrases based on vocabulary needs
+        total_new_words = len(remaining_story_verbs) + len(remaining_story_vocab)
+        target_phrases = min(
+            max_phrases_per_story,
+            max(10, int(total_new_words / target_new_words_per_card)),
+        )
+
+        print(f"Target number of phrases for this story: {target_phrases}")
+
+        # Assign phrases until we reach target or exhaust options
+        assigned_count = 0
+
+        while (
+            assigned_count < target_phrases
+            and remaining_phrases
+            and (remaining_story_verbs or remaining_story_vocab)
+        ):
+            # Find best remaining phrase for this story
+            best_phrase = None
+            best_score = -1
+            best_new_words = 0
+            best_info = None
+
+            for phrase_key in remaining_phrases:
+                if phrase_key not in phrase_index["phrase_vocab"]:
+                    continue
+
+                # Get vocab from phrase index
+                phrase_verbs = set(phrase_index["phrase_vocab"][phrase_key]["verbs"])
+                phrase_vocab = set(phrase_index["phrase_vocab"][phrase_key]["vocab"])
+
+                # Calculate new words this phrase would teach for this story
+                new_story_verbs = phrase_verbs & remaining_story_verbs
+                new_story_vocab = phrase_vocab & remaining_story_vocab
+
+                # Calculate new words globally
+                new_global_verbs = phrase_verbs - global_known_verbs
+                new_global_vocab = phrase_vocab - global_known_vocab
+
+                # Score formula: prioritize story relevance but consider global learning
+                # Weight verbs higher than regular vocabulary
+                story_score = (len(new_story_verbs) * 3) + len(new_story_vocab)
+                global_score = (len(new_global_verbs) * 2) + len(new_global_vocab)
+
+                # Combined score weights story relevance higher
+                score = (story_score * 2) + global_score
+
+                # Favor phrases with total new words close to target
+                total_new = len(new_global_verbs) + len(new_global_vocab)
+                distance_penalty = abs(total_new - target_new_words_per_card)
+                adjusted_score = score - distance_penalty
+
+                if adjusted_score > best_score:
+                    best_phrase = phrase_key
+                    best_score = adjusted_score
+                    best_new_words = total_new
+                    best_info = {
+                        "phrase": phrases[phrase_keys.index(phrase_key)],
+                        "score": adjusted_score,
+                        "new_story_verbs": len(new_story_verbs),
+                        "new_story_vocab": len(new_story_vocab),
+                        "new_global_verbs": len(new_global_verbs),
+                        "new_global_vocab": len(new_global_vocab),
+                        "total_new_words": total_new,
+                    }
+
+            # If no good phrase found, consider breaking out
+            if best_score <= 0:
+                print(f"No more relevant phrases found for {story}")
+                break
+
+            # Add best phrase to assignments
+            assignments[story].append(best_info)
+            remaining_phrases.remove(best_phrase)
+            assigned_count += 1
+
+            # Update vocabulary tracking
+            phrase_verbs = set(phrase_index["phrase_vocab"][best_phrase]["verbs"])
+            phrase_vocab = set(phrase_index["phrase_vocab"][best_phrase]["vocab"])
+
+            # Update story coverage
+            story_covered_verbs.update(phrase_verbs & story_verbs)
+            story_covered_vocab.update(phrase_vocab & story_vocab)
+
+            # Update global knowledge
+            global_known_verbs.update(phrase_verbs)
+            global_known_vocab.update(phrase_vocab)
+
+            # Update remaining vocabulary to learn
+            remaining_story_verbs = story_verbs - global_known_verbs
+            remaining_story_vocab = story_vocab - global_known_vocab
+
+        # Update story phrase count
+        story_phrase_counts[story] = assigned_count
+
+        # Calculate coverage statistics for this story
+        # Calculate story-specific coverage statistics
+        verb_coverage = (
+            len(story_covered_verbs) / len(story_verbs) if story_verbs else 1.0
+        )
+        vocab_coverage = (
+            len(story_covered_vocab) / len(story_vocab) if story_vocab else 1.0
+        )
+
+        # Calculate how much of this story's vocabulary is already covered by global knowledge
+        story_verb_coverage_by_global = (
+            len(story_verbs & global_known_verbs) / len(story_verbs)
+            if story_verbs
+            else 1.0
+        )
+        story_vocab_coverage_by_global = (
+            len(story_vocab & global_known_vocab) / len(story_vocab)
+            if story_vocab
+            else 1.0
+        )
+        story_total_coverage_by_global = (
+            (
+                len(story_verbs & global_known_verbs)
+                + len(story_vocab & global_known_vocab)
+            )
+            / (len(story_verbs) + len(story_vocab))
+            if (story_verbs or story_vocab)
+            else 1.0
+        )
+
+        # Print coverage statistics
+        print(f"Assigned {assigned_count} phrases to {story}")
+        print(f"Story verb coverage from this story's flashcards: {verb_coverage:.1%}")
+        print(
+            f"Story vocab coverage from this story's flashcards: {vocab_coverage:.1%}"
+        )
+        print(f"Coverage of this story by global knowledge:")
+        print(
+            f"  Story verb coverage by global knowledge: {story_verb_coverage_by_global:.1%} ({len(story_verbs & global_known_verbs)}/{len(story_verbs)})"
+        )
+        print(
+            f"  Story vocab coverage by global knowledge: {story_vocab_coverage_by_global:.1%} ({len(story_vocab & global_known_vocab)}/{len(story_vocab)})"
+        )
+        print(
+            f"  Story total coverage by global knowledge: {story_total_coverage_by_global:.1%} ({len(story_verbs & global_known_verbs) + len(story_vocab & global_known_vocab)}/{len(story_verbs) + len(story_vocab)})"
+        )
+
+    # After processing all stories, assign any remaining flashcards
+    if remaining_phrases:
+        print(f"\nAssigning {len(remaining_phrases)} remaining phrases")
+
+        # For remaining phrases, assign to most relevant story
+        for phrase_key in list(remaining_phrases):
+            if phrase_key not in phrase_index["phrase_vocab"]:
+                remaining_phrases.remove(phrase_key)
+                continue
+
+            best_story = None
+            best_relevance = -1
+
+            for story in story_sequence:
+                # Skip stories that are already at max
+                if (
+                    story_phrase_counts[story] >= max_phrases_per_story * 1.2
+                ):  # Allow some overflow
+                    continue
+
+                # Get vocabulary
+                phrase_verbs = set(phrase_index["phrase_vocab"][phrase_key]["verbs"])
+                phrase_vocab = set(phrase_index["phrase_vocab"][phrase_key]["vocab"])
+
+                story_verbs = set(story_index["story_vocab"][story]["verbs"])
+                story_vocab = set(story_index["story_vocab"][story]["vocab"])
+
+                # Calculate relevance score
+                verb_overlap = len(phrase_verbs & story_verbs)
+                vocab_overlap = len(phrase_vocab & story_vocab)
+
+                relevance = (verb_overlap * 2) + vocab_overlap
+
+                if relevance > best_relevance:
+                    best_story = story
+                    best_relevance = relevance
+
+            # If we found a relevant story, assign the phrase
+            if best_story and best_relevance > 0:
+                # Get phrase info
+                phrase_verbs = set(phrase_index["phrase_vocab"][phrase_key]["verbs"])
+                phrase_vocab = set(phrase_index["phrase_vocab"][phrase_key]["vocab"])
+
+                # Calculate new words relative to global knowledge
+                new_global_verbs = phrase_verbs - global_known_verbs
+                new_global_vocab = phrase_vocab - global_known_vocab
+
+                # Create info dictionary
+                info = {
+                    "phrase": phrases[phrase_keys.index(phrase_key)],
+                    "score": best_relevance,
+                    "new_story_verbs": 0,  # Not calculated for remaining assignments
+                    "new_story_vocab": 0,
+                    "new_global_verbs": len(new_global_verbs),
+                    "new_global_vocab": len(new_global_vocab),
+                    "total_new_words": len(new_global_verbs) + len(new_global_vocab),
                 }
-            )
 
-        # Update known vocabulary for next story
-        for _, row in phrase_df.iterrows():
-            known_vocab.update(row["content_words"])
+                # Add to assignments
+                assignments[best_story].append(info)
+                story_phrase_counts[best_story] += 1
 
-    return pd.DataFrame(optimised_results)
+                # Update global knowledge
+                global_known_verbs.update(phrase_verbs)
+                global_known_vocab.update(phrase_vocab)
 
+                # Remove from remaining
+                remaining_phrases.remove(phrase_key)
 
-def optimize_sequence_with_known(
-    df: pd.DataFrame, known_vocab: Set = None, window_size: int = 15
-) -> pd.DataFrame:
-    """
-    Optimise the sequence of phrases, taking into account pre-existing knowledge.
+    # Print assignment statistics
+    print("\nFinal Assignment Statistics:")
+    total_assigned = sum(story_phrase_counts.values())
+    print(f"Total phrases: {len(phrases)}")
+    print(f"Total assigned: {total_assigned}")
+    print(f"Remaining unassigned: {len(remaining_phrases)}")
 
-    Args:
-        df: DataFrame with processed phrases
-        known_vocab: Set of words already known from previous stories
-        window_size: Size of rolling window for local optimisation
+    print("\nPhrases per story:")
+    for story in story_sequence:
+        if story in story_phrase_counts:
+            print(f"{story}: {story_phrase_counts[story]} phrases")
 
-    Returns:
-        DataFrame with optimised phrase sequence
-    """
+            # Calculate average new words per flashcard for this story
+            if story_phrase_counts[story] > 0:
+                total_new_words = sum(
+                    item["total_new_words"] for item in assignments[story]
+                )
+                avg_new_words = total_new_words / story_phrase_counts[story]
+                print(f"  Average new words per flashcard: {avg_new_words:.2f}")
 
-    if known_vocab is None:
-        known_vocab = set()
-    else:
-        known_vocab = known_vocab.copy()  # Create a copy to not modify the original
-
-    # Calculate ideal rate for remaining vocabulary to learn
-    total_vocab = set()
-    for _, content_words in df["content_words"].items():
-        total_vocab.update(content_words)
-
-    remaining_vocab = total_vocab - known_vocab
-    ideal_rate = len(remaining_vocab) / len(df) if len(df) > 0 else 0
-
-    # Initialise sequence building variables
-    result_indices = []
-    available_indices = set(df.index)
-
-    # Choose initial phrase closest to ideal rate
-    initial_metrics = df.apply(
-        lambda row: calculate_new_words(row, known_vocab), axis=1
-    ).apply(pd.Series)
-
-    if available_indices:
-        best_start_idx = (initial_metrics["new_ratio"] - ideal_rate).abs().idxmin()
-        result_indices.append(best_start_idx)
-        available_indices.remove(best_start_idx)
-        known_vocab.update(df.loc[best_start_idx, "content_words"])
-
-    # Build rest of sequence
-    while available_indices:
-        # Calculate rolling mean of recent phrases for local smoothness
-        if len(result_indices) >= window_size:
-            recent_indices = result_indices[-window_size:]
-            recent_new_words = np.mean(
-                [
-                    len(df.loc[idx, "content_words"] - known_vocab)
-                    for idx in recent_indices
-                ]
-            )
-        else:
-            recent_new_words = ideal_rate
-
-        # Score remaining phrases
-        candidates = []
-        for idx in available_indices:
-            metrics = calculate_new_words(df.loc[idx], known_vocab)
-            score = abs(metrics["new_words"] - ideal_rate)
-            local_penalty = abs(metrics["new_words"] - recent_new_words)
-            score += local_penalty * 0.5  # Weight local smoothness
-            candidates.append((idx, metrics, score))
-
-        # Select best candidate
-        best_idx = min(candidates, key=lambda x: x[2])[0]
-        result_indices.append(best_idx)
-        available_indices.remove(best_idx)
-        known_vocab.update(df.loc[best_idx, "content_words"])
-
-    # Create result DataFrame
-    result_df = df.loc[result_indices].copy()
-    result_df["sequence_position"] = range(len(result_df))
-
-    # Calculate final metrics
-    metrics = []
-    current_known = known_vocab.copy()
-
-    for _, row in result_df.iterrows():
-        m = calculate_new_words(row, current_known)
-        metrics.append(m)
-        current_known.update(row["content_words"])
-
-    metrics_df = pd.DataFrame(metrics)
-    result_df = pd.concat([result_df, metrics_df], axis=1)
-
-    return result_df
-
-
-def optimize_phrase_list_with_known(
-    phrases: List[str], known_vocab: Set = None
-) -> List[str]:
-    """
-    Optimise phrase sequence considering pre-existing known vocabulary.
-    Wrapper around the existing functions.
-
-    Args:
-        phrases: List of phrases to optimise
-        known_vocab: Set of words already known
-
-    Returns:
-        Reordered list of phrases
-    """
-
-    # Prepare data
-    df = prepare_phrase_dataframe(phrases)
-
-    # Optimise sequence with known vocabulary
-    optimised_df = optimize_sequence_with_known(df, known_vocab)
-
-    return list(optimised_df["phrase"])
+    return assignments
