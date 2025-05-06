@@ -1,20 +1,68 @@
 {
-    "fr-FR": {"phrases" : {
-        "TARGET_LANGUAGE_FEMALE_VOICE": "fr-FR-Neural2-G",
-        "TARGET_LANGUAGE_MALE_VOICE": "fr-FR-Neural2-G"
-    }},
-    "story" : {
-        "TARGET_LANGUAGE_FEMALE_VOICE": "fr-FR-Chirp3-HD-Zephyr",
-        "TARGET_LANGUAGE_MALE_VOICE": "fr-FR-Chirp3-HD-Puck"
-    },
-    "sv-SE" : {
-        "phrases" : {
-            "TARGET_LANGUAGE_FEMALE_VOICE": "sv-SE-SofieNeural",
-            "TARGET_LANGUAGE_MALE_VOICE": "sv-SE-MattiasNeural"
+    "fr-FR": {
+        "phrases": {
+            "female": {
+                "provider": "google",
+                "voice_id": "fr-FR-Neural2-G"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "fr-FR-Neural2-G"
+            }
         },
-        "story" : {
-            "TARGET_LANGUAGE_FEMALE_VOICE": "sv-SE-SofieNeural",
-            "TARGET_LANGUAGE_MALE_VOICE": "sv-SE-MattiasNeural"
+        "stories": {
+            "female": {
+                "provider": "google",
+                "voice_id": "fr-FR-Chirp3-HD-Zephyr"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "fr-FR-Chirp3-HD-Puck"
+            }
+        }
+    },
+    "sv-SE": {
+        "phrases": {
+            "female": {
+                "provider": "azure",
+                "voice_id": "sv-SE-SofieNeural"
+            },
+            "male": {
+                "provider": "azure",
+                "voice_id": "sv-SE-MattiasNeural"
+            }
+        },
+        "stories": {
+            "female": {
+                "provider": "azure",
+                "voice_id": "sv-SE-SofieNeural"
+            },
+            "male": {
+                "provider": "azure",
+                "voice_id": "sv-SE-MattiasNeural"
+            }
+        }
+    },
+    "en-GB": {
+        "phrases": {
+            "female": {
+                "provider": "google",
+                "voice_id": "en-GB-Chirp3-HD-Achernar"
+            },
+            "male": {
+                "provider": "google", 
+                "voice_id": "en-GB-Chirp3-HD-Algenib"
+            }
+        },
+        "stories": {
+            "female": {
+                "provider": "google",
+                "voice_id": "en-GB-Chirp3-HD-Achernar"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "en-GB-Chirp3-HD-Algenib"
+            }
         }
     }
 }

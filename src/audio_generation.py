@@ -61,6 +61,7 @@ def generate_translated_phrase_audio(
                 text=cleaned_eng,
                 config_language="source",
                 gender="MALE",
+                voice_setting="phrases",
             )
         else:
             english_audio = AudioSegment.silent(100)
@@ -72,6 +73,7 @@ def generate_translated_phrase_audio(
             gender="FEMALE",
             speaking_rate=config.SPEAKING_RATE_SLOW,
             word_break_ms=config.WORD_BREAK_MS,
+            voice_setting="phrases",
         )
 
         # Generate normal target language audio
@@ -80,6 +82,7 @@ def generate_translated_phrase_audio(
             config_language="target",
             gender="FEMALE",
             speaking_rate=1.0,
+            voice_setting="phrases",
         )
 
         all_audio_segments.append([english_audio, target_slow, target_normal])
@@ -133,58 +136,76 @@ def clean_translated_content(
         raise ValueError(f"Unsupported content format: {type(content)}")
 
 
-def generate_phrase_english_audio_files(phrases: List[str], output_dir: str) -> None:
-    """
-    Generate slow and normal English-only speed MP3 files for each phrase and save them to output_dir.
-
-    Args:
-        phrases: List of English phrases to convert to audio
-        output_dir: Directory where the MP3 files will be saved
-    """
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
-    for phrase in tqdm(phrases):
-        # Generate a clean filename for this phrase
-        base_filename = clean_filename(phrase)
-
-        if os.path.exists(os.path.join(output_dir, f"{base_filename}.mp3")):
-            # file already exists
-            print(f"{base_filename} exists, skipping")
-            continue
-
-        # Generate the audio for normal speed
-        normal_audio = text_to_speech(text=phrase, speaking_rate=1.0)
-
-        # Generate the audio for slow speed
-        slow_audio = slow_text_to_speech(
-            text=phrase,
-        )
-
-        # Save the normal speed version
-        normal_filepath = os.path.join(output_dir, f"{base_filename}.mp3")
-        normal_audio.export(normal_filepath, format="mp3")
-
-        # Save the slow version
-        slow_filepath = os.path.join(output_dir, f"{base_filename}_slow.mp3")
-        slow_audio.export(slow_filepath, format="mp3")
-
-        print(f"Generated audio files for phrase: {phrase}")
-
 
 def setup_ffmpeg():
-    ffmpeg_path = r"C:\Program Files\ffmpeg-7.0-essentials_build\bin"
-
-    if os.path.exists(ffmpeg_path):
-        # Add FFmpeg to the PATH
-        os.environ["PATH"] += os.pathsep + ffmpeg_path
-        print(f"FFmpeg path added to system PATH: {ffmpeg_path}")
+    # Try default Windows path first
+    default_ffmpeg_path = r"C:\Program Files\ffmpeg-7.0-essentials_build\bin"
+    
+    # Search system PATH for ffmpeg
+    found_paths = []
+    for path in os.environ["PATH"].split(os.pathsep):
+        if "ffmpeg" in path.lower():
+            found_paths.append(path)
+            
+    if os.path.exists(default_ffmpeg_path):
+        # Add default FFmpeg to PATH if found
+        os.environ["PATH"] += os.pathsep + default_ffmpeg_path
+        print(f"Default FFmpeg path added to system PATH: {default_ffmpeg_path}")
+    elif found_paths:
+        # Print any ffmpeg paths found in system PATH
+        print("Found existing FFmpeg paths:")
+        for path in found_paths:
+            print(f"  {path}")
     else:
-        print(f"FFmpeg path not found: {ffmpeg_path}")
-        print("Please check the installation directory.")
+        print("No FFmpeg paths found in default location or system PATH")
+        print("Please check FFmpeg is installed and added to system PATH")
 
 
 setup_ffmpeg()
+
+
+def text_to_speech(
+    text: str,
+    config_language: Literal["source", "target"] = "source",
+    gender: Literal["MALE", "FEMALE"] = "MALE",
+    speaking_rate: float = 1.0,
+    is_ssml: bool = False,
+    voice_setting: Literal["phrases", "stories"] = "phrases",
+) -> AudioSegment:
+    """
+    Wrapper that handles diveriting to Azure, Google, or ElevenLabs depending on the voice configuration.
+    Converts text to speech using the configured provider.
+
+    Args:
+        text: Text to convert to speech
+        config_language: Which language configuration to use ("source" or "target")
+        gender: Target voice gender ("MALE" or "FEMALE")
+        speaking_rate: Speed of speech (1.0 is normal speed)
+        is_ssml: Whether the input text is SSML
+        voice_setting: Which voice setting to use ("phrases" or "stories")
+
+    Returns:
+        AudioSegment containing the generated speech
+    """
+    # Get voice models for the specified setting
+    voice_models = config.get_voice_models(enum_type=voice_setting)
+
+    if config_language == "source":
+        voice_model = voice_models[0]
+    elif (config_language == "target") & (gender == "FEMALE"):
+        voice_model = voice_models[1]
+    else:
+        voice_model = voice_models[2]
+
+    # Route to appropriate provider
+    if voice_model.provider == VoiceProvider.GOOGLE:
+        return text_to_speech_google(text, voice_model, speaking_rate, is_ssml)
+    elif voice_model.provider == VoiceProvider.AZURE:
+        return text_to_speech_azure(text, voice_model, speaking_rate, is_ssml)
+    elif voice_model.provider == VoiceProvider.ELEVENLABS:
+        return text_to_speech_elevenlabs(text, voice_model, speaking_rate, is_ssml)
+    else:
+        raise ValueError(f"Unsupported voice provider: {voice_model.provider}")
 
 
 def text_to_speech_google(
@@ -198,8 +219,7 @@ def text_to_speech_google(
 
     Args:
         text: Text or SSML to convert to speech
-        language_code: Language code (e.g., 'en-US')
-        voice_name: Name of the voice to use
+        voice_model: VoiceInfo object containing voice details
         speaking_rate: Speed of speech (1.0 is normal speed)
         is_ssml: Whether the input text is SSML
 
@@ -215,15 +235,19 @@ def text_to_speech_google(
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
     voice = texttospeech.VoiceSelectionParams(
-        language_code=voice_model.language_code, name=voice_model.voice_id
+        language_code=voice_model.language_code,
+        name=voice_model.voice_id
     )
 
     audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
+        audio_encoding=texttospeech.AudioEncoding.MP3,
+        speaking_rate=speaking_rate
     )
 
     response = client.synthesize_speech(
-        input=synthesis_input, voice=voice, audio_config=audio_config
+        input=synthesis_input,
+        voice=voice,
+        audio_config=audio_config
     )
 
     return AudioSegment.from_mp3(io.BytesIO(response.audio_content))
@@ -251,7 +275,8 @@ def text_to_speech_azure(
     service_region = os.getenv("AZURE_REGION", "eastus")
 
     speech_config = speechsdk.SpeechConfig(
-        subscription=speech_key, region=service_region
+        subscription=speech_key,
+        region=service_region
     )
     speech_config.speech_synthesis_voice_name = voice_model.voice_id
     speech_config.set_speech_synthesis_output_format(
@@ -268,15 +293,14 @@ def text_to_speech_azure(
     pull_stream = speechsdk.audio.PullAudioOutputStream()
     audio_config = speechsdk.audio.AudioOutputConfig(stream=pull_stream)
     speech_synthesizer = speechsdk.SpeechSynthesizer(
-        speech_config=speech_config, audio_config=audio_config
+        speech_config=speech_config,
+        audio_config=audio_config
     )
 
     # Subscribe to events for audio data
     speech_synthesizer.synthesizing.connect(write_to_buffer)
 
     try:
-        # Handle SSML and non-SSML input appropriately
-
         if is_ssml:
             # Extract the content between <speak> tags
             content = text[7:-8].strip()  # Remove <speak> and </speak>
@@ -326,6 +350,7 @@ def text_to_speech_azure(
     except Exception as e:
         raise Exception(f"Azure speech synthesis error: {str(e)}")
 
+
 def text_to_speech_elevenlabs(
     text: str,
     voice_model: VoiceInfo,
@@ -343,31 +368,20 @@ def text_to_speech_elevenlabs(
     
     Returns:
         AudioSegment containing the generated speech
+        
+    Raises:
+        ValueError: If SSML is requested, as ElevenLabs doesn't support SSML well
     """
-
+    if is_ssml:
+        raise ValueError(
+            "SSML is not well supported by ElevenLabs. Please use a Google or Azure voice instead "
+            "by updating the voice configuration in preferred_voices.json."
+        )
 
     # Get ElevenLabs API key from environment variable
     api_key = os.getenv("ELEVENLABS_API_KEY")
     if not api_key:
         raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
-    
-    # If input is standard SSML, convert to ElevenLabs format
-    if is_ssml:
-        # Extract content between <speak> tags
-        if "<speak>" in text and "</speak>" in text:
-            text = re.search(r'<speak>(.*?)</speak>', text, re.DOTALL).group(1).strip()
-            
-        # Convert standard SSML break tags to ElevenLabs format
-        # From: <break time="250ms"/>
-        # To: <break time="0.25s" />
-        text = re.sub(
-            r'<break time="(\d+)ms"/>',
-            lambda m: f'<break time="{int(m.group(1))/1000:.2f}s" />',
-            text
-        )
-            
-        # Remove any other SSML tags
-        text = re.sub(r'<(?!break\s)[^>]+>', '', text)
     
     try:
         # Set up API endpoint
@@ -404,48 +418,6 @@ def text_to_speech_elevenlabs(
     except Exception as e:
         raise Exception(f"ElevenLabs speech synthesis error: {str(e)}")
 
-def text_to_speech(
-    text: str,
-    config_language: Literal["source", "target"] = "source",
-    gender: Literal["MALE", "FEMALE"] = "MALE",
-    speaking_rate: float = 1.0,
-    is_ssml: bool = False,
-) -> AudioSegment:
-    """
-    Wrapper that handles diveriting to Azure or Google depending on the settings in the config file
-    for language, which then cause the voice models to be either Azure or Google ones.
-    Converts text to speech using the configured provider (Google or Azure).
-
-    Args:
-        text: Text to convert to speech
-        config_language: so we know which model to choose
-        gender: target voice models are both male or female
-        speaking_rate: Speed of speech (1.0 is normal speed)
-        is_ssml: Whether the input text is SSML
-
-    Returns:
-        AudioSegment containing the generated speech
-    """
-    # Use config values if parameters are not provided
-    voice_models = config.get_voice_models()
-
-    if config_language == "source":
-        voice_model = voice_models[0]
-    elif (config_language == "target") & (gender == "FEMALE"):
-        voice_model = voice_models[1]
-    else:
-        voice_model = voice_models[2]
-
-    # Route to appropriate provider
-    if voice_model.provider == VoiceProvider.GOOGLE:
-        return text_to_speech_google(text, voice_model, speaking_rate, is_ssml)
-    elif voice_model.provider == VoiceProvider.AZURE:
-        return text_to_speech_azure(text, voice_model, speaking_rate, is_ssml)
-    elif voice_model.provider == VoiceProvider.ELEVENLABS:
-        return text_to_speech_elevenlabs(text, voice_model, speaking_rate, is_ssml)
-    else:
-        raise ValueError(f"Unsupported voice provider: {voice_model.provider}")
-
 
 def slow_text_to_speech(
     text: str,
@@ -453,6 +425,7 @@ def slow_text_to_speech(
     gender: Literal["MALE", "FEMALE"] = "MALE",
     speaking_rate: float = None,
     word_break_ms: int = None,
+    voice_setting: Literal["phrases", "stories"] = "phrases",
 ) -> AudioSegment:
     """
     Generate slowed down text-to-speech audio with breaks between words.
@@ -465,6 +438,7 @@ def slow_text_to_speech(
         gender: Target voice gender ("MALE" or "FEMALE")
         speaking_rate: Speaking rate (defaults to config.SPEAKING_RATE_SLOW)
         word_break_ms: Break time between words in ms (defaults to config.WORD_BREAK_MS)
+        voice_setting: Which voice setting to use ("phrases" or "stories")
 
     Returns:
         AudioSegment containing the generated speech with word breaks
@@ -487,7 +461,7 @@ def slow_text_to_speech(
     tokens = tokenize_text(cleaned_text, language_code)
     
     # Get the voice model to determine the provider
-    voice_models = config.get_voice_models()
+    voice_models = config.get_voice_models(enum_type=voice_setting)
 
     if config_language == "source":
         voice_model = voice_models[0]
@@ -520,6 +494,7 @@ def slow_text_to_speech(
             gender=gender,
             speaking_rate=speaking_rate,
             is_ssml=False,  # ElevenLabs handles the break tags natively
+            voice_setting=voice_setting,
         )
     else:
         # For Google and Azure, use standard SSML
@@ -541,6 +516,7 @@ def slow_text_to_speech(
             gender=gender,
             speaking_rate=speaking_rate,
             is_ssml=True,
+            voice_setting=voice_setting,
         )
 
 
@@ -679,6 +655,7 @@ def generate_audio_from_dialogue(
             config_language,
             gender,
             speaking_rate=1.0,
+            voice_setting="stories",
         )
 
         audio_segments.append(audio)
@@ -1104,6 +1081,7 @@ def generate_and_upload_audio_for_utterance(
         config_language="target",
         gender=gender,
         speaking_rate=1.0,
+        voice_setting="stories",
     )
 
     # Create filename and base prefix
