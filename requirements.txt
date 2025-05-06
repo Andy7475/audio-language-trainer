@@ -30,4 +30,4 @@ python-dotenv
 requests
 soundfile                       #for speeding up dialogue
 tqdm
-#spacy>=3.8.0
+spacy>=3.0.0

@@ -623,7 +623,7 @@ def get_phrase_audio_path(
     return f"multimedia/audio/phrases/{language}/{speed}/{phrase_key}.mp3"
 
 
-def get_phrase_image_path(phrase_key: str) -> str:
+def get_phrase_image_path(phrase_key: str, language: Optional[str] = None) -> str:
     """
     Get the GCS path for a phrase's image file.
 
@@ -633,7 +633,10 @@ def get_phrase_image_path(phrase_key: str) -> str:
     Returns:
         str: Path to the image file in GCS
     """
-    return f"multimedia/images/core/{phrase_key}.png"
+
+    if language is None:
+        language = "core"  # default to core for language agnostic images
+    return f"multimedia/images/{language}/{phrase_key}.png"
 
 
 def get_anki_deck_path(

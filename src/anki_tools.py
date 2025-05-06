@@ -8,21 +8,15 @@ import genanki
 import pandas as pd
 from anki.collection import Collection
 from dotenv import load_dotenv
-from PIL import Image
-from pydub import AudioSegment
 from tqdm import tqdm
 
 from src.config_loader import config
-from src.convert import clean_filename, get_deck_name, string_to_large_int
+from src.convert import get_deck_name, string_to_large_int
 from src.gcs_storage import get_story_collection_path, read_from_gcs
-from src.generate import add_audio, add_translations
-from src.images import add_image_paths
 from src.phrase import build_phrase_dict_from_gcs, get_phrase_keys
 from src.utils import (
-    create_test_story_dict,
     load_template,
 )
-from src.wiktionary import generate_wiktionary_links
 
 
 def import_anki_packages(
@@ -208,92 +202,6 @@ def get_anki_path() -> str:
     if not os.path.exists(path):
         raise EnvironmentError(f"Anki collection not found at: {path}")
     return path
-
-
-def validate_anki_tag(tag: str) -> bool:
-    """
-    Validate if a tag is acceptable for Anki.
-
-    Args:
-        tag: String to validate as an Anki tag
-
-    Returns:
-        bool: True if tag is valid, False otherwise
-    """
-    if not tag or " " in tag:
-        return False
-    return True
-
-
-def append_tag_to_note(existing_tags: str, new_tag: str) -> str:
-    """
-    Append a new tag to existing space-separated tags if not already present.
-
-    Args:
-        existing_tags: Space-separated string of existing tags
-        new_tag: Tag to append
-
-    Returns:
-        str: Updated space-separated tags string
-    """
-    tags = set(existing_tags.split()) if existing_tags else set()
-    tags.add(new_tag)
-    return " ".join(sorted(tags))
-
-
-def add_tag_to_matching_notes(
-    phrases: List[str], tag: str, deck_name: str, collection_path: Optional[str] = None
-) -> Tuple[int, List[str]]:
-    """
-    Add tag to notes where EnglishText matches any of the provided phrases.
-    Uses ANKI_COLLECTION_PATH from environment if collection_path not provided.
-
-    Args:
-        phrases: List of English phrases to match against
-        tag: Tag to add to matching notes
-        deck_name: Name of the deck to process
-        collection_path: Optional override for collection path
-
-    Returns:
-        tuple[int, list[str]]: (Number of notes updated, List of errors if any)
-    """
-    if collection_path is None:
-        collection_path = get_anki_path()
-
-    if not validate_anki_tag(tag):
-        raise ValueError("Invalid tag - must not contain spaces")
-
-    errors = []
-    updates = 0
-
-    try:
-        with AnkiCollectionReader(collection_path) as reader:
-            notes = reader.get_notes_for_deck(deck_name)
-
-            for note in notes:
-                english_text = note["fields"].get("EnglishText", "").strip()
-
-                if english_text in phrases:
-                    try:
-                        current_tags = " ".join(note["tags"]) if note["tags"] else ""
-                        updated_tags = append_tag_to_note(current_tags, tag)
-
-                        anki_note = reader.col.get_note(note["id"])
-                        anki_note.tags = updated_tags.split()
-                        # Replace flush() with update_note()
-                        reader.col.update_note(anki_note)
-
-                        updates += 1
-
-                    except Exception as e:
-                        errors.append(f"Error updating note {note['id']}: {str(e)}")
-
-            reader.col.save()
-
-    except Exception as e:
-        errors.append(f"Error accessing collection: {str(e)}")
-
-    return updates, errors
 
 
 class AnkiCollectionReader:
@@ -812,8 +720,6 @@ def get_deck_contents(
             other_cols = [col for col in df.columns if col not in first_cols]
             df = df[first_cols + other_cols]
 
-            if include_stats:
-                df = add_knowledge_score(df)
 
             reader.close()
             return df
@@ -821,100 +727,6 @@ def get_deck_contents(
     except Exception as e:
         raise Exception(f"Error getting deck contents: {str(e)}")
 
-
-def calculate_knowledge_score(row: pd.Series) -> float:
-    """
-    Calculate a knowledge score (0-1) for a single card based on its statistics.
-
-    Components:
-    - Interval (40%): max 365 days
-    - Ease (20%): range 1300-3100
-    - Success (30%): based on lapses vs reps
-    - Efficiency (10%): interval gained per rep
-
-    Args:
-        row: Series containing card statistics with columns:
-            avg_interval, avg_ease, total_reps, total_lapses
-
-    Returns:
-        float: Knowledge score between 0 and 1
-    """
-    # Return 0 if card has never been reviewed
-    if row.total_reps == 0:
-        return 0.0
-
-    # 1. Interval score (40%)
-    max_interval = 365
-    interval_score = min(row.avg_interval / max_interval, 1) * 0.4
-
-    # 2. Ease score (20%)
-    min_ease = 1300
-    max_ease = 3100
-    ease_score = min(max(0, (row.avg_ease - min_ease) / (max_ease - min_ease)), 1) * 0.2
-
-    # 3. Success score (30%)
-    success_rate = 1 - (row.total_lapses / row.total_reps)
-    success_score = max(0, success_rate) * 0.3
-
-    # 4. Efficiency score (10%)
-    days_per_rep = row.avg_interval / row.total_reps
-    efficiency_score = min(days_per_rep / 30, 1) * 0.1  # Cap at 30 days per rep
-
-    return round(interval_score + ease_score + success_score + efficiency_score, 3)
-
-
-def add_knowledge_score(df: pd.DataFrame) -> pd.DataFrame:
-    """Add knowledge score column to DataFrame using apply."""
-    result_df = df.copy()
-    result_df["knowledge_score"] = df.apply(calculate_knowledge_score, axis=1)
-    return result_df
-
-
-def create_anki_deck_from_english_phrase_list(
-    phrase_list: List[str],
-    deck_name: str,
-    anki_filename_prefix: str,
-    image_dir: str,
-    batch_size: int = 50,
-    output_dir="../outputs/longman",
-):
-    """Takes a list of english phrases and does: 1) translation 2) text to speech 3) export to Anki deck.
-    To avoid overloading the text-to-speech APIs it will batch up the phrases into smaller decks (*.apkg), but these will all have the same 'deck_id'
-    and so when you import them into Anki they will merge into the same deck. The decks will be called {anki_filename_prefix}_{from_index}.apkg
-    """
-
-    phrase_dict = {
-        "anki": {"corrected_phrase_list": phrase_list}
-    }  # this format is because it's the same as our story_dictionary
-    translated_phrases_dict = add_translations(
-        phrase_dict
-    )  # this already batches so can pass entire list
-
-    # we will now create slices of the main phrase dictionary using a 'from_index' and batch_size
-    for from_index in range(0, len(phrase_list), batch_size):
-        partial_dict = create_test_story_dict(
-            translated_phrases_dict,
-            story_parts=1,
-            from_index=from_index,
-            dialogue_entries=2,
-            num_phrases=batch_size,
-        )
-        translated_phrases_dict_audio = add_audio(partial_dict)
-
-        if image_dir:
-            translated_phrases_dict_audio = add_image_paths(
-                translated_phrases_dict_audio, image_dir
-            )
-            export_to_anki_with_images(
-                story_data_dict=translated_phrases_dict_audio,
-                output_dir=output_dir,
-                story_name=f"{anki_filename_prefix}_{from_index}",
-                deck_name=deck_name,
-                index_position=from_index,
-            )
-        else:
-            raise ValueError("Missing an image directory (image_dir)")
-    return translated_phrases_dict_audio
 
 
 def get_sort_field(order: int, target_text: str) -> str:
@@ -931,164 +743,6 @@ def get_sort_field(order: int, target_text: str) -> str:
     # Take first 5 chars of hex representation (20 bits)
     truncated_guid = hex(guid)[2:10]
     return f"{order:04d}-{truncated_guid}"
-
-
-def export_to_anki_with_images(
-    story_data_dict: Dict[str, Dict],
-    output_dir: str,
-    story_name: str,
-    deck_name: str = None,
-    index_position: int = 0,
-) -> None:
-    """
-    Export story data to an Anki deck, including images for each card. Use add_image_paths
-    with story_data_dict first to get image data.
-
-    The story_name is used as a prefix for the anki file only
-    if you want these merged with other decks, ensure the deck_name matches exactly
-    as this is used to generate the deck id.
-
-    index_position is used to correctly allocate the right card_position index, so that
-    the cards are served in the order they were generated, which will be an optimised order
-    based on evening out the number of words per phrase, otherwise Anki will sort alphabetically on the
-    first field in the list
-    """
-    os.makedirs(output_dir, exist_ok=True)
-
-    language_practice_model = genanki.Model(
-        1607392313 + 121 + 999,  # adding 999 to try sort order
-        "Language Practice With Images Sort Order",
-        fields=[
-            {"name": "SortOrder"},
-            {"name": "TargetText"},
-            {"name": "TargetAudio"},
-            {"name": "TargetAudioSlow"},
-            {"name": "EnglishText"},
-            {"name": "WiktionaryLinks"},
-            {"name": "Picture"},
-            {"name": "TargetLanguageName"},
-        ],
-        templates=[
-            {
-                "name": "Listening Card",
-                "qfmt": load_template("listening_card_front_template.html"),
-                "afmt": load_template("card_back_template.html"),
-            },
-            {
-                "name": "Reading Card",
-                "qfmt": load_template("reading_card_front_template.html"),
-                "afmt": load_template("card_back_template.html"),
-            },
-            {
-                "name": "Speaking Card",
-                "qfmt": load_template("speaking_card_front_template.html"),
-                "afmt": load_template("card_back_template.html"),
-            },
-        ],
-        css=load_template("card_styles.css"),
-    )
-
-    media_files = []
-    notes = []
-
-    # Set up deck name and ID
-    if deck_name is None:
-        deck_id = string_to_large_int(config.TARGET_LANGUAGE_NAME + "image")
-        deck_name = f"{config.TARGET_LANGUAGE_NAME} - phrases with images"
-    else:
-        deck_id = string_to_large_int(deck_name + "image")
-    deck = genanki.Deck(deck_id, deck_name)
-
-    for story_part, data in story_data_dict.items():
-        # Get all the relevant lists
-        phrase_pairs = data["translated_phrase_list"]
-        audio_segments = data["translated_phrase_list_audio"]
-        image_paths = data.get(
-            "image_path", [None] * len(phrase_pairs)
-        )  # Default to None if missing
-
-        # Zip all three lists together
-
-        for (english, target), audio_segment, image_path in tqdm(
-            zip(phrase_pairs, audio_segments, image_paths),
-            desc="generating image and sound files",
-        ):
-            image_filename = None
-            if image_path is not None:
-                try:
-                    image_filename = f"{uuid.uuid4()}.png"
-                    output_path = os.path.join(output_dir, image_filename)
-                    with Image.open(image_path) as img:
-                        img = img.resize((400, 400))
-                        img.save(output_path, "PNG", optimize=True)
-                    media_files.append(image_filename)
-                except Exception as e:
-                    print(f"Error copying image for {english}: {str(e)}")
-                    image_filename = None
-
-            # Handle audio
-            target_audio_normal = f"{uuid.uuid4()}.mp3"
-            target_audio_slow = f"{uuid.uuid4()}.mp3"
-
-            if isinstance(audio_segment, AudioSegment):
-                target_normal_audio_segment = audio_segment
-                target_slow_audio_segment = audio_segment
-            elif isinstance(audio_segment, List) and len(audio_segment) > 2:
-                target_normal_audio_segment = audio_segment[2]
-                target_slow_audio_segment = audio_segment[1]
-            else:
-                raise Exception(f"Unexpected audio format: {audio_segment}")
-
-            # Export audio files
-            target_normal_audio_segment.export(
-                os.path.join(output_dir, target_audio_normal), format="mp3"
-            )
-            target_slow_audio_segment.export(
-                os.path.join(output_dir, target_audio_slow), format="mp3"
-            )
-            media_files.extend([target_audio_normal, target_audio_slow])
-
-            # Generate Wiktionary links
-            wiktionary_links = generate_wiktionary_links(target)
-
-            # Create note
-            note = genanki.Note(
-                model=language_practice_model,
-                fields=[
-                    get_sort_field(index_position, target),
-                    target,
-                    f"[sound:{target_audio_normal}]",
-                    f"[sound:{target_audio_slow}]",
-                    english,
-                    wiktionary_links,
-                    f'<img src="{image_filename}">' if image_filename else "",
-                    config.TARGET_LANGUAGE_NAME,
-                ],
-                guid=string_to_large_int(target + "image"),
-            )
-            notes.append(note)
-            index_position += 1
-
-    # Add notes to deck
-    for note in tqdm(notes, desc="adding notes to deck"):
-        deck.add_note(note)
-
-    # Create and save the package
-    package = genanki.Package(deck)
-    package.media_files = [os.path.join(output_dir, file) for file in media_files]
-    output_filename = os.path.join(output_dir, f"{story_name}_anki_deck.apkg")
-    package.write_to_file(output_filename)
-    print(f"Anki deck exported to {output_filename}")
-
-    # Clean up temporary files
-    for media_file in tqdm(media_files, desc="deleting temp files"):
-        file_path = os.path.join(output_dir, media_file)
-        try:
-            os.remove(file_path)
-        except OSError as e:
-            print(f"Error deleting file {file_path}: {e}")
-
-    print("Cleanup of temporary files completed.")
 
 
 def create_anki_deck_from_gcs(
@@ -1127,6 +781,7 @@ def create_anki_deck_from_gcs(
         story_names = list(collection_data.keys())
 
     # Process each story
+    output_filenames = []
     for story_position, current_story_name in enumerate(story_names, start=1):
         # Get phrase keys for this story
         phrase_keys = get_phrase_keys(current_story_name, collection)
@@ -1144,7 +799,7 @@ def create_anki_deck_from_gcs(
             continue
 
         # Create Anki deck for this story
-        export_phrases_to_anki(
+        output_filename = export_phrases_to_anki(
             phrase_dict=phrase_dict,
             output_dir=output_dir,
             deck_name=deck_name,
@@ -1152,7 +807,9 @@ def create_anki_deck_from_gcs(
             collection=collection,
             story_position=story_position,
         )
+        output_filenames.append(output_filename)
 
+    return output_filenames
 
 def export_phrases_to_anki(
     phrase_dict: Dict[str, Dict[str, Any]],
@@ -1162,7 +819,7 @@ def export_phrases_to_anki(
     deck_name: Optional[str] = None,
     collection: str = "LM1000",
     story_position: Optional[int] = None,
-) -> None:
+) -> str:
     """
     Export phrase data to an Anki deck.
 
@@ -1185,6 +842,9 @@ def export_phrases_to_anki(
         story_name: Optional name of the story (e.g. 'story_community_park')
         collection: Collection name (default: "LM1000")
         story_position: Optional position of story in sequence (e.g. 1 becomes "01")
+
+    Returns:
+        output_filename: Path to the exported Anki deck
     """
     os.makedirs(output_dir, exist_ok=True)
     language_cap = language.title()
@@ -1335,3 +995,4 @@ def export_phrases_to_anki(
             print(f"Error deleting file {file_path}: {e}")
 
     print("Cleanup of temporary files completed.")
+    return output_filename
