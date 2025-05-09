@@ -34,12 +34,12 @@
         },
         "stories": {
             "female": {
-                "provider": "azure",
-                "voice_id": "sv-SE-SofieNeural"
+                "provider": "elevenlabs",
+                "voice_id": "aSLKtNoVBZlxQEMsnGL2"
             },
             "male": {
-                "provider": "azure",
-                "voice_id": "sv-SE-MattiasNeural"
+                "provider": "elevenlabs",
+                "voice_id": "7UMEOkIJdI4hjmR2SWNq"
             }
         }
     },

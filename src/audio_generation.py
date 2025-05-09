@@ -136,17 +136,16 @@ def clean_translated_content(
         raise ValueError(f"Unsupported content format: {type(content)}")
 
 
-
 def setup_ffmpeg():
     # Try default Windows path first
     default_ffmpeg_path = r"C:\Program Files\ffmpeg-7.0-essentials_build\bin"
-    
+
     # Search system PATH for ffmpeg
     found_paths = []
     for path in os.environ["PATH"].split(os.pathsep):
         if "ffmpeg" in path.lower():
             found_paths.append(path)
-            
+
     if os.path.exists(default_ffmpeg_path):
         # Add default FFmpeg to PATH if found
         os.environ["PATH"] += os.pathsep + default_ffmpeg_path
@@ -235,19 +234,15 @@ def text_to_speech_google(
         synthesis_input = texttospeech.SynthesisInput(text=text)
 
     voice = texttospeech.VoiceSelectionParams(
-        language_code=voice_model.language_code,
-        name=voice_model.voice_id
+        language_code=voice_model.language_code, name=voice_model.voice_id
     )
 
     audio_config = texttospeech.AudioConfig(
-        audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=speaking_rate
+        audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=speaking_rate
     )
 
     response = client.synthesize_speech(
-        input=synthesis_input,
-        voice=voice,
-        audio_config=audio_config
+        input=synthesis_input, voice=voice, audio_config=audio_config
     )
 
     return AudioSegment.from_mp3(io.BytesIO(response.audio_content))
@@ -275,8 +270,7 @@ def text_to_speech_azure(
     service_region = os.getenv("AZURE_REGION", "eastus")
 
     speech_config = speechsdk.SpeechConfig(
-        subscription=speech_key,
-        region=service_region
+        subscription=speech_key, region=service_region
     )
     speech_config.speech_synthesis_voice_name = voice_model.voice_id
     speech_config.set_speech_synthesis_output_format(
@@ -293,8 +287,7 @@ def text_to_speech_azure(
     pull_stream = speechsdk.audio.PullAudioOutputStream()
     audio_config = speechsdk.audio.AudioOutputConfig(stream=pull_stream)
     speech_synthesizer = speechsdk.SpeechSynthesizer(
-        speech_config=speech_config,
-        audio_config=audio_config
+        speech_config=speech_config, audio_config=audio_config
     )
 
     # Subscribe to events for audio data
@@ -359,16 +352,16 @@ def text_to_speech_elevenlabs(
 ) -> AudioSegment:
     """
     Convert text to speech using ElevenLabs TTS API directly with requests.
-    
+
     Args:
         text: Text to convert to speech (can include <break time="1.0s" /> tags)
         voice_model: VoiceInfo object containing voice details
         speaking_rate: Speed of speech (1.0 is normal speed)
         is_ssml: Whether the input text is standard SSML (will be converted for ElevenLabs)
-    
+
     Returns:
         AudioSegment containing the generated speech
-        
+
     Raises:
         ValueError: If SSML is requested, as ElevenLabs doesn't support SSML well
     """
@@ -382,39 +375,46 @@ def text_to_speech_elevenlabs(
     api_key = os.getenv("ELEVENLABS_API_KEY")
     if not api_key:
         raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
-    
+
     try:
         # Set up API endpoint
         url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_model.voice_id}"
-        
+
         # Set up headers
         headers = {
             "Accept": "audio/mpeg",
             "Content-Type": "application/json",
-            "xi-api-key": api_key
+            "xi-api-key": api_key,
         }
-        
+
         # Set up request body
         body = {
             "text": text,
-            "model_id": "eleven_multilingual_v2"  # Use multilingual model for language support
+            "model_id": "eleven_multilingual_v2",  # Use multilingual model for language support
         }
-        
+
         # Apply speaking rate if different from 1.0
         if speaking_rate != 1.0:
-            body["voice_settings"] = {"stability": 0.5, "similarity_boost": 0.5, "style": 0.0, "speed": speaking_rate}
-        
+            body["voice_settings"] = {
+                "stability": 0.5,
+                "similarity_boost": 0.5,
+                "style": 0.0,
+                "speed": speaking_rate,
+            }
+
         # Make the API request
         response = requests.post(url, json=body, headers=headers)
-        
+
         # Check if request was successful
         if response.status_code != 200:
-            raise Exception(f"API request failed with status code {response.status_code}: {response.text}")
-        
+            raise Exception(
+                f"API request failed with status code {response.status_code}: {response.text}"
+            )
+
         # Convert response to audio segment
         audio_bytes = io.BytesIO(response.content)
         return AudioSegment.from_mp3(audio_bytes)
-        
+
     except Exception as e:
         raise Exception(f"ElevenLabs speech synthesis error: {str(e)}")
 
@@ -429,7 +429,7 @@ def slow_text_to_speech(
 ) -> AudioSegment:
     """
     Generate slowed down text-to-speech audio with breaks between words.
-    
+
     Uses SSML for Google and Azure voices, and explicit break tags for ElevenLabs voices.
 
     Args:
@@ -459,7 +459,7 @@ def slow_text_to_speech(
     # Clean the text and tokenize it
     cleaned_text = clean_tts_text(text)
     tokens = tokenize_text(cleaned_text, language_code)
-    
+
     # Get the voice model to determine the provider
     voice_models = config.get_voice_models(enum_type=voice_setting)
 
@@ -469,24 +469,24 @@ def slow_text_to_speech(
         voice_model = voice_models[1]
     else:
         voice_model = voice_models[2]
-    
+
     # Handle different providers
     if voice_model.provider == VoiceProvider.ELEVENLABS:
         # For ElevenLabs, convert milliseconds to seconds and use their break format
         break_sec = word_break_ms / 1000.0
-        
+
         # Check if break duration exceeds ElevenLabs' limit (3 seconds)
         if break_sec >= 3.0:
             raise ValueError(
                 f"Break duration of {break_sec:.2f}s exceeds ElevenLabs' limit of 3 seconds. "
                 f"Please use a word_break_ms value less than 3000."
             )
-            
+
         formatted_break = f' <break time="{break_sec:.2f}s" /> '
-        
+
         # Join the tokens with ElevenLabs break format
         text_with_breaks = formatted_break.join(tokens)
-        
+
         # Generate speech with the breaks embedded in the text
         return text_to_speech(
             text=text_with_breaks,
@@ -499,7 +499,7 @@ def slow_text_to_speech(
     else:
         # For Google and Azure, use standard SSML
         word_break_time = str(word_break_ms) + "ms"
-        
+
         # Create SSML with breaks between words
         ssml_parts = ["<speak>"]
         for i, token in enumerate(tokens):
@@ -1084,16 +1084,16 @@ def generate_and_upload_audio_for_utterance(
         voice_setting="stories",
     )
 
-    # Create filename and base prefix
-    filename = f"part_{utterance_index}_{utterance['speaker'].lower()}.mp3"
-    base_prefix = (
-        f"{collection}/stories/{story_name}/audio/{language_name}/{story_part}"
+    audio_path = get_utterance_audio_path(
+        story_name,
+        story_part,
+        utterance_index,
+        utterance["speaker"],
+        language_name,
+        collection,
     )
-
     # Upload the audio
-    gcs_uri = upload_to_gcs(
-        obj=audio, bucket_name=bucket_name, file_name=filename, base_prefix=base_prefix
-    )
+    gcs_uri = upload_to_gcs(obj=audio, bucket_name=bucket_name, file_name=audio_path)
 
     return gcs_uri
 
@@ -1103,6 +1103,7 @@ def generate_dialogue_audio_and_upload(
     story_name: str,
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
+    overwrite: bool = False,
 ) -> Dict[str, List[str]]:
     """
     Generate audio for a translated dialogue dictionary and upload to GCS.
@@ -1141,7 +1142,7 @@ def generate_dialogue_audio_and_upload(
             audio_uris[story_part] = []
 
             # Process each utterance in the dialogue
-            for i, utterance in enumerate(
+            for utterance_index, utterance in enumerate(
                 tqdm(
                     part_data["translated_dialogue"],
                     desc=f"Generating translated audio for {story_part}",
@@ -1149,20 +1150,24 @@ def generate_dialogue_audio_and_upload(
                 )
             ):
                 # First check if this audio file already exists
-                filename = f"part_{i}_{utterance['speaker'].lower()}.mp3"
-                audio_blob_path = f"{audio_dir_path}/{filename}"
+                audio_path = get_utterance_audio_path(
+                    story_name,
+                    story_part,
+                    utterance_index,
+                    utterance["speaker"],
+                    language_name,
+                    collection,
+                )
 
-                if check_blob_exists(bucket_name, audio_blob_path):
-                    print(
-                        f"Audio file already exists: gs://{bucket_name}/{audio_blob_path}"
-                    )
-                    audio_uri = f"gs://{bucket_name}/{audio_blob_path}"
+                if check_blob_exists(bucket_name, audio_path) and not overwrite:
+                    print(f"Audio file already exists: gs://{bucket_name}/{audio_path}")
+                    audio_uri = f"gs://{bucket_name}/{audio_path}"
                 else:
                     # Generate and upload audio
                     audio_uri = generate_and_upload_audio_for_utterance(
                         utterance,
                         story_part,
-                        i,
+                        utterance_index,
                         story_name,
                         collection,
                         bucket_name,

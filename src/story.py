@@ -810,10 +810,7 @@ def upload_story_image(
     )
 
     # Create the GCS path
-    file_extension = os.path.splitext(image_file)[1]
-    filename = f"{story_part}{file_extension}"
-    base_prefix = f"collections/{collection}/stories/{story_name}/images"
-
+    image_path = get_image_path(story_name, story_part, collection)
     # Read the image file
     with open(image_file, "rb") as f:
         image_data = f.read()
@@ -822,9 +819,7 @@ def upload_story_image(
     gcs_uri = upload_to_gcs(
         obj=image_data,
         bucket_name=bucket_name,
-        file_name=filename,
-        base_prefix=base_prefix,
-        content_type=f"image/{file_extension[1:]}",
+        file_name=image_path,
     )
 
     print(f"Image uploaded to {gcs_uri}")

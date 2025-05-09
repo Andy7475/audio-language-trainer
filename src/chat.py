@@ -242,7 +242,6 @@ Task: <span class='font-bold'>{scenario['challenge']}</span> and find out: <span
 
 def create_html_challenges(
     challenges: List[Dict[str, str]],
-    output_dir: Path,
     story_name: str,
     component_path: str = "ChallengeViewer.js",
     template_path: str = "challenge_template.html",
@@ -255,14 +254,14 @@ def create_html_challenges(
             - challenge_description: Description of the challenge
             - llm_prompt: Prompt to send to the LLM (hidden from user)
             - answer: The answer to reveal
-        output_dir: Directory where the HTML file will be saved
+        output_path: Path to the HTML file
         story_name: snakecase of the form story_title_of_story
         language: Target language name
         component_path: Path to the React component file
         template_path: Path to the HTML template file
 
     Returns:
-        The HTML content as a string
+        The GCS URI of the uploaded HTML file
     """
     # Load the React component
     react_component = load_template(component_path)
@@ -276,13 +275,12 @@ def create_html_challenges(
         react_component=react_component,
     )
 
+    from src.gcs_storage import get_story_translated_challenges_path, upload_to_gcs
+
     # Create output directory if it doesn't exist
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = get_story_translated_challenges_path(story_name)
 
-    output_file = "challenges.html"
-    # Create the HTML file
-    output_path = output_dir / output_file
-    output_path.write_text(html_content, encoding="utf-8")
+    gcs_uri = upload_to_gcs(html_content, config.GCS_PUBLIC_BUCKET, output_path)
 
-    print(f"HTML challenges created at: {output_path}")
-    return html_content
+    print(f"HTML challenges created at: {gcs_uri}")
+    return gcs_uri
