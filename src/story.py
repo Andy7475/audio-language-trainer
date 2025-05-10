@@ -412,7 +412,7 @@ def create_album_files(
     PAUSE_TEXT = "---------"
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
 
-    ALBUM_NAME = get_story_title(story_name)
+    ALBUM_NAME = get_story_title(story_name) + " ({config.TARGET_LANGUAGE_NAME})"
     TOTAL_TRACKS = len(story_data_dict) * 2  # 1 track normal, 1 track fast
 
     m4a_file_paths = []
