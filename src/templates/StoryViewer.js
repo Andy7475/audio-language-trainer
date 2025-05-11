@@ -13,6 +13,7 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
   const [remainingLoops, setRemainingLoops] = React.useState(0);
   const [playbackMode, setPlaybackMode] = React.useState(null);
   const [showCopyNotification, setShowCopyNotification] = React.useState(false);
+  const [showEnglish, setShowEnglish] = React.useState(true);
 
   // for play all dialgoue
   const [isPlayingAll, setIsPlayingAll] = React.useState(false);
@@ -287,7 +288,6 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
           // In StoryViewer.js, update the speaking challenges button
           React.createElement('a', {
             href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/story_${title.toLowerCase().replace(/\s+/g, '_')}/challenges.html`,
-            // Added ml-4 for left margin
             className: 'ml-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-2 font-medium'
           },
             React.createElement('span', null, '🎤'),
@@ -368,10 +368,18 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
               setActiveSection(newState);
               if (newState !== null) {
                 window.location.hash = sectionName;
-                // Smooth scroll to the section
+                // Scroll to position the section header at the top of the viewport
                 const element = document.getElementById(sectionName);
                 if (element) {
-                  element.scrollIntoView({ behavior: 'smooth' });
+                  // Add a small delay to ensure the content is expanded before scrolling
+                  setTimeout(() => {
+                    element.scrollIntoView({ 
+                      behavior: 'smooth',
+                      block: 'start'
+                    });
+                    // Offset for both the fixed header and the section header
+                    window.scrollBy(0, -120); // Increased from -80 to -120 to account for both headers
+                  }, 50);
                 }
               } else {
                 // Remove hash when closing section
@@ -430,6 +438,14 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                 className: 'w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base bg-red-600 hover:bg-red-700 text-white'
               }, '■ Stop'),
 
+              // Add English text toggle here
+              React.createElement('div', { className: 'flex items-center justify-center gap-2 bg-white rounded-lg p-2' },
+                React.createElement('label', { className: 'text-sm text-gray-600' }, 'Show English:'),
+                React.createElement('button', {
+                  onClick: () => setShowEnglish(!showEnglish),
+                  className: `px-3 py-1 rounded-lg ${showEnglish ? 'bg-green-600' : 'bg-gray-600'} hover:opacity-90 transition-colors text-white text-sm`
+                }, showEnglish ? 'On' : 'Off')
+              )
             ),
 
             // Dialogue section
@@ -443,8 +459,14 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                     React.createElement('p', { className: 'text-sm text-gray-600 mb-1' },
                       utterance.speaker
                     ),
+                    React.createElement('p', { 
+                      className: 'text-lg mb-2 cursor-pointer hover:bg-gray-100 rounded px-1 transition-colors duration-150',
+                      onClick: () => copyToClipboard(utterance.text)
+                    },
+                      utterance.text
+                    ),
                     renderWiktionaryLinks(utterance.wiktionary_links),
-                    React.createElement('p', { className: 'mt-2 text-gray-600' },
+                    showEnglish && React.createElement('p', { className: 'mt-2 text-gray-600' },
                       section.dialogue[index].text
                     )
                   ),
