@@ -275,15 +275,6 @@ def create_and_upload_html_story(
         react_component=react_component,
     )
 
-    # Create local file path for temporary storage
-    local_dir = Path(output_dir) / story_name / language
-    local_dir.mkdir(parents=True, exist_ok=True)
-    local_html_path = local_dir / f"{story_name}.html"
-
-    # Write the HTML file locally
-    local_html_path.write_text(html_content, encoding="utf-8")
-    print(f"HTML story created locally at: {local_html_path}")
-
     try:
 
         blob_path = get_public_story_path(story_name)
@@ -300,7 +291,7 @@ def create_and_upload_html_story(
 
     except Exception as e:
         print(f"Error uploading to GCS: {str(e)}")
-        return str(local_html_path)  # Return local path if upload fails
+        return str(blob_path)  # Return local path if upload fails
 
 
 def generate_language_section(langauge: str, stories: List[Dict[str, str]]) -> str:
