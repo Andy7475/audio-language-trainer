@@ -287,7 +287,7 @@ def generate_test_html(
                 <style>
                     {css}
                     body {{
-                        background-color: #0a192f;
+                        background-color: #303030;
                         color: white;
                     }}
                 </style>
@@ -315,7 +315,7 @@ def generate_test_html(
                     max-width: 800px; 
                     margin: 0 auto; 
                     padding: 20px;
-                    background-color: #0a192f;
+                    background-color: #303030;
                     color: white;
                 }}
                 h1, h2 {{ color: #64ffda; }}
