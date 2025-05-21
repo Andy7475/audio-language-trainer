@@ -7,6 +7,111 @@ from src.config_loader import config
 from src.utils import load_template
 from src.convert import convert_PIL_image_to_base64, convert_audio_to_base64
 
+def create_png_of_html(path_to_html, output_path=None, width=375, height=812):
+    """
+    Renders an HTML file at smartphone screen size and saves it as a PNG using Selenium.
+    
+    Args:
+        path_to_html: Path to the HTML file to render
+        output_path: Path where the PNG should be saved. If None, uses the HTML filename with .png extension
+        width: Width of the smartphone screen in pixels (default: iPhone X width = 375)
+        height: Height of the smartphone screen in pixels (default: iPhone X height = 812)
+        
+    Returns:
+        Path to the saved PNG file
+    """
+    import os
+    import time
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    
+    if output_path is None:
+        # Use the same filename but with .png extension
+        output_path = os.path.splitext(path_to_html)[0] + '.png'
+    
+    # Setup Chrome in headless mode
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument(f"--window-size={width},{height}")
+    
+    driver = webdriver.Chrome(options=chrome_options)
+    
+    try:
+        # Convert to absolute path for file:// URL
+        abs_path = os.path.abspath(path_to_html)
+        driver.get(f"file://{abs_path}")
+        
+        # Wait for any JS to render
+        driver.implicitly_wait(2)
+        time.sleep(0.5)
+        
+        # Take screenshot and save
+        driver.save_screenshot(output_path)
+        
+        return output_path
+    finally:
+        # Always clean up
+        driver.quit()
+
+def batch_convert_anki_cards(html_folder, output_folder=None, device_presets=None):
+    """
+    Converts a folder of HTML Anki cards to PNG images with various device dimensions.
+    
+    Args:
+        html_folder: Folder containing HTML files
+        output_folder: Where to save the PNG files (defaults to html_folder/renders)
+        device_presets: Dictionary of device names and their dimensions, or None for defaults
+        
+    Returns:
+        Dictionary mapping HTML files to their rendered PNG files
+    """
+    import os
+    import glob
+    
+    # Default device presets if none provided
+    if device_presets is None:
+        device_presets = {
+            "iphone": (375, 812),       # iPhone X/11/12
+            "android": (360, 800),      # Common Android size
+        }
+    
+    # Create output folder if it doesn't exist
+    if output_folder is None:
+        output_folder = os.path.join(html_folder, "renders")
+    
+    os.makedirs(output_folder, exist_ok=True)
+    
+    # Find all HTML files
+    html_files = glob.glob(os.path.join(html_folder, "*.html"))
+    
+    results = {}
+    for html_file in html_files:
+        base_name = os.path.basename(html_file)
+        name_without_ext = os.path.splitext(base_name)[0]
+        
+        file_results = {}
+        
+        # Render for each device preset
+        for device, dimensions in device_presets.items():
+            width, height = dimensions
+            output_name = f"{name_without_ext}_{device}.png"
+            output_path = os.path.join(output_folder, output_name)
+            
+            try:
+                create_png_of_html(
+                    html_file,
+                    output_path=output_path,
+                    width=width,
+                    height=height
+                )
+                file_results[device] = output_path
+            except Exception as e:
+                print(f"Error rendering {html_file} for {device}: {str(e)}")
+        
+        results[html_file] = file_results
+    
+    return results
 
 def image_to_base64_html(image) -> str:
     """Convert a PIL Image to base64 for embedding in HTML."""
@@ -150,7 +255,13 @@ def generate_test_html(
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>{template_name.capitalize()} Card Front</title>
-                <style>{css}</style>
+                <style>
+                    {css}
+                    body {{
+                        background-color: #303030;
+                        color: white;
+                    }}
+                </style>
             </head>
             <body>
                 {front_content}
@@ -173,7 +284,13 @@ def generate_test_html(
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>{template_name.capitalize()} Card Back</title>
-                <style>{css}</style>
+                <style>
+                    {css}
+                    body {{
+                        background-color: #0a192f;
+                        color: white;
+                    }}
+                </style>
             </head>
             <body>
                 {back_content}
@@ -193,22 +310,29 @@ def generate_test_html(
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Anki Template Tester</title>
             <style>
-                body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-                h1, h2 {{ color: #2196F3; }}
+                body {{ 
+                    font-family: Arial, sans-serif; 
+                    max-width: 800px; 
+                    margin: 0 auto; 
+                    padding: 20px;
+                    background-color: #0a192f;
+                    color: white;
+                }}
+                h1, h2 {{ color: #64ffda; }}
                 .card-links {{ display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 40px; }}
                 .card-link {{ 
                     display: block; padding: 15px; 
-                    background-color: #f0f0f0; border-radius: 8px;
-                    text-decoration: none; color: #333; width: 200px;
+                    background-color: #112240; border-radius: 8px;
+                    text-decoration: none; color: white; width: 200px;
                     text-align: center; transition: background-color 0.3s;
                 }}
-                .card-link:hover {{ background-color: #e0e0e0; }}
-                .info {{ background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
+                .card-link:hover {{ background-color: #1d3461; }}
+                .info {{ background-color: #112240; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
                 .media {{ display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }}
                 .media-item {{ width: 200px; }}
                 .media-item audio {{ width: 100%; }}
                 .media-item img {{ max-width: 100%; }}
-                .phrase-info {{ background-color: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
+                .phrase-info {{ background-color: #112240; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
             </style>
         </head>
         <body>
