@@ -713,3 +713,36 @@ def get_story_index_path(collection: str = "LM1000") -> str:
         Format: collections/{collection}/story_index.json
     """
     return f"collections/{collection}/story_index.json"
+
+
+def get_flashcard_path(
+    story_name: str,
+    collection: str = "LM1000",
+    language: Optional[str] = None,
+    story_position: Optional[int] = None,
+) -> str:
+    """
+    Get the GCS path for a story's flashcard file.
+
+    Args:
+        story_name: Name of the story
+        collection: Collection name (default: "LM1000")
+        language: Optional language name (defaults to config.TARGET_LANGUAGE_NAME)
+        story_position: Optional position number for the story
+
+    Returns:
+        str: Path to the flashcard file in GCS
+        Format: collections/{collection}/flashcards/{language}/{position}_{story_name}.apkg
+    """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+
+    # Sanitize the story name for use in paths
+    sanitized_story = sanitize_path_component(story_name)
+
+    # Format the position if provided
+    position_str = ""
+    if story_position is not None:
+        position_str = f"{story_position:02d}_"
+
+    return f"collections/{collection}/flashcards/{language}/{position_str}{sanitized_story}.apkg"

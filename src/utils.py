@@ -334,3 +334,26 @@ def extract_json_from_llm_response(response):
     else:
         print("No JSON-like structure found in the response")
         return None
+
+
+def get_story_position(story_name: str, collection_data: Dict[str, Any]) -> int:
+    """
+    Get the position of a story in the collection data.
+
+    Since Python 3.7+, dictionaries maintain insertion order, so we can safely
+    get the position of a story by iterating through the keys.
+
+    Args:
+        story_name: Name of the story to find position for
+        collection_data: Dictionary from get_story_collection_path containing story data
+
+    Returns:
+        int: 1-based position of the story in the collection (1 for first story)
+
+    Raises:
+        ValueError: If story_name is not found in collection_data
+    """
+    for i, key in enumerate(collection_data.keys(), start=1):
+        if key == story_name:
+            return i
+    raise ValueError(f"Story '{story_name}' not found in collection data")
