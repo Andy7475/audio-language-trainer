@@ -11,16 +11,22 @@ from dotenv import load_dotenv
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
-
+from pathlib import Path
 from src.config_loader import config
 from src.convert import clean_filename, get_deck_name, string_to_large_int
-from src.gcs_storage import get_story_collection_path, read_from_gcs
+from src.gcs_storage import (
+    get_story_collection_path,
+    read_from_gcs,
+    upload_to_gcs,
+    get_flashcard_path,
+)
 from src.generate import add_audio, add_translations
 from src.images import add_image_paths
 from src.phrase import build_phrase_dict_from_gcs, get_phrase_keys
 from src.utils import (
     create_test_story_dict,
     load_template,
+    get_story_position,
 )
 from src.wiktionary import generate_wiktionary_links
 
@@ -1094,7 +1100,7 @@ def export_to_anki_with_images(
 def create_anki_deck_from_gcs(
     story_name: Optional[str | list[str]] = None,
     deck_name: Optional[str] = None,
-    output_dir: Optional[str] = "../outputs/flashcards",
+    output_dir: Optional[str] = "../outputs/gcs",
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
 ) -> None:
@@ -1127,7 +1133,10 @@ def create_anki_deck_from_gcs(
         story_names = list(collection_data.keys())
 
     # Process each story
-    for story_position, current_story_name in enumerate(story_names, start=1):
+    for current_story_name in story_names:
+        # Get story position from collection data
+        story_position = get_story_position(current_story_name, collection_data)
+
         # Get phrase keys for this story
         phrase_keys = get_phrase_keys(current_story_name, collection)
         if not phrase_keys:
@@ -1156,7 +1165,7 @@ def create_anki_deck_from_gcs(
 
 def export_phrases_to_anki(
     phrase_dict: Dict[str, Dict[str, Any]],
-    output_dir: str = "../outputs/flashcards",
+    output_dir: str = "../outputs/gcs",
     language: str = config.TARGET_LANGUAGE_NAME.lower(),
     story_name: Optional[str] = None,
     deck_name: Optional[str] = None,
@@ -1186,6 +1195,7 @@ def export_phrases_to_anki(
         collection: Collection name (default: "LM1000")
         story_position: Optional position of story in sequence (e.g. 1 becomes "01")
     """
+    output_dir = os.path.join(output_dir, config.GCS_PRIVATE_BUCKET)
     os.makedirs(output_dir, exist_ok=True)
     language_cap = language.title()
     # Format deck name with proper hierarchy
@@ -1196,15 +1206,19 @@ def export_phrases_to_anki(
     else:
         formatted_deck_name = f"{language_cap}::{collection}::Phrases"
 
-    # Create package filename in snake case
-    package_name_parts = [language.lower()]
-    if collection != "LM1000":
-        package_name_parts.append(collection.lower())
-    if story_name:
-        package_name_parts.append(story_name.replace("story_", ""))
-    package_filename = f"{'_'.join(package_name_parts)}_anki_deck.apkg"
-
     # Create Anki model
+    flashcard_path = get_flashcard_path(
+        story_name=story_name,
+        collection=collection,
+        language=language,
+        story_position=story_position,
+    )
+    flashcard_dir = Path(flashcard_path).parent
+    local_output_dir = os.path.join(output_dir, flashcard_dir)  # for temp media files
+    os.makedirs(
+        local_output_dir, exist_ok=True
+    )  # ensure directory exists before writing files
+
     language_practice_model = genanki.Model(
         1607392313,  # Model ID
         "Language Practice With Images",
@@ -1265,7 +1279,7 @@ def export_phrases_to_anki(
             if phrase_data["image"] is not None:
                 try:
                     image_filename = f"{uuid.uuid4()}.png"
-                    output_path = os.path.join(output_dir, image_filename)
+                    output_path = os.path.join(local_output_dir, image_filename)
                     # Resize and save the PIL Image directly
                     resized_img = phrase_data["image"].resize((400, 400))
                     resized_img.save(output_path, "PNG", optimize=True)
@@ -1280,13 +1294,13 @@ def export_phrases_to_anki(
 
             if phrase_data["audio_normal"] is not None:
                 phrase_data["audio_normal"].export(
-                    os.path.join(output_dir, target_audio_normal), format="mp3"
+                    os.path.join(local_output_dir, target_audio_normal), format="mp3"
                 )
                 media_files.append(target_audio_normal)
 
             if phrase_data["audio_slow"] is not None:
                 phrase_data["audio_slow"].export(
-                    os.path.join(output_dir, target_audio_slow), format="mp3"
+                    os.path.join(local_output_dir, target_audio_slow), format="mp3"
                 )
                 media_files.append(target_audio_slow)
 
@@ -1321,14 +1335,30 @@ def export_phrases_to_anki(
 
     # Create and save the package
     package = genanki.Package(deck)
-    package.media_files = [os.path.join(output_dir, file) for file in media_files]
-    output_filename = os.path.join(output_dir, package_filename)
+    package.media_files = [os.path.join(local_output_dir, file) for file in media_files]
+
+    # Save package to the same location we'll upload from
+    output_filename = os.path.join(output_dir, flashcard_path)
     package.write_to_file(output_filename)
     print(f"Anki deck exported to {output_filename}")
 
+    # Read the file content for upload
+    with open(output_filename, "rb") as f:
+        file_content = f.read()
+
+        # Upload to GCS
+        gcs_uri = upload_to_gcs(
+            obj=file_content,
+            bucket_name=config.GCS_PRIVATE_BUCKET,
+            file_name=flashcard_path,
+            content_type="application/octet-stream",
+            save_local=True,
+        )
+        print(f"Flashcard file uploaded to GCS: {gcs_uri}")
+
     # Clean up temporary files
     for media_file in tqdm(media_files, desc="deleting temp files"):
-        file_path = os.path.join(output_dir, media_file)
+        file_path = os.path.join(local_output_dir, media_file)
         try:
             os.remove(file_path)
         except OSError as e:

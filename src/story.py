@@ -143,7 +143,7 @@ def update_all_index_pages(
 
 
 def generate_and_update_index_html(
-    output_dir: str = "../outputs/stories",
+    output_dir: str = "../outputs/gcs",
     bucket_name: str = None,
     template_path: str = "index_template.html",
     m4a_template_path: str = "m4a_index_template.html",
@@ -153,7 +153,7 @@ def generate_and_update_index_html(
     Generate index.html and m4a_downloads.html files from GCS bucket contents and upload them.
 
     Args:
-        output_dir: Directory where the HTML files will be saved locally
+        output_dir: Directory where the HTML files will be saved locally (defaults to "../outputs/gcs")
         bucket_name: Name of the GCS bucket containing stories (defaults to config.GCS_PUBLIC_BUCKET)
         template_path: Path to the main index HTML template file
         m4a_template_path: Path to the M4A index HTML template file
@@ -191,10 +191,21 @@ def generate_and_update_index_html(
     # Generate special pages HTML
     special_pages_html = generate_special_pages_section(special_pages)
 
+    # Add sticky banner HTML
+    sticky_banner = """
+    <div class="sticky-banner" style="position: fixed; top: 0; left: 0; right: 0; background-color: #FB9A4B; color: #3a3e41; text-align: center; padding: 10px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+        <a href="https://www.firephrase.co.uk" style="text-decoration: none; font-weight: bold; font-size: 1.1em;">
+            Get more flashcard decks at FirePhrase.co.uk
+        </a>
+    </div>
+    <div style="margin-top: 50px;"> <!-- Add margin to prevent content from being hidden under the banner -->
+    """
+
     # Load and fill template
     template = Template(load_template(template_path))
     html_content = template.substitute(
-        language_sections=language_sections, special_pages=special_pages_html
+        language_sections=sticky_banner + language_sections,
+        special_pages=special_pages_html,
     )
 
     # Write to file
@@ -212,20 +223,25 @@ def generate_and_update_index_html(
     m4a_index_url = None
 
     if upload:
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-
         # Upload main index
-        main_blob = bucket.blob("index.html")
-        main_blob.upload_from_filename(main_index_path, content_type="text/html")
-        main_index_url = f"https://storage.googleapis.com/{bucket_name}/index.html"
+        main_index_url = upload_to_gcs(
+            obj=html_content,
+            bucket_name=bucket_name,
+            file_name="index.html",
+            content_type="text/html",
+        )
         print(f"Main index uploaded to: {main_index_url}")
 
+        # Read M4A index content
+        with open(m4a_index_path, "r", encoding="utf-8") as f:
+            m4a_html_content = f.read()
+
         # Upload M4A index
-        m4a_blob = bucket.blob("m4a_downloads.html")
-        m4a_blob.upload_from_filename(m4a_index_path, content_type="text/html")
-        m4a_index_url = (
-            f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html"
+        m4a_index_url = upload_to_gcs(
+            obj=m4a_html_content,
+            bucket_name=bucket_name,
+            file_name="m4a_downloads.html",
+            content_type="text/html",
         )
         print(f"M4A downloads index uploaded to: {m4a_index_url}")
 
