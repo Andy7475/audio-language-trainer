@@ -6,6 +6,64 @@ from src.phrase import build_phrase_dict_from_gcs
 from src.config_loader import config
 from src.utils import load_template
 from src.convert import convert_PIL_image_to_base64, convert_audio_to_base64
+from src.images import create_png_of_html
+
+
+def batch_convert_anki_cards(html_folder, output_folder=None, device_presets=None):
+    """
+    Converts a folder of HTML Anki cards to PNG images with various device dimensions.
+
+    Args:
+        html_folder: Folder containing HTML files
+        output_folder: Where to save the PNG files (defaults to html_folder/renders)
+        device_presets: Dictionary of device names and their dimensions, or None for defaults
+
+    Returns:
+        Dictionary mapping HTML files to their rendered PNG files
+    """
+    import os
+    import glob
+
+    # Default device presets if none provided
+    if device_presets is None:
+        device_presets = {
+            "iphone": (375, 812),  # iPhone X/11/12
+            "android": (360, 800),  # Common Android size
+        }
+
+    # Create output folder if it doesn't exist
+    if output_folder is None:
+        output_folder = os.path.join(html_folder, "renders")
+
+    os.makedirs(output_folder, exist_ok=True)
+
+    # Find all HTML files
+    html_files = glob.glob(os.path.join(html_folder, "*.html"))
+
+    results = {}
+    for html_file in html_files:
+        base_name = os.path.basename(html_file)
+        name_without_ext = os.path.splitext(base_name)[0]
+
+        file_results = {}
+
+        # Render for each device preset
+        for device, dimensions in device_presets.items():
+            width, height = dimensions
+            output_name = f"{name_without_ext}_{device}.png"
+            output_path = os.path.join(output_folder, output_name)
+
+            try:
+                create_png_of_html(
+                    html_file, output_path=output_path, width=width, height=height
+                )
+                file_results[device] = output_path
+            except Exception as e:
+                print(f"Error rendering {html_file} for {device}: {str(e)}")
+
+        results[html_file] = file_results
+
+    return results
 
 
 def image_to_base64_html(image) -> str:
@@ -150,7 +208,13 @@ def generate_test_html(
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>{template_name.capitalize()} Card Front</title>
-                <style>{css}</style>
+                <style>
+                    {css}
+                    body {{
+                        background-color: #303030;
+                        color: white;
+                    }}
+                </style>
             </head>
             <body>
                 {front_content}
@@ -173,7 +237,13 @@ def generate_test_html(
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>{template_name.capitalize()} Card Back</title>
-                <style>{css}</style>
+                <style>
+                    {css}
+                    body {{
+                        background-color: #303030;
+                        color: white;
+                    }}
+                </style>
             </head>
             <body>
                 {back_content}
@@ -193,22 +263,29 @@ def generate_test_html(
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Anki Template Tester</title>
             <style>
-                body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-                h1, h2 {{ color: #2196F3; }}
+                body {{ 
+                    font-family: Arial, sans-serif; 
+                    max-width: 800px; 
+                    margin: 0 auto; 
+                    padding: 20px;
+                    background-color: #303030;
+                    color: white;
+                }}
+                h1, h2 {{ color: #64ffda; }}
                 .card-links {{ display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 40px; }}
                 .card-link {{ 
                     display: block; padding: 15px; 
-                    background-color: #f0f0f0; border-radius: 8px;
-                    text-decoration: none; color: #333; width: 200px;
+                    background-color: #112240; border-radius: 8px;
+                    text-decoration: none; color: white; width: 200px;
                     text-align: center; transition: background-color 0.3s;
                 }}
-                .card-link:hover {{ background-color: #e0e0e0; }}
-                .info {{ background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
+                .card-link:hover {{ background-color: #1d3461; }}
+                .info {{ background-color: #112240; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
                 .media {{ display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }}
                 .media-item {{ width: 200px; }}
                 .media-item audio {{ width: 100%; }}
                 .media-item img {{ max-width: 100%; }}
-                .phrase-info {{ background-color: #f0f0f0; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
+                .phrase-info {{ background-color: #112240; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
             </style>
         </head>
         <body>
