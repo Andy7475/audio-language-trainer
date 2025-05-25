@@ -17,19 +17,6 @@ from src.config_loader import config
 load_dotenv()  # so we can use environment variables for various global settings
 
 
-def list_story_folders(base_dir: str = "../outputs/stories"):
-    """List all story_ folders in the specified directory."""
-    base_path = Path(base_dir)
-    if not base_path.exists():
-        return []
-
-    return [
-        folder.name
-        for folder in base_path.iterdir()
-        if folder.is_dir() and folder.name.startswith("story_")
-    ]
-
-
 def get_first_n_items(d: dict, n: int) -> dict:
     """
     Get the first n items from a dictionary.
