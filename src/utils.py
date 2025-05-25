@@ -17,19 +17,6 @@ from src.config_loader import config
 load_dotenv()  # so we can use environment variables for various global settings
 
 
-def list_story_folders(base_dir: str = "../outputs/stories"):
-    """List all story_ folders in the specified directory."""
-    base_path = Path(base_dir)
-    if not base_path.exists():
-        return []
-
-    return [
-        folder.name
-        for folder in base_path.iterdir()
-        if folder.is_dir() and folder.name.startswith("story_")
-    ]
-
-
 def get_first_n_items(d: dict, n: int) -> dict:
     """
     Get the first n items from a dictionary.
@@ -334,3 +321,297 @@ def extract_json_from_llm_response(response):
     else:
         print("No JSON-like structure found in the response")
         return None
+
+
+def get_story_position(story_name: str, collection_data: Dict[str, Any]) -> int:
+    """
+    Get the position of a story in the collection data.
+
+    Since Python 3.7+, dictionaries maintain insertion order, so we can safely
+    get the position of a story by iterating through the keys.
+
+    Args:
+        story_name: Name of the story to find position for
+        collection_data: Dictionary from get_story_collection_path containing story data
+
+    Returns:
+        int: 1-based position of the story in the collection (1 for first story)
+
+    Raises:
+        ValueError: If story_name is not found in collection_data
+    """
+    for i, key in enumerate(collection_data.keys(), start=1):
+        if key == story_name:
+            return i
+    raise ValueError(f"Story '{story_name}' not found in collection data")
+
+
+def change_phrase(
+    old_phrase: str,
+    new_phrase: str,
+    collection: str = "LM1000",
+    bucket_name: Optional[str] = None,
+    keep_image: bool = False,
+    generate_audio: bool = True,
+    review_translations: bool = True,
+) -> None:
+    """
+    Change a phrase and update all related files in GCS.
+    This includes updating the raw phrases list, translations, story collections,
+    and handling multimedia files (audio and images).
+
+    Args:
+        old_phrase: The original phrase to be changed
+        new_phrase: The new phrase to replace it with
+        collection: Collection name (default: "LM1000")
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
+        keep_image: If True, renames the image file to use the new phrase key instead of preserving the old one
+        generate_audio: If True, generates new audio for the new phrase
+        review_translations: If True, uses Anthropic to review the translation
+    """
+    from src.convert import clean_filename
+    from src.gcs_storage import (
+        get_phrase_path,
+        get_translated_phrases_path,
+        get_story_collection_path,
+        get_phrase_audio_path,
+        get_phrase_image_path,
+        get_phrase_index_path,
+        get_story_index_path,
+        read_from_gcs,
+        upload_to_gcs,
+    )
+    from src.audio_generation import upload_phrases_audio_to_gcs
+    from src.translation import (
+        review_translations_with_anthropic,
+        translate_from_english,
+    )
+    from src.wiktionary import generate_wiktionary_links
+    from google.cloud import storage
+
+    print(f"\n{'='*80}")
+    print(f"Starting phrase change from '{old_phrase}' to '{new_phrase}'")
+    print(f"{'='*80}\n")
+
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    # Get the phrase keys for both old and new phrases
+    old_phrase_key = clean_filename(old_phrase)
+    new_phrase_key = clean_filename(new_phrase)
+    print(f"Generated phrase keys:")
+    print(f"  Old: {old_phrase_key}")
+    print(f"  New: {new_phrase_key}\n")
+
+    # 1. Update raw phrases list
+    print("1. Updating raw phrases list...")
+    phrases_path = get_phrase_path(collection)
+    try:
+        phrases = read_from_gcs(bucket_name, phrases_path, "json")
+        if old_phrase not in phrases:
+            raise ValueError(f"Old phrase '{old_phrase}' not found in phrases list")
+
+        # Replace the old phrase with the new one
+        phrases = [new_phrase if p == old_phrase else p for p in phrases]
+        upload_to_gcs(phrases, bucket_name, phrases_path)
+        print("  ✓ Raw phrases list updated successfully\n")
+    except Exception as e:
+        raise ValueError(f"Failed to update phrases list: {str(e)}")
+
+    # 2. Update translations
+    print("2. Updating translations...")
+    translations_path = get_translated_phrases_path(collection)
+    try:
+        translations = read_from_gcs(bucket_name, translations_path, "json")
+        if old_phrase_key in translations:
+            # Get the old translation data
+            old_translation_data = translations.pop(old_phrase_key)
+
+            # Get new translation
+            new_translation = translate_from_english([new_phrase])[0]
+
+            # Create new translation data with correct format
+            new_translation_data = {
+                "english": new_phrase,
+                config.TARGET_LANGUAGE_NAME.lower(): new_translation,
+            }
+
+            # If review_translations is True, use Anthropic to review the translation
+            if review_translations:
+                print("  ℹ Reviewing translation with Anthropic...")
+                reviewed = review_translations_with_anthropic(
+                    [{"english": new_phrase, "translation": new_translation}]
+                )
+                if reviewed and reviewed[0].get("modified", False):
+                    new_translation_data[config.TARGET_LANGUAGE_NAME.lower()] = (
+                        reviewed[0]["translation"]
+                    )
+                    print("  ✓ Translation reviewed and improved")
+                else:
+                    print("  ℹ Translation was good as is")
+
+            # Generate new Wiktionary links
+            print("  ℹ Generating Wiktionary links...")
+            wiktionary_links = generate_wiktionary_links(
+                new_translation_data[config.TARGET_LANGUAGE_NAME.lower()]
+            )
+            new_translation_data["wiktionary_links"] = wiktionary_links
+            print("  ✓ Wiktionary links generated")
+
+            # Add the new translation data
+            translations[new_phrase_key] = new_translation_data
+            upload_to_gcs(translations, bucket_name, translations_path)
+            print("  ✓ Translations updated successfully\n")
+        else:
+            print("  ℹ No translation found for old phrase\n")
+    except Exception as e:
+        print(f"  ⚠ Warning: Failed to update translations: {str(e)}\n")
+
+    # 3. Update story collections
+    print("3. Updating story collections...")
+    collection_path = get_story_collection_path(collection)
+    try:
+        collection_data = read_from_gcs(bucket_name, collection_path, "json")
+        updated_stories = []
+        for story_name, phrases in collection_data.items():
+            for phrase_data in phrases:
+                if phrase_data["phrase"] == old_phrase:
+                    phrase_data["phrase"] = new_phrase
+                    updated_stories.append(story_name)
+        if updated_stories:
+            upload_to_gcs(collection_data, bucket_name, collection_path)
+            print(f"  ✓ Updated phrase in {len(updated_stories)} stories:")
+            for story in updated_stories:
+                print(f"    - {story}")
+            print()
+        else:
+            print("  ℹ Phrase not found in any stories\n")
+    except Exception as e:
+        print(f"  ⚠ Warning: Failed to update story collections: {str(e)}\n")
+
+    # 4. Handle multimedia files
+    print("4. Handling multimedia files...")
+    # First, get all files associated with the old phrase key
+    old_audio_normal = get_phrase_audio_path(old_phrase_key, "normal")
+    old_audio_slow = get_phrase_audio_path(old_phrase_key, "slow")
+    old_image = get_phrase_image_path(old_phrase_key)
+    new_image = get_phrase_image_path(new_phrase_key)
+
+    # Delete old audio files
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    deleted_files = []
+    for path in [old_audio_normal, old_audio_slow]:
+        blob = bucket.blob(path)
+        if blob.exists():
+            blob.delete()
+            deleted_files.append(path)
+
+    if deleted_files:
+        print("  ✓ Deleted audio files:")
+        for file in deleted_files:
+            print(f"    - {file}")
+    else:
+        print("  ℹ No audio files found to delete")
+
+    # Handle image file
+    old_image_blob = bucket.blob(old_image)
+    if old_image_blob.exists():
+        if keep_image:
+            # Copy the image to the new location and delete the old one
+            new_image_blob = bucket.blob(new_image)
+            new_image_blob.rewrite(old_image_blob)
+            old_image_blob.delete()
+            print(f"  ✓ Renamed image file from {old_image} to {new_image}")
+        else:
+            print(f"  ℹ Image file preserved at: {old_image}")
+    else:
+        print("  ℹ No image file found")
+    print()
+
+    # 5. Generate new audio if requested
+    if generate_audio:
+        print("5. Generating new audio...")
+        try:
+            # Create phrase dict for audio generation
+            phrase_dict = {
+                new_phrase_key: {
+                    "english": new_phrase,
+                    config.TARGET_LANGUAGE_NAME.lower(): translations[new_phrase_key][
+                        config.TARGET_LANGUAGE_NAME.lower()
+                    ],
+                }
+            }
+
+            # Generate and upload new audio
+            result = upload_phrases_audio_to_gcs(
+                phrase_dict=phrase_dict,
+                bucket_name=bucket_name,
+                upload_english_audio=True,
+                overwrite=True,
+            )
+
+            if result and new_phrase_key in result:
+                print("  ✓ New audio generated and uploaded successfully")
+                print(
+                    f"    - Normal speed: {result[new_phrase_key]['audio_urls']['normal']}"
+                )
+                print(
+                    f"    - Slow speed: {result[new_phrase_key]['audio_urls']['slow']}"
+                )
+                print(
+                    f"    - English: {result[new_phrase_key]['audio_urls']['english']}"
+                )
+            else:
+                print("  ⚠ Warning: Failed to generate new audio")
+            print()
+        except Exception as e:
+            print(f"  ⚠ Warning: Failed to generate new audio: {str(e)}\n")
+
+    # 6. Rebuild indexes
+    print("6. Rebuilding indexes...")
+    try:
+        # Rebuild phrase index
+        phrase_index_path = get_phrase_index_path(collection)
+        phrase_index = read_from_gcs(bucket_name, phrase_index_path, "json")
+        updated_words = []
+        for word, phrases in phrase_index.items():
+            if old_phrase in phrases:
+                phrases.remove(old_phrase)
+                phrases.append(new_phrase)
+                updated_words.append(word)
+        if updated_words:
+            upload_to_gcs(phrase_index, bucket_name, phrase_index_path)
+            print(f"  ✓ Updated phrase index for {len(updated_words)} words:")
+            for word in updated_words:
+                print(f"    - {word}")
+        else:
+            print("  ℹ No updates needed in phrase index")
+
+        # Rebuild story index
+        story_index_path = get_story_index_path(collection)
+        story_index = read_from_gcs(bucket_name, story_index_path, "json")
+        updated_words = []
+        for word, stories in story_index.items():
+            if old_phrase in stories:
+                stories.remove(old_phrase)
+                stories.append(new_phrase)
+                updated_words.append(word)
+        if updated_words:
+            upload_to_gcs(story_index, bucket_name, story_index_path)
+            print(f"  ✓ Updated story index for {len(updated_words)} words:")
+            for word in updated_words:
+                print(f"    - {word}")
+        else:
+            print("  ℹ No updates needed in story index")
+        print()
+    except Exception as e:
+        print(f"  ⚠ Warning: Failed to rebuild indexes: {str(e)}\n")
+
+    print(f"{'='*80}")
+    print(f"Successfully changed phrase from '{old_phrase}' to '{new_phrase}'")
+    if not keep_image:
+        print(
+            f"Note: Image file at {old_image} was preserved. You may want to update it manually if needed."
+        )
+    print(f"{'='*80}\n")
