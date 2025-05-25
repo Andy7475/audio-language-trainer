@@ -1,7 +1,8 @@
 # audio-language-trainer
 
 ## Caveat
-A personal project - not intended for plug-and-play release. You are welcome to use what is here, but it will not work out of the box (see setup section later)
+You are welcome to use what is here, but it will not work out of the box (see setup section later)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 ## Motivation
 There is often a gap after completing a basic language course (like Section 1 on DuoLingo, or perhaps you've done a Foundation Michel Thomas method) - the advice is typically to start reading magazines and watching TV, but this is far too hard. I was wanting something that exposed me to some longer dialogue, rapidly increased by vocabulary, and also reinforced what I had learnt (or was still learning). A sort of 'stepping stone' towards watching a TV program perhaps, or going abroad and being more comfortable in the middle of a group where people are conversing - they won't pause after 3 or 4 words, they just keep talking amongst each other!
