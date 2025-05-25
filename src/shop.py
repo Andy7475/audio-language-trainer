@@ -17,8 +17,8 @@ from src.gcs_storage import (
 )
 from src.convert import get_story_title, clean_filename
 from src.utils import get_story_position
-from src.anki_tools import create_anki_deck_from_gcs
-from src.template_testing import generate_test_html, create_png_of_html
+from src.template_testing import generate_test_html
+from src.images import create_png_of_html
 
 
 def get_existing_flashcards(
@@ -184,22 +184,19 @@ def create_spread_deck_image(
     png_files: List[str],
     output_path: str,
     angle_offset: float = 6.0,
-    overlap: float = 0.3,
+    x_offset: float = 0,
     background_color: str = "#FFFFFF",
-    max_width: int = 3000,
-    max_height: int = 4000,
 ) -> str:
     """
     Creates a single image showing multiple PNG files spread out like a deck of cards.
+    Image size is calculated exactly based on the card arrangement.
 
     Args:
         png_files: List of paths to PNG files to include in the spread
         output_path: Where to save the final image
         angle_offset: Angle in degrees between each card (default: 6.0)
-        overlap: How much each card should overlap with the next (0.0 to 1.0, default: 0.3)
+        x_offset: Horizontal offset between cards in pixels - larger values spread cards wider (default: 0)
         background_color: Color of the background (default: "#FFFFFF" - white)
-        max_width: Maximum width of the output image (default: 3000)
-        max_height: Maximum height of the output image (default: 4000)
 
     Returns:
         Path to the created image
@@ -231,39 +228,66 @@ def create_spread_deck_image(
         max_card_width = max(max_card_width, bordered_img.width)
         max_card_height = max(max_card_height, bordered_img.height)
 
-    # Calculate total width needed for spread
-    total_angle = angle_offset * (len(images) - 1)
-    # Use sine to calculate the maximum width needed
-    max_spread_width = max_card_width * (1 + math.sin(math.radians(total_angle)))
+    # Calculate exact dimensions needed for the fan arrangement
+    # Find the maximum extent of all rotated cards
+    min_x = float("inf")
+    max_x = float("-inf")
+    min_y = float("inf")
+    max_y = float("-inf")
 
-    # Calculate dimensions for the final image
-    # Add more padding to prevent clipping
-    final_width = min(int(max_spread_width * (1 + overlap * 2)), max_width)
-    final_height = min(int(max_card_height * 1.5), max_height)  # Increased padding
+    # Calculate positions for all cards to find bounds
+    card_positions = []
 
-    # Create new image with background
+    for draw_order, img in enumerate(images):
+        # Calculate angle for this card
+        fan_angle = angle_offset * (draw_order - (len(images) - 1) // 2)
+
+        # Rotate the image to get its dimensions
+        rotated = img.rotate(fan_angle, expand=True, resample=Image.BICUBIC)
+
+        # Calculate position relative to pivot point (rotation logic)
+        angle_rad = math.radians(fan_angle)
+        bottom_center_offset_y = img.height // 2 * math.cos(angle_rad)
+        bottom_center_offset_x = img.height // 2 * math.sin(angle_rad)
+
+        # Base position from rotation
+        base_x = -rotated.width // 2 - bottom_center_offset_x
+        base_y = -rotated.height // 2 - bottom_center_offset_y
+
+        # Apply horizontal offset AFTER rotation calculations
+        horizontal_offset = x_offset * (draw_order - (len(images) - 1) // 2)
+        final_x = base_x + horizontal_offset
+        final_y = base_y
+
+        card_positions.append((rotated, final_x, final_y))
+
+        # Update bounds with final positions
+        left = final_x
+        right = final_x + rotated.width
+        top = final_y
+        bottom = final_y + rotated.height
+
+        min_x = min(min_x, left)
+        max_x = max(max_x, right)
+        min_y = min(min_y, top)
+        max_y = max(max_y, bottom)
+
+    # Calculate final image dimensions with small padding
+    padding = 20
+    final_width = int(max_x - min_x) + 2 * padding
+    final_height = int(max_y - min_y) + 2 * padding
+
+    # Calculate pivot position in the final image
+    pivot_x = -min_x + padding
+    pivot_y = -min_y + padding
+
+    # Create new image with exact dimensions
     final_image = Image.new("RGBA", (final_width, final_height), background_color)
 
-    # Calculate starting position (bottom left)
-    start_x = int(final_width * 0.1)  # 10% from left edge
-    start_y = int(final_height * 0.8)  # 80% from top edge
-
-    # Place each image with rotation
-    for i, img in enumerate(images):
-        # Calculate angle for this card (clockwise from bottom left)
-        angle = -angle_offset * i  # Negative angle for clockwise rotation
-
-        # Rotate the image
-        rotated = img.rotate(angle, expand=True, resample=Image.BICUBIC)
-
-        # Calculate position for this card
-        # Move each card slightly to the right and adjust for rotation
-        x_offset = int(i * max_card_width * overlap)
-        y_offset = int(math.sin(math.radians(angle)) * max_card_width * 0.5)
-
-        # Calculate position
-        x = start_x + x_offset
-        y = start_y + y_offset - rotated.height  # Subtract height to align bottom
+    # Draw all cards using pre-calculated positions
+    for rotated, rel_x, rel_y in card_positions:
+        x = int(pivot_x + rel_x)
+        y = int(pivot_y + rel_y)
 
         # Paste the rotated image
         final_image.paste(rotated, (x, y), rotated)
@@ -279,10 +303,8 @@ def generate_spread_deck_image(
     bucket_name: Optional[str] = None,
     num_phrases: int = 5,
     angle_offset: float = 6.0,
-    overlap: float = 0.3,
+    x_offset: float = 0.0,
     background_color: str = "#FFFFFF",
-    max_width: int = 3000,
-    max_height: int = 4000,
 ) -> List[str]:
     """
     Generate spread deck images from phrases in specified stories or collection and upload to GCS.
@@ -296,8 +318,6 @@ def generate_spread_deck_image(
         angle_offset: Angle in degrees between each card (default: 6.0)
         overlap: How much each card should overlap with the next (0.0 to 1.0, default: 0.3)
         background_color: Color of the background (default: "#303030")
-        max_width: Maximum width of the output image (default: 3000)
-        max_height: Maximum height of the output image (default: 4000)
 
     Returns:
         List of GCS URIs of the uploaded spread deck images
@@ -345,6 +365,7 @@ def generate_spread_deck_image(
         )
         selected_phrases = story_phrases
     else:
+        random.seed(12)
         selected_phrases = random.sample(story_phrases, num_phrases)
 
     # Generate HTML and PNG files for each phrase
@@ -378,10 +399,8 @@ def generate_spread_deck_image(
         png_files=png_files,
         output_path=temp_output,
         angle_offset=angle_offset,
-        overlap=overlap,
+        x_offset=x_offset,
         background_color=background_color,
-        max_width=max_width,
-        max_height=max_height,
     )
 
     # Upload to GCS

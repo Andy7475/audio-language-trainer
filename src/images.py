@@ -18,6 +18,54 @@ load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
 
+def create_png_of_html(path_to_html, output_path=None, width=375, height=1100):
+    """
+    Renders an HTML file at smartphone screen size and saves it as a PNG using Selenium.
+
+    Args:
+        path_to_html: Path to the HTML file to render
+        output_path: Path where the PNG should be saved. If None, uses the HTML filename with .png extension
+        width: Width of the smartphone screen in pixels (default: iPhone X width = 375)
+        height: Height of the smartphone screen in pixels (default: iPhone X height = 812)
+
+    Returns:
+        Path to the saved PNG file
+    """
+    import os
+    import time
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+
+    if output_path is None:
+        # Use the same filename but with .png extension
+        output_path = os.path.splitext(path_to_html)[0] + ".png"
+
+    # Setup Chrome in headless mode
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument(f"--window-size={width},{height}")
+
+    driver = webdriver.Chrome(options=chrome_options)
+
+    try:
+        # Convert to absolute path for file:// URL
+        abs_path = os.path.abspath(path_to_html)
+        driver.get(f"file://{abs_path}")
+
+        # Wait for any JS to render
+        driver.implicitly_wait(2)
+        time.sleep(0.5)
+
+        # Take screenshot and save
+        driver.save_screenshot(output_path)
+
+        return output_path
+    finally:
+        # Always clean up
+        driver.quit()
+
+
 def add_image_style(prompt: str, style: str) -> str:
     """Adds an art style to an image generation prompt.
 
