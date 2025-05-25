@@ -185,9 +185,9 @@ def create_spread_deck_image(
     output_path: str,
     angle_offset: float = 6.0,
     overlap: float = 0.3,
-    background_color: str = "#303030",
+    background_color: str = "#FFFFFF",
     max_width: int = 3000,
-    max_height: int = 2000,
+    max_height: int = 4000,
 ) -> str:
     """
     Creates a single image showing multiple PNG files spread out like a deck of cards.
@@ -197,9 +197,9 @@ def create_spread_deck_image(
         output_path: Where to save the final image
         angle_offset: Angle in degrees between each card (default: 6.0)
         overlap: How much each card should overlap with the next (0.0 to 1.0, default: 0.3)
-        background_color: Color of the background (default: "#303030")
+        background_color: Color of the background (default: "#FFFFFF" - white)
         max_width: Maximum width of the output image (default: 3000)
-        max_height: Maximum height of the output image (default: 2000)
+        max_height: Maximum height of the output image (default: 4000)
 
     Returns:
         Path to the created image
@@ -217,9 +217,19 @@ def create_spread_deck_image(
         # Convert to RGBA if not already
         if img.mode != "RGBA":
             img = img.convert("RGBA")
-        images.append(img)
-        max_card_width = max(max_card_width, img.width)
-        max_card_height = max(max_card_height, img.height)
+
+        # Add border to the image
+        border_size = 2
+        bordered_img = Image.new(
+            "RGBA",
+            (img.width + 2 * border_size, img.height + 2 * border_size),
+            (240, 240, 240, 255),
+        )  # Pale grey border
+        bordered_img.paste(img, (border_size, border_size), img)
+
+        images.append(bordered_img)
+        max_card_width = max(max_card_width, bordered_img.width)
+        max_card_height = max(max_card_height, bordered_img.height)
 
     # Calculate total width needed for spread
     total_angle = angle_offset * (len(images) - 1)
@@ -227,20 +237,21 @@ def create_spread_deck_image(
     max_spread_width = max_card_width * (1 + math.sin(math.radians(total_angle)))
 
     # Calculate dimensions for the final image
+    # Add more padding to prevent clipping
     final_width = min(int(max_spread_width * (1 + overlap * 2)), max_width)
-    final_height = min(int(max_card_height * 1.5), max_height)
+    final_height = min(int(max_card_height * 1.5), max_height)  # Increased padding
 
     # Create new image with background
     final_image = Image.new("RGBA", (final_width, final_height), background_color)
 
     # Calculate starting position (bottom left)
-    start_x = int(final_width * 0.1)
-    start_y = int(final_height * 0.8)
+    start_x = int(final_width * 0.1)  # 10% from left edge
+    start_y = int(final_height * 0.8)  # 80% from top edge
 
     # Place each image with rotation
     for i, img in enumerate(images):
         # Calculate angle for this card (clockwise from bottom left)
-        angle = -angle_offset * i
+        angle = -angle_offset * i  # Negative angle for clockwise rotation
 
         # Rotate the image
         rotated = img.rotate(angle, expand=True, resample=Image.BICUBIC)
@@ -252,7 +263,7 @@ def create_spread_deck_image(
 
         # Calculate position
         x = start_x + x_offset
-        y = start_y + y_offset - rotated.height
+        y = start_y + y_offset - rotated.height  # Subtract height to align bottom
 
         # Paste the rotated image
         final_image.paste(rotated, (x, y), rotated)
@@ -269,7 +280,7 @@ def generate_spread_deck_image(
     num_phrases: int = 5,
     angle_offset: float = 6.0,
     overlap: float = 0.3,
-    background_color: str = "#303030",
+    background_color: str = "#FFFFFF",
     max_width: int = 3000,
     max_height: int = 4000,
 ) -> List[str]:
@@ -285,8 +296,8 @@ def generate_spread_deck_image(
         angle_offset: Angle in degrees between each card (default: 6.0)
         overlap: How much each card should overlap with the next (0.0 to 1.0, default: 0.3)
         background_color: Color of the background (default: "#303030")
-        max_width: Maximum width of the output image (default: 2000)
-        max_height: Maximum height of the output image (default: 1000)
+        max_width: Maximum width of the output image (default: 3000)
+        max_height: Maximum height of the output image (default: 4000)
 
     Returns:
         List of GCS URIs of the uploaded spread deck images
@@ -343,19 +354,22 @@ def generate_spread_deck_image(
 
         # Generate HTML files in a temporary directory
         temp_dir = os.path.join(temp_base_dir, f"temp_{phrase_key}")
-        os.makedirs(temp_dir, exist_ok=True)
-
-        generate_test_html(
-            phrase_key=phrase_key,
-            output_dir=temp_dir,
-            collection=collection,
-            bucket_name=bucket_name,
-        )
-
-        # Create PNG from the reading card front
         html_path = os.path.join(temp_dir, "reading_back.html")
         png_path = os.path.join(temp_dir, f"{phrase_key}.png")
-        create_png_of_html(html_path, png_path, width=375, height=1100)
+
+        # Only generate HTML if directory doesn't exist or PNG doesn't exist
+        if not os.path.exists(temp_dir) or not os.path.exists(png_path):
+            os.makedirs(temp_dir, exist_ok=True)
+            generate_test_html(
+                phrase_key=phrase_key,
+                output_dir=temp_dir,
+                collection=collection,
+                bucket_name=bucket_name,
+            )
+
+            # Create PNG from the reading card front
+            create_png_of_html(html_path, png_path, width=375, height=1100)
+
         png_files.append(png_path)
 
     # Create the spread deck image
@@ -395,11 +409,7 @@ def generate_spread_deck_image(
         content_type="image/png",
     )
 
-    # Clean up temporary files
-    for png_file in png_files:
-        os.remove(png_file)
-        os.remove(os.path.join(os.path.dirname(png_file), "reading_back.html"))
-        os.rmdir(os.path.dirname(png_file))
+    # Clean up only the final spread deck image
     os.remove(temp_output)
 
     return gcs_uri
