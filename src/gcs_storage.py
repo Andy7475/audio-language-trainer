@@ -751,3 +751,23 @@ def get_flashcard_path(
         position_str = f"{story_position:02d}_"
 
     return f"collections/{collection}/flashcards/{language}/{position_str}{sanitized_story}.apkg"
+
+
+def get_marketing_images_path(
+    collection: str = "LM1000", language: Optional[str] = None
+) -> str:
+    """
+    Get the GCS path for marketing images.
+
+    Args:
+        collection: Collection name (default: "LM1000")
+        language: Optional language name (defaults to config.TARGET_LANGUAGE_NAME)
+
+    Returns:
+        str: Path to the marketing images directory in GCS
+        Format: collections/{collection}/marketing/{language}/images/
+    """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+
+    return f"collections/{collection}/marketing/{language}/images/"
