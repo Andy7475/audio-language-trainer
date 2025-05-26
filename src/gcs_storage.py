@@ -753,21 +753,46 @@ def get_flashcard_path(
     return f"collections/{collection}/flashcards/{language}/{position_str}{sanitized_story}.apkg"
 
 
-def get_marketing_images_path(
-    collection: str = "LM1000", language: Optional[str] = None
+def get_marketing_image_path(
+    product_type: str,
+    collection: str = "LM1000",
+    language: Optional[str] = None,
+    bundle_range: Optional[str] = None,
+    story_name: Optional[str] = None,
 ) -> str:
     """
-    Get the GCS path for marketing images.
+    Get the GCS path for a marketing image.
 
     Args:
-        collection: Collection name (default: "LM1000")
-        language: Optional language name (defaults to config.TARGET_LANGUAGE_NAME)
+        product_type: One of "complete", "bundle", "individual", "templates", or "anatomy"
+        collection: Collection name (e.g., "LM1000")
+        language: Target language (defaults to config.TARGET_LANGUAGE_NAME)
+        bundle_range: For bundles, range like "01-08"
+        story_name: For individual products, the story name to include in filename
 
     Returns:
-        str: Path to the marketing images directory in GCS
-        Format: collections/{collection}/marketing/{language}/images/
+        str: GCS path (after bucket name) for the marketing image
+        Format: collections/{collection}/marketing/{language}/images/{filename}
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME.lower()
 
-    return f"collections/{collection}/marketing/{language}/images/"
+    base_path = f"collections/{collection}/marketing/{language}/images/"
+
+    if product_type == "complete":
+        filename = f"{language}_{collection}_complete_pack.png"
+    elif product_type == "bundle":
+        filename = f"{language}_{collection}_bundle_{bundle_range}.png"
+    elif product_type == "individual":
+        if story_name:
+            filename = f"{language}_{collection}_individual_{story_name}.png"
+        else:
+            filename = f"{language}_{collection}_individual_pack.png"
+    elif product_type == "templates":
+        filename = f"{language}_{collection}_template_types.png"
+    elif product_type == "anatomy":
+        filename = f"{language}_{collection}_flashcard_anatomy.png"
+    else:
+        raise ValueError(f"Invalid product_type: {product_type}")
+
+    return base_path + filename
