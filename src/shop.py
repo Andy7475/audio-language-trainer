@@ -101,9 +101,9 @@ def create_product_templates():
 <li>${audio_files} M4A audio files organized in story albums:
 <ul>
 <li>Regular-speed story parts</li>
-<li>Fast-mode versions for advanced listening skill development</li>
+<li>Fast-mode versions for advanced listening skill development (<a href="https://storage.googleapis.com/audio-language-trainer-stories/time_compressed_speech.html">About Speed Listening</a>)</li>
 <li>Works with any standard audio player</li>
-<li>Features embedded lyrics that display in the free Oto Music Player app, allowing you to read while listening</li>
+<li>Features embedded lyrics that display in the free <a href="https://play.google.com/store/apps/details?id=com.piyush.music&hl=en">Oto Music Player</a> app, allowing you to read while listening</li>
 </ul>
 </li>
 <li>High-quality AI-generated audio (human-curated for accuracy)</li>
@@ -120,7 +120,7 @@ def create_product_templates():
 ${story_list}
 <p>Experience words 'just sticking' in your memory with the vivid images and audio. Complete a deck of flashcards, then consolidate by listening to the final story. Each story reinforces previously learned words while introducing new vocabulary in memorable contexts, so it's important to do the stories in order.</p>
 <p>With 20 - 30 minutes a day expect to do a story every 5 - 7 days. You will average about 2 new words per flashcard, although initially this is higher as all words might be new, later it is lower. Learning therefore gets easier as the stories progress.</p>
-<p>With just 15 - 30 minutes of daily practice, complete this system in 3-4 months and dramatically expand your vocabulary foundation.</p>
+<p>With regular daily practice, complete this system in 3-4 months and dramatically expand your vocabulary foundation.</p>
 <p><strong>Save ${savings_percent}% compared to purchasing individual packs!</strong></p>
 """
     )
@@ -139,13 +139,13 @@ ${story_list}
 
 <h3>What's Included:</h3>
 <ul>
-<li>${total_phrases}+ carefully designed digital flashcards (35 per story)</li>
+<li>${total_phrases}+ carefully designed digital flashcards (~30-50 per story)</li>
 <li>${audio_files} M4A audio files organized in story albums:
 <ul>
 <li>Regular-speed story parts for each story</li>
 <li>Fast-mode versions for advanced listening skill development</li>
 <li>Works with any standard audio player</li>
-<li>Features embedded lyrics that display in the free Oto Music Player app, allowing you to read while listening</li>
+<li>Features embedded lyrics that display in the free <a href="https://play.google.com/store/apps/details?id=com.piyush.music&hl=en">Oto Music Player</a> app, allowing you to read while listening</li>
 </ul>
 </li>
 <li>High-quality AI-generated audio (human-curated for accuracy)</li>
@@ -182,7 +182,7 @@ ${sample_phrases_html}
 <li>3 regular-speed story parts</li>
 <li>3 fast-mode versions for advanced listening skill development</li>
 <li>Works with any standard audio player</li>
-<li>Features embedded lyrics that display in the free Oto Music Player app, allowing you to read while listening</li>
+<li>Features embedded lyrics that display in the free <a href="https://play.google.com/store/apps/details?id=com.piyush.music&hl=en">Oto Music Player</a> app, allowing you to read while listening</li>
 </ul>
 </li>
 <li>High-quality AI-generated audio (human-curated for accuracy)</li>
@@ -200,7 +200,7 @@ ${sample_phrases_html}
 <li>Practice speaking in realistic scenarios matching the story context</li>
 <li>For advanced technical users comfortable with API integration</li>
 <li>Requires your own OpenAI account</li>
-<li>Provided as-is for those wanting to experiment with AI language interactions</li>
+<li>Provided as-is for those wanting to experiment with the latest AI language interactions</li>
 </ul>
 </li>
 </ul>
@@ -213,7 +213,7 @@ ${sample_phrases_html}
 <ul>
 <li>Requires the free Anki application</li>
 <li>M4A files work with any standard media player</li>
-<li>For synchronized lyrics display, download the free Oto Music Player app</li>
+<li>For synchronized lyrics display, download the free <a href="https://play.google.com/store/apps/details?id=com.piyush.music&hl=en">Oto Music Player</a> app</li>
 <li>AI chat feature requires an OpenAI API key (for technically advanced users)</li>
 </ul>
 """
@@ -364,6 +364,7 @@ def generate_shopify_csv(
         "Variant Taxable": "TRUE",
         "source language (product.metafields.custom.source_language)": source_language,
         "target language (product.metafields.custom.target_language)": target_language,
+        "pack type (product.metafields.custom.pack_type)": "Complete",
         "Status": "draft",
     }
 
@@ -419,6 +420,7 @@ def generate_shopify_csv(
             "Variant Taxable": "TRUE",
             "source language (product.metafields.custom.source_language)": source_language,
             "target language (product.metafields.custom.target_language)": target_language,
+            "pack type (product.metafields.custom.pack_type)": "Bundle",
             "Status": "draft",
         }
 
@@ -480,6 +482,7 @@ def generate_shopify_csv(
                 "Variant Taxable": "TRUE",
                 "source language (product.metafields.custom.source_language)": source_language,
                 "target language (product.metafields.custom.target_language)": target_language,
+                "pack type (product.metafields.custom.pack_type)": "Single",
                 "Status": "draft",
             }
 
@@ -521,6 +524,7 @@ def generate_shopify_csv(
         "Image Position",
         "source language (product.metafields.custom.source_language)",
         "target language (product.metafields.custom.target_language)",
+        "pack type (product.metafields.custom.pack_type)",
         "Status",
     ]
 
