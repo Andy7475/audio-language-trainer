@@ -753,21 +753,45 @@ def get_flashcard_path(
     return f"collections/{collection}/flashcards/{language}/{position_str}{sanitized_story}.apkg"
 
 
-def get_marketing_images_path(
-    collection: str = "LM1000", language: Optional[str] = None
-) -> str:
+def get_marketing_image_paths(
+    product_type: str,
+    collection: str = "LM1000",
+    language: Optional[str] = None,
+    bundle_range: Optional[str] = None,
+    story_name: Optional[str] = None,
+) -> List[str]:
     """
-    Get the GCS path for marketing images.
+    Generate marketing image paths for different product types.
 
     Args:
-        collection: Collection name (default: "LM1000")
-        language: Optional language name (defaults to config.TARGET_LANGUAGE_NAME)
+        product_type: "complete", "bundle", or "individual"
+        collection: Collection name (e.g., "LM1000")
+        language: Target language (defaults to config.TARGET_LANGUAGE_NAME)
+        bundle_range: For bundles, range like "01-08"
+        story_name: For individual products, the story name to include in filename
 
     Returns:
-        str: Path to the marketing images directory in GCS
-        Format: collections/{collection}/marketing/{language}/images/
+        List of 3 GCS paths (after bucket name) for the product
+        Format: collections/{collection}/marketing/{language}/images/{filename}
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME.lower()
 
-    return f"collections/{collection}/marketing/{language}/images/"
+    base_path = f"collections/{collection}/marketing/{language}/images/"
+
+    # Image 1: Product-specific image
+    if product_type == "complete":
+        img1 = f"{language}_{collection}_complete_pack.png"
+    elif product_type == "bundle":
+        img1 = f"{language}_{collection}_bundle_{bundle_range}.png"
+    else:  # individual
+        if story_name:
+            img1 = f"{language}_{collection}_individual_{story_name}.png"
+        else:
+            img1 = f"{language}_{collection}_individual_pack.png"
+
+    # Images 2 & 3: Common marketing images
+    img2 = f"{language}_{collection}_flashcard_anatomy.png"
+    img3 = f"{language}_{collection}_template_types.png"
+
+    return [base_path + img1, base_path + img2, base_path + img3]
