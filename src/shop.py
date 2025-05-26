@@ -364,7 +364,7 @@ def generate_shopify_csv(
         "Variant Taxable": "TRUE",
         "source language (product.metafields.custom.source_language)": source_language,
         "target language (product.metafields.custom.target_language)": target_language,
-        "Status": "active",
+        "Status": "draft",
     }
 
     add_product_with_images(complete_product, "complete")
@@ -419,7 +419,7 @@ def generate_shopify_csv(
             "Variant Taxable": "TRUE",
             "source language (product.metafields.custom.source_language)": source_language,
             "target language (product.metafields.custom.target_language)": target_language,
-            "Status": "active",
+            "Status": "draft",
         }
 
         add_product_with_images(bundle_product, "bundle", bundle_range=range_display)
@@ -480,7 +480,7 @@ def generate_shopify_csv(
                 "Variant Taxable": "TRUE",
                 "source language (product.metafields.custom.source_language)": source_language,
                 "target language (product.metafields.custom.target_language)": target_language,
-                "Status": "active",
+                "Status": "draft",
             }
 
             add_product_with_images(individual_product, "individual", story_name=story)
