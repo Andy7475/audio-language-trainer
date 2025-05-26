@@ -753,25 +753,25 @@ def get_flashcard_path(
     return f"collections/{collection}/flashcards/{language}/{position_str}{sanitized_story}.apkg"
 
 
-def get_marketing_image_paths(
+def get_marketing_image_path(
     product_type: str,
     collection: str = "LM1000",
     language: Optional[str] = None,
     bundle_range: Optional[str] = None,
     story_name: Optional[str] = None,
-) -> List[str]:
+) -> str:
     """
-    Generate marketing image paths for different product types.
+    Get the GCS path for a marketing image.
 
     Args:
-        product_type: "complete", "bundle", or "individual"
+        product_type: One of "complete", "bundle", "individual", "templates", or "anatomy"
         collection: Collection name (e.g., "LM1000")
         language: Target language (defaults to config.TARGET_LANGUAGE_NAME)
         bundle_range: For bundles, range like "01-08"
         story_name: For individual products, the story name to include in filename
 
     Returns:
-        List of 3 GCS paths (after bucket name) for the product
+        str: GCS path (after bucket name) for the marketing image
         Format: collections/{collection}/marketing/{language}/images/{filename}
     """
     if language is None:
@@ -779,19 +779,20 @@ def get_marketing_image_paths(
 
     base_path = f"collections/{collection}/marketing/{language}/images/"
 
-    # Image 1: Product-specific image
     if product_type == "complete":
-        img1 = f"{language}_{collection}_complete_pack.png"
+        filename = f"{language}_{collection}_complete_pack.png"
     elif product_type == "bundle":
-        img1 = f"{language}_{collection}_bundle_{bundle_range}.png"
-    else:  # individual
+        filename = f"{language}_{collection}_bundle_{bundle_range}.png"
+    elif product_type == "individual":
         if story_name:
-            img1 = f"{language}_{collection}_individual_{story_name}.png"
+            filename = f"{language}_{collection}_individual_{story_name}.png"
         else:
-            img1 = f"{language}_{collection}_individual_pack.png"
+            filename = f"{language}_{collection}_individual_pack.png"
+    elif product_type == "templates":
+        filename = f"{language}_{collection}_template_types.png"
+    elif product_type == "anatomy":
+        filename = f"{language}_{collection}_flashcard_anatomy.png"
+    else:
+        raise ValueError(f"Invalid product_type: {product_type}")
 
-    # Images 2 & 3: Common marketing images
-    img2 = f"{language}_{collection}_flashcard_anatomy.png"
-    img3 = f"{language}_{collection}_template_types.png"
-
-    return [base_path + img1, base_path + img2, base_path + img3]
+    return base_path + filename

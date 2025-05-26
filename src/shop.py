@@ -10,13 +10,15 @@ from PIL import Image
 
 from src.config_loader import config
 from src.convert import clean_filename, get_story_title
+
+# Get collection data to iterate through stories
 from src.gcs_storage import (
-    get_marketing_image_paths,
     get_phrase_path,
     get_story_collection_path,
     get_story_index_path,
     read_from_gcs,
     upload_to_gcs,
+    get_marketing_image_path,
 )
 from src.images import create_png_of_html
 from src.template_testing import generate_test_html
@@ -158,7 +160,7 @@ ${story_list}
     # Individual Template
     individual_template = Template(
         """
-<p><strong>"${story_title}" - Story #${story_position:02d} | ${collection} Vocabulary Series</strong></p>
+<p><strong>${story_title} - Story #${story_position:02d} | ${collection} Vocabulary Series</strong></p>
 <p>Part of our systematic approach to mastering the most common 1000 words through engaging story contexts. This pack continues your vocabulary journey with carefully crafted phrases designed to reinforce previously learned words while introducing new ones.</p>
 
 <h3>About This Pack:</h3>
@@ -232,7 +234,7 @@ def generate_shopify_csv(
     output_dir: str = "../outputs/shopify",
 ) -> str:
     """
-    Generate comprehensive Shopify CSV file for flashcard products.
+    Generate comprehensive Shopify CSV file for flashcard products with multiple images per product.
 
     Args:
         bundle_config: Dict mapping bundle names to story position ranges
@@ -274,7 +276,55 @@ def generate_shopify_csv(
 
     # Language and source info
     target_language = config.TARGET_LANGUAGE_NAME
-    source_language = config.SOURCE_LANGUAGE_NAME
+    source_language = getattr(config, "SOURCE_LANGUAGE_NAME", "English")
+
+    # Shopify CDN base URL
+    shopify_cdn_base = "https://cdn.shopify.com/s/files/1/0925/9630/6250/files/"
+
+    def add_product_with_images(base_product: dict, product_type: str, **image_kwargs):
+        """Helper function to add a product with multiple images to csv_data."""
+        # Get all image paths for this product type
+        image_paths = []
+
+        # Get main product images (3 images)
+        main_image_path = get_marketing_image_path(
+            product_type=product_type,
+            collection=collection,
+            language=target_language.lower(),
+            **image_kwargs,
+        )
+        image_paths.append(main_image_path)
+
+        # Get templates image
+        templates_image_path = get_marketing_image_path(
+            product_type="templates",
+            collection=collection,
+            language=target_language.lower(),
+        )
+        image_paths.append(templates_image_path)
+
+        # Get anatomy image
+        anatomy_image_path = get_marketing_image_path(
+            product_type="anatomy",
+            collection=collection,
+            language=target_language.lower(),
+        )
+        image_paths.append(anatomy_image_path)
+
+        # Add main product row (first image)
+        first_product = base_product.copy()
+        first_product["Image Src"] = shopify_cdn_base + image_paths[0].split("/")[-1]
+        first_product["Image Position"] = 1
+        csv_data.append(first_product)
+
+        # Add additional image rows (positions 2 and 3)
+        for i, image_path in enumerate(image_paths[1:], start=2):
+            image_row = {
+                "Handle": base_product["Handle"],
+                "Image Src": shopify_cdn_base + image_path.split("/")[-1],
+                "Image Position": i,
+            }
+            csv_data.append(image_row)
 
     # 1. Generate Complete Pack
     verb_count, vocab_count, total_phrases = calculate_vocab_stats(
@@ -298,16 +348,12 @@ def generate_shopify_csv(
         savings_percent=savings_percent,
     )
 
-    complete_images = get_marketing_image_paths(
-        "complete", collection, target_language.lower()
-    )
-
     complete_product = {
         "Handle": f"{target_language.lower()}-{collection.lower()}-complete-pack",
         "Title": f"{target_language} - {collection} - Complete Pack (All {len(all_stories)} Stories)",
         "Body (HTML)": complete_description,
         "Vendor": "FirePhrase",
-        "Product Category": "Education > Language Learning",
+        "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
         "Type": "Digital Flashcards",
         "Tags": f"{target_language}, {source_language}, {collection}, Complete, Bundle, Digital Download, Language Learning",
         "Published": "TRUE",
@@ -316,28 +362,12 @@ def generate_shopify_csv(
         "Variant Price": prices["complete"],
         "Variant Requires Shipping": "FALSE",
         "Variant Taxable": "TRUE",
-        "Image Src": complete_images[0],
-        "Image Position": 1,
         "source language (product.metafields.custom.source_language)": source_language,
         "target language (product.metafields.custom.target_language)": target_language,
         "Status": "active",
     }
-    csv_data.append(complete_product)
 
-    # Add additional images for complete pack
-    for i, img_url in enumerate(complete_images[1:], 2):
-        csv_data.append(
-            {
-                "Handle": complete_product["Handle"],
-                "Image Src": img_url,
-                "Image Position": i,
-                **{
-                    k: ""
-                    for k in complete_product.keys()
-                    if k not in ["Handle", "Image Src", "Image Position"]
-                },
-            }
-        )
+    add_product_with_images(complete_product, "complete")
 
     # 2. Generate Bundle Packs
     for bundle_name, (start_pos, end_pos) in bundle_config.items():
@@ -373,16 +403,12 @@ def generate_shopify_csv(
             savings_percent=savings_percent,
         )
 
-        bundle_images = get_marketing_image_paths(
-            "bundle", collection, target_language.lower(), range_display
-        )
-
         bundle_product = {
             "Handle": f"{target_language.lower()}-{collection.lower()}-{bundle_name.lower().replace(' ', '-')}",
             "Title": f"{target_language} - {collection} - {bundle_name}",
             "Body (HTML)": bundle_description,
             "Vendor": "FirePhrase",
-            "Product Category": "Education > Language Learning",
+            "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
             "Type": "Digital Flashcards",
             "Tags": f"{target_language}, {source_language}, {collection}, Bundle, Digital Download, Language Learning",
             "Published": "TRUE",
@@ -391,47 +417,41 @@ def generate_shopify_csv(
             "Variant Price": prices["bundle"],
             "Variant Requires Shipping": "FALSE",
             "Variant Taxable": "TRUE",
-            "Image Src": bundle_images[0],
-            "Image Position": 1,
             "source language (product.metafields.custom.source_language)": source_language,
             "target language (product.metafields.custom.target_language)": target_language,
             "Status": "active",
         }
-        csv_data.append(bundle_product)
 
-        # Add additional images for bundle
-        for i, img_url in enumerate(bundle_images[1:], 2):
-            csv_data.append(
-                {
-                    "Handle": bundle_product["Handle"],
-                    "Image Src": img_url,
-                    "Image Position": i,
-                    **{
-                        k: ""
-                        for k in bundle_product.keys()
-                        if k not in ["Handle", "Image Src", "Image Position"]
-                    },
-                }
-            )
+        add_product_with_images(bundle_product, "bundle", bundle_range=range_display)
 
     # 3. Generate Individual Packs
+    print(f"\n=== Generating Individual Story Packs ===")
+    print(f"Total stories to process: {len(all_stories)}")
+
     for story in all_stories:
         try:
+            print(f"\nProcessing story: {story}")
             position = get_story_position(story, collection_data)
+            print(f"  Position: {position}")
+
             story_title = get_story_title(story)
+            print(f"  Title: {story_title}")
+
             phrase_count = len(collection_data[story])
+            print(f"  Phrase count: {phrase_count}")
 
             sample_phrases = get_sample_phrases(story, collection_data, 5)
             sample_phrases_html = "\n".join(
                 [f'<li>"{phrase}"</li>' for phrase in sample_phrases]
             )
+            print(f"  Sample phrases: {len(sample_phrases)}")
 
             # Determine story theme (simplified)
             story_theme = (
                 "engaging"  # Could be enhanced to detect theme from story content
             )
 
-            individual_description = templates["individual"].substitute(
+            individual_description = templates["individual"].safe_substitute(
                 story_title=story_title,
                 story_position=position,
                 collection=collection,
@@ -439,17 +459,17 @@ def generate_shopify_csv(
                 story_theme=story_theme,
                 sample_phrases_html=sample_phrases_html,
             )
+            print("  Generated description")
 
-            individual_images = get_marketing_image_paths(
-                "individual", collection, target_language.lower(), story_name=story
-            )
+            handle = f"{target_language.lower()}-{collection.lower()}-story-{position:02d}-{story.replace('story_', '').replace('_', '-')}"
+            print(f"  Generated handle: {handle}")
 
             individual_product = {
-                "Handle": f"{target_language.lower()}-{collection.lower()}-story-{position:02d}-{story.replace('story_', '').replace('_', '-')}",
+                "Handle": handle,
                 "Title": f"{target_language} - {collection} - Story {position:02d}: {story_title}",
                 "Body (HTML)": individual_description,
                 "Vendor": "FirePhrase",
-                "Product Category": "Education > Language Learning",
+                "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
                 "Type": "Digital Flashcards",
                 "Tags": f"{target_language}, {source_language}, {collection}, Individual, Digital Download, Language Learning",
                 "Published": "TRUE",
@@ -458,32 +478,22 @@ def generate_shopify_csv(
                 "Variant Price": prices["individual"],
                 "Variant Requires Shipping": "FALSE",
                 "Variant Taxable": "TRUE",
-                "Image Src": individual_images[0],
-                "Image Position": 1,
                 "source language (product.metafields.custom.source_language)": source_language,
                 "target language (product.metafields.custom.target_language)": target_language,
                 "Status": "active",
             }
-            csv_data.append(individual_product)
 
-            # Add additional images for individual pack
-            for i, img_url in enumerate(individual_images[1:], 2):
-                csv_data.append(
-                    {
-                        "Handle": individual_product["Handle"],
-                        "Image Src": img_url,
-                        "Image Position": i,
-                        **{
-                            k: ""
-                            for k in individual_product.keys()
-                            if k not in ["Handle", "Image Src", "Image Position"]
-                        },
-                    }
-                )
+            add_product_with_images(individual_product, "individual", story_name=story)
+            print("  Added main product with images to CSV data")
 
-        except ValueError:
-            print(f"Skipping story {story} - not found in collection")
+            print(f"✅ Successfully processed story {position:02d}: {story_title}")
+
+        except Exception as e:
+            print(f"⚠️ Error processing story {story}: {str(e)}")
             continue
+
+    print(f"\n=== Individual Story Processing Complete ===")
+    print(f"Successfully processed {len(csv_data)} total entries")
 
     # Write CSV file
     os.makedirs(output_dir, exist_ok=True)
@@ -531,6 +541,7 @@ def generate_product_images(
     collection: str = "LM1000",
     bundle_config: Dict[str, List[int]] = None,
     bucket_name: Optional[str] = None,
+    generate_individual: bool = True,
 ) -> Dict[str, str]:
     """
     Generate all required product images for Shopify listings.
@@ -556,6 +567,71 @@ def generate_product_images(
 
     generated_images = {}
 
+    # 0. Generate Template Types Image
+    print("Generating template types image...")
+
+    # Get a sample phrase from the first story
+    collection_data = read_from_gcs(
+        bucket_name, get_story_collection_path(collection), "json"
+    )
+    first_story = list(collection_data.keys())[0]
+    sample_phrase = collection_data[first_story][0]["phrase"]
+    phrase_key = clean_filename(sample_phrase)
+
+    # Create temp directory for template types
+    temp_base_dir = "../outputs/temp"
+    temp_dir = os.path.join(temp_base_dir, f"temp_template_types_{phrase_key}")
+    os.makedirs(temp_dir, exist_ok=True)
+
+    # Generate HTML and PNG files for each template type
+    png_files = []
+    template_types = ["reading_front", "listening_front", "speaking_front"]
+
+    # Generate HTML for all template types
+    generate_test_html(
+        phrase_key=phrase_key,
+        output_dir=temp_dir,
+        collection=collection,
+        bucket_name=bucket_name,
+    )
+
+    # Create PNGs from the generated HTML files
+    for template_type in template_types:
+        html_path = os.path.join(temp_dir, f"{template_type}.html")
+        png_path = os.path.join(temp_dir, f"{template_type}.png")
+        create_png_of_html(html_path, png_path, width=375, height=1100)
+        png_files.append(png_path)
+
+    # Create the spread deck image
+    temp_output = os.path.join(temp_base_dir, "temp_template_types_spread.png")
+    create_spread_deck_image(
+        png_files=png_files,
+        output_path=temp_output,
+        angle_offset=24.0,
+        x_offset=120.0,
+        background_color="#FFFFFF",
+    )
+
+    # Upload to GCS
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    gcs_file_path = get_marketing_image_path("templates", collection, language)
+
+    with open(temp_output, "rb") as f:
+        image_data = f.read()
+
+    template_types_uri = upload_to_gcs(
+        obj=image_data,
+        bucket_name=bucket_name,
+        file_name=gcs_file_path,
+        content_type="image/png",
+    )
+
+    generated_images["template_types"] = template_types_uri
+    print(f"✅ Template types image: {template_types_uri}")
+
+    # Clean up
+    os.remove(temp_output)
+
     # 1. Generate Complete Pack Image
     # More cards, smaller angles and offsets for cleaner look
     print("Generating complete pack image...")
@@ -565,7 +641,7 @@ def generate_product_images(
         bucket_name=bucket_name,
         num_phrases=12,
         angle_offset=6.0,  # Smaller angle for many cards
-        x_offset=20.0,  # Minimal offset for tight spread
+        x_offset=40.0,
         background_color="#FFFFFF",
         product_type="complete",
     )
@@ -593,41 +669,38 @@ def generate_product_images(
 
     # 3. Generate Individual Pack Images (One for each story)
     # Fewer cards, larger angles and offsets for dramatic effect
-    print("Generating individual pack images...")
+    if generate_individual:
+        print("Generating individual pack images...")
 
-    # Get collection data to iterate through stories
-    from src.gcs_storage import get_story_collection_path, read_from_gcs
-    from src.utils import get_story_position
+        collection_path = get_story_collection_path(collection)
+        collection_data = read_from_gcs(bucket_name, collection_path, "json")
+        all_stories = list(collection_data.keys())
 
-    collection_path = get_story_collection_path(collection)
-    collection_data = read_from_gcs(bucket_name, collection_path, "json")
-    all_stories = list(collection_data.keys())
+        for story in all_stories:
+            try:
+                position = get_story_position(story, collection_data)
+                print(f"Generating individual image for story {position:02d}: {story}")
 
-    for story in all_stories:
-        try:
-            position = get_story_position(story, collection_data)
-            print(f"Generating individual image for story {position:02d}: {story}")
+                # Create spread using phrases from this specific story (single position)
+                individual_uri = generate_spread_deck_image(
+                    story_positions=[position],  # Single story position
+                    collection=collection,
+                    bucket_name=bucket_name,
+                    num_phrases=3,
+                    angle_offset=12.0,  # Larger angle for dramatic fan effect
+                    x_offset=30.0,  # Larger offset for wider spread
+                    background_color="#FFFFFF",
+                    product_type="individual",
+                )
 
-            # Create spread using phrases from this specific story (single position)
-            individual_uri = generate_spread_deck_image(
-                story_positions=[position],  # Single story position
-                collection=collection,
-                bucket_name=bucket_name,
-                num_phrases=3,
-                angle_offset=12.0,  # Larger angle for dramatic fan effect
-                x_offset=30.0,  # Larger offset for wider spread
-                background_color="#FFFFFF",
-                product_type="individual",
-            )
+                generated_images[f"individual_{story}"] = individual_uri
+                print(f"✅ Individual pack image for {story}: {individual_uri}")
 
-            generated_images[f"individual_{story}"] = individual_uri
-            print(f"✅ Individual pack image for {story}: {individual_uri}")
+            except ValueError as e:
+                print(f"⚠️ Skipping story {story}: {e}")
+                continue
 
-        except ValueError as e:
-            print(f"⚠️ Skipping story {story}: {e}")
-            continue
-
-    print(f"\n🎉 Generated {len(generated_images)} product images successfully!")
+        print(f"\n🎉 Generated {len(generated_images)} product images successfully!")
     return generated_images
 
 
@@ -654,7 +727,7 @@ def create_spread_deck_image(
     """
     if not png_files:
         raise ValueError("No PNG files provided")
-
+    x_offset = abs(x_offset) * -1
     # Load all images
     images = []
     max_card_width = 0
@@ -757,6 +830,7 @@ def generate_spread_deck_image(
     x_offset: float = 0.0,
     background_color: str = "#FFFFFF",
     product_type: Optional[str] = None,
+    template_type: str = "reading_back",
 ) -> str:
     """
     Generate spread deck images from phrases in specified stories or collection and upload to GCS.
@@ -772,6 +846,7 @@ def generate_spread_deck_image(
         x_offset: Horizontal offset between cards in pixels (default: 0.0)
         background_color: Color of the background (default: "#FFFFFF")
         product_type: Product type ("complete", "bundle", "individual") - auto-detected if None
+        template_type: Type of template to use ("reading_back", "reading_front", "listening_front", "speaking_front")
 
     Returns:
         GCS URI of the uploaded spread deck image
@@ -787,7 +862,7 @@ def generate_spread_deck_image(
     # Get collection data
     collection_path = get_story_collection_path(collection)
     collection_data = read_from_gcs(bucket_name, collection_path, "json")
-
+    random.seed(12)  # Default seed for multi-story
     # Get story names based on positions if provided
     if story_positions:
         # Convert collection_data keys to list to maintain order
@@ -809,22 +884,10 @@ def generate_spread_deck_image(
         for story_name in selected_stories:
             story_phrases.extend([p["phrase"] for p in collection_data[story_name]])
 
-        # For single story, use story name as seed for consistent sampling
-        if len(story_positions) == 1:
-            import random
-
-            random.seed(hash(selected_stories[0]) % (2**32))
-        else:
-            import random
-
-            random.seed(12)  # Default seed for multi-story
     else:
         # Get all phrases from the collection
         phrases_path = get_phrase_path(collection)
         story_phrases = read_from_gcs(bucket_name, phrases_path, "json")
-        import random
-
-        random.seed(12)  # Default seed
 
     # Randomly sample phrases
     if len(story_phrases) < num_phrases:
@@ -842,7 +905,7 @@ def generate_spread_deck_image(
 
         # Generate HTML files in a temporary directory
         temp_dir = os.path.join(temp_base_dir, f"temp_{phrase_key}")
-        html_path = os.path.join(temp_dir, "reading_back.html")
+        html_path = os.path.join(temp_dir, f"{template_type}.html")
         png_path = os.path.join(temp_dir, f"{phrase_key}.png")
 
         # Only generate HTML if directory doesn't exist or PNG doesn't exist
@@ -887,6 +950,8 @@ def generate_spread_deck_image(
     elif product_type == "bundle":
         range_str = f"{min(story_positions):02d}-{max(story_positions):02d}"
         filename = f"{language}_{collection}_bundle_{range_str}.png"
+    elif product_type == "template_types":
+        filename = f"{language}_{collection}_template_types.png"
     else:  # individual
         story_name = selected_stories[0] if len(story_positions) == 1 else None
         if story_name:
@@ -895,7 +960,6 @@ def generate_spread_deck_image(
             filename = f"{language}_{collection}_individual_pack.png"
 
     # Upload to GCS using marketing images path
-    from src.gcs_storage import upload_to_gcs
 
     # Get the marketing image path (first one contains the file we're creating)
     bundle_range = None
@@ -907,7 +971,7 @@ def generate_spread_deck_image(
         story_name = selected_stories[0]
 
     # Get the first marketing image path (this is the one we're creating)
-    marketing_image_paths = get_marketing_image_paths(
+    marketing_image_paths = get_marketing_image_path(
         product_type=product_type,
         collection=collection,
         language=language,
