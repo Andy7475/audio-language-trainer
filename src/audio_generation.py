@@ -834,7 +834,7 @@ def create_m4a_with_timed_lyrics(
         audio["\xa9alb"] = album_name  # Album Name
         audio["trkn"] = [(track_number, total_tracks)]  # Track Number
         audio["\xa9day"] = str(datetime.now().year)  # Year
-        audio["aART"] = "Audio Language Trainer"  # Album Artist
+        audio["aART"] = "FirePhrase"  # Album Artist
         audio["\xa9lyr"] = lyrics_text  # Lyrics
         audio["\xa9gen"] = "Education"  # Genre set to Education
         audio["pcst"] = True  # Podcast flag set to True
