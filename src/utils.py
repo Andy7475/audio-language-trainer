@@ -13,6 +13,7 @@ from anthropic import AnthropicVertex
 from dotenv import load_dotenv
 from tqdm import tqdm
 from src.config_loader import config
+from src.gcs_storage import get_story_collection_path, read_from_gcs
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -323,27 +324,38 @@ def extract_json_from_llm_response(response):
         return None
 
 
-def get_story_position(story_name: str, collection_data: Dict[str, Any]) -> int:
+def get_story_position(story_name: str, collection: str = "LM1000", bucket_name: Optional[str] = None) -> int:
     """
-    Get the position of a story in the collection data.
+    Get the position of a story in the collection.
 
     Since Python 3.7+, dictionaries maintain insertion order, so we can safely
     get the position of a story by iterating through the keys.
 
     Args:
         story_name: Name of the story to find position for
-        collection_data: Dictionary from get_story_collection_path containing story data
+        collection: Collection name (default: "LM1000")
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
 
     Returns:
         int: 1-based position of the story in the collection (1 for first story)
 
     Raises:
-        ValueError: If story_name is not found in collection_data
+        ValueError: If story_name is not found in collection data
     """
+
+
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+
+    # Get collection data from GCS
+    collection_path = get_story_collection_path(collection)
+    collection_data = read_from_gcs(bucket_name, collection_path, "json")
+
+    # Find position in collection
     for i, key in enumerate(collection_data.keys(), start=1):
         if key == story_name:
             return i
-    raise ValueError(f"Story '{story_name}' not found in collection data")
+    raise ValueError(f"Story '{story_name}' not found in collection {collection}")
 
 
 def change_phrase(

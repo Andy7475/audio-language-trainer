@@ -23,7 +23,7 @@ from src.gcs_storage import (
     check_blob_exists,
     get_fast_audio_path,
     get_image_path,
-    get_m4a_blob_prefix,
+    get_m4a_file_path,
     get_m4a_filename,
     get_public_story_path,
     get_story_translated_dialogue_path,
@@ -33,7 +33,7 @@ from src.gcs_storage import (
     read_from_gcs,
     upload_to_gcs,
 )
-from src.utils import load_template
+from src.utils import load_template, get_story_position
 from src.wiktionary import generate_wiktionary_links
 
 
@@ -409,8 +409,7 @@ def create_html_story(
 def create_album_files(
     story_data_dict: dict,
     story_name: str,
-    output_dir: str = "../outputs/stories",
-    upload_to_gcs: bool = True,
+    collection: str = "LM1000"
 ):
     """Creates and saves M4A files for the story, with album artwork.
     Optionally uploads files to Google Cloud Storage.
@@ -419,7 +418,11 @@ def create_album_files(
     PAUSE_TEXT = "---------"
     GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
 
-    ALBUM_NAME = get_story_title(story_name) + f" ({config.TARGET_LANGUAGE_NAME})"
+    gcs_bucket_name = config.GCS_PRIVATE_BUCKET
+    # Get story position from collection
+    story_position = get_story_position(story_name, collection)
+
+    ALBUM_NAME = f"{story_position:02d} - " + get_story_title(story_name) + f" ({config.TARGET_LANGUAGE_NAME})"
     TOTAL_TRACKS = len(story_data_dict) * 2  # 1 track normal, 1 track fast
 
     m4a_file_paths = []
@@ -428,12 +431,7 @@ def create_album_files(
         0
     ]  # this probably will pick 'introduction'
     cover_image_base64 = story_data_dict[story_data_first_key]["image_data"]
-    output_dir = os.path.join(output_dir, story_name, config.TARGET_LANGUAGE_NAME)
-    # this controls if files are uploaded to GCS or not
-    if upload_to_gcs:
-        gcs_bucket_name = config.GCS_PUBLIC_BUCKET
-    else:
-        gcs_bucket_name = None
+
     # Create the story tracks for each story section
     for track_number, (story_part, data) in enumerate(
         tqdm(story_data_dict.items(), desc="creating album"), start=1
@@ -455,23 +453,19 @@ def create_album_files(
         captions_list.extend(dialogue_list)
 
         # Create M4A file
+        m4a_filename = get_m4a_file_path(story_name, story_part, fast=False, story_position=story_position, collection=collection)
 
-        m4a_filename = get_m4a_filename(story_name, story_part, fast=False)
 
-        m4a_path = os.path.join(output_dir, m4a_filename)
-
-        create_m4a_with_timed_lyrics(
+        m4a_path = create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
             phrases=captions_list,
-            output_file=m4a_filename,
-            output_dir=output_dir,
+            m4a_filename=m4a_filename,
             album_name=ALBUM_NAME,
             track_title=story_part,
             track_number=track_number,
             total_tracks=TOTAL_TRACKS,
             cover_image_base64=cover_image_base64,
-            gcs_bucket_name=gcs_bucket_name,
-            gcs_base_prefix=get_m4a_blob_prefix(story_name),
+            bucket_name=gcs_bucket_name,
         )
         m4a_file_paths.append(m4a_path)
         print(f"Saved M4A file track number {track_number}")
@@ -497,22 +491,22 @@ def create_album_files(
             captions_list.append(PAUSE_TEXT)
 
         # Create M4A file
-        m4a_filename_fast = get_m4a_filename(
-            story_name=story_name, story_part=story_part, fast=True
+        m4a_filename_fast = get_m4a_file_path(
+            story_name=story_name, 
+            story_part=story_part, 
+            fast=True,
+            story_position=story_position
         )
-        m4a_path = os.path.join(output_dir, m4a_filename)
-        create_m4a_with_timed_lyrics(
+        m4a_path = create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
             phrases=captions_list,
-            output_file=m4a_filename_fast,
-            output_dir=output_dir,
+            m4a_filename=m4a_filename_fast,
             album_name=ALBUM_NAME,
             track_title=story_part + " (fast)",
             track_number=track_number,
             total_tracks=TOTAL_TRACKS,
             cover_image_base64=cover_image_base64,
-            gcs_bucket_name=gcs_bucket_name,
-            gcs_base_prefix=get_m4a_blob_prefix(story_name),
+            bucket_name=gcs_bucket_name,
         )
         m4a_file_paths.append(m4a_path)
         print(f"Saved M4A file track number {track_number}")

@@ -427,16 +427,29 @@ def get_story_translated_challenges_path(story_name: str) -> str:
     return f"{config.TARGET_LANGUAGE_NAME.lower()}/{story_name}/challenges.html"
 
 
-def get_m4a_file_path(story_name: str, story_part: str, fast: bool = False) -> str:
-    """Get the GCS path for a story part's m4a file. Each story part has its own m4a file."""
+def get_m4a_file_path(story_name: str, story_part: str, story_position:int, fast: bool = False, collection: str = "LM1000") -> str:
+    """Get the GCS path for a story part's m4a file. All M4A files for a collection/language are stored in the same folder.
+    
+    Args:
+        story_name: Name of the story
+        story_part: Part of the story (e.g., 'introduction')
+        fast: Whether this is a fast version of the audio
+        collection: Collection name (default: "LM1000")
+        
+    Returns:
+        str: Path to the m4a file in GCS
+        Format: collections/{collection}/audio/{language}/{filename}
+        where filename includes story name and part information
+    """
     language = config.TARGET_LANGUAGE_NAME.lower()
     story_part = sanitize_path_component(story_part)
+
     if fast:
-        filename = get_m4a_filename(story_name, story_part, fast=True)
-        return f"{language}/{story_name}/{filename}"
+        filename = get_m4a_filename(story_name, story_part, fast=True, story_position=story_position)
+        return f"collections/{collection}/audio/{language}/{filename}"
     else:
-        filename = get_m4a_filename(story_name, story_part, fast=False)
-        return f"{language}/{story_name}/{filename}"
+        filename = get_m4a_filename(story_name, story_part, fast=False, story_position=story_position)
+        return f"collections/{collection}/audio/{language}/{filename}"
 
 
 def get_m4a_blob_prefix(story_name: str) -> str:
@@ -451,14 +464,28 @@ def get_m4a_blob_prefix(story_name: str) -> str:
     return f"{language}/{story_name}/"
 
 
-def get_m4a_filename(story_name: str, story_part: str, fast: bool = False) -> str:
-    """Get the GCS path for a story part's m4a file. Each story part has its own m4a file."""
+def get_m4a_filename(story_name: str, story_part: str, fast: bool = False, story_position: Optional[int] = None) -> str:
+    """Get the filename for a story part's m4a file.
+    
+    Args:
+        story_name: Name of the story
+        story_part: Part of the story (e.g., 'introduction')
+        fast: Whether this is a fast version of the audio
+        story_position: Optional position number of the story in the collection
+        
+    Returns:
+        str: Filename in format: {language}_{position:02d}_{story_name}_{story_part}[_FAST].m4a
+    """
     language = config.TARGET_LANGUAGE_NAME.lower()
     story_part = sanitize_path_component(story_part)
+    
+    # Format position if provided, otherwise omit it
+    position_str = f"{story_position:02d}_" if story_position is not None else ""
+    
     if fast:
-        return f"{language}_{story_name}_{story_part}_FAST.m4a"
+        return f"{language}_{position_str}{story_name}_{story_part}_FAST.m4a"
     else:
-        return f"{language}_{story_name}_{story_part}.m4a"
+        return f"{language}_{position_str}{story_name}_{story_part}.m4a"
 
 
 def get_story_dialogue_path(story_name: str, collection: str = "LM1000") -> str:

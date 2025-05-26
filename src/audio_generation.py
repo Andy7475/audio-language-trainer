@@ -759,23 +759,20 @@ def generate_and_upload_fast_audio(
 def create_m4a_with_timed_lyrics(
     audio_segments: List[AudioSegment],
     phrases: List[str],
-    output_file: str,
+    m4a_filename: str,
     album_name: str,
     track_title: str,
     track_number: int,
+    bucket_name: str,
+    cover_image_base64: Optional[str] = None,
     total_tracks: int = 6,
-    cover_image_base64: Optional[str] = None,  # Base64 string of the cover image
-    output_dir: Optional[str] = None,
-    gcs_bucket_name: Optional[str] = None,
-    gcs_base_prefix: str = "",
-) -> Union[str, tuple]:
+) -> str:
     """
     Create an M4A file with timed lyrics and metadata, saving locally and/or uploading to GCS.
 
     Args:
         audio_segments: List of AudioSegment objects to combine
         phrases: List of text phrases matching the audio segments
-        output_file: Name of the output file
         album_name: Name of the album
         track_title: Title of this track
         track_number: Number of this track in the album
@@ -786,15 +783,11 @@ def create_m4a_with_timed_lyrics(
         gcs_base_prefix: Prefix/folder path in the GCS bucket. Defaults to ""
 
     Returns:
-        If saving locally only: Local file path
-        If uploading to GCS only: GCS URI
-        If both: Tuple of (local_path, gcs_uri)
+        GCS URI file path
 
     Raises:
         ValueError: If neither output_dir nor gcs_bucket_name is provided
     """
-    if not output_dir and not gcs_bucket_name:
-        raise ValueError("Either output_dir or gcs_bucket_name must be provided")
 
     # Create a temporary file
     with io.BytesIO() as temp_buffer:
@@ -821,6 +814,7 @@ def create_m4a_with_timed_lyrics(
         combined_audio.export(temp_buffer, format="ipod")
         temp_buffer.seek(0)
 
+        output_file = m4a_filename.rsplit('/')[0]
         # Add metadata to the M4A file
         temp_file_path = (
             f"/tmp/{output_file}_temp"
@@ -840,7 +834,7 @@ def create_m4a_with_timed_lyrics(
         audio["\xa9alb"] = album_name  # Album Name
         audio["trkn"] = [(track_number, total_tracks)]  # Track Number
         audio["\xa9day"] = str(datetime.now().year)  # Year
-        audio["aART"] = "Audio Language Trainer"  # Album Artist
+        audio["aART"] = "FirePhrase"  # Album Artist
         audio["\xa9lyr"] = lyrics_text  # Lyrics
         audio["\xa9gen"] = "Education"  # Genre set to Education
         audio["pcst"] = True  # Podcast flag set to True
@@ -870,29 +864,11 @@ def create_m4a_with_timed_lyrics(
         # Remove the temporary file
         os.remove(temp_file_path)
 
-        results = []
-
-        # Save locally if output_dir is provided
-        if output_dir:
-            os.makedirs(output_dir, exist_ok=True)
-            local_path = os.path.join(output_dir, output_file)
-            with open(local_path, "wb") as f:
-                f.write(final_audio_data)
-            results.append(local_path)
-
-        # Upload to GCS if bucket_name is provided
-        if gcs_bucket_name:
-            full_path = f"{gcs_base_prefix.rstrip('/')}/{output_file}".lstrip("/")
-            gcs_uri = upload_to_gcs(
-                final_audio_data, gcs_bucket_name, full_path, content_type="audio/mp4"
-            )
-            print(f"Uploaded to GCS: {gcs_uri}")
-            results.append(gcs_uri)
-
-        # Return appropriate result
-        if len(results) == 1:
-            return results[0]
-        return tuple(results)
+        gcs_uri = upload_to_gcs(
+            final_audio_data, bucket_name, file_name=m4a_filename, content_type="audio/mp4"
+        )
+        print(f"Uploaded to GCS: {gcs_uri}")
+        return gcs_uri
 
 
 def upload_phrases_audio_to_gcs(
