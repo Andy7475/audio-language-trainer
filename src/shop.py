@@ -192,27 +192,27 @@ ${sample_phrases_html}
 <h3>Online Companion Resources:</h3>
 <ul>
 <li>Access to online companion story</li>
-<li>Immersive AI chat feature:
+<li>Immersive AI chat feature (Speaking Challenges):
 <ul>
 <li>Step into the story and tackle common language challenges related to the narrative</li>
 <li>Practice speaking in realistic scenarios matching the story context</li>
-<li>For advanced technical users comfortable with API integration</li>
+<li>Experimental feature with no technical support</li>
 <li>Requires your own OpenAI account</li>
-<li>Provided as-is for those wanting to experiment with the latest AI language interactions</li>
+<li>Provided as-is for those wanting to experiment with the latest AI language technology</li>
 </ul>
 </li>
 </ul>
 
 <h3>Progressive Learning System:</h3>
 <p>Our research-based approach introduces vocabulary in an optimal sequence. While each pack can be used independently, maximum benefit comes from progressing through the series in order, as later stories build upon vocabulary introduced in earlier ones.</p>
-<p>Just 10-15 minutes daily practice will dramatically improve your vocabulary retention. Our phrase-based method creates meaningful connections between words, helping you remember them naturally in context.</p>
+<p>Just 30 minutes daily practice will dramatically improve your vocabulary retention. Our phrase-based method creates meaningful connections between words, helping you remember them naturally in context.</p>
 
 <h3>Technical Requirements:</h3>
 <ul>
 <li>Requires the free Anki application</li>
 <li>M4A files work with any standard media player</li>
 <li>For synchronized lyrics display, download the free <a href="https://play.google.com/store/apps/details?id=com.piyush.music&hl=en">Oto Music Player</a> app</li>
-<li>AI chat feature requires an OpenAI API key (for technically advanced users)</li>
+<li>AI chat feature requires an OpenAI API key from your own account. </li>
 </ul>
 """
     )
