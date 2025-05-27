@@ -9,9 +9,7 @@ from typing import Dict, List, Optional, Tuple
 from PIL import Image
 
 from src.config_loader import config
-from src.convert import clean_filename, get_story_title
-
-# Get collection data to iterate through stories
+from src.convert import clean_filename, get_story_title, get_collection_title
 from src.gcs_storage import (
     get_phrase_path,
     get_story_collection_path,
@@ -71,12 +69,12 @@ def get_sample_phrases(
     return phrases
 
 
-def generate_story_list_html(story_names: List[str], collection_data: Dict) -> str:
+def generate_story_list_html(story_names: List[str], collection: str) -> str:
     """Generate HTML list of stories with their positions and titles."""
     story_items = []
     for story in story_names:
         try:
-            position = get_story_position(story, collection_data)
+            position = get_story_position(story, collection)
             title = get_story_title(story)
             story_items.append(f'<li>Story {position:02d}: "{title}"</li>')
         except ValueError:
@@ -92,7 +90,7 @@ def create_product_templates():
     complete_template = Template(
         """
 <p><strong>Complete ${collection} Vocabulary System (All ${total_stories} Stories)</strong></p>
-<p>Master the most essential ${vocab_count}+ words (${verb_count}+ verbs, ${vocab_count}+ vocabulary) through our comprehensive, story-based learning system. This complete collection provides a structured path to vocabulary acquisition through ${total_stories} engaging stories, carefully sequenced to optimise retention.</p>
+<p>Master the most essential 1000 words (including {verb_count}+ verbs) through our comprehensive, story-based learning system. This complete collection provides a structured path to vocabulary acquisition through ${total_stories} engaging stories, carefully sequenced to optimise retention.</p>
 
 <h3>The Complete System Includes:</h3>
 <ul>
@@ -227,8 +225,8 @@ ${sample_phrases_html}
 
 
 def generate_shopify_csv(
-    bundle_config: Dict[str, List[int]] = None,
-    prices: Dict[str, float] = None,
+    bundle_config: dict,
+    prices: dict,
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
     output_dir: str = "../outputs/shopify",
@@ -247,17 +245,6 @@ def generate_shopify_csv(
     Returns:
         str: Path to generated CSV file
     """
-    # Default configurations
-    if bundle_config is None:
-        bundle_config = {
-            "Bundle 01-08": [1, 8],
-            "Bundle 09-14": [9, 14],
-            "Bundle 15-20": [15, 20],
-        }
-
-    if prices is None:
-        prices = {"individual": 1.99, "bundle": 7.99, "complete": 19.99}
-
     if bucket_name is None:
         bucket_name = config.GCS_PRIVATE_BUCKET
 
@@ -276,7 +263,7 @@ def generate_shopify_csv(
 
     # Language and source info
     target_language = config.TARGET_LANGUAGE_NAME
-    source_language = getattr(config, "SOURCE_LANGUAGE_NAME", "English")
+    source_language = config.SOURCE_LANGUAGE_NAME
 
     # Shopify CDN base URL
     shopify_cdn_base = "https://cdn.shopify.com/s/files/1/0925/9630/6250/files/"
@@ -309,7 +296,7 @@ def generate_shopify_csv(
             collection=collection,
             language=target_language.lower(),
         )
-        image_paths.append(anatomy_image_path)
+        # image_paths.append(anatomy_image_path)
 
         # Add main product row (first image)
         first_product = base_product.copy()
@@ -331,14 +318,17 @@ def generate_shopify_csv(
         all_stories, story_index, collection_data
     )
 
-    story_list_html = generate_story_list_html(all_stories, collection_data)
+    story_list_html = generate_story_list_html(all_stories, collection)
     audio_files = len(all_stories) * 6  # 6 files per story
     savings_percent = round(
         (1 - prices["complete"] / (len(all_stories) * prices["individual"])) * 100
     )
 
+    # Get the display title for the collection
+    collection_title = get_collection_title(collection)
+
     complete_description = templates["complete"].substitute(
-        collection=collection,
+        collection=collection_title,  # Use formatted title
         total_stories=len(all_stories),
         vocab_count=vocab_count,
         verb_count=verb_count,
@@ -350,12 +340,12 @@ def generate_shopify_csv(
 
     complete_product = {
         "Handle": f"{target_language.lower()}-{collection.lower()}-complete-pack",
-        "Title": f"{target_language} - {collection} - Complete Pack (All {len(all_stories)} Stories)",
+        "Title": f"{target_language} - {collection_title} - Complete Pack (All {len(all_stories)} Stories)",
         "Body (HTML)": complete_description,
         "Vendor": "FirePhrase",
         "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
         "Type": "Digital Flashcards",
-        "Tags": f"{target_language}, {source_language}, {collection}, Complete, Bundle, Digital Download, Language Learning",
+        "Tags": f"{target_language}, {source_language}, {collection_title}, Complete, Bundle, Digital Download, Language Learning",
         "Published": "TRUE",
         "Option1 Name": "Format",
         "Option1 Value": "Digital Download",
@@ -385,7 +375,7 @@ def generate_shopify_csv(
             bundle_stories, story_index, collection_data
         )
 
-        story_list_html = generate_story_list_html(bundle_stories, collection_data)
+        story_list_html = generate_story_list_html(bundle_stories, collection)
         audio_files = len(bundle_stories) * 6
         range_display = f"{start_pos:02d}-{end_pos:02d}"
         savings_percent = round(
@@ -393,7 +383,7 @@ def generate_shopify_csv(
         )
 
         bundle_description = templates["bundle"].substitute(
-            collection=collection,
+            collection=collection_title,  # Use formatted title
             range_display=range_display,
             story_count=len(bundle_stories),
             vocab_count=vocab_count,
@@ -406,12 +396,12 @@ def generate_shopify_csv(
 
         bundle_product = {
             "Handle": f"{target_language.lower()}-{collection.lower()}-{bundle_name.lower().replace(' ', '-')}",
-            "Title": f"{target_language} - {collection} - {bundle_name}",
+            "Title": f"{target_language} - {collection_title} - {bundle_name}",
             "Body (HTML)": bundle_description,
             "Vendor": "FirePhrase",
             "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
             "Type": "Digital Flashcards",
-            "Tags": f"{target_language}, {source_language}, {collection}, Bundle, Digital Download, Language Learning",
+            "Tags": f"{target_language}, {source_language}, {collection_title}, Bundle, Digital Download, Language Learning",
             "Published": "TRUE",
             "Option1 Name": "Format",
             "Option1 Value": "Digital Download",
@@ -433,7 +423,7 @@ def generate_shopify_csv(
     for story in all_stories:
         try:
             print(f"\nProcessing story: {story}")
-            position = get_story_position(story, collection_data)
+            position = get_story_position(story, collection)
             print(f"  Position: {position}")
 
             story_title = get_story_title(story)
@@ -456,7 +446,7 @@ def generate_shopify_csv(
             individual_description = templates["individual"].safe_substitute(
                 story_title=story_title,
                 story_position=position,
-                collection=collection,
+                collection=collection_title,  # Use formatted title
                 phrase_count=phrase_count,
                 story_theme=story_theme,
                 sample_phrases_html=sample_phrases_html,
@@ -468,12 +458,12 @@ def generate_shopify_csv(
 
             individual_product = {
                 "Handle": handle,
-                "Title": f"{target_language} - {collection} - Story {position:02d}: {story_title}",
+                "Title": f"{target_language} - {collection_title} - Story {position:02d}: {story_title}",
                 "Body (HTML)": individual_description,
                 "Vendor": "FirePhrase",
                 "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
                 "Type": "Digital Flashcards",
-                "Tags": f"{target_language}, {source_language}, {collection}, Individual, Digital Download, Language Learning",
+                "Tags": f"{target_language}, {source_language}, {collection_title}, Individual, Digital Download, Language Learning",
                 "Published": "TRUE",
                 "Option1 Name": "Format",
                 "Option1 Value": "Digital Download",
@@ -682,7 +672,7 @@ def generate_product_images(
 
         for story in all_stories:
             try:
-                position = get_story_position(story, collection_data)
+                position = get_story_position(story, collection)
                 print(f"Generating individual image for story {position:02d}: {story}")
 
                 # Create spread using phrases from this specific story (single position)

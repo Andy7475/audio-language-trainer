@@ -21,6 +21,26 @@ def clean_filename(phrase: str) -> str:
     return clean
 
 
+def get_collection_title(collection: str) -> str:
+    """
+    Convert a collection name to a title case string.
+
+    Args:
+        collection: Input collection name (e.g. "LM1000")
+
+    Returns:
+        str: Collection title to accommodate changes in name (e.g. "First1000")
+
+    Example:
+        >>> get_collection_title("lm1000")
+        'LM1000'
+    """
+
+    MAPPING = {"LM1000": "First1000", "LM2000": "Second1000"}
+
+    return MAPPING.get(collection, collection.title())
+
+
 def get_story_title(story_name: str) -> str:
     """
     Clean a story name by removing 'story' and underscores, returning in title case.
