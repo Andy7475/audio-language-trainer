@@ -879,7 +879,7 @@ def create_anki_deck_from_gcs(
     # Process each story
     for current_story_name in story_names:
         # Get story position from collection data
-        story_position = get_story_position(current_story_name, collection_data)
+        story_position = get_story_position(current_story_name, collection)
 
         # Get phrase keys for this story
         phrase_keys = get_phrase_keys(current_story_name, collection)
