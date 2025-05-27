@@ -230,6 +230,7 @@ def generate_shopify_csv(
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
     output_dir: str = "../outputs/shopify",
+    free_individual_count: int = 2,
 ) -> str:
     """
     Generate comprehensive Shopify CSV file for flashcard products with multiple images per product.
@@ -241,6 +242,7 @@ def generate_shopify_csv(
         collection: Collection name (default: "LM1000")
         bucket_name: GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
         output_dir: Output directory for CSV file
+        free_individual_count: Number of individual packs to make free (default: 2, set to 0 for none)
 
     Returns:
         str: Path to generated CSV file
@@ -456,6 +458,14 @@ def generate_shopify_csv(
             handle = f"{target_language.lower()}-{collection.lower()}-story-{position:02d}-{story.replace('story_', '').replace('_', '-')}"
             print(f"  Generated handle: {handle}")
 
+            # Determine pricing - first 2 individual packs are free
+            if position <= free_individual_count:
+                individual_price = "0.00"
+                print(f"  Setting as FREE (position {position} <= {free_individual_count})")
+            else:
+                individual_price = prices["individual"]
+                print(f"  Setting price: {individual_price}")
+
             individual_product = {
                 "Handle": handle,
                 "Title": f"{target_language} - {collection_title} - Story {position:02d}: {story_title}",
@@ -467,7 +477,7 @@ def generate_shopify_csv(
                 "Published": "TRUE",
                 "Option1 Name": "Format",
                 "Option1 Value": "Digital Download",
-                "Variant Price": prices["individual"],
+                "Variant Price": individual_price,
                 "Variant Requires Shipping": "FALSE",
                 "Variant Taxable": "TRUE",
                 "source language (product.metafields.custom.source_language)": source_language,
