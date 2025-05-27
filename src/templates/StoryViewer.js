@@ -338,16 +338,6 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
               : 'bg-green-800 hover:bg-green-900'
           } text-white`
         }, playbackMode === 'normal' ? '■ Stop' : 'Play All'),),
-        // Add this to the header section of StoryViewer
-        React.createElement('div', { className: 'flex items-center gap-4' },
-          React.createElement('a', {
-            href: '/audio-language-trainer-stories/m4a_downloads.html',
-            className: 'px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2'
-          },
-            React.createElement('span', { className: 'text-sm' }, '🎧'),
-            'Download Audio Files'
-          )
-        )
       )
     ),
 
