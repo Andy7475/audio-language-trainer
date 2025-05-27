@@ -147,21 +147,21 @@ def generate_and_update_index_html(
     output_dir: str = "../outputs/gcs",
     bucket_name: str = None,
     template_path: str = "index_template.html",
-    m4a_template_path: str = "m4a_index_template.html",
+    m4a_template_path: str = "m4a_index_template.html",  # Kept for compatibility, but not used
     upload: bool = True,
 ) -> tuple:
     """
-    Generate index.html and m4a_downloads.html files from GCS bucket contents and upload them.
+    Generate index.html file from GCS bucket contents and upload it.
 
     Args:
-        output_dir: Directory where the HTML files will be saved locally (defaults to "../outputs/gcs")
+        output_dir: Directory where the HTML file will be saved locally (defaults to "../outputs/gcs")
         bucket_name: Name of the GCS bucket containing stories (defaults to config.GCS_PUBLIC_BUCKET)
         template_path: Path to the main index HTML template file
-        m4a_template_path: Path to the M4A index HTML template file
-        upload: Whether to upload the generated files to GCS
+        m4a_template_path: (ignored)
+        upload: Whether to upload the generated file to GCS
 
     Returns:
-        tuple: (main_index_path, m4a_index_path, main_index_url, m4a_index_url)
+        tuple: (main_index_path, None, main_index_url, None)
     """
     if bucket_name is None:
         bucket_name = config.GCS_PUBLIC_BUCKET
@@ -176,13 +176,11 @@ def generate_and_update_index_html(
         exclude_patterns=["challenges.html", "m4a_downloads.html"],
     )
 
-    # Add M4A downloads link to special pages
-    special_pages.append(
-        {
-            "name": "Audio Downloads",
-            "url": f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html",
-        }
-    )
+    # Remove M4A downloads link from special pages if present
+    special_pages = [
+        page for page in special_pages
+        if not (page["name"].lower().startswith("audio downloads") or "m4a_downloads.html" in page.get("url", ""))
+    ]
 
     # Generate sections HTML
     language_sections = ""
@@ -214,17 +212,9 @@ def generate_and_update_index_html(
     with open(main_index_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
-    # 2. Generate M4A index
-    m4a_index_path = generate_m4a_index_html(
-        bucket_name=bucket_name, output_dir=output_dir, template_path=m4a_template_path
-    )
-
-    # 3. Upload files to GCS if requested
+    # Upload file to GCS if requested
     main_index_url = None
-    m4a_index_url = None
-
     if upload:
-        # Upload main index
         main_index_url = upload_to_gcs(
             obj=html_content,
             bucket_name=bucket_name,
@@ -233,20 +223,7 @@ def generate_and_update_index_html(
         )
         print(f"Main index uploaded to: {main_index_url}")
 
-        # Read M4A index content
-        with open(m4a_index_path, "r", encoding="utf-8") as f:
-            m4a_html_content = f.read()
-
-        # Upload M4A index
-        m4a_index_url = upload_to_gcs(
-            obj=m4a_html_content,
-            bucket_name=bucket_name,
-            file_name="m4a_downloads.html",
-            content_type="text/html",
-        )
-        print(f"M4A downloads index uploaded to: {m4a_index_url}")
-
-    return (main_index_path, m4a_index_path, main_index_url, m4a_index_url)
+    return (main_index_path, None, main_index_url, None)
 
 
 def create_and_upload_html_story(
