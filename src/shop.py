@@ -158,7 +158,7 @@ ${story_list}
     # Individual Template
     individual_template = Template(
         """
-<p><strong>${story_title} - Story #${story_position:02d} | ${collection} Vocabulary Series</strong></p>
+<p><strong>${story_title} - Story ${story_position} | ${collection} Vocabulary Series</strong></p>
 <p>Part of our systematic approach to mastering the most common 1000 words through engaging story contexts. This pack continues your vocabulary journey with carefully crafted phrases designed to reinforce previously learned words while introducing new ones.</p>
 
 <h3>About This Pack:</h3>
@@ -357,7 +357,7 @@ def generate_shopify_csv(
         "source language (product.metafields.custom.source_language)": source_language,
         "target language (product.metafields.custom.target_language)": target_language,
         "pack type (product.metafields.custom.pack_type)": "Complete",
-        "Status": "draft",
+        #"Status": "draft",
     }
 
     add_product_with_images(complete_product, "complete")
@@ -413,7 +413,7 @@ def generate_shopify_csv(
             "source language (product.metafields.custom.source_language)": source_language,
             "target language (product.metafields.custom.target_language)": target_language,
             "pack type (product.metafields.custom.pack_type)": "Bundle",
-            "Status": "draft",
+           # "Status": "draft",
         }
 
         add_product_with_images(bundle_product, "bundle", bundle_range=range_display)
@@ -447,7 +447,7 @@ def generate_shopify_csv(
 
             individual_description = templates["individual"].safe_substitute(
                 story_title=story_title,
-                story_position=position,
+                story_position=f"{position:02d}",  # Format as zero-padded string
                 collection=collection_title,  # Use formatted title
                 phrase_count=phrase_count,
                 story_theme=story_theme,
@@ -483,7 +483,7 @@ def generate_shopify_csv(
                 "source language (product.metafields.custom.source_language)": source_language,
                 "target language (product.metafields.custom.target_language)": target_language,
                 "pack type (product.metafields.custom.pack_type)": "Single",
-                "Status": "draft",
+               # "Status": "draft",
             }
 
             add_product_with_images(individual_product, "individual", story_name=story)
@@ -525,7 +525,7 @@ def generate_shopify_csv(
         "source language (product.metafields.custom.source_language)",
         "target language (product.metafields.custom.target_language)",
         "pack type (product.metafields.custom.pack_type)",
-        "Status",
+        #"Status",
     ]
 
     with open(output_file, "w", newline="", encoding="utf-8") as f:
