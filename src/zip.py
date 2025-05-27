@@ -1,5 +1,6 @@
 import os
 import zipfile
+import io
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
@@ -9,6 +10,7 @@ from src.gcs_storage import (
     get_m4a_file_path,
     get_story_collection_path,
     read_from_gcs,
+    upload_to_gcs,
 )
 from src.utils import get_story_position
 
@@ -50,15 +52,16 @@ def create_m4a_zip_collections(
     language = config.TARGET_LANGUAGE_NAME.lower()
     target_language_name = config.TARGET_LANGUAGE_NAME
 
-    # Create output directory structure
-    zip_output_dir = (
-        Path(output_base_dir)
-        / bucket_name
-        / "collections"
-        / collection
-        / "zip_downloads"
-        / language
-    )
+    # Get the base path for M4A files to use for zip files
+    # Use the first story to get the path structure
+    if all_stories:
+        sample_m4a_path = get_m4a_file_path(all_stories[0], "introduction", 1, collection=collection)
+        base_path = Path(sample_m4a_path).parent
+    else:
+        base_path = Path(f"collections/{collection}/audio/{language}")
+
+    # Create output directory structure using the same path as M4A files
+    zip_output_dir = Path(output_base_dir) / bucket_name / base_path
     zip_output_dir.mkdir(parents=True, exist_ok=True)
 
     # Track created zip files
@@ -83,6 +86,7 @@ def create_m4a_zip_collections(
         complete_m4a_files,
         complete_zip_path,
         f"Complete {target_language_name} {collection} Audio Collection",
+        bucket_name,
     )
     created_zips["complete"] = str(complete_zip_path)
 
@@ -113,6 +117,7 @@ def create_m4a_zip_collections(
             bundle_m4a_files,
             bundle_zip_path,
             f"{target_language_name} {collection} {bundle_name} Audio",
+            bucket_name,
         )
         created_zips[f"bundle_{start_pos:02d}_{end_pos:02d}"] = str(bundle_zip_path)
 
@@ -140,6 +145,7 @@ def create_m4a_zip_collections(
                 story_files,
                 individual_zip_path,
                 f"{target_language_name} {collection} Story {story_position:02d}: {story_title} Audio",
+                bucket_name,
             )
             created_zips[f"individual_{story}"] = str(individual_zip_path)
 
@@ -167,7 +173,22 @@ def _get_story_m4a_files(
         List of tuples (local_file_path, archive_name)
     """
     story_position = get_story_position(story_name, collection)
-    story_parts = ["introduction", "development", "conclusion"]  # Standard story parts
+    
+    # Get the story parts from the dialogue data in GCS
+    from src.gcs_storage import get_story_dialogue_path, read_from_gcs
+    
+    dialogue_path = get_story_dialogue_path(story_name, collection)
+    try:
+        dialogue_data = read_from_gcs(bucket_name, dialogue_path, expected_type="json")
+        # Story parts are the top-level keys of the dialogue JSON
+        if isinstance(dialogue_data, dict):
+            story_parts = list(dialogue_data.keys())
+        else:
+            # Fallback to standard parts if structure is unexpected
+            story_parts = ["introduction", "development", "conclusion"]
+    except Exception as e:
+        print(f"Warning: Could not load story parts for {story_name}: {e}")
+        story_parts = ["introduction", "development", "conclusion"]
 
     m4a_files = []
 
@@ -222,12 +243,11 @@ def _ensure_local_m4a_file(
         # Ensure parent directory exists
         local_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Download file
-        audio_data = read_from_gcs(bucket_name, gcs_file_path, "bytes")
+        # Download file as audio
+        audio_segment = read_from_gcs(bucket_name, gcs_file_path, "audio")
 
-        # Save locally
-        with open(local_path, "wb") as f:
-            f.write(audio_data)
+        # Export to M4A format
+        audio_segment.export(str(local_path), format="ipod")  # ipod is the format name for m4a in pydub
 
         return str(local_path)
 
@@ -237,31 +257,50 @@ def _ensure_local_m4a_file(
 
 
 def _create_zip_file(
-    m4a_files: List[Tuple[str, str]], zip_path: Path, description: str
+    m4a_files: List[Tuple[str, str]], 
+    zip_path: Path, 
+    description: str,
+    bucket_name: str,
 ) -> None:
     """
-    Create a zip file from M4A files.
+    Create a zip file from M4A files and upload to GCS.
 
     Args:
         m4a_files: List of tuples (local_file_path, archive_name)
         zip_path: Path where zip file will be created
         description: Description for progress bar
+        bucket_name: GCS bucket name to upload to
     """
     if not m4a_files:
         print(f"No files to zip for {description}")
         return
 
-    print(f"Creating {description} ({len(m4a_files)} files)")
+    print(f"\nCreating {description} ({len(m4a_files)} files)")
+    print(f"Files to be included:")
+    for local_path, archive_name in m4a_files:
+        print(f"  - {archive_name} (from {local_path})")
 
-    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+    # Create zip file in memory
+    print("\nCreating zip file in memory...")
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zipf:
         for local_path, archive_name in tqdm(
             m4a_files, desc="Adding files", leave=False
         ):
             if os.path.exists(local_path):
+                print(f"Adding {archive_name} ({os.path.getsize(local_path) / 1024:.1f} KB)")
                 zipf.write(local_path, archive_name)
             else:
                 print(f"Warning: File not found: {local_path}")
 
     # Get zip file size
-    zip_size_mb = zip_path.stat().st_size / (1024 * 1024)
-    print(f"✅ Created: {zip_path.name} ({zip_size_mb:.1f} MB)")
+    zip_size_mb = len(zip_buffer.getvalue()) / (1024 * 1024)
+    print(f"\nZip file created in memory: {zip_size_mb:.1f} MB")
+
+    # First write to local file
+    print(f"\nWriting zip file to local path: {zip_path}")
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(zip_path, "wb") as f:
+        f.write(zip_buffer.getvalue())
+    print(f"Local file written successfully: {zip_path.stat().st_size / (1024 * 1024):.1f} MB")
+
