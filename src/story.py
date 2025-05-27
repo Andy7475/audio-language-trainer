@@ -1,6 +1,7 @@
 import base64
 import json
 import os
+import zipfile
 from collections import defaultdict
 from pathlib import Path
 from string import Template
@@ -407,9 +408,7 @@ def create_html_story(
 
 
 def create_album_files(
-    story_data_dict: dict,
-    story_name: str,
-    collection: str = "LM1000"
+    story_data_dict: dict, story_name: str, collection: str = "LM1000"
 ):
     """Creates and saves M4A files for the story, with album artwork.
     Optionally uploads files to Google Cloud Storage.
@@ -422,14 +421,16 @@ def create_album_files(
     # Get story position from collection
     story_position = get_story_position(story_name, collection)
 
-    ALBUM_NAME = f"{story_position:02d} - " + get_story_title(story_name) + f" ({config.TARGET_LANGUAGE_NAME})"
+    ALBUM_NAME = (
+        f"{story_position:02d} - "
+        + get_story_title(story_name)
+        + f" ({config.TARGET_LANGUAGE_NAME})"
+    )
     TOTAL_TRACKS = len(story_data_dict) * 2  # 1 track normal, 1 track fast
 
     m4a_file_paths = []
 
-    story_data_first_key = list(story_data_dict.keys())[
-        0
-    ]  # this probably will pick 'introduction'
+    story_data_first_key = list(story_data_dict.keys())[0]
     cover_image_base64 = story_data_dict[story_data_first_key]["image_data"]
 
     # Create the story tracks for each story section
@@ -453,8 +454,13 @@ def create_album_files(
         captions_list.extend(dialogue_list)
 
         # Create M4A file
-        m4a_filename = get_m4a_file_path(story_name, story_part, fast=False, story_position=story_position, collection=collection)
-
+        m4a_filename = get_m4a_file_path(
+            story_name,
+            story_part,
+            fast=False,
+            story_position=story_position,
+            collection=collection,
+        )
 
         m4a_path = create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
@@ -492,10 +498,10 @@ def create_album_files(
 
         # Create M4A file
         m4a_filename_fast = get_m4a_file_path(
-            story_name=story_name, 
-            story_part=story_part, 
+            story_name=story_name,
+            story_part=story_part,
             fast=True,
-            story_position=story_position
+            story_position=story_position,
         )
         m4a_path = create_m4a_with_timed_lyrics(
             audio_segments=audio_list,

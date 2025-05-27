@@ -172,12 +172,23 @@ def upload_to_gcs(
             raise ValueError(f"Failed to save image: {e}")
 
     elif hasattr(obj, "read"):  # For file-like objects
+        # For zip files, ensure we're using the correct content type
+        if file_name.lower().endswith('.zip'):
+            content_type = "application/zip"
+            
+        # Upload to GCS using upload_from_file
         blob.upload_from_file(obj, content_type=content_type)
+        
+        # Save locally if requested
         if save_local:
+            # Reset file pointer to beginning for local save
+            obj.seek(0)
+            file_content = obj.read()
+            
             local_path = os.path.join(local_base_dir, bucket_name, full_path)
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "wb") as f:
-                f.write(obj.read())
+                f.write(file_content)
 
     else:
         raise ValueError(f"Unsupported object type: {type(obj)}")
