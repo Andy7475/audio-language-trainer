@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$collection_title - $language_name Stories</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .collection-info {
+            background: #e8f4fd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #3498db;
+        }
+        .story-grid {
+            display: grid;
+            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        }
+        .story-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border-left: 4px solid #3498db;
+        }
+        .story-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .story-number {
+            background: #3498db;
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        .story-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        .story-info {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .story-links {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .story-link {
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .story-link.primary {
+            background: #3498db;
+            color: white;
+        }
+        .story-link.primary:hover {
+            background: #2980b9;
+        }
+        .story-link.secondary {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+        .story-link.secondary:hover {
+            background: #d5dbdb;
+        }
+        .navigation {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .breadcrumb {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        .breadcrumb a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+        h2 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="navigation">
+        <div class="breadcrumb">
+            <a href="$main_index_url">All Languages</a> > 
+            <a href="$language_index_url">$language_name</a> > 
+            $collection_title
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>$collection_title</h1>
+        <p>$language_name Language Learning Stories</p>
+    </div>
+
+    <div class="collection-info">
+        <h2>Collection Overview</h2>
+        <p><strong>Stories:</strong> $story_count | <strong>Language:</strong> $language_name</p>
+        <p>$collection_description</p>
+    </div>
+
+    <div class="story-grid">
+        $story_cards
+    </div>
+
+    <footer style="margin-top: 30px; text-align: center; padding: 20px; background-color: white; border-radius: 8px;">
+        <p>If you enjoy these stories and associated flashcards 
+            <a href="https://ankiweb.net/shared/by-author/1746208521">available on AnkiWeb</a>, 
+            please consider 
+            <a href="https://www.firephrase.co.uk">checking out FirePhrase.co.uk</a> for more flashcard decks.
+        </p>
+    </footer>
+</body>
+</html> 

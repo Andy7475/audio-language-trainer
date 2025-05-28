@@ -37,37 +37,38 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
         const [isExpanded, setIsExpanded] = React.useState(false);
     
         return React.createElement('div', { 
-            className: "mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg" 
+            className: "mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg" 
         },
             React.createElement('div', {
                 className: "flex items-center justify-between cursor-pointer",
                 onClick: () => setIsExpanded(!isExpanded)
             },
                 React.createElement('div', { className: "flex items-center space-x-2" },
-                    React.createElement('span', { className: "text-yellow-600 text-xl" }, "⚠️"),
-                    React.createElement('span', { className: "font-medium text-yellow-800" }, 
-                        "Important API Key Security Information"
+                    React.createElement('span', { className: "text-blue-600 text-xl" }, "ℹ️"),
+                    React.createElement('span', { className: "font-medium text-blue-800" }, 
+                        "Experimental AI Speaking Feature"
                     )
                 ),
-                React.createElement('button', { className: "text-yellow-600" },
+                React.createElement('button', { className: "text-blue-600" },
                     isExpanded ? '▼' : '▶'
                 )
             ),
             
             isExpanded && React.createElement('div', { 
-                className: "mt-4 text-sm text-yellow-700 space-y-2" 
+                className: "mt-4 text-sm text-blue-700 space-y-2" 
             },
                 React.createElement('p', { className: "font-semibold" },
-                    "⚠️ This application requires an OpenAI API key with chat.completions write permissions."
-                ),React.createElement('p', { className: "font-semibold" },
-                    "⚠️ This tool is a personal project for my own use, but you are welcome to use it at your own risk."
+                    "🧪 This is an experimental feature provided complimentary with no technical support."
+                ),
+                React.createElement('p', { className: "font-semibold" },
+                    "🔑 You will need your own OpenAI account and API key with chat.completions permissions."
                 ),
                 
-                React.createElement('p', null, "For your security:"),
+                React.createElement('p', null, "For security and best practices:"),
                 React.createElement('ul', { className: "list-disc ml-6 space-y-1" },
-                    React.createElement('li', null, "Create a separate API key just for this application"),
+                    React.createElement('li', null, "Create a dedicated API key for this application"),
                     React.createElement('li', null, "Disable auto top-up for this key"),
-                    React.createElement('li', null, "Create it in an isolated project"),
+                    React.createElement('li', null, "Create the key in an isolated project"),
                     React.createElement('li', null, 
                         "Review the ",
                         React.createElement('a', {
@@ -75,8 +76,8 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                             className: "text-blue-600 hover:underline",
                             target: "_blank",
                             rel: "noopener noreferrer"
-                        }, "source code"),
-                        " before proceeding. The code has an MIT license - this is not a commercial product, and pasting an API key into a random website is against security best practice."
+                        }, "open source code"),
+                        " before proceeding if desired"
                     )
                 ),
                 
@@ -93,7 +94,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                     ),
                     React.createElement('li', null, "Create a new secret key"),
                     React.createElement('li', null, "Enable chat.completions permission"),
-                    React.createElement('li', null, "Copy and paste the key here")
+                    React.createElement('li', null, "Copy and paste the key above")
                 ),
                 
                 React.createElement('p', { className: "mt-4 text-xs" },
