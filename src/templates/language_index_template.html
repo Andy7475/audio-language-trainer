@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>$collection_title - $language_name Stories</title>
+    <title>$language_name Language Learning Stories</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,79 +21,66 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             text-align: center;
         }
-        .collection-info {
-            background: #e8f4fd;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-left: 4px solid #3498db;
-        }
-        .story-grid {
-            display: grid;
-            gap: 15px;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        }
-        .story-card {
+        .collection-section {
             background: white;
             border-radius: 8px;
-            padding: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
             border-left: 4px solid #3498db;
         }
-        .story-card:hover {
+        .collection-grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        .collection-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e9ecef;
+        }
+        .collection-card:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
-        .story-number {
-            background: #3498db;
-            color: white;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .collection-title {
+            font-size: 20px;
             font-weight: bold;
-            font-size: 14px;
             margin-bottom: 10px;
-        }
-        .story-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 8px;
             color: #2c3e50;
         }
-        .story-info {
-            font-size: 12px;
+        .collection-stats {
+            font-size: 14px;
             color: #7f8c8d;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
-        .story-links {
+        .collection-links {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
-        .story-link {
-            padding: 4px 8px;
-            border-radius: 4px;
+        .collection-link {
+            padding: 8px 16px;
+            border-radius: 6px;
             text-decoration: none;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: 500;
             transition: background-color 0.2s;
         }
-        .story-link.primary {
+        .collection-link.primary {
             background: #3498db;
             color: white;
         }
-        .story-link.primary:hover {
+        .collection-link.primary:hover {
             background: #2980b9;
         }
-        .story-link.secondary {
+        .collection-link.secondary {
             background: #ecf0f1;
             color: #2c3e50;
         }
-        .story-link.secondary:hover {
+        .collection-link.secondary:hover {
             background: #d5dbdb;
         }
         .navigation {
@@ -127,24 +114,20 @@
 <body>
     <div class="navigation">
         <div class="breadcrumb">
-            <a href="$main_index_url">All Languages</a> > 
-            <a href="$language_index_url">$language_name</a> > 
-            $collection_title
+            <a href="$main_index_url">All Languages</a> > $language_name
         </div>
     </div>
 
     <div class="header">
-        <h1>$collection_title</h1>
-        <p>$language_name Language Learning Stories</p>
+        <h1>$language_name</h1>
+        <p>Language Learning Story Collections</p>
     </div>
 
-    <div class="collection-info">
-        <h2>Collection Overview</h2>
-        <p><strong>Stories:</strong> $story_count | <strong>Language:</strong> $language_name</p>
-    </div>
-
-    <div class="story-grid">
-        $story_cards
+    <div class="collection-section">
+        <h2>Available Collections</h2>
+        <div class="collection-grid">
+            $collection_cards
+        </div>
     </div>
 
     <footer style="margin-top: 30px; text-align: center; padding: 20px; background-color: white; border-radius: 8px;">
