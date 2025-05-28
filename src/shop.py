@@ -90,7 +90,7 @@ def create_product_templates():
     complete_template = Template(
         """
 <p><strong>Complete ${collection} Vocabulary System (All ${total_stories} Stories)</strong></p>
-<p>Master the most essential 1000 words (including {verb_count}+ verbs) through our comprehensive, story-based learning system. This complete collection provides a structured path to vocabulary acquisition through ${total_stories} engaging stories, carefully sequenced to optimise retention.</p>
+<p>Master the most essential 1000 words (including ${verb_count}+ verbs) through our comprehensive, story-based learning system. This complete collection provides a structured path to vocabulary acquisition through ${total_stories} engaging stories, carefully sequenced to optimise retention.</p>
 
 <h3>The Complete System Includes:</h3>
 <ul>
@@ -106,9 +106,6 @@ def create_product_templates():
 </li>
 <li>High-quality AI-generated audio (human-curated for accuracy)</li>
 <li>Access to complementary online companion stories
-<ul>
-<li>Experimental and unsupported Immersive AI chat features for each story (for advanced technical users with OpenAI API key)</li>
-</ul>
 </li>
 <li>Systematic coverage of the most frequent 1000 words</li>
 <li>Visual memory aids and reference links for deeper learning</li>
@@ -148,7 +145,6 @@ ${story_list}
 </li>
 <li>High-quality AI-generated audio (human-curated for accuracy)</li>
 <li>Access to online companion stories for each pack</li>
-<li>Immersive AI chat features for technically adept users (requires OpenAI API key)</li>
 <li>Visual memory aids and Wiktionary links</li>
 <li>Save ${savings_percent}% compared to purchasing individually</li>
 </ul>
@@ -192,15 +188,6 @@ ${sample_phrases_html}
 <h3>Online Companion Resources:</h3>
 <ul>
 <li>Access to online companion story</li>
-<li>Immersive AI chat feature (Speaking Challenges):
-<ul>
-<li>Step into the story and tackle common language challenges related to the narrative</li>
-<li>Practice speaking in realistic scenarios matching the story context</li>
-<li>Experimental feature with no technical support</li>
-<li>Requires your own OpenAI account</li>
-<li>Provided as-is for those wanting to experiment with the latest AI language technology</li>
-</ul>
-</li>
 </ul>
 
 <h3>Progressive Learning System:</h3>
@@ -209,10 +196,9 @@ ${sample_phrases_html}
 
 <h3>Technical Requirements:</h3>
 <ul>
-<li>Requires the free Anki application</li>
+<li>Requires the free <a href="https://apps.ankiweb.net/">Anki</a> application</li>
 <li>M4A files work with any standard media player</li>
 <li>For synchronized lyrics display, download the free <a href="https://play.google.com/store/apps/details?id=com.piyush.music&hl=en">Oto Music Player</a> app</li>
-<li>AI chat feature requires an OpenAI API key from your own account. </li>
 </ul>
 """
     )
