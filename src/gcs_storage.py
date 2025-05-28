@@ -431,11 +431,13 @@ def get_story_challenges_path(story_name: str, collection: str = "LM1000") -> st
     return f"collections/{collection}/stories/{story_name}/challenges.json"
 
 
-def get_story_translated_challenges_path(story_name: str) -> str:
+def get_story_translated_challenges_path(story_name: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story's challenges webpage
-    e.g: audio-language-trainer-stories/swedish/story_birthday_party_planning_mishap/challenges.html
+    e.g: audio-language-trainer-stories/swedish/lm1000/story_birthday_party_planning_mishap/challenges.html
     """
-    return f"{config.TARGET_LANGUAGE_NAME.lower()}/{story_name}/challenges.html"
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    collection_folder = sanitize_path_component(collection.lower())
+    return f"{language}/{collection_folder}/{story_name}/challenges.html"
 
 
 def get_m4a_file_path(story_name: str, story_part: str, story_position:int, fast: bool = False, collection: str = "LM1000") -> str:
@@ -504,14 +506,15 @@ def get_story_dialogue_path(story_name: str, collection: str = "LM1000") -> str:
     return f"collections/{collection}/stories/{story_name}/dialogue.json"
 
 
-def get_public_story_path(story_name: str) -> str:
+def get_public_story_path(story_name: str, collection: str = "LM1000") -> str:
     """Get the GCS blob path for a story's public HTML file.
     Meant to go to the GCS public bucket which is for holding stories."""
 
     language = config.TARGET_LANGUAGE_NAME
     language_folder = sanitize_path_component(language.lower())
+    collection_folder = sanitize_path_component(collection.lower())
     story_folder = sanitize_path_component(story_name)
-    blob_path = f"{language_folder}/{story_folder}/{story_name}.html"
+    blob_path = f"{language_folder}/{collection_folder}/{story_folder}/{story_name}.html"
     return blob_path
 
 
@@ -563,62 +566,6 @@ def get_fast_audio_path(
 def get_image_path(story_name: str, story_part: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story part image."""
     return f"collections/{collection}/stories/{story_name}/images/{story_part}.png"
-
-
-def process_bucket_contents(bucket_name: str, exclude_patterns: list = None) -> tuple:
-    """
-    Process bucket contents - extract html files to populate the story index, excluding specified patterns.
-
-    Args:
-        bucket_name: Name of the GCS bucket
-        exclude_patterns: List of patterns to exclude (e.g., ['challenges.html'])
-
-    Returns:
-        tuple: (stories_by_language, special_pages)
-    """
-    if exclude_patterns is None:
-        exclude_patterns = []
-
-    stories_by_language = defaultdict(list)
-    special_pages = []
-
-    # default to public bucket
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-    blobs = bucket.list_blobs()
-
-    for blob in blobs:
-        if any(pattern in blob.name for pattern in exclude_patterns):
-            continue
-        path = Path(blob.name)
-        parts = path.parts
-
-        # Skip non-HTML files
-        if not blob.name.endswith(".html"):
-            continue
-
-        # Handle special pages at root level
-        if len(parts) == 1:
-            if parts[0] != "index.html":
-                special_pages.append(
-                    {
-                        "name": parts[0].replace(".html", "").replace("_", " ").title(),
-                        "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
-                    }
-                )
-            continue
-
-        # Process story pages
-        if len(parts) >= 3 and parts[1].startswith("story_"):
-            language = parts[0].title()
-            story_name = parts[1].replace("story_", "").replace("_", " ").title()
-            url = f"https://storage.googleapis.com/{bucket_name}/{blob.name}"
-
-            stories_by_language[language].append({"name": story_name, "url": url})
-
-    return dict(stories_by_language), special_pages
 
 
 def get_stories_from_collection(

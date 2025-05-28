@@ -19,6 +19,7 @@ from src.convert import (
     convert_base64_to_audio,
     convert_PIL_image_to_base64,
     get_story_title,
+    get_collection_title,
 )
 from src.gcs_storage import (
     check_blob_exists,
@@ -30,192 +31,12 @@ from src.gcs_storage import (
     get_story_translated_dialogue_path,
     get_utterance_audio_path,
     get_wiktionary_cache_path,
-    process_bucket_contents,
     read_from_gcs,
     upload_to_gcs,
+    get_story_collection_path
 )
 from src.utils import load_template, get_story_position
 from src.wiktionary import generate_wiktionary_links
-
-
-def generate_and_upload_m4a_index(bucket_name=None, output_dir="../outputs/stories"):
-    """
-    Generate the M4A index page and upload it to Google Cloud Storage.
-
-    Args:
-        bucket_name: Optional GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
-        output_dir: Directory where the HTML file will be saved locally
-
-    Returns:
-        str: Public URL of the uploaded file
-    """
-    # First generate the index
-    local_path = generate_m4a_index_html(bucket_name, output_dir)
-
-    # Initialize storage client
-    storage_client = storage.Client()
-
-    # Get bucket
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-    bucket = storage_client.bucket(bucket_name)
-
-    # Upload directly to the root of the bucket
-    blob = bucket.blob("m4a_downloads.html")
-    blob.upload_from_filename(local_path, content_type="text/html")
-
-    print("M4A index uploaded to GCS: m4a_downloads.html")
-
-    # Return the public URL
-    return f"https://storage.googleapis.com/{bucket_name}/m4a_downloads.html"
-
-
-def update_all_index_pages(
-    output_dir: str = "../outputs/stories",
-    bucket_name: str = None,
-    force_upload: bool = True,
-    verbose: bool = True,
-) -> dict:
-    """
-    Update all index pages for the language learning platform.
-
-    This function generates and uploads:
-    - Main story index (index.html)
-    - Audio downloads index (m4a_downloads.html)
-
-    Args:
-        output_dir: Directory where HTML files will be saved locally
-        bucket_name: Name of the GCS bucket (defaults to config.GCS_PUBLIC_BUCKET)
-        force_upload: Whether to upload generated files even if they exist
-        verbose: Whether to print detailed progress information
-
-    Returns:
-        dict: Dictionary with paths and URLs for all generated index pages
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-
-    if verbose:
-        print(f"Starting index page updates for bucket: {bucket_name}")
-
-    results = {}
-
-    try:
-        # Generate and update main and M4A indices
-        if verbose:
-            print("Generating main index and M4A downloads index...")
-
-        main_path, m4a_path, main_url, m4a_url = generate_and_update_index_html(
-            output_dir=output_dir, bucket_name=bucket_name, upload=force_upload
-        )
-
-        results.update(
-            {
-                "main_index": {"local_path": main_path, "url": main_url},
-                "m4a_index": {"local_path": m4a_path, "url": m4a_url},
-            }
-        )
-
-        if verbose:
-            print(f"✅ Main index updated: {main_url}")
-            print(f"✅ M4A downloads index updated: {m4a_url}")
-
-        # Check if either URL is None (indicating upload failure)
-        if force_upload and (main_url is None or m4a_url is None):
-            print("⚠️ Warning: Upload was requested but one or more URLs are missing.")
-
-        if verbose:
-            print("All index pages updated successfully.")
-
-        return results
-
-    except Exception as e:
-        error_msg = f"Error updating index pages: {str(e)}"
-        print(f"❌ {error_msg}")
-
-        # Try to include as much information as possible despite the error
-        if "main_path" in locals():
-            results["main_index"] = {"local_path": main_path, "url": None}
-        if "m4a_path" in locals():
-            results["m4a_index"] = {"local_path": m4a_path, "url": None}
-
-        results["error"] = error_msg
-        return results
-
-
-def generate_and_update_index_html(
-    output_dir: str = "../outputs/gcs",
-    bucket_name: str = None,
-    template_path: str = "index_template.html",
-    upload: bool = True,
-) -> tuple:
-    """
-    Generate index.html file from GCS bucket contents and upload it.
-
-    Args:
-        output_dir: Directory where the HTML file will be saved locally (defaults to "../outputs/gcs")
-        bucket_name: Name of the GCS bucket containing stories (defaults to config.GCS_PUBLIC_BUCKET)
-        template_path: Path to the main index HTML template file
-        upload: Whether to upload the generated file to GCS
-
-    Returns:
-        tuple: (main_index_path, None, main_index_url, None)
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-
-    # Ensure output directory exists
-    os.makedirs(output_dir, exist_ok=True)
-
-    # 1. Generate main index.html
-    # Process bucket contents
-    stories_by_language, special_pages = process_bucket_contents(
-        bucket_name,
-        exclude_patterns=["challenges.html"],
-    )
-
-    # Generate sections HTML
-    language_sections = ""
-    for language, stories in sorted(stories_by_language.items()):
-        language_sections += generate_language_section(language, stories)
-
-    # Generate special pages HTML
-    special_pages_html = generate_special_pages_section(special_pages)
-
-    # Add sticky banner HTML
-    sticky_banner = """
-    <div class="sticky-banner" style="position: fixed; top: 0; left: 0; right: 0; background-color: #FB9A4B; color: #3a3e41; text-align: center; padding: 10px; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-        <a href="https://www.firephrase.co.uk" style="text-decoration: none; font-weight: bold; font-size: 1.1em;">
-            Get more flashcard decks at FirePhrase.co.uk
-        </a>
-    </div>
-    <div style="margin-top: 50px;"> <!-- Add margin to prevent content from being hidden under the banner -->
-    """
-
-    # Load and fill template
-    template = Template(load_template(template_path))
-    html_content = template.substitute(
-        language_sections=sticky_banner + language_sections,
-        special_pages=special_pages_html,
-    )
-
-    # Write to file
-    main_index_path = os.path.join(output_dir, "index.html")
-    with open(main_index_path, "w", encoding="utf-8") as f:
-        f.write(html_content)
-
-    # Upload file to GCS if requested
-    main_index_url = None
-    if upload:
-        main_index_url = upload_to_gcs(
-            obj=html_content,
-            bucket_name=bucket_name,
-            file_name="index.html",
-            content_type="text/html",
-        )
-        print(f"Main index uploaded to: {main_index_url}")
-
-    return (main_index_path, None, main_index_url, None)
 
 
 def create_and_upload_html_story(
@@ -224,7 +45,7 @@ def create_and_upload_html_story(
     bucket_name: str = config.GCS_PUBLIC_BUCKET,
     component_path: str = "StoryViewer.js",
     template_path: str = "story_template.html",
-    output_dir: str = "../outputs/stories/",
+    collection: str = "LM1000",
 ) -> str:
     """
     Create a standalone HTML file from prepared story data and upload it to GCS.
@@ -233,10 +54,10 @@ def create_and_upload_html_story(
         prepared_data: Dictionary containing prepared story data with base64 encoded assets
         story_name: Name of the story
         bucket_name: GCS bucket name for upload
-        language: Target language name (defaults to config.TARGET_LANGUAGE_NAME)
         component_path: Path to the React component file
         template_path: Path to the HTML template file
         output_dir: Local directory to save HTML file before upload
+        collection: Collection name for organizing stories
 
     Returns:
         str: Public URL of the uploaded HTML file
@@ -263,7 +84,7 @@ def create_and_upload_html_story(
 
     try:
 
-        blob_path = get_public_story_path(story_name)
+        blob_path = get_public_story_path(story_name, collection)
 
         public_url = upload_to_gcs(
             obj=html_content,
@@ -600,163 +421,6 @@ def prepare_story_data_for_html(
 
     return prepared_data
 
-
-def generate_m4a_index_html(
-    bucket_name: str = None,
-    output_dir: str = "../outputs/stories",
-    template_path: str = "m4a_index_template.html",
-) -> str:
-    """
-    Generate an index.html file for M4A downloads organized by language and story.
-
-    Args:
-        bucket_name: GCS bucket containing M4A files
-        output_dir: Where to save the generated HTML
-        template_path: Path to the HTML template
-
-    Returns:
-        str: Path to the generated index file
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-
-    # Initialize storage client
-    client = storage.Client()
-    bucket = client.bucket(bucket_name)
-
-    # Get all M4A files in the bucket
-    m4a_files = defaultdict(lambda: defaultdict(list))
-
-    for blob in bucket.list_blobs():
-        if blob.name.endswith(".m4a"):
-            parts = blob.name.split("/")
-
-            # Expected format: language/story_name/story_name_part.m4a
-            if len(parts) >= 3:
-                language = parts[0].capitalize()
-                story_name = get_story_title(parts[1])
-
-                # Get file size in MB
-                size_mb = blob.size / (1024 * 1024)
-
-                m4a_files[language][story_name].append(
-                    {
-                        "name": parts[-1],
-                        "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
-                        "size": f"{size_mb:.1f} MB",
-                        "size_bytes": blob.size,
-                    }
-                )
-
-    # Generate HTML content
-    languages_html = ""
-    total_size = 0
-    file_count = 0
-
-    for language, stories in sorted(m4a_files.items()):
-        # Important: Use a local variable for language_id, not $languageId
-        language_id = language.lower().replace(" ", "_")
-        stories_html = ""
-        language_size = 0
-        language_file_count = 0
-
-        for story, files in sorted(stories.items()):
-            # Create story_id for HTML IDs
-            story_id = f"{language_id}_{story.lower().replace(' ', '_')}"
-            files_html = ""
-            story_size = 0
-
-            for file_info in files:
-                file_id = f"{story_id}_{file_info['name'].replace('.', '_')}"
-                files_html += f"""
-                <div class="file-item">
-                    <label class="flex items-center space-x-2">
-                        <input type="checkbox" id="{file_id}" 
-                               data-url="{file_info['url']}" 
-                               data-size="{file_info['size_bytes']}"
-                               data-name="{file_info['name']}"
-                               class="file-checkbox">
-                        <span>{file_info['name']}</span>
-                        <span class="text-gray-500 text-sm">{file_info['size']}</span>
-                    </label>
-                </div>
-                """
-                story_size += file_info["size_bytes"]
-                language_size += file_info["size_bytes"]
-                total_size += file_info["size_bytes"]
-                language_file_count += 1
-                file_count += 1
-
-            story_size_mb = story_size / (1024 * 1024)
-
-            stories_html += f"""
-            <div class="story-section mb-4">
-                <div class="story-header bg-gray-100 p-2 rounded flex items-center">
-                    <label class="flex items-center space-x-2 flex-grow">
-                        <input type="checkbox" id="{story_id}_all" class="story-checkbox">
-                        <span class="font-medium">{story}</span>
-                        <span class="text-gray-500 text-sm">({len(files)} files, {story_size_mb:.1f} MB)</span>
-                    </label>
-                    <button class="toggle-btn px-2" data-target="{story_id}_files">▼</button>
-                </div>
-                <div id="{story_id}_files" class="story-files pl-6 pt-2">
-                    {files_html}
-                </div>
-            </div>
-            """
-
-        language_size_mb = language_size / (1024 * 1024)
-
-        languages_html += f"""
-        <div class="language-section mb-6">
-            <div class="language-header bg-blue-100 p-3 rounded flex items-center">
-                <label class="flex items-center space-x-2 flex-grow">
-                    <input type="checkbox" id="{language_id}_all" class="language-checkbox">
-                    <span class="font-medium text-lg">{language}</span>
-                    <span class="text-gray-600">
-                        ({len(stories)} stories, {language_file_count} files, {language_size_mb:.1f} MB)
-                    </span>
-                </label>
-                <button class="toggle-btn px-2" data-target="{language_id}_stories">▼</button>
-            </div>
-            <div id="{language_id}_stories" class="language-stories pl-6 pt-3">
-                {stories_html}
-            </div>
-        </div>
-        """
-
-    total_size_mb = total_size / (1024 * 1024)
-
-    # Load template content (make sure this loads the exact template you pasted)
-    template_content = load_template(template_path)
-    template = Template(template_content)
-
-    # Only pass the variables that exist in the template
-    template_vars = {
-        "language_sections": languages_html,
-        "file_count": file_count,
-        "total_size": f"{total_size_mb:.1f}",
-    }
-
-    try:
-        # Try to substitute with only the variables we know are in the template
-        html_content = template.safe_substitute(**template_vars)
-    except KeyError as e:
-        # If an error occurs, print helpful debugging information
-        print(f"KeyError: {e} not found in template variables")
-        print(f"Template variables provided: {list(template_vars.keys())}")
-        print(f"Check if {e} is used in your template but missing from the variables")
-        raise
-
-    # Write to file
-    output_path = os.path.join(output_dir, "m4a_downloads.html")
-    os.makedirs(output_dir, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(html_content)
-
-    return output_path
-
-
 def upload_story_image(
     image_file: str,
     story_part: str,
@@ -886,3 +550,376 @@ def prepare_story_data_from_gcs(
             print(f"Warning: Image not found for {story_part}: {str(e)}")
 
     return prepared_data
+
+
+def generate_hierarchical_index_system(
+    languages: List[str] = None,
+    collections: List[str] = None,
+    bucket_name: str = None,
+    upload: bool = True,
+) -> dict:
+    """
+    Generate a hierarchical index system: Main Index > Language Index > Collection Index.
+    
+    This replaces the bucket scraping approach with a structured system based on 
+    collection data files.
+    
+    Args:
+        languages: List of language names (defaults to [config.TARGET_LANGUAGE_NAME])
+        collections: List of collection names (defaults to ["LM1000"])
+        bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET) 
+        upload: Whether to upload generated files
+        
+    Returns:
+        dict: Results with URLs for all generated index pages
+    """
+    
+    if languages is None:
+        languages = [config.TARGET_LANGUAGE_NAME]
+    if collections is None:
+        collections = ["LM1000"]
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+        
+    results = {
+        "main_index": None,
+        "language_indexes": {},
+        "collection_indexes": {}
+    }
+    
+    # 1. Generate main index (language selector)
+    results["main_index"] = generate_main_language_index(
+        languages=languages,
+        bucket_name=bucket_name,
+        upload=upload,
+        collections=collections
+    )
+    
+    # 2. Generate language-level indexes
+    for language in languages:
+        results["language_indexes"][language] = generate_language_collection_index(
+            language=language,
+            collections=collections,
+            bucket_name=bucket_name,
+            upload=upload
+        )
+        
+        # 3. Generate collection-level indexes for this language
+        for collection in collections:
+            key = f"{language}_{collection}"
+            results["collection_indexes"][key] = generate_collection_story_index(
+                language=language,
+                collection=collection,
+                bucket_name=bucket_name,
+                upload=upload
+            )
+    
+    return results
+
+
+def generate_main_language_index(
+    languages: List[str],
+    bucket_name: str,
+    upload: bool = True,
+    collections: List[str] = None,
+) -> str:
+    """Generate the main index page that shows available languages."""
+    
+    if collections is None:
+        collections = ["LM1000"]
+    
+    # Get language statistics
+    language_cards = ""
+    special_pages = get_special_pages_from_bucket(bucket_name)
+    
+    for language in languages:
+        # Get stats for this language across all collections
+        total_stories = 0
+        collections_available = []
+        
+        # Check which collections exist for this language
+        for collection in collections:
+            try:
+                collection_data = read_from_gcs(
+                    config.GCS_PRIVATE_BUCKET, 
+                    get_story_collection_path(collection), 
+                    "json"
+                )
+                if collection_data:
+                    collections_available.append(collection)
+                    total_stories += len(collection_data)
+            except:
+                continue
+                
+        stats_text = f"{len(collections_available)} collections, {total_stories} stories"
+        language_url = f"{language.lower()}/index.html"
+        
+        language_cards += f"""
+        <div class="language-card">
+            <div class="language-name">{language}</div>
+            <div class="language-stats">{stats_text}</div>
+            <a href="{language_url}" class="language-link">Browse Stories</a>
+        </div>
+        """
+    
+    # Generate special pages section
+    special_pages_html = ""
+    if special_pages:
+        special_links = "\n".join(
+            f'<a href="{page["url"]}" class="special-link">{page["name"]}</a>' 
+            for page in special_pages
+        )
+        special_pages_html = f"""
+        <div class="special-section">
+            <h2>Additional Resources</h2>
+            <div class="special-links">
+                {special_links}
+            </div>
+        </div>
+        """
+    
+    # Load and fill template
+    template = Template(load_template("index_template.html"))
+    html_content = template.substitute(
+        language_cards=language_cards,
+        special_pages=special_pages_html,
+    )
+    
+    # Upload directly using upload_to_gcs (which handles local saving automatically)
+    if upload:
+        url = upload_to_gcs(
+            obj=html_content,
+            bucket_name=bucket_name,
+            file_name="index.html",
+            content_type="text/html",
+        )
+        return url
+    
+    return None
+
+
+def generate_language_collection_index(
+    language: str,
+    collections: List[str],
+    bucket_name: str,
+    upload: bool = True,
+) -> str:
+    """Generate a language-level index showing available collections."""
+    
+    collection_cards = ""
+    
+    for collection in collections:
+        try:
+            # Get collection data
+            collection_data = read_from_gcs(
+                config.GCS_PRIVATE_BUCKET,
+                get_story_collection_path(collection),
+                "json"
+            )
+            
+            story_count = len(collection_data)
+            collection_title = get_collection_title(collection)
+            
+            collection_url = f"{collection.lower()}/index.html"
+            
+            collection_cards += f"""
+            <div class="collection-card">
+                <div class="collection-title">{collection_title}</div>
+                <div class="collection-stats">{story_count} stories</div>
+                <div class="collection-links">
+                    <a href="{collection_url}" class="collection-link primary">View Stories</a>
+                </div>
+            </div>
+            """
+            
+        except Exception as e:
+            print(f"Warning: Could not load collection {collection}: {e}")
+            continue
+    
+    # Load and fill template
+    template = Template(load_template("language_index_template.html"))
+    html_content = template.substitute(
+        language_name=language,
+        collection_cards=collection_cards,
+        main_index_url="../index.html",
+    )
+    
+    # Upload directly using upload_to_gcs
+    if upload:
+        blob_path = f"{language.lower()}/index.html"
+        url = upload_to_gcs(
+            obj=html_content,
+            bucket_name=bucket_name,
+            file_name=blob_path,
+            content_type="text/html",
+        )
+        return url
+    
+    return None
+
+
+def generate_collection_story_index(
+    language: str,
+    collection: str,
+    bucket_name: str,
+    upload: bool = True,
+) -> str:
+    """Generate a collection-level index showing stories ordered by position."""
+    
+    try:
+        # Get collection data
+        collection_data = read_from_gcs(
+            config.GCS_PRIVATE_BUCKET,
+            get_story_collection_path(collection),
+            "json"
+        )
+        
+        story_cards = ""
+        
+        # Generate story cards ordered by position
+        for position, (story_name, story_data) in enumerate(collection_data.items(), 1):
+            story_title = get_story_title(story_name)
+            phrase_count = len(story_data) if isinstance(story_data, list) else 0
+            
+            # Generate URLs - relative from collection index to story folder
+            story_url = f"{story_name}/{story_name}.html"
+            challenges_url = f"{story_name}/challenges.html"
+            
+            story_cards += f"""
+            <div class="story-card">
+                <div class="story-number">{position:02d}</div>
+                <div class="story-title">{story_title}</div>
+                <div class="story-info">{phrase_count} phrases</div>
+                <div class="story-links">
+                    <a href="{story_url}" class="story-link primary">Read Story</a>
+                    <a href="{challenges_url}" class="story-link secondary">Challenges</a>
+                </div>
+            </div>
+            """
+        
+        story_count = len(collection_data)
+        collection_title = get_collection_title(collection)
+        
+        # Load and fill template
+        template = Template(load_template("collection_index_template.html"))
+        html_content = template.substitute(
+            collection_title=collection_title,
+            language_name=language,
+            story_count=story_count,
+            story_cards=story_cards,
+            main_index_url="../../index.html",
+            language_index_url="../index.html",
+        )
+        
+        # Upload directly using upload_to_gcs
+        if upload:
+            blob_path = f"{language.lower()}/{collection.lower()}/index.html"
+            url = upload_to_gcs(
+                obj=html_content,
+                bucket_name=bucket_name,
+                file_name=blob_path,
+                content_type="text/html",
+            )
+            return url
+        
+        return None
+        
+    except Exception as e:
+        print(f"Error generating collection index for {language}/{collection}: {e}")
+        return None
+
+
+def get_special_pages_from_bucket(bucket_name: str) -> List[Dict[str, str]]:
+    """Get special pages (non-story pages) from bucket."""
+    special_pages = []
+    
+    try:
+        client = storage.Client()
+        bucket = client.bucket(bucket_name)
+        
+        for blob in bucket.list_blobs():
+            if blob.name.endswith(".html"):
+                path = Path(blob.name)
+                parts = path.parts
+                
+                # Only root-level files that aren't index.html
+                if len(parts) == 1 and parts[0] != "index.html":
+                    special_pages.append({
+                        "name": parts[0].replace(".html", "").replace("_", " ").title(),
+                        "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
+                    })
+    except Exception as e:
+        print(f"Warning: Could not load special pages: {e}")
+    
+    return special_pages
+
+
+def update_all_index_pages_hierarchical(
+    languages: List[str] = None,
+    collections: List[str] = None,
+    bucket_name: str = None,
+    force_upload: bool = True,
+    verbose: bool = True,
+) -> dict:
+    """
+    Update all index pages using the new hierarchical system (Language > Collection > Story).
+
+    This function generates and uploads:
+    - Main language selector index (index.html)
+    - Language-level collection indexes 
+    - Collection-level story indexes (with numbered stories)
+
+    Args:
+        languages: List of language names (defaults to [config.TARGET_LANGUAGE_NAME])
+        collections: List of collection names (defaults to ["LM1000"])
+        bucket_name: Name of the GCS bucket (defaults to config.GCS_PUBLIC_BUCKET)
+        force_upload: Whether to upload generated files even if they exist
+        verbose: Whether to print detailed progress information
+
+    Returns:
+        dict: Dictionary with paths and URLs for all generated index pages
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PUBLIC_BUCKET
+    if languages is None:
+        languages = [config.TARGET_LANGUAGE_NAME]
+    if collections is None:
+        collections = ["LM1000"]
+
+    if verbose:
+        print(f"Starting hierarchical index generation for bucket: {bucket_name}")
+
+    results = {}
+
+    try:
+        # Generate hierarchical index system
+        if verbose:
+            print("Generating hierarchical index system...")
+
+        hierarchical_results = generate_hierarchical_index_system(
+            languages=languages,
+            collections=collections,
+            bucket_name=bucket_name,
+            upload=force_upload
+        )
+
+        results.update({
+            "main_index": {"url": hierarchical_results["main_index"]},
+            "language_indexes": hierarchical_results["language_indexes"],
+            "collection_indexes": hierarchical_results["collection_indexes"],
+        })
+
+        if verbose:
+            print(f"✅ Main index: {hierarchical_results['main_index']}")
+            for lang, url in hierarchical_results["language_indexes"].items():
+                print(f"✅ {lang} language index: {url}")
+            for key, url in hierarchical_results["collection_indexes"].items():
+                print(f"✅ {key} collection index: {url}")
+
+        return results
+
+    except Exception as e:
+        error_msg = f"Error updating hierarchical index pages: {str(e)}"
+        print(f"❌ {error_msg}")
+        results["error"] = error_msg
+        return results
