@@ -147,7 +147,6 @@ def generate_and_update_index_html(
     output_dir: str = "../outputs/gcs",
     bucket_name: str = None,
     template_path: str = "index_template.html",
-    m4a_template_path: str = "m4a_index_template.html",  # Kept for compatibility, but not used
     upload: bool = True,
 ) -> tuple:
     """
@@ -157,7 +156,6 @@ def generate_and_update_index_html(
         output_dir: Directory where the HTML file will be saved locally (defaults to "../outputs/gcs")
         bucket_name: Name of the GCS bucket containing stories (defaults to config.GCS_PUBLIC_BUCKET)
         template_path: Path to the main index HTML template file
-        m4a_template_path: (ignored)
         upload: Whether to upload the generated file to GCS
 
     Returns:
@@ -173,14 +171,8 @@ def generate_and_update_index_html(
     # Process bucket contents
     stories_by_language, special_pages = process_bucket_contents(
         bucket_name,
-        exclude_patterns=["challenges.html", "m4a_downloads.html"],
+        exclude_patterns=["challenges.html"],
     )
-
-    # Remove M4A downloads link from special pages if present
-    special_pages = [
-        page for page in special_pages
-        if not (page["name"].lower().startswith("audio downloads") or "m4a_downloads.html" in page.get("url", ""))
-    ]
 
     # Generate sections HTML
     language_sections = ""
