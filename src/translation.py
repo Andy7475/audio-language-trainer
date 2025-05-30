@@ -235,3 +235,64 @@ def tokenize_text(
         print(f"API Tokenization failed: {str(e)}")
         # Fallback: split on spaces if present, otherwise return whole text as one token
         return text.split() if " " in text else [text]
+
+
+def review_translated_phrases_batch(
+    translated_phrases: Dict[str, Dict[str, str]],
+    target_language: str = None,
+    batch_size: int = 20,
+    model: str = "claude-3-5-sonnet-latest",
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Wrapper function to batch review translations from the translated_phrases format.
+    
+    Args:
+        translated_phrases: Dictionary with phrase_keys containing {'english': 'phrase', target_language: 'translation'}
+        target_language: The target language for translations (defaults to config.TARGET_LANGUAGE_NAME)
+        batch_size: Number of phrases to process in each batch (default: 20)
+        model: Anthropic model to use
+        
+    Returns:
+        Dictionary with same structure but with 'modified' field added to each translation
+    """
+    if target_language is None:
+        target_language = config.TARGET_LANGUAGE_NAME.lower()
+    
+    # Convert to list of (phrase_key, phrase_data) tuples for batching
+    phrase_items = list(translated_phrases.items())
+    result = {}
+    
+    # Process in batches
+    for i in range(0, len(phrase_items), batch_size):
+        batch_items = phrase_items[i:i + batch_size]
+        
+        # Convert batch to phrase_pairs format
+        phrase_pairs = []
+        batch_keys = []
+        
+        for phrase_key, phrase_data in batch_items:
+            phrase_pairs.append({
+                'english': phrase_data['english'],
+                'translation': phrase_data[target_language]
+            })
+            batch_keys.append(phrase_key)
+        
+        print(f"Processing batch {i//batch_size + 1} with {len(phrase_pairs)} phrases...")
+        
+        # Call the original function
+        reviewed_batch = review_translations_with_anthropic(
+            phrase_pairs=phrase_pairs,
+            target_language=target_language,
+            model=model
+        )
+        
+        # Convert results back to original format
+        for j, reviewed_translation in enumerate(reviewed_batch):
+            phrase_key = batch_keys[j]
+            result[phrase_key] = {
+                'english': reviewed_translation['english'],
+                target_language: reviewed_translation['translation'],
+                'modified': reviewed_translation['modified']
+            }
+    
+    return result
