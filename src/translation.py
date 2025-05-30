@@ -68,7 +68,7 @@ def review_translations_with_anthropic(
     system_prompt = f"""You are a professional translator specializing in natural-sounding {target_language}.
 Review the provided {config.SOURCE_LANGUAGE_NAME} phrases and their {target_language} translations.
 Improve translations to sound more natural for everyday spoken {target_language}.
-You are supporting a language learner, so keep to the source vocabulary fairly closely, but use a natural word choice or phrase that a native speaker would use.
+You are supporting a language learner, so keep to the {config.SOURCE_LANGUAGE_NAME} vocabulary, but use a natural word choice or phrase that a native speaker would use.
 
 For each translation pair:
 1. Assess if the current translation sounds natural in {target_language}
