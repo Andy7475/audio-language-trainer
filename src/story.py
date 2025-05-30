@@ -311,12 +311,10 @@ def create_album_files(
 
 
 def prepare_dialogue_with_wiktionary(story_data_dict: dict, language_name: str = None):
-    """
-    Process dialogue utterances to include Wiktionary links for the target language text.
-    We will try and read the existing wiktionary links cache from GCS first. As this
-    will probably already have data in it from processing the flashcard phrases.
+    """Add wiktionary links to utterances for target language text.
+
     Args:
-        story_data_dict: Dictionary of story_part :dialogue : [list of utternaces]
+        story_data_dict: Story data dictionary containing dialogue
         language_name: Name of target language for Wiktionary links
 
     Returns:
@@ -367,6 +365,7 @@ def prepare_story_data_for_html(
     story_name: str,
     m4a_folder: Optional[str] = None,
     image_folder: Optional[str] = None,
+    collection: str = "LM1000",
 ) -> Dict:
     """Process the story data dictionary to include base64 encoded audio and images.
     M4A files are now handled separately through the m4a_index.html page."""
@@ -378,7 +377,8 @@ def prepare_story_data_for_html(
         prepared_data[section_name] = {
             "dialogue": section_data.get("dialogue", []),
             "translated_dialogue": prepare_dialogue_with_wiktionary(
-                section_data.get("translated_dialogue", [])
+                section_data.get("translated_dialogue", []),
+                language_name=config.TARGET_LANGUAGE_NAME
             ),
             "audio_data": {
                 "dialogue": [],

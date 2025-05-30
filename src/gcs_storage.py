@@ -421,14 +421,9 @@ def get_story_collection_path(collection: str = "LM1000") -> str:
 
 def get_story_challenges_path(story_name: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story's challenges JSON file (dictionary of scenarios).
-    audio-language-trainer-private-content/
-    collections/
-    LM1000/
-    stories/
-    story_a_fishing_trip/
-    challenges.json"""
+    Challenges are language-agnostic (English) so they go in the common folder."""
 
-    return f"collections/{collection}/stories/{story_name}/challenges.json"
+    return f"collections/{collection}/common/stories/{story_name}/challenges.json"
 
 
 def get_story_translated_challenges_path(story_name: str, collection: str = "LM1000") -> str:
@@ -451,7 +446,7 @@ def get_m4a_file_path(story_name: str, story_part: str, story_position:int, fast
         
     Returns:
         str: Path to the m4a file in GCS
-        Format: collections/{collection}/audio/{language}/{filename}
+        Format: collections/{collection}/{language}/audio/{filename}
         where filename includes story name and part information
     """
     language = config.TARGET_LANGUAGE_NAME.lower()
@@ -459,10 +454,10 @@ def get_m4a_file_path(story_name: str, story_part: str, story_position:int, fast
 
     if fast:
         filename = get_m4a_filename(story_name, story_part, fast=True, story_position=story_position)
-        return f"collections/{collection}/audio/{language}/{filename}"
+        return f"collections/{collection}/{language}/audio/{filename}"
     else:
         filename = get_m4a_filename(story_name, story_part, fast=False, story_position=story_position)
-        return f"collections/{collection}/audio/{language}/{filename}"
+        return f"collections/{collection}/{language}/audio/{filename}"
 
 
 def get_m4a_blob_prefix(story_name: str) -> str:
@@ -503,7 +498,7 @@ def get_m4a_filename(story_name: str, story_part: str, fast: bool = False, story
 
 def get_story_dialogue_path(story_name: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story's dialogue file (initial English only)."""
-    return f"collections/{collection}/stories/{story_name}/dialogue.json"
+    return f"collections/{collection}/common/stories/{story_name}/dialogue.json"
 
 
 def get_public_story_path(story_name: str, collection: str = "LM1000") -> str:
@@ -521,17 +516,16 @@ def get_public_story_path(story_name: str, collection: str = "LM1000") -> str:
 def get_story_translated_dialogue_path(
     story_name: str, collection: str = "LM1000"
 ) -> str:
-
     language = config.TARGET_LANGUAGE_NAME.lower()
     """Get the GCS path for a story's translated dialogue file."""
-    return f"collections/{collection}/stories/{story_name}/dialogue/{language}/translated_dialogue.json"
+    return f"collections/{collection}/{language}/stories/{story_name}/translated_dialogue.json"
 
 
 def get_translated_phrases_path(collection: str = "LM1000") -> str:
-    """Get the GCS path for a story's translated phrases file. These are dictionaries keyed of the phrase key
+    """Get the GCS path for a collections's translated phrases file. These are dictionaries keyed of the phrase key
     and contain translations and wiktionary links."""
     language = config.TARGET_LANGUAGE_NAME.lower()
-    return f"collections/{collection}/translations/{language}.json"
+    return f"collections/{collection}/{language}/translations.json"
 
 
 def get_wiktionary_cache_path() -> str:
@@ -552,7 +546,7 @@ def get_utterance_audio_path(
 ) -> str:
     """Get the GCS path for an utterance audio file."""
     filename = f"part_{index}_{speaker.lower()}.mp3"
-    return f"collections/{collection}/stories/{story_name}/audio/{language}/{story_part}/{filename}"
+    return f"collections/{collection}/{language}/stories/{story_name}/audio/{story_part}/{filename}"
 
 
 def get_fast_audio_path(
@@ -560,12 +554,12 @@ def get_fast_audio_path(
 ) -> str:
     language = config.TARGET_LANGUAGE_NAME.lower()
     """Get the GCS path for a fast audio file."""
-    return f"collections/{collection}/stories/{story_name}/audio/{language}/{story_part}/fast.mp3"
+    return f"collections/{collection}/{language}/stories/{story_name}/audio/{story_part}/fast.mp3"
 
 
 def get_image_path(story_name: str, story_part: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story part image."""
-    return f"collections/{collection}/stories/{story_name}/images/{story_part}.png"
+    return f"collections/{collection}/common/stories/{story_name}/images/{story_part}.png"
 
 
 def get_stories_from_collection(
@@ -605,10 +599,10 @@ def get_phrase_audio_path(
         str: Path to the audio file in GCS
     """
     language = config.TARGET_LANGUAGE_NAME.lower()
-    return f"multimedia/audio/phrases/{language}/{speed}/{phrase_key}.mp3"
+    return f"phrases/{language}/audio/{speed}/{phrase_key}.mp3"
 
 
-def get_phrase_image_path(phrase_key: str) -> str:
+def get_phrase_image_path(phrase_key: str, use_language: bool = False) -> str:
     """
     Get the GCS path for a phrase's image file.
 
@@ -618,31 +612,11 @@ def get_phrase_image_path(phrase_key: str) -> str:
     Returns:
         str: Path to the image file in GCS
     """
-    return f"multimedia/images/core/{phrase_key}.png"
-
-
-def get_anki_deck_path(
-    story_name: str, collection: str = "LM1000", language: Optional[str] = None
-) -> str:
-    """
-    Get the GCS path for an Anki deck file.
-
-    Args:
-        story_name: Name of the story
-        collection: Collection name (default: "LM1000")
-        language: Optional language code (defaults to config.TARGET_LANGUAGE_NAME)
-
-    Returns:
-        str: Path to the Anki deck file in GCS
-        Format: collections/{collection}/anki/{language}/{story_name}.apkg
-    """
-    if language is None:
+    if use_language:
         language = config.TARGET_LANGUAGE_NAME.lower()
-
-    # Sanitize the story name for use in paths
-    sanitized_story = sanitize_path_component(story_name)
-
-    return f"collections/{collection}/anki/{language}/{sanitized_story}.apkg"
+        return f"phrases/{language}/images/{phrase_key}.png"
+    else:
+        return f"phrases/common/images/{phrase_key}.png"
 
 
 def get_phrase_path(collection: str = "LM1000") -> str:
@@ -717,15 +691,15 @@ def get_flashcard_path(
 
     Returns:
         str: Path to the flashcard file in GCS
-        Format: collections/{collection}/flashcards/{language}/{position}_{story_name}.apkg
-        If story_name is None, returns: collections/{collection}/flashcards/{language}/
+        Format: collections/{collection}/{language}/flashcards/{position}_{story_name}.apkg
+        If story_name is None, returns: collections/{collection}/{language}/flashcards/
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME.lower()
 
     # If story_name is None, return just the folder path
     if story_name is None:
-        return f"collections/{collection}/flashcards/{language}/"
+        return f"collections/{collection}/{language}/flashcards/"
 
     # Sanitize the story name for use in paths
     sanitized_story = sanitize_path_component(story_name)
@@ -735,7 +709,7 @@ def get_flashcard_path(
     if story_position is not None:
         position_str = f"{story_position:02d}_"
 
-    return f"collections/{collection}/flashcards/{language}/{position_str}{sanitized_story}.apkg"
+    return f"collections/{collection}/{language}/flashcards/{language}_{position_str}_{sanitized_story}.apkg"
 
 
 def get_marketing_image_path(
@@ -757,12 +731,12 @@ def get_marketing_image_path(
 
     Returns:
         str: GCS path (after bucket name) for the marketing image
-        Format: collections/{collection}/marketing/{language}/images/{filename}
+        Format: collections/{collection}/{language}/marketing/{filename}
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME.lower()
 
-    base_path = f"collections/{collection}/marketing/{language}/images/"
+    base_path = f"collections/{collection}/{language}/marketing/"
 
     if product_type == "complete":
         filename = f"{language}_{collection}_complete_pack.png"
@@ -781,3 +755,19 @@ def get_marketing_image_path(
         raise ValueError(f"Invalid product_type: {product_type}")
 
     return base_path + filename
+
+
+def get_shopify_image_path(filename: str, bucket_name: Optional[str] = None) -> str:
+    """
+    Get the GCS path for a Shopify image.
+
+    Args:
+        filename: Name of the image file
+
+    Returns:
+        str: GCS path for the Shopify image
+        Format: audio-language-trainer-private-content/resources/shopify/images/{filename}
+    """
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+    return f"{bucket_name}/resources/shopify/images/{filename}"
