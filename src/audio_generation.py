@@ -28,6 +28,7 @@ from src.gcs_storage import (
     get_utterance_audio_path,
     read_from_gcs,
     upload_to_gcs,
+    get_phrase_audio_path,
 )
 from src.translation import tokenize_text
 
@@ -814,7 +815,7 @@ def create_m4a_with_timed_lyrics(
         combined_audio.export(temp_buffer, format="ipod")
         temp_buffer.seek(0)
 
-        output_file = m4a_filename.rsplit('/')[0]
+        output_file = m4a_filename.rsplit("/")[0]
         # Add metadata to the M4A file
         temp_file_path = (
             f"/tmp/{output_file}_temp"
@@ -865,7 +866,10 @@ def create_m4a_with_timed_lyrics(
         os.remove(temp_file_path)
 
         gcs_uri = upload_to_gcs(
-            final_audio_data, bucket_name, file_name=m4a_filename, content_type="audio/mp4"
+            final_audio_data,
+            bucket_name,
+            file_name=m4a_filename,
+            content_type="audio/mp4",
         )
         print(f"Uploaded to GCS: {gcs_uri}")
         return gcs_uri
@@ -874,7 +878,6 @@ def create_m4a_with_timed_lyrics(
 def upload_phrases_audio_to_gcs(
     phrase_dict: Dict[str, Dict[str, str]],
     bucket_name: Optional[str] = None,
-    upload_english_audio: bool = False,
     overwrite: bool = False,
 ) -> Dict[str, Dict[str, Any]]:
     """
@@ -884,7 +887,6 @@ def upload_phrases_audio_to_gcs(
         phrase_dict: Dictionary with phrase_key as keys and values containing
                     'english' and target language phrases
         bucket_name: Optional GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
-        upload_english_audio: Whether to upload English audio (default: False)
         overwrite: Whether to overwrite existing files in GCS (default: False)
 
     Returns:
@@ -919,12 +921,8 @@ def upload_phrases_audio_to_gcs(
         clean_key = clean_filename(english_text)
 
         # Define paths for normal and slow audio
-        normal_path = (
-            f"multimedia/audio/phrases/{target_language_lower}/normal/{clean_key}.mp3"
-        )
-        slow_path = (
-            f"multimedia/audio/phrases/{target_language_lower}/slow/{clean_key}.mp3"
-        )
+        normal_path = get_phrase_audio_path(clean_key, "normal")
+        slow_path = get_phrase_audio_path(clean_key, "slow")
 
         # Check if files already exist (if not overwriting)
         if not overwrite:
@@ -949,15 +947,11 @@ def upload_phrases_audio_to_gcs(
                 continue
 
         try:
-            # Make sure we don't hit API rate limits
-            # ok_to_query_api()
-
             # Generate audio for this single phrase
             translated_phrase = (english_text, target_text)
             audio_segments = generate_translated_phrase_audio([translated_phrase])[0]
 
             # Get the audio segments
-            english_audio = audio_segments[0]
             slow_audio = audio_segments[1]
             normal_audio = audio_segments[2]
 
@@ -965,15 +959,13 @@ def upload_phrases_audio_to_gcs(
             normal_url = upload_to_gcs(
                 normal_audio,
                 bucket_name,
-                f"{clean_key}.mp3",
-                base_prefix=f"multimedia/audio/phrases/{target_language_lower}/normal",
+                file_name=normal_path,
             )
 
             slow_url = upload_to_gcs(
                 slow_audio,
                 bucket_name,
-                f"{clean_key}.mp3",
-                base_prefix=f"multimedia/audio/phrases/{target_language_lower}/slow",
+                file_name=slow_path,
             )
 
             # Store results
@@ -983,28 +975,7 @@ def upload_phrases_audio_to_gcs(
             result_dict[phrase_key]["audio_urls"]["normal"] = normal_url
             result_dict[phrase_key]["audio_urls"]["slow"] = slow_url
 
-            # Optionally upload English audio
-            if upload_english_audio:
-                english_path = f"multimedia/audio/phrases/english/{clean_key}.mp3"
-
-                # Check if English audio exists if not overwriting
-                if not overwrite and check_blob_exists(bucket_name, english_path):
-                    print(
-                        f"Skipping English audio for phrase {phrase_key} - file already exists"
-                    )
-                    result_dict[phrase_key]["audio_urls"][
-                        "english"
-                    ] = f"gs://{bucket_name}/{english_path}"
-                else:
-                    english_url = upload_to_gcs(
-                        english_audio,
-                        bucket_name,
-                        f"{clean_key}.mp3",
-                        base_prefix="multimedia/audio/phrases/english",
-                    )
-                    result_dict[phrase_key]["audio_urls"]["english"] = english_url
-
-            print(f"Successfully processed and uploaded audio for phrase: {phrase_key}")
+            print(f"{normal_path} and {slow_path} uploaded to GCS")
 
         except Exception as e:
             print(f"Error processing phrase {phrase_key}: {str(e)}")
