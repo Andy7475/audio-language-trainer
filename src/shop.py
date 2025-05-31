@@ -964,7 +964,7 @@ def generate_spread_deck_image(
         story_name = selected_stories[0]
 
     # Get the first marketing image path (this is the one we're creating)
-    marketing_image_paths = get_marketing_image_path(
+    marketing_image_path = get_marketing_image_path(
         product_type=product_type,
         collection=collection,
         language=language,
@@ -973,7 +973,7 @@ def generate_spread_deck_image(
     )
 
     # The first path is the file we're creating
-    gcs_file_path = marketing_image_paths[0]
+    gcs_file_path = marketing_image_path
 
     # Read the image file
     with open(temp_output, "rb") as f:

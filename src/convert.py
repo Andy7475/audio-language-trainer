@@ -209,7 +209,9 @@ def get_deck_name(
     # Capitalize the language name
     language_cap = language.title()
 
-    return f"{language_cap}::{collection_title}::{position_str} {story_title}"
+    return (
+        f"FirePhrase - {language_cap}::{collection_title}::{position_str} {story_title}"
+    )
 
 
 def convert_bytes_to_base64(data: bytes) -> str:
