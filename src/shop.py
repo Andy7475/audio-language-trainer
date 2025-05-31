@@ -343,7 +343,7 @@ def generate_shopify_csv(
         "source language (product.metafields.custom.source_language)": source_language,
         "target language (product.metafields.custom.target_language)": target_language,
         "pack type (product.metafields.custom.pack_type)": "Complete",
-        #"Status": "draft",
+        # "Status": "draft",
     }
 
     add_product_with_images(complete_product, "complete")
@@ -399,7 +399,7 @@ def generate_shopify_csv(
             "source language (product.metafields.custom.source_language)": source_language,
             "target language (product.metafields.custom.target_language)": target_language,
             "pack type (product.metafields.custom.pack_type)": "Bundle",
-           # "Status": "draft",
+            # "Status": "draft",
         }
 
         add_product_with_images(bundle_product, "bundle", bundle_range=range_display)
@@ -447,7 +447,9 @@ def generate_shopify_csv(
             # Determine pricing - first 2 individual packs are free
             if position <= free_individual_count:
                 individual_price = "0.00"
-                print(f"  Setting as FREE (position {position} <= {free_individual_count})")
+                print(
+                    f"  Setting as FREE (position {position} <= {free_individual_count})"
+                )
             else:
                 individual_price = prices["individual"]
                 print(f"  Setting price: {individual_price}")
@@ -469,7 +471,7 @@ def generate_shopify_csv(
                 "source language (product.metafields.custom.source_language)": source_language,
                 "target language (product.metafields.custom.target_language)": target_language,
                 "pack type (product.metafields.custom.pack_type)": "Single",
-               # "Status": "draft",
+                # "Status": "draft",
             }
 
             add_product_with_images(individual_product, "individual", story_name=story)
@@ -511,7 +513,7 @@ def generate_shopify_csv(
         "source language (product.metafields.custom.source_language)",
         "target language (product.metafields.custom.target_language)",
         "pack type (product.metafields.custom.pack_type)",
-        #"Status",
+        # "Status",
     ]
 
     with open(output_file, "w", newline="", encoding="utf-8") as f:
@@ -852,7 +854,8 @@ def generate_spread_deck_image(
     # Get collection data
     collection_path = get_story_collection_path(collection)
     collection_data = read_from_gcs(bucket_name, collection_path, "json")
-    random.seed(12)  # Default seed for multi-story
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    random.seed(language + collection)  # Default seed for multi-story
     # Get story names based on positions if provided
     if story_positions:
         # Convert collection_data keys to list to maintain order
