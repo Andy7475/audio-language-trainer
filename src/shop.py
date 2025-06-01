@@ -116,7 +116,6 @@ ${story_list}
 <p>Experience words 'just sticking' in your memory with the vivid images and audio. Complete a deck of flashcards, then consolidate by listening to the final story. Each story reinforces previously learned words while introducing new vocabulary in memorable contexts, so it's important to do the stories in order.</p>
 <p>With 20 - 30 minutes a day expect to do a story every 5 - 7 days. You will average about 2 new words per flashcard, although initially this is higher as all words might be new, later it is lower. Learning therefore gets easier as the stories progress.</p>
 <p>With regular daily practice, complete this system in 3-4 months and dramatically expand your vocabulary foundation.</p>
-<p><strong>Save ${savings_percent}% compared to purchasing individual packs!</strong></p>
 """
     )
 
@@ -125,7 +124,7 @@ ${story_list}
         """
 <p><strong>${collection} Vocabulary Bundle (Stories ${range_display})</strong></p>
 <p>Continue your journey to language fluency with this carefully sequenced collection of story-based vocabulary packs. This bundle includes stories ${range_display} from our ${collection} series, designed to systematically build your mastery of the most common 1000 words.</p>
-
+<p>Gain cashback towards the complete collection, valid for 30 days.</p>
 <h3>Bundle Contents:</h3>
 ${story_list}
 
@@ -146,7 +145,6 @@ ${story_list}
 <li>High-quality AI-generated audio (human-curated for accuracy)</li>
 <li>Access to online companion stories for each pack</li>
 <li>Visual memory aids and Wiktionary links</li>
-<li>Save ${savings_percent}% compared to purchasing individually</li>
 </ul>
 """
     )
@@ -343,7 +341,7 @@ def generate_shopify_csv(
         "source language (product.metafields.custom.source_language)": source_language,
         "target language (product.metafields.custom.target_language)": target_language,
         "pack type (product.metafields.custom.pack_type)": "Complete",
-        #"Status": "draft",
+        # "Status": "draft",
     }
 
     add_product_with_images(complete_product, "complete")
@@ -389,7 +387,7 @@ def generate_shopify_csv(
             "Vendor": "FirePhrase",
             "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
             "Type": "Digital Flashcards",
-            "Tags": f"{target_language}, {source_language}, {collection_title}, Bundle, Digital Download, Language Learning",
+            "Tags": f"{target_language}, {source_language}, {collection_title}, Bundle, Continue, Digital Download, Language Learning",
             "Published": "TRUE",
             "Option1 Name": "Format",
             "Option1 Value": "Digital Download",
@@ -399,7 +397,7 @@ def generate_shopify_csv(
             "source language (product.metafields.custom.source_language)": source_language,
             "target language (product.metafields.custom.target_language)": target_language,
             "pack type (product.metafields.custom.pack_type)": "Bundle",
-           # "Status": "draft",
+            # "Status": "draft",
         }
 
         add_product_with_images(bundle_product, "bundle", bundle_range=range_display)
@@ -447,7 +445,9 @@ def generate_shopify_csv(
             # Determine pricing - first 2 individual packs are free
             if position <= free_individual_count:
                 individual_price = "0.00"
-                print(f"  Setting as FREE (position {position} <= {free_individual_count})")
+                print(
+                    f"  Setting as FREE (position {position} <= {free_individual_count})"
+                )
             else:
                 individual_price = prices["individual"]
                 print(f"  Setting price: {individual_price}")
@@ -469,7 +469,7 @@ def generate_shopify_csv(
                 "source language (product.metafields.custom.source_language)": source_language,
                 "target language (product.metafields.custom.target_language)": target_language,
                 "pack type (product.metafields.custom.pack_type)": "Single",
-               # "Status": "draft",
+                # "Status": "draft",
             }
 
             add_product_with_images(individual_product, "individual", story_name=story)
@@ -511,7 +511,7 @@ def generate_shopify_csv(
         "source language (product.metafields.custom.source_language)",
         "target language (product.metafields.custom.target_language)",
         "pack type (product.metafields.custom.pack_type)",
-        #"Status",
+        # "Status",
     ]
 
     with open(output_file, "w", newline="", encoding="utf-8") as f:
@@ -852,7 +852,8 @@ def generate_spread_deck_image(
     # Get collection data
     collection_path = get_story_collection_path(collection)
     collection_data = read_from_gcs(bucket_name, collection_path, "json")
-    random.seed(12)  # Default seed for multi-story
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    random.seed(language + collection)  # Default seed for multi-story
     # Get story names based on positions if provided
     if story_positions:
         # Convert collection_data keys to list to maintain order
@@ -961,7 +962,7 @@ def generate_spread_deck_image(
         story_name = selected_stories[0]
 
     # Get the first marketing image path (this is the one we're creating)
-    marketing_image_paths = get_marketing_image_path(
+    marketing_image_path = get_marketing_image_path(
         product_type=product_type,
         collection=collection,
         language=language,
@@ -970,7 +971,7 @@ def generate_spread_deck_image(
     )
 
     # The first path is the file we're creating
-    gcs_file_path = marketing_image_paths[0]
+    gcs_file_path = marketing_image_path
 
     # Read the image file
     with open(temp_output, "rb") as f:

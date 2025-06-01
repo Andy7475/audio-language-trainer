@@ -200,7 +200,7 @@ def get_deck_name(
     """
     # Get the story title without "story_" prefix and with proper capitalization
     story_title = get_story_title(story_name)
-
+    collection_title = get_collection_title(collection)
     # Format the position if provided
     position_str = ""
     if story_position is not None:
@@ -209,7 +209,9 @@ def get_deck_name(
     # Capitalize the language name
     language_cap = language.title()
 
-    return f"{language_cap}::{collection}::{position_str} {story_title}"
+    return (
+        f"FirePhrase - {language_cap}::{collection_title}::{position_str} {story_title}"
+    )
 
 
 def convert_bytes_to_base64(data: bytes) -> str:

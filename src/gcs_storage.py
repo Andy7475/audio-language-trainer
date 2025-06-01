@@ -173,18 +173,18 @@ def upload_to_gcs(
 
     elif hasattr(obj, "read"):  # For file-like objects
         # For zip files, ensure we're using the correct content type
-        if file_name.lower().endswith('.zip'):
+        if file_name.lower().endswith(".zip"):
             content_type = "application/zip"
-            
+
         # Upload to GCS using upload_from_file
         blob.upload_from_file(obj, content_type=content_type)
-        
+
         # Save locally if requested
         if save_local:
             # Reset file pointer to beginning for local save
             obj.seek(0)
             file_content = obj.read()
-            
+
             local_path = os.path.join(local_base_dir, bucket_name, full_path)
             os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "wb") as f:
@@ -426,7 +426,9 @@ def get_story_challenges_path(story_name: str, collection: str = "LM1000") -> st
     return f"collections/{collection}/common/stories/{story_name}/challenges.json"
 
 
-def get_story_translated_challenges_path(story_name: str, collection: str = "LM1000") -> str:
+def get_story_translated_challenges_path(
+    story_name: str, collection: str = "LM1000"
+) -> str:
     """Get the GCS path for a story's challenges webpage
     e.g: audio-language-trainer-stories/swedish/lm1000/story_birthday_party_planning_mishap/challenges.html
     """
@@ -435,15 +437,21 @@ def get_story_translated_challenges_path(story_name: str, collection: str = "LM1
     return f"{language}/{collection_folder}/{story_name}/challenges.html"
 
 
-def get_m4a_file_path(story_name: str, story_part: str, story_position:int, fast: bool = False, collection: str = "LM1000") -> str:
+def get_m4a_file_path(
+    story_name: str,
+    story_part: str,
+    story_position: int,
+    fast: bool = False,
+    collection: str = "LM1000",
+) -> str:
     """Get the GCS path for a story part's m4a file. All M4A files for a collection/language are stored in the same folder.
-    
+
     Args:
         story_name: Name of the story
         story_part: Part of the story (e.g., 'introduction')
         fast: Whether this is a fast version of the audio
         collection: Collection name (default: "LM1000")
-        
+
     Returns:
         str: Path to the m4a file in GCS
         Format: collections/{collection}/{language}/audio/{filename}
@@ -453,10 +461,14 @@ def get_m4a_file_path(story_name: str, story_part: str, story_position:int, fast
     story_part = sanitize_path_component(story_part)
 
     if fast:
-        filename = get_m4a_filename(story_name, story_part, fast=True, story_position=story_position)
+        filename = get_m4a_filename(
+            story_name, story_part, fast=True, story_position=story_position
+        )
         return f"collections/{collection}/{language}/audio/{filename}"
     else:
-        filename = get_m4a_filename(story_name, story_part, fast=False, story_position=story_position)
+        filename = get_m4a_filename(
+            story_name, story_part, fast=False, story_position=story_position
+        )
         return f"collections/{collection}/{language}/audio/{filename}"
 
 
@@ -472,24 +484,29 @@ def get_m4a_blob_prefix(story_name: str) -> str:
     return f"{language}/{story_name}/"
 
 
-def get_m4a_filename(story_name: str, story_part: str, fast: bool = False, story_position: Optional[int] = None) -> str:
+def get_m4a_filename(
+    story_name: str,
+    story_part: str,
+    fast: bool = False,
+    story_position: Optional[int] = None,
+) -> str:
     """Get the filename for a story part's m4a file.
-    
+
     Args:
         story_name: Name of the story
         story_part: Part of the story (e.g., 'introduction')
         fast: Whether this is a fast version of the audio
         story_position: Optional position number of the story in the collection
-        
+
     Returns:
         str: Filename in format: {language}_{position:02d}_{story_name}_{story_part}[_FAST].m4a
     """
     language = config.TARGET_LANGUAGE_NAME.lower()
     story_part = sanitize_path_component(story_part)
-    
+
     # Format position if provided, otherwise omit it
     position_str = f"{story_position:02d}_" if story_position is not None else ""
-    
+
     if fast:
         return f"{language}_{position_str}{story_name}_{story_part}_FAST.m4a"
     else:
@@ -509,7 +526,9 @@ def get_public_story_path(story_name: str, collection: str = "LM1000") -> str:
     language_folder = sanitize_path_component(language.lower())
     collection_folder = sanitize_path_component(collection.lower())
     story_folder = sanitize_path_component(story_name)
-    blob_path = f"{language_folder}/{collection_folder}/{story_folder}/{story_name}.html"
+    blob_path = (
+        f"{language_folder}/{collection_folder}/{story_folder}/{story_name}.html"
+    )
     return blob_path
 
 
@@ -559,7 +578,9 @@ def get_fast_audio_path(
 
 def get_image_path(story_name: str, story_part: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story part image."""
-    return f"collections/{collection}/common/stories/{story_name}/images/{story_part}.png"
+    return (
+        f"collections/{collection}/common/stories/{story_name}/images/{story_part}.png"
+    )
 
 
 def get_stories_from_collection(
@@ -675,7 +696,7 @@ def get_story_index_path(collection: str = "LM1000") -> str:
 
 
 def get_flashcard_path(
-    story_name: Optional[str],
+    story_name: Optional[str] = None,
     collection: str = "LM1000",
     language: Optional[str] = None,
     story_position: Optional[int] = None,
@@ -705,9 +726,11 @@ def get_flashcard_path(
     sanitized_story = sanitize_path_component(story_name)
 
     # Format the position if provided
-    position_str = ""
+    from src.story import get_story_position
+
+    story_position = get_story_position(story_name, collection=collection)
     if story_position is not None:
-        position_str = f"{story_position:02d}_"
+        position_str = f"{story_position:02d}"
 
     return f"collections/{collection}/{language}/flashcards/{language}_{position_str}_{sanitized_story}.apkg"
 
