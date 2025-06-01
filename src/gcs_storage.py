@@ -726,7 +726,9 @@ def get_flashcard_path(
     sanitized_story = sanitize_path_component(story_name)
 
     # Format the position if provided
-    position_str = ""
+    from src.story import get_story_position
+
+    story_position = get_story_position(story_name, collection=collection)
     if story_position is not None:
         position_str = f"{story_position:02d}"
 
