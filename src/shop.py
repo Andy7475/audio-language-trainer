@@ -116,7 +116,6 @@ ${story_list}
 <p>Experience words 'just sticking' in your memory with the vivid images and audio. Complete a deck of flashcards, then consolidate by listening to the final story. Each story reinforces previously learned words while introducing new vocabulary in memorable contexts, so it's important to do the stories in order.</p>
 <p>With 20 - 30 minutes a day expect to do a story every 5 - 7 days. You will average about 2 new words per flashcard, although initially this is higher as all words might be new, later it is lower. Learning therefore gets easier as the stories progress.</p>
 <p>With regular daily practice, complete this system in 3-4 months and dramatically expand your vocabulary foundation.</p>
-<p><strong>Save ${savings_percent}% compared to purchasing individual packs!</strong></p>
 """
     )
 
@@ -125,7 +124,7 @@ ${story_list}
         """
 <p><strong>${collection} Vocabulary Bundle (Stories ${range_display})</strong></p>
 <p>Continue your journey to language fluency with this carefully sequenced collection of story-based vocabulary packs. This bundle includes stories ${range_display} from our ${collection} series, designed to systematically build your mastery of the most common 1000 words.</p>
-
+<p>Gain cashback towards the complete collection, valid for 30 days.</p>
 <h3>Bundle Contents:</h3>
 ${story_list}
 
@@ -146,7 +145,6 @@ ${story_list}
 <li>High-quality AI-generated audio (human-curated for accuracy)</li>
 <li>Access to online companion stories for each pack</li>
 <li>Visual memory aids and Wiktionary links</li>
-<li>Save ${savings_percent}% compared to purchasing individually</li>
 </ul>
 """
     )
@@ -389,7 +387,7 @@ def generate_shopify_csv(
             "Vendor": "FirePhrase",
             "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
             "Type": "Digital Flashcards",
-            "Tags": f"{target_language}, {source_language}, {collection_title}, Bundle, Digital Download, Language Learning",
+            "Tags": f"{target_language}, {source_language}, {collection_title}, Bundle, Continue, Digital Download, Language Learning",
             "Published": "TRUE",
             "Option1 Name": "Format",
             "Option1 Value": "Digital Download",
