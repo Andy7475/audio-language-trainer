@@ -1,4 +1,4 @@
-const StoryViewer = ({ storyData, title, targetLanguage }) => {
+const StoryViewer = ({ storyData, title, targetLanguage, collectionName, collectionRaw }) => {
   const [activeSection, setActiveSection] = React.useState(() => {
     // Check if there's a hash in the URL on initial load
     const hash = window.location.hash.slice(1);
@@ -24,6 +24,8 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
   const audioQueue = React.useRef([]);
   const fastAudioQueue = React.useRef([]);
   const activeSectionAudio = React.useRef(null);
+
+  const story_folder = "story_" + title.replace(/\s+/g, '_').toLowerCase();
 
   React.useEffect(() => {
     // Hide loading message when component mounts
@@ -276,10 +278,20 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
       React.createElement('div', { className: 'max-w-4xl mx-auto' },
         React.createElement('div', { className: 'flex items-center gap-2' },
           React.createElement('a', {
+            href: 'https://storage.googleapis.com/audio-language-trainer-stories/index.html',
+            className: 'hover:text-blue-500 transition-colors'
+          }, 'All Languages'),
+          React.createElement('span', { className: 'text-gray-400' }, '>'),
+          React.createElement('a', {
             href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
             className: 'hover:text-blue-500 transition-colors'
-          }, `${targetLanguage} Stories`),
+          }, targetLanguage),
           React.createElement('span', { className: 'text-gray-400' }, '>'),
+          collectionName && React.createElement('a', {
+            href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/index.html`,
+            className: 'hover:text-blue-500 transition-colors'
+          }, collectionName),
+          collectionName && React.createElement('span', { className: 'text-gray-400' }, '>'),
           React.createElement('span', null, title)
         ),
         React.createElement('div', { className: 'flex items-center gap-4 mt-2' },
@@ -316,7 +328,11 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
               }
             },
             className: `button ${playbackMode === 'fast' ? 'secondary' : ''}`
-          }, playbackMode === 'normal' ? '■ Stop' : 'Play All')
+          }, playbackMode === 'normal' ? '■ Stop' : 'Play All'),
+          React.createElement('a', {
+            href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/${story_folder}/challenges.html`,
+            className: 'button'
+          }, 'Speaking Challenges')
         )
       )
     ),

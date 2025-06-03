@@ -74,12 +74,18 @@ def create_and_upload_html_story(
     # Read the HTML template
     template = Template(load_template(template_path))
 
+    # Read the shared styles
+    styles = load_template("styles.css")
+
     # Substitute the template variables
     html_content = template.substitute(
         title=story_title,
         story_data=json.dumps(prepared_data),
         language=language,
         react_component=react_component,
+        styles=styles,
+        collection_name=get_collection_title(collection),
+        collection_raw=collection,
     )
 
     try:

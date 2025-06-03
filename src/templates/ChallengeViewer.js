@@ -1,4 +1,4 @@
-const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
+const ChallengeViewer = ({ challengeData, title, targetLanguage, collectionName, collectionRaw }) => {
     const [apiKey, setApiKey] = React.useState('');
     const [activeSessions, setActiveSessions] = React.useState({});
     const [showAnswers, setShowAnswers] = React.useState({});
@@ -364,12 +364,22 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
             React.createElement('div', { className: 'max-w-4xl mx-auto' },
                 React.createElement('div', { className: 'flex items-center gap-2' },
                     React.createElement('a', {
-                        href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
+                        href: 'https://storage.googleapis.com/audio-language-trainer-stories/index.html',
                         className: 'hover:text-blue-500 transition-colors'
-                    }, `${targetLanguage} Stories`),
+                    }, 'All Languages'),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
                     React.createElement('a', {
-                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${story_folder}/${story_folder}.html`,
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
+                        className: 'hover:text-blue-500 transition-colors'
+                    }, targetLanguage),
+                    React.createElement('span', { className: 'text-gray-400' }, '>'),
+                    collectionName && React.createElement('a', {
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/index.html`,
+                        className: 'hover:text-blue-500 transition-colors'
+                    }, collectionName),
+                    collectionName && React.createElement('span', { className: 'text-gray-400' }, '>'),
+                    React.createElement('a', {
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/${story_folder}/${story_folder}.html`,
                         className: 'hover:text-blue-500 transition-colors'
                     }, title),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
