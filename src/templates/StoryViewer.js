@@ -331,7 +331,7 @@ const StoryViewer = ({ storyData, title, targetLanguage, collectionName, collect
           }, playbackMode === 'normal' ? '■ Stop' : 'Play All'),
           React.createElement('a', {
             href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/${story_folder}/challenges.html`,
-            className: 'button'
+            className: 'button primary'
           }, 'Speaking Challenges')
         )
       )

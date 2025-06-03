@@ -38,6 +38,29 @@ from src.gcs_storage import (
 from src.utils import load_template, get_story_position
 from src.wiktionary import generate_wiktionary_links
 
+def upload_styles_to_gcs():
+    """Upload the styles.css file to the public GCS bucket."""
+    
+    # Load the CSS content with correct path handling
+    try:
+        # Try current directory first (when running from project root)
+        styles_content = load_template("styles.css", "src/templates")
+    except FileNotFoundError:
+        # Fallback to relative path (when running from subdirectory)
+        styles_content = load_template("styles.css", "../src/templates")
+    
+    # Upload to GCS
+    public_url = upload_to_gcs(
+        obj=styles_content,
+        bucket_name=config.GCS_PUBLIC_BUCKET,
+        file_name="styles.css",
+        content_type="text/css",
+    )
+    
+    print(f"✅ Styles uploaded successfully!")
+    print(f"🌐 Public URL: {public_url}")
+    
+    return public_url
 
 def create_and_upload_html_story(
     prepared_data: Dict,
@@ -74,16 +97,12 @@ def create_and_upload_html_story(
     # Read the HTML template
     template = Template(load_template(template_path))
 
-    # Read the shared styles
-    styles = load_template("styles.css")
-
     # Substitute the template variables
     html_content = template.substitute(
         title=story_title,
         story_data=json.dumps(prepared_data),
         language=language,
         react_component=react_component,
-        styles=styles,
         collection_name=get_collection_title(collection),
         collection_raw=collection,
     )
@@ -182,16 +201,12 @@ def create_html_story(
     # Read the HTML template
     template = Template(load_template(template_path))
 
-    # Read the shared styles
-    styles = load_template("styles.css")
-
     # Substitute the template variables
     html_content = template.substitute(
         title=story_title,
         story_data=json.dumps(prepared_data),
         language=language,
         react_component=react_component,
-        styles=styles,
     )
 
     # Create html file path
@@ -898,6 +913,11 @@ def update_all_index_pages_hierarchical(
 
     if verbose:
         print(f"Starting hierarchical index generation for bucket: {bucket_name}")
+
+    # Upload latest styles first
+    if verbose:
+        print("Uploading latest styles...")
+    upload_styles_to_gcs()
 
     results = {}
 

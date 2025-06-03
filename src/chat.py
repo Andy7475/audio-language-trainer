@@ -269,14 +269,13 @@ def create_html_challenges(
     react_component = load_template(component_path)
     template = Template(load_template(template_path))
     title = get_story_title(story_name)
-    styles = load_template("styles.css")
+    
     # Create the HTML content
     html_content = template.substitute(
         title=title,
         challenge_data=json.dumps(challenges),
         language=config.TARGET_LANGUAGE_NAME,
         react_component=react_component,
-        styles=styles,
         collection_name=get_collection_title(collection),
         collection_raw=collection,
     )
