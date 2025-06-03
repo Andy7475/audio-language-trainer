@@ -271,30 +271,18 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
     }, 'Copied!'),
     React.createElement('audio', { ref: audioRef, className: 'hidden' }),
 
-
-    // Header with global controls
+    // Header with consistent breadcrumb navigation
     React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
-      React.createElement('div', { className: 'flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4' },
-        React.createElement('div', { className: 'flex justify-between items-center' },
-          // Left side - existing title hierarchy
-          React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
-            React.createElement('a', {
-              href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
-              className: 'hover:text-blue-500 transition-colors'
-            }, `${targetLanguage} Stories`),
-            React.createElement('span', { className: 'text-gray-400' }, '>'),
-            title || 'Language Learning Story'
-          ),
-          // In StoryViewer.js, update the speaking challenges button
+      React.createElement('div', { className: 'max-w-4xl mx-auto' },
+        React.createElement('div', { className: 'flex items-center gap-2' },
           React.createElement('a', {
-            href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/story_${title.toLowerCase().replace(/\s+/g, '_')}/challenges.html`,
-            className: 'ml-4 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm flex items-center gap-2 font-medium'
-          },
-            React.createElement('span', null, '🎤'),
-            'Try Speaking Practice'
-          )
+            href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
+            className: 'hover:text-blue-500 transition-colors'
+          }, `${targetLanguage} Stories`),
+          React.createElement('span', { className: 'text-gray-400' }, '>'),
+          React.createElement('span', null, title)
         ),
-        React.createElement('div', { className: 'flex items-center gap-4' },
+        React.createElement('div', { className: 'flex items-center gap-4 mt-2' },
           React.createElement('div', { className: 'flex items-center gap-2' },
             React.createElement('label', { htmlFor: 'loopCount', className: 'text-sm' },
               'Loops:'
@@ -317,27 +305,19 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                 playAllFastAudio(loopCount);
               }
             },
-            className: `px-4 py-2 rounded-lg ${
-              playbackMode === 'normal'
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700'
-            } text-white`
+            className: `button ${playbackMode === 'normal' ? 'secondary' : ''}`
           }, playbackMode === 'all' ? '■ Stop' : `Play All Fast`),
-
-        React.createElement('button', {
-          onClick: () => {
-            if (playbackMode === 'normal') {
-              stopPlayback();
-            } else {
-              playAllNormal();
-            }
-          },
-          className: `px-4 py-2 rounded-lg mr-2 ${
-            playbackMode === 'fast'
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-green-800 hover:bg-green-900'
-          } text-white`
-        }, playbackMode === 'normal' ? '■ Stop' : 'Play All'),),
+          React.createElement('button', {
+            onClick: () => {
+              if (playbackMode === 'normal') {
+                stopPlayback();
+              } else {
+                playAllNormal();
+              }
+            },
+            className: `button ${playbackMode === 'fast' ? 'secondary' : ''}`
+          }, playbackMode === 'normal' ? '■ Stop' : 'Play All')
+        )
       )
     ),
 
@@ -347,7 +327,7 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
         React.createElement('div', {
           key: sectionName,
           id: sectionName,
-          className: 'mb-6 bg-white rounded-lg shadow-md scroll-mt-20'
+          className: 'card mb-6'
         },
           // Section header with anchor
           React.createElement('a', {
@@ -358,21 +338,17 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
               setActiveSection(newState);
               if (newState !== null) {
                 window.location.hash = sectionName;
-                // Scroll to position the section header at the top of the viewport
                 const element = document.getElementById(sectionName);
                 if (element) {
-                  // Add a small delay to ensure the content is expanded before scrolling
                   setTimeout(() => {
                     element.scrollIntoView({ 
                       behavior: 'smooth',
                       block: 'start'
                     });
-                    // Offset for both the fixed header and the section header
-                    window.scrollBy(0, -120); // Increased from -80 to -120 to account for both headers
+                    window.scrollBy(0, -120);
                   }, 50);
                 }
               } else {
-                // Remove hash when closing section
                 history.pushState('', document.title, window.location.pathname + window.location.search);
               }
             },
@@ -406,26 +382,20 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
               React.createElement('button', {
                 onClick: () => playAllDialogue(sectionIndex, section.audio_data.dialogue),
                 disabled: playbackMode !== null,
-                className: `w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base ${playbackMode !== null
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-                  } text-white`
+                className: `button ${playbackMode !== null ? 'secondary' : ''}`
               }, playbackMode === 'normal' ? 'Playing...' : 'Play Dialogue'),
 
               React.createElement('button', {
                 onClick: () => playFastAudio(sectionIndex, loopCount),
                 disabled: playbackMode !== null,
-                className: `w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base ${playbackMode !== null
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-green-600 hover:bg-green-700'
-                  } text-white`
+                className: `button ${playbackMode !== null ? 'secondary' : ''}`
               }, playbackMode !== null
                 ? `Playing (${remainingLoops + 1} loops left)`
                 : 'Play Fast Version'),
 
               playbackMode && React.createElement('button', {
                 onClick: stopPlayback,
-                className: 'w-full px-4 py-3 sm:py-2 rounded-lg text-lg sm:text-base bg-red-600 hover:bg-red-700 text-white'
+                className: 'button danger'
               }, '■ Stop'),
 
               // Add English text toggle here
@@ -433,7 +403,7 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                 React.createElement('label', { className: 'text-sm text-gray-600' }, 'Show English:'),
                 React.createElement('button', {
                   onClick: () => setShowEnglish(!showEnglish),
-                  className: `px-3 py-1 rounded-lg ${showEnglish ? 'bg-green-600' : 'bg-gray-600'} hover:opacity-90 transition-colors text-white text-sm`
+                  className: `button ${showEnglish ? '' : 'secondary'}`
                 }, showEnglish ? 'On' : 'Off')
               )
             ),
@@ -464,17 +434,16 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
                     section.audio_data?.dialogue[index] && React.createElement('button', {
                       onClick: () => playAudioData(section.audio_data.dialogue[index]),
                       disabled: playbackMode !== null,
-                      className: `p-2 rounded-full hover:bg-gray-200 ${playbackMode !== null ? 'opacity-50 cursor-not-allowed' : ''
-                        }`
+                      className: `button secondary ${playbackMode !== null ? 'opacity-50 cursor-not-allowed' : ''}`
                     }, '🔊'),
                     React.createElement('button', {
                       onClick: () => copyToClipboard(utterance.text),
-                      className: 'p-2 rounded-full hover:bg-gray-200',
+                      className: 'button secondary',
                       title: 'Copy phrase'
                     }, '📋'),
                     React.createElement('button', {
                       onClick: (e) => copyPrompt(utterance.text, e),
-                      className: 'p-2 rounded-full hover:bg-gray-200',
+                      className: 'button secondary',
                       title: 'Copy as prompt and open Claude'
                     }, '💡')
                   )
@@ -484,7 +453,6 @@ const StoryViewer = ({ storyData, title, targetLanguage }) => {
           )
         )
       )
-
     )
   );
 };

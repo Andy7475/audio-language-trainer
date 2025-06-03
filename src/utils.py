@@ -223,7 +223,19 @@ def save_json(data, file_path):
 
 
 def load_template(filename, parent_path: str = "../src/templates"):
-    # print(os.listdir())
+    """Load a template file from the templates directory.
+
+    Args:
+        filename: Name of the template file
+        parent_path: Parent directory containing the templates folder
+
+    Returns:
+        str: Contents of the template file
+    """
+    # Handle CSS files
+    if filename.endswith(".css"):
+        parent_path = os.path.join(parent_path, "styles")
+
     filename = os.path.join(parent_path, filename)
     with open(filename, "r", encoding="utf-8") as f:
         return f.read()
@@ -324,7 +336,9 @@ def extract_json_from_llm_response(response):
         return None
 
 
-def get_story_position(story_name: str, collection: str = "LM1000", bucket_name: Optional[str] = None) -> int:
+def get_story_position(
+    story_name: str, collection: str = "LM1000", bucket_name: Optional[str] = None
+) -> int:
     """
     Get the position of a story in the collection.
 
@@ -342,7 +356,6 @@ def get_story_position(story_name: str, collection: str = "LM1000", bucket_name:
     Raises:
         ValueError: If story_name is not found in collection data
     """
-
 
     if bucket_name is None:
         bucket_name = config.GCS_PRIVATE_BUCKET

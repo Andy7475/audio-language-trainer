@@ -33,7 +33,7 @@ from src.gcs_storage import (
     get_wiktionary_cache_path,
     read_from_gcs,
     upload_to_gcs,
-    get_story_collection_path
+    get_story_collection_path,
 )
 from src.utils import load_template, get_story_position
 from src.wiktionary import generate_wiktionary_links
@@ -176,12 +176,16 @@ def create_html_story(
     # Read the HTML template
     template = Template(load_template(template_path))
 
+    # Read the shared styles
+    styles = load_template("styles.css")
+
     # Substitute the template variables
     html_content = template.substitute(
         title=story_title,
         story_data=json.dumps(prepared_data),
         language=language,
         react_component=react_component,
+        styles=styles,
     )
 
     # Create html file path
@@ -378,7 +382,7 @@ def prepare_story_data_for_html(
             "dialogue": section_data.get("dialogue", []),
             "translated_dialogue": prepare_dialogue_with_wiktionary(
                 section_data.get("translated_dialogue", []),
-                language_name=config.TARGET_LANGUAGE_NAME
+                language_name=config.TARGET_LANGUAGE_NAME,
             ),
             "audio_data": {
                 "dialogue": [],
@@ -420,6 +424,7 @@ def prepare_story_data_for_html(
         # NOTE: We no longer include m4a_data here as it's available through the dedicated downloads page
 
     return prepared_data
+
 
 def upload_story_image(
     image_file: str,
@@ -560,50 +565,46 @@ def generate_hierarchical_index_system(
 ) -> dict:
     """
     Generate a hierarchical index system: Main Index > Language Index > Collection Index.
-    
-    This replaces the bucket scraping approach with a structured system based on 
+
+    This replaces the bucket scraping approach with a structured system based on
     collection data files.
-    
+
     Args:
         languages: List of language names (defaults to [config.TARGET_LANGUAGE_NAME])
         collections: List of collection names (defaults to ["LM1000"])
-        bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET) 
+        bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
         upload: Whether to upload generated files
-        
+
     Returns:
         dict: Results with URLs for all generated index pages
     """
-    
+
     if languages is None:
         languages = [config.TARGET_LANGUAGE_NAME]
     if collections is None:
         collections = ["LM1000"]
     if bucket_name is None:
         bucket_name = config.GCS_PUBLIC_BUCKET
-        
-    results = {
-        "main_index": None,
-        "language_indexes": {},
-        "collection_indexes": {}
-    }
-    
+
+    results = {"main_index": None, "language_indexes": {}, "collection_indexes": {}}
+
     # 1. Generate main index (language selector)
     results["main_index"] = generate_main_language_index(
         languages=languages,
         bucket_name=bucket_name,
         upload=upload,
-        collections=collections
+        collections=collections,
     )
-    
+
     # 2. Generate language-level indexes
     for language in languages:
         results["language_indexes"][language] = generate_language_collection_index(
             language=language,
             collections=collections,
             bucket_name=bucket_name,
-            upload=upload
+            upload=upload,
         )
-        
+
         # 3. Generate collection-level indexes for this language
         for collection in collections:
             key = f"{language}_{collection}"
@@ -611,9 +612,9 @@ def generate_hierarchical_index_system(
                 language=language,
                 collection=collection,
                 bucket_name=bucket_name,
-                upload=upload
+                upload=upload,
             )
-    
+
     return results
 
 
@@ -624,36 +625,38 @@ def generate_main_language_index(
     collections: List[str] = None,
 ) -> str:
     """Generate the main index page that shows available languages."""
-    
+
     if collections is None:
         collections = ["LM1000"]
-    
+
     # Get language statistics
     language_cards = ""
     special_pages = get_special_pages_from_bucket(bucket_name)
-    
+
     for language in languages:
         # Get stats for this language across all collections
         total_stories = 0
         collections_available = []
-        
+
         # Check which collections exist for this language
         for collection in collections:
             try:
                 collection_data = read_from_gcs(
-                    config.GCS_PRIVATE_BUCKET, 
-                    get_story_collection_path(collection), 
-                    "json"
+                    config.GCS_PRIVATE_BUCKET,
+                    get_story_collection_path(collection),
+                    "json",
                 )
                 if collection_data:
                     collections_available.append(collection)
                     total_stories += len(collection_data)
             except:
                 continue
-                
-        stats_text = f"{len(collections_available)} collections, {total_stories} stories"
+
+        stats_text = (
+            f"{len(collections_available)} collections, {total_stories} stories"
+        )
         language_url = f"{language.lower()}/index.html"
-        
+
         language_cards += f"""
         <div class="language-card">
             <div class="language-name">{language}</div>
@@ -661,12 +664,12 @@ def generate_main_language_index(
             <a href="{language_url}" class="language-link">Browse Stories</a>
         </div>
         """
-    
+
     # Generate special pages section
     special_pages_html = ""
     if special_pages:
         special_links = "\n".join(
-            f'<a href="{page["url"]}" class="special-link">{page["name"]}</a>' 
+            f'<a href="{page["url"]}" class="special-link">{page["name"]}</a>'
             for page in special_pages
         )
         special_pages_html = f"""
@@ -677,14 +680,14 @@ def generate_main_language_index(
             </div>
         </div>
         """
-    
+
     # Load and fill template
     template = Template(load_template("index_template.html"))
     html_content = template.substitute(
         language_cards=language_cards,
         special_pages=special_pages_html,
     )
-    
+
     # Upload directly using upload_to_gcs (which handles local saving automatically)
     if upload:
         url = upload_to_gcs(
@@ -694,7 +697,7 @@ def generate_main_language_index(
             content_type="text/html",
         )
         return url
-    
+
     return None
 
 
@@ -705,23 +708,21 @@ def generate_language_collection_index(
     upload: bool = True,
 ) -> str:
     """Generate a language-level index showing available collections."""
-    
+
     collection_cards = ""
-    
+
     for collection in collections:
         try:
             # Get collection data
             collection_data = read_from_gcs(
-                config.GCS_PRIVATE_BUCKET,
-                get_story_collection_path(collection),
-                "json"
+                config.GCS_PRIVATE_BUCKET, get_story_collection_path(collection), "json"
             )
-            
+
             story_count = len(collection_data)
             collection_title = get_collection_title(collection)
-            
+
             collection_url = f"{collection.lower()}/index.html"
-            
+
             collection_cards += f"""
             <div class="collection-card">
                 <div class="collection-title">{collection_title}</div>
@@ -731,11 +732,11 @@ def generate_language_collection_index(
                 </div>
             </div>
             """
-            
+
         except Exception as e:
             print(f"Warning: Could not load collection {collection}: {e}")
             continue
-    
+
     # Load and fill template
     template = Template(load_template("language_index_template.html"))
     html_content = template.substitute(
@@ -743,7 +744,7 @@ def generate_language_collection_index(
         collection_cards=collection_cards,
         main_index_url="../index.html",
     )
-    
+
     # Upload directly using upload_to_gcs
     if upload:
         blob_path = f"{language.lower()}/index.html"
@@ -754,7 +755,7 @@ def generate_language_collection_index(
             content_type="text/html",
         )
         return url
-    
+
     return None
 
 
@@ -765,26 +766,24 @@ def generate_collection_story_index(
     upload: bool = True,
 ) -> str:
     """Generate a collection-level index showing stories ordered by position."""
-    
+
     try:
         # Get collection data
         collection_data = read_from_gcs(
-            config.GCS_PRIVATE_BUCKET,
-            get_story_collection_path(collection),
-            "json"
+            config.GCS_PRIVATE_BUCKET, get_story_collection_path(collection), "json"
         )
-        
+
         story_cards = ""
-        
+
         # Generate story cards ordered by position
         for position, (story_name, story_data) in enumerate(collection_data.items(), 1):
             story_title = get_story_title(story_name)
             phrase_count = len(story_data) if isinstance(story_data, list) else 0
-            
+
             # Generate URLs - relative from collection index to story folder
             story_url = f"{story_name}/{story_name}.html"
             challenges_url = f"{story_name}/challenges.html"
-            
+
             story_cards += f"""
             <div class="story-card">
                 <div class="story-number">{position:02d}</div>
@@ -796,10 +795,10 @@ def generate_collection_story_index(
                 </div>
             </div>
             """
-        
+
         story_count = len(collection_data)
         collection_title = get_collection_title(collection)
-        
+
         # Load and fill template
         template = Template(load_template("collection_index_template.html"))
         html_content = template.substitute(
@@ -810,7 +809,7 @@ def generate_collection_story_index(
             main_index_url="../../index.html",
             language_index_url="../index.html",
         )
-        
+
         # Upload directly using upload_to_gcs
         if upload:
             blob_path = f"{language.lower()}/{collection.lower()}/index.html"
@@ -821,9 +820,9 @@ def generate_collection_story_index(
                 content_type="text/html",
             )
             return url
-        
+
         return None
-        
+
     except Exception as e:
         print(f"Error generating collection index for {language}/{collection}: {e}")
         return None
@@ -832,25 +831,30 @@ def generate_collection_story_index(
 def get_special_pages_from_bucket(bucket_name: str) -> List[Dict[str, str]]:
     """Get special pages (non-story pages) from bucket."""
     special_pages = []
-    
+
     try:
         client = storage.Client()
         bucket = client.bucket(bucket_name)
-        
+
         for blob in bucket.list_blobs():
             if blob.name.endswith(".html"):
                 path = Path(blob.name)
                 parts = path.parts
-                
+
                 # Only root-level files that aren't index.html
                 if len(parts) == 1 and parts[0] != "index.html":
-                    special_pages.append({
-                        "name": parts[0].replace(".html", "").replace("_", " ").title(),
-                        "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
-                    })
+                    special_pages.append(
+                        {
+                            "name": parts[0]
+                            .replace(".html", "")
+                            .replace("_", " ")
+                            .title(),
+                            "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
+                        }
+                    )
     except Exception as e:
         print(f"Warning: Could not load special pages: {e}")
-    
+
     return special_pages
 
 
@@ -866,7 +870,7 @@ def update_all_index_pages_hierarchical(
 
     This function generates and uploads:
     - Main language selector index (index.html)
-    - Language-level collection indexes 
+    - Language-level collection indexes
     - Collection-level story indexes (with numbered stories)
 
     Args:
@@ -900,14 +904,16 @@ def update_all_index_pages_hierarchical(
             languages=languages,
             collections=collections,
             bucket_name=bucket_name,
-            upload=force_upload
+            upload=force_upload,
         )
 
-        results.update({
-            "main_index": {"url": hierarchical_results["main_index"]},
-            "language_indexes": hierarchical_results["language_indexes"],
-            "collection_indexes": hierarchical_results["collection_indexes"],
-        })
+        results.update(
+            {
+                "main_index": {"url": hierarchical_results["main_index"]},
+                "language_indexes": hierarchical_results["language_indexes"],
+                "collection_indexes": hierarchical_results["collection_indexes"],
+            }
+        )
 
         if verbose:
             print(f"✅ Main index: {hierarchical_results['main_index']}")

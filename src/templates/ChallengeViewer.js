@@ -359,22 +359,23 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
     };
 
     return React.createElement('div', { className: 'min-h-screen bg-gray-100' },
-        // Keep existing header with API key input
+        // Header with consistent breadcrumb navigation
         React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
             React.createElement('div', { className: 'max-w-4xl mx-auto' },
-                React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
+                React.createElement('div', { className: 'flex items-center gap-2' },
                     React.createElement('a', {
                         href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
                         className: 'hover:text-blue-500 transition-colors'
-                      }, `${targetLanguage} Stories`),
+                    }, `${targetLanguage} Stories`),
+                    React.createElement('span', { className: 'text-gray-400' }, '>'),
                     React.createElement('a', {
                         href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${story_folder}/${story_folder}.html`,
                         className: 'hover:text-blue-500 transition-colors'
-                    }, `> ${title} `),
+                    }, title),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
-                    'Speaking Challenges'
+                    React.createElement('span', null, 'Speaking Challenges')
                 ),
-                React.createElement('div', { className: 'flex items-center gap-4' },
+                React.createElement('div', { className: 'flex items-center gap-4 mt-2' },
                     React.createElement('label', { className: 'text-sm font-medium' }, 'OpenAI API Key:'),
                     React.createElement('input', {
                         type: 'password',
