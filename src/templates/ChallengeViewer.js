@@ -369,7 +369,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage, collectionName,
                     }, 'All Languages'),
                     React.createElement('span', { className: 'breadcrumb-separator' }, '>'),
                     React.createElement('a', {
-                        href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/index.html`,
                         className: 'breadcrumb-link'
                     }, targetLanguage),
                     React.createElement('span', { className: 'breadcrumb-separator' }, '>'),
