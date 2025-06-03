@@ -6,55 +6,27 @@
     <title>$title</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        .loading-message {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 2rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            z-index: 50;
-        }
-        .loading-message.hidden {
-            display: none;
-        }
-        .audio-player {
-            display: none;
-        }
-        .info-link {
-            text-decoration: none;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-        .info-link:hover {
-            opacity: 1;
-        }
-    </style>
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles.css">
 </head>
-<body>
+<body class="template-body">
     <div id="loading-message" class="loading-message">
-        <h2 class="text-xl font-bold mb-2">Loading Story Content</h2>
-        <p class="text-gray-600">Please wait while we prepare your language learning content...</p>
+        <h2>Loading Story Content</h2>
+        <p>Please wait while we prepare your language learning content...</p>
     </div>
     
     <div id="root"></div>
     <a href="https://storage.googleapis.com/audio-language-trainer-stories/time_compressed_speech.html" 
-   target="_blank" 
-   rel="noopener noreferrer"
-   class="info-link fixed bottom-4 right-4 flex items-center gap-2 text-blue-600 bg-white rounded-lg px-3 py-2 shadow-md hover:bg-blue-50"
-   title="Learn about speed listening practice">
+       target="_blank" 
+       rel="noopener noreferrer"
+       class="template-info-link"
+       title="Learn about speed listening practice">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="16" x2="12" y2="12"></line>
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
         </svg>
-        <span class="text-sm font-medium">About Speed Listening</span>
+        <span>About Speed Listening</span>
     </a>
     <script>
         // Define the function to hide loading message
@@ -79,7 +51,9 @@
         root.render(React.createElement(StoryViewer, { 
             storyData: storyData,
             targetLanguage: targetLanguage,
-            title: "$title"
+            title: "$title",
+            collectionName: "$collection_name",
+            collectionRaw: "$collection_raw"
         }));
     </script>
 </body>

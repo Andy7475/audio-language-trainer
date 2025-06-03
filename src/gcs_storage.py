@@ -436,7 +436,6 @@ def get_story_translated_challenges_path(
     collection_folder = sanitize_path_component(collection.lower())
     return f"{language}/{collection_folder}/{story_name}/challenges.html"
 
-
 def get_m4a_file_path(
     story_name: str,
     story_part: str,

@@ -1,4 +1,4 @@
-const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
+const ChallengeViewer = ({ challengeData, title, targetLanguage, collectionName, collectionRaw }) => {
     const [apiKey, setApiKey] = React.useState('');
     const [activeSessions, setActiveSessions] = React.useState({});
     const [showAnswers, setShowAnswers] = React.useState({});
@@ -37,25 +37,25 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
         const [isExpanded, setIsExpanded] = React.useState(false);
     
         return React.createElement('div', { 
-            className: "mb-4 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg" 
+            className: "info-panel" 
         },
             React.createElement('div', {
-                className: "flex items-center justify-between cursor-pointer",
+                className: "info-panel-header",
                 onClick: () => setIsExpanded(!isExpanded)
             },
-                React.createElement('div', { className: "flex items-center space-x-2" },
-                    React.createElement('span', { className: "text-blue-600 text-xl" }, "ℹ️"),
-                    React.createElement('span', { className: "font-medium text-blue-800" }, 
+                React.createElement('div', { className: "info-panel-title" },
+                    React.createElement('span', { className: "info-panel-icon" }, "ℹ️"),
+                    React.createElement('span', { className: "info-panel-text" }, 
                         "Experimental AI Speaking Feature"
                     )
                 ),
-                React.createElement('button', { className: "text-blue-600" },
+                React.createElement('button', { className: "info-panel-toggle" },
                     isExpanded ? '▼' : '▶'
                 )
             ),
             
             isExpanded && React.createElement('div', { 
-                className: "mt-4 text-sm text-blue-700 space-y-2" 
+                className: "info-panel-content" 
             },
                 React.createElement('p', { className: "font-semibold" },
                     "🧪 This is an experimental feature provided complimentary with no technical support."
@@ -65,7 +65,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                 ),
                 
                 React.createElement('p', null, "For security and best practices:"),
-                React.createElement('ul', { className: "list-disc ml-6 space-y-1" },
+                React.createElement('ul', { className: "info-panel-list" },
                     React.createElement('li', null, "Create a dedicated API key for this application"),
                     React.createElement('li', null, "Disable auto top-up for this key"),
                     React.createElement('li', null, "Create the key in an isolated project"),
@@ -73,7 +73,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                         "Review the ",
                         React.createElement('a', {
                             href: "https://github.com/Andy7475/audio-language-trainer",
-                            className: "text-blue-600 hover:underline",
+                            className: "info-panel-link",
                             target: "_blank",
                             rel: "noopener noreferrer"
                         }, "open source code"),
@@ -82,12 +82,12 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                 ),
                 
                 React.createElement('p', null, "To get started:"),
-                React.createElement('ol', { className: "list-decimal ml-6 space-y-1" },
+                React.createElement('ol', { className: "info-panel-list" },
                     React.createElement('li', null, 
                         "Visit ",
                         React.createElement('a', {
                             href: "https://platform.openai.com/api-keys",
-                            className: "text-blue-600 hover:underline",
+                            className: "info-panel-link",
                             target: "_blank",
                             rel: "noopener noreferrer"
                         }, "OpenAI API Keys")
@@ -97,11 +97,11 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                     React.createElement('li', null, "Copy and paste the key above")
                 ),
                 
-                React.createElement('p', { className: "mt-4 text-xs" },
+                React.createElement('p', { className: "mt-2" },
                     "For more information, see OpenAI's ",
                     React.createElement('a', {
                         href: "https://help.openai.com/en/articles/5112595-best-practices-for-api-key-safety",
-                        className: "text-blue-600 hover:underline",
+                        className: "info-panel-link",
                         target: "_blank",
                         rel: "noopener noreferrer"
                     }, "API key safety best practices"),
@@ -358,29 +358,40 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
         setShowAnswers(prev => ({ ...prev, [challengeId]: !prev[challengeId] }));
     };
 
-    return React.createElement('div', { className: 'min-h-screen bg-gray-100' },
-        // Keep existing header with API key input
-        React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
-            React.createElement('div', { className: 'max-w-4xl mx-auto' },
-                React.createElement('h1', { className: 'text-xl font-bold flex items-center gap-2' },
+    return React.createElement('div', { className: 'app-container' },
+        // Header with consistent breadcrumb navigation
+        React.createElement('header', { className: 'app-header' },
+            React.createElement('div', { className: 'header-content' },
+                React.createElement('div', { className: 'breadcrumb-nav' },
                     React.createElement('a', {
-                        href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
-                        className: 'hover:text-blue-500 transition-colors'
-                      }, `${targetLanguage} Stories`),
+                        href: 'https://storage.googleapis.com/audio-language-trainer-stories/index.html',
+                        className: 'breadcrumb-link'
+                    }, 'All Languages'),
+                    React.createElement('span', { className: 'breadcrumb-separator' }, '>'),
                     React.createElement('a', {
-                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${story_folder}/${story_folder}.html`,
-                        className: 'hover:text-blue-500 transition-colors'
-                    }, `> ${title} `),
-                    React.createElement('span', { className: 'text-gray-400' }, '>'),
-                    'Speaking Challenges'
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/index.html`,
+                        className: 'breadcrumb-link'
+                    }, targetLanguage),
+                    React.createElement('span', { className: 'breadcrumb-separator' }, '>'),
+                    collectionName && React.createElement('a', {
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/index.html`,
+                        className: 'breadcrumb-link'
+                    }, collectionName),
+                    collectionName && React.createElement('span', { className: 'breadcrumb-separator' }, '>'),
+                    React.createElement('a', {
+                        href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/${story_folder}/${story_folder}.html`,
+                        className: 'breadcrumb-link'
+                    }, title),
+                    React.createElement('span', { className: 'breadcrumb-separator' }, '>'),
+                    React.createElement('span', { className: 'breadcrumb-current' }, 'Speaking Challenges')
                 ),
-                React.createElement('div', { className: 'flex items-center gap-4' },
-                    React.createElement('label', { className: 'text-sm font-medium' }, 'OpenAI API Key:'),
+                React.createElement('div', { className: 'api-key-controls' },
+                    React.createElement('label', { className: 'api-key-label' }, 'OpenAI API Key:'),
                     React.createElement('input', {
                         type: 'password',
                         value: apiKey,
                         onChange: (e) => setApiKey(e.target.value),
-                        className: 'flex-grow p-2 rounded text-black',
+                        className: 'api-key-input',
                         placeholder: 'sk-...'
                     })
                 )
@@ -391,48 +402,48 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
         React.createElement(InfoPanel),
 
         // Main content with grouped challenges
-        React.createElement('main', { className: 'max-w-4xl mx-auto p-4' },
+        React.createElement('main', { className: 'main-content' },
             challengeData.map((group, groupIndex) => 
                 React.createElement('div', {
                     key: groupIndex,
-                    className: 'mb-6 bg-white rounded-lg shadow-md overflow-hidden'
+                    className: 'content-card'
                 },
                     // Group header
                     React.createElement('div', {
-                        className: 'p-4 bg-gray-50 cursor-pointer hover:bg-gray-100',
+                        className: 'content-card-header',
                         onClick: () => toggleGroup(groupIndex)
                     },
                         React.createElement('div', { 
-                            className: 'flex justify-between items-center'
+                            className: 'content-card-title'
                         },
                             React.createElement('h2', { 
-                                className: 'text-xl font-semibold'
+                                className: 'content-card-heading'
                             }, `Scenario ${groupIndex + 1}`),
                             React.createElement('span', null, 
                                 expandedGroups[groupIndex] ? '▼' : '▶'
                             )
                         ),
                         React.createElement('p', { 
-                            className: 'mt-2 text-gray-600',
+                            className: 'content-card-description',
                             dangerouslySetInnerHTML: { __html: group.group_description }
                         })
                     ),
                     
                     // Variants section
                     expandedGroups[groupIndex] && React.createElement('div', { 
-                        className: 'p-4'
+                        className: 'content-card-body'
                     },
                         group.variants.map((variant, variantIndex) => 
                             React.createElement('div', {
                                 key: variantIndex,
-                                className: 'mb-4 last:mb-0 p-4 bg-gray-50 rounded-lg'
+                                className: 'variant-container'
                             },
                                 React.createElement('h3', { 
-                                    className: 'font-medium mb-2 text-lg'
+                                    className: 'variant-title'
                                 }, variant.variant),
                                 
                                 React.createElement('div', { 
-                                    className: 'flex flex-col sm:flex-row gap-2'
+                                    className: 'button-group'
                                 },
                                     React.createElement('button', {
                                         onClick: () => startSession(
@@ -440,10 +451,10 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                                             variant.llm_prompt
                                         ),
                                         disabled: activeSessions[`${groupIndex}-${variantIndex}`],
-                                        className: `px-4 py-2 rounded ${
+                                        className: `button ${
                                             activeSessions[`${groupIndex}-${variantIndex}`]
-                                                ? 'bg-gray-400 cursor-not-allowed'
-                                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                                                ? 'secondary'
+                                                : 'primary'
                                         }`
                                     }, activeSessions[`${groupIndex}-${variantIndex}`] 
                                         ? 'Session Active' 
@@ -453,25 +464,25 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                                     React.createElement('button', {
                                         onClick: () => endSession(`${groupIndex}-${variantIndex}`),
                                         disabled: !activeSessions[`${groupIndex}-${variantIndex}`],
-                                        className: `px-4 py-2 rounded ${
+                                        className: `button ${
                                             !activeSessions[`${groupIndex}-${variantIndex}`]
-                                                ? 'bg-gray-400 cursor-not-allowed'
-                                                : 'bg-red-600 hover:bg-red-700 text-white'
+                                                ? 'secondary'
+                                                : 'danger'
                                         }`
                                     }, 'End Session'),
                                     
                                     React.createElement('button', {
                                         onClick: () => toggleAnswer(`${groupIndex}-${variantIndex}`),
-                                        className: 'px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white'
+                                        className: 'button success'
                                     }, showAnswers[`${groupIndex}-${variantIndex}`] 
                                         ? 'Hide Answer' 
                                         : 'Show Answer'
                                     )
                                 ),
-                                React.createElement('div', { className: 'mt-2' },
+                                React.createElement('div', { className: 'prompt-display' },
                                     React.createElement('button', {
                                         onClick: () => togglePrompt(`${groupIndex}-${variantIndex}`, variant.llm_prompt),
-                                        className: 'text-sm text-gray-500 hover:text-gray-700'
+                                        className: 'prompt-toggle'
                                     }, showPrompts[`${groupIndex}-${variantIndex}`] ? 'Hide Prompt' : 'View/Edit Prompt'),
                                     
                                     showPrompts[`${groupIndex}-${variantIndex}`] && 
@@ -482,27 +493,27 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage }) => {
                                                 ...prev,
                                                 [`${groupIndex}-${variantIndex}`]: e.target.value
                                             })),
-                                            className: 'w-full p-2 border rounded text-sm font-mono',
+                                            className: 'prompt-textarea',
                                             rows: 4
                                         }),
                                         React.createElement('button', {
                                             onClick: () => copyPrompt(`${groupIndex}-${variantIndex}`),
-                                            className: 'mt-1 text-sm text-blue-600 hover:text-blue-800'
+                                            className: 'prompt-copy-btn'
                                         }, 'Copy Prompt')
                                     )
                                 ),
                                 
                                 connectionStatus[`${groupIndex}-${variantIndex}`] && 
                                     React.createElement('div', {
-                                        className: 'mt-2 p-2 bg-gray-100 rounded'
+                                        className: 'status-display'
                                     }, connectionStatus[`${groupIndex}-${variantIndex}`]),
                                 
                                 showAnswers[`${groupIndex}-${variantIndex}`] && 
                                     React.createElement('div', {
-                                        className: 'mt-4 p-4 bg-gray-100 rounded-lg'
+                                        className: 'answer-display'
                                     },
                                         React.createElement('h4', { 
-                                            className: 'font-medium mb-2'
+                                            className: 'answer-heading'
                                         }, 'Answer:'),
                                         React.createElement('p', null, variant.answer)
                                     )

@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from string import Template
 from typing import Dict, List, Tuple
-from src.convert import get_story_title
+from src.convert import get_story_title, get_collection_title
 from src.anki_tools import load_template
 from src.config_loader import config
 
@@ -245,6 +245,7 @@ def create_html_challenges(
     story_name: str,
     component_path: str = "ChallengeViewer.js",
     template_path: str = "challenge_template.html",
+    collection: str = "LM1000",
 ) -> str:
     """
     Create a standalone HTML file for language challenges using string.Template.
@@ -259,6 +260,7 @@ def create_html_challenges(
         language: Target language name
         component_path: Path to the React component file
         template_path: Path to the HTML template file
+        collection: Collection name for organizing stories
 
     Returns:
         The GCS URI of the uploaded HTML file
@@ -267,12 +269,15 @@ def create_html_challenges(
     react_component = load_template(component_path)
     template = Template(load_template(template_path))
     title = get_story_title(story_name)
+    
     # Create the HTML content
     html_content = template.substitute(
         title=title,
         challenge_data=json.dumps(challenges),
         language=config.TARGET_LANGUAGE_NAME,
         react_component=react_component,
+        collection_name=get_collection_title(collection),
+        collection_raw=collection,
     )
 
     from src.gcs_storage import get_story_translated_challenges_path, upload_to_gcs
