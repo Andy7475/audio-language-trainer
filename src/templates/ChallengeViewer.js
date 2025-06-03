@@ -362,36 +362,36 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage, collectionName,
         // Header with consistent breadcrumb navigation
         React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
             React.createElement('div', { className: 'max-w-4xl mx-auto' },
-                React.createElement('div', { className: 'flex items-center gap-2' },
+                React.createElement('div', { className: 'flex items-center gap-2 flex-wrap' },
                     React.createElement('a', {
                         href: 'https://storage.googleapis.com/audio-language-trainer-stories/index.html',
-                        className: 'hover:text-blue-500 transition-colors'
+                        className: 'hover:text-blue-500 transition-colors whitespace-nowrap'
                     }, 'All Languages'),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
                     React.createElement('a', {
                         href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
-                        className: 'hover:text-blue-500 transition-colors'
+                        className: 'hover:text-blue-500 transition-colors whitespace-nowrap'
                     }, targetLanguage),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
                     collectionName && React.createElement('a', {
                         href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/index.html`,
-                        className: 'hover:text-blue-500 transition-colors'
+                        className: 'hover:text-blue-500 transition-colors whitespace-nowrap'
                     }, collectionName),
                     collectionName && React.createElement('span', { className: 'text-gray-400' }, '>'),
                     React.createElement('a', {
                         href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/${story_folder}/${story_folder}.html`,
-                        className: 'hover:text-blue-500 transition-colors'
+                        className: 'hover:text-blue-500 transition-colors whitespace-nowrap'
                     }, title),
                     React.createElement('span', { className: 'text-gray-400' }, '>'),
-                    React.createElement('span', null, 'Speaking Challenges')
+                    React.createElement('span', { className: 'whitespace-nowrap' }, 'Speaking Challenges')
                 ),
-                React.createElement('div', { className: 'flex items-center gap-4 mt-2' },
-                    React.createElement('label', { className: 'text-sm font-medium' }, 'OpenAI API Key:'),
+                React.createElement('div', { className: 'flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2' },
+                    React.createElement('label', { className: 'text-sm font-medium whitespace-nowrap' }, 'OpenAI API Key:'),
                     React.createElement('input', {
                         type: 'password',
                         value: apiKey,
                         onChange: (e) => setApiKey(e.target.value),
-                        className: 'flex-grow p-2 rounded text-black',
+                        className: 'flex-grow p-2 rounded text-black min-w-0',
                         placeholder: 'sk-...'
                     })
                 )

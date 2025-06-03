@@ -276,27 +276,27 @@ const StoryViewer = ({ storyData, title, targetLanguage, collectionName, collect
     // Header with consistent breadcrumb navigation
     React.createElement('header', { className: 'bg-blue-600 text-white p-4 sticky top-0 z-10' },
       React.createElement('div', { className: 'max-w-4xl mx-auto' },
-        React.createElement('div', { className: 'flex items-center gap-2' },
+        React.createElement('div', { className: 'flex items-center gap-2 flex-wrap' },
           React.createElement('a', {
             href: 'https://storage.googleapis.com/audio-language-trainer-stories/index.html',
-            className: 'hover:text-blue-500 transition-colors'
+            className: 'hover:text-blue-500 transition-colors whitespace-nowrap'
           }, 'All Languages'),
           React.createElement('span', { className: 'text-gray-400' }, '>'),
           React.createElement('a', {
             href: `https://storage.googleapis.com/audio-language-trainer-stories/index.html#${targetLanguage.toLowerCase()}`,
-            className: 'hover:text-blue-500 transition-colors'
+            className: 'hover:text-blue-500 transition-colors whitespace-nowrap'
           }, targetLanguage),
           React.createElement('span', { className: 'text-gray-400' }, '>'),
           collectionName && React.createElement('a', {
             href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/index.html`,
-            className: 'hover:text-blue-500 transition-colors'
+            className: 'hover:text-blue-500 transition-colors whitespace-nowrap'
           }, collectionName),
           collectionName && React.createElement('span', { className: 'text-gray-400' }, '>'),
-          React.createElement('span', null, title)
+          React.createElement('span', { className: 'whitespace-nowrap' }, title)
         ),
-        React.createElement('div', { className: 'flex items-center gap-4 mt-2' },
+        React.createElement('div', { className: 'flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mt-2 flex-wrap' },
           React.createElement('div', { className: 'flex items-center gap-2' },
-            React.createElement('label', { htmlFor: 'loopCount', className: 'text-sm' },
+            React.createElement('label', { htmlFor: 'loopCount', className: 'text-sm whitespace-nowrap' },
               'Loops:'
             ),
             React.createElement('input', {
@@ -317,7 +317,7 @@ const StoryViewer = ({ storyData, title, targetLanguage, collectionName, collect
                 playAllFastAudio(loopCount);
               }
             },
-            className: `button ${playbackMode === 'normal' ? 'secondary' : ''}`
+            className: `button ${playbackMode === 'normal' ? 'secondary' : ''} whitespace-nowrap`
           }, playbackMode === 'all' ? '■ Stop' : `Play All Fast`),
           React.createElement('button', {
             onClick: () => {
@@ -327,11 +327,11 @@ const StoryViewer = ({ storyData, title, targetLanguage, collectionName, collect
                 playAllNormal();
               }
             },
-            className: `button ${playbackMode === 'fast' ? 'secondary' : ''}`
+            className: `button ${playbackMode === 'fast' ? 'secondary' : ''} whitespace-nowrap`
           }, playbackMode === 'normal' ? '■ Stop' : 'Play All'),
           React.createElement('a', {
             href: `https://storage.googleapis.com/audio-language-trainer-stories/${targetLanguage.toLowerCase()}/${(collectionRaw || collectionName).toLowerCase()}/${story_folder}/challenges.html`,
-            className: 'button'
+            className: 'button whitespace-nowrap'
           }, 'Speaking Challenges')
         )
       )
