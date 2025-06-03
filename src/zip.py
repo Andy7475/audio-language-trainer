@@ -55,7 +55,9 @@ def create_m4a_zip_collections(
     # Get the base path for M4A files to use for zip files
     # Use the first story to get the path structure
     if all_stories:
-        sample_m4a_path = get_m4a_file_path(all_stories[0], "introduction", 1, collection=collection)
+        sample_m4a_path = get_m4a_file_path(
+            all_stories[0], "introduction", 1, collection=collection
+        )
         base_path = Path(sample_m4a_path).parent
     else:
         base_path = Path(f"collections/{collection}/audio/{language}")
@@ -173,10 +175,10 @@ def _get_story_m4a_files(
         List of tuples (local_file_path, archive_name)
     """
     story_position = get_story_position(story_name, collection)
-    
+
     # Get the story parts from the dialogue data in GCS
     from src.gcs_storage import get_story_dialogue_path, read_from_gcs
-    
+
     dialogue_path = get_story_dialogue_path(story_name, collection)
     try:
         dialogue_data = read_from_gcs(bucket_name, dialogue_path, expected_type="json")
@@ -247,7 +249,9 @@ def _ensure_local_m4a_file(
         audio_segment = read_from_gcs(bucket_name, gcs_file_path, "audio")
 
         # Export to M4A format
-        audio_segment.export(str(local_path), format="ipod")  # ipod is the format name for m4a in pydub
+        audio_segment.export(
+            str(local_path), format="ipod"
+        )  # ipod is the format name for m4a in pydub
 
         return str(local_path)
 
@@ -257,8 +261,8 @@ def _ensure_local_m4a_file(
 
 
 def _create_zip_file(
-    m4a_files: List[Tuple[str, str]], 
-    zip_path: Path, 
+    m4a_files: List[Tuple[str, str]],
+    zip_path: Path,
     description: str,
     bucket_name: str,
 ) -> None:
@@ -275,10 +279,10 @@ def _create_zip_file(
         print(f"No files to zip for {description}")
         return
 
-    print(f"\nCreating {description} ({len(m4a_files)} files)")
-    print(f"Files to be included:")
-    for local_path, archive_name in m4a_files:
-        print(f"  - {archive_name} (from {local_path})")
+    # print(f"\nCreating {description} ({len(m4a_files)} files)")
+    # print(f"Files to be included:")
+    # for local_path, archive_name in m4a_files:
+    #    print(f"  - {archive_name} (from {local_path})")
 
     # Create zip file in memory
     print("\nCreating zip file in memory...")
@@ -288,7 +292,7 @@ def _create_zip_file(
             m4a_files, desc="Adding files", leave=False
         ):
             if os.path.exists(local_path):
-                print(f"Adding {archive_name} ({os.path.getsize(local_path) / 1024:.1f} KB)")
+                # print(f"Adding {archive_name} ({os.path.getsize(local_path) / 1024:.1f} KB)")
                 zipf.write(local_path, archive_name)
             else:
                 print(f"Warning: File not found: {local_path}")
@@ -302,5 +306,6 @@ def _create_zip_file(
     zip_path.parent.mkdir(parents=True, exist_ok=True)
     with open(zip_path, "wb") as f:
         f.write(zip_buffer.getvalue())
-    print(f"Local file written successfully: {zip_path.stat().st_size / (1024 * 1024):.1f} MB")
-
+    print(
+        f"Local file written successfully: {zip_path.stat().st_size / (1024 * 1024):.1f} MB"
+    )
