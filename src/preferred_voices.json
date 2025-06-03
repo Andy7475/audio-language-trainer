@@ -21,6 +21,28 @@
             }
         }
     },
+    "it-IT": {
+        "phrases": {
+            "female": {
+                "provider": "google",
+                "voice_id": "it-IT-Neural2-E"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "it-IT-Neural2-F"
+            }
+        },
+        "stories": {
+            "female": {
+                "provider": "google",
+                "voice_id": "it-IT-Chirp-HD-F"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "it-IT-Chirp-HD-D"
+            }
+        }
+    },
     "nb-NO": {
         "phrases": {
             "female": {
