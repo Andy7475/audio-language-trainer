@@ -21,6 +21,28 @@
             }
         }
     },
+    "nb-NO": {
+        "phrases": {
+            "female": {
+                "provider": "azure",
+                "voice_id": "nb-NO-IselinNeural"
+            },
+            "male": {
+                "provider": "azure",
+                "voice_id": "nb-NO-FinnNeural"
+            }
+        },
+        "stories": {
+            "female": {
+                "provider": "elevenlabs",
+                "voice_id": "uNsWM1StCcpydKYOjKyu"
+            },
+            "male": {
+                "provider": "elevenlabs",
+                "voice_id": "4kCDY3HJwvO7Zp3con83"
+            }
+        }
+    },
     "sv-SE": {
         "phrases": {
             "female": {
