@@ -161,66 +161,6 @@ def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
     """
 
 
-def create_html_story(
-    story_data_dict: Dict,
-    image_dir: str,
-    story_name: str,
-    language: str = None,
-    component_path: str = "StoryViewer.js",
-    template_path: str = "story_template.html",
-) -> Path:
-    """
-    Create a standalone HTML file from the story data dictionary using string.Template.
-
-    Args:
-        story_data_dict: Dictionary containing story data, translations, and audio
-        image_dir: Path where images are stored and output HTML will be saved
-        story_name: Name of the story
-        language: Target language name for Wiktionary links (defaults to config.TARGET_LANGUAGE_NAME)
-        component_path: Path to the React component file..uses default parent folder in load_template()
-        template_path: Path to the HTML template file..uses default parent folder in load_template()
-
-    Returns:
-        The html file path
-    """
-    if language is None:
-        language = config.TARGET_LANGUAGE_NAME
-    story_title = get_story_title(story_name)
-
-    # Process the story data and convert audio to base64
-    prepared_data = prepare_story_data_for_html(
-        story_data_dict,
-        story_name=story_name,
-        m4a_folder=image_dir / language,
-        image_folder=image_dir,
-    )
-
-    # Read the React component
-    react_component = load_template(component_path)
-
-    # Read the HTML template
-    template = Template(load_template(template_path))
-
-    # Substitute the template variables
-    html_content = template.substitute(
-        title=story_title,
-        story_data=json.dumps(prepared_data),
-        language=language,
-        react_component=react_component,
-    )
-
-    # Create html file path
-    html_path = image_dir / language / f"{story_name}.html"
-
-    # Create parent directory if it doesn't exist
-    html_path.parent.mkdir(parents=True, exist_ok=True)
-
-    # Write the HTML file
-    html_path.write_text(html_content, encoding="utf-8")
-
-    print(f"HTML story created at: {html_path}")
-    return html_path
-
 
 def create_album_files(
     story_data_dict: dict, story_name: str, collection: str = "LM1000"
@@ -383,68 +323,6 @@ def prepare_dialogue_with_wiktionary(story_data_dict: dict, language_name: str =
     )
 
     return story_data_dict_copy
-
-
-def prepare_story_data_for_html(
-    story_data_dict: Dict,
-    story_name: str,
-    m4a_folder: Optional[str] = None,
-    image_folder: Optional[str] = None,
-    collection: str = "LM1000",
-) -> Dict:
-    """Process the story data dictionary to include base64 encoded audio and images.
-    M4A files are now handled separately through the m4a_index.html page."""
-    prepared_data = {}
-
-    for section_name, section_data in tqdm(
-        story_data_dict.items(), desc="Preparing HTML data"
-    ):
-        prepared_data[section_name] = {
-            "dialogue": section_data.get("dialogue", []),
-            "translated_dialogue": prepare_dialogue_with_wiktionary(
-                section_data.get("translated_dialogue", []),
-                language_name=config.TARGET_LANGUAGE_NAME,
-            ),
-            "audio_data": {
-                "dialogue": [],
-                "fast_dialogue": None,
-            },
-        }
-
-        # Process normal dialogue audio
-        if "translated_dialogue_audio" in section_data:
-            for audio_segment in section_data["translated_dialogue_audio"]:
-                audio_base64 = convert_audio_to_base64(audio_segment)
-                prepared_data[section_name]["audio_data"]["dialogue"].append(
-                    audio_base64
-                )
-
-        # Process fast dialogue audio (single segment per section)
-        if "translated_dialogue_audio_fast" in section_data:
-            fast_audio_base64 = convert_audio_to_base64(
-                section_data["translated_dialogue_audio_fast"]
-            )
-            prepared_data[section_name]["audio_data"][
-                "fast_dialogue"
-            ] = fast_audio_base64
-
-        # Add image data if folder is provided
-        if image_folder:
-            image_filename = f"{story_name}_{section_name}.png"
-            image_path = os.path.join(image_folder, image_filename)
-
-            try:
-                if os.path.exists(image_path):
-                    with open(image_path, "rb") as img_file:
-                        image_data = img_file.read()
-                        image_base64 = base64.b64encode(image_data).decode("utf-8")
-                        prepared_data[section_name]["image_data"] = image_base64
-            except Exception as e:
-                print(f"Warning: Failed to process image for {section_name}: {str(e)}")
-
-        # NOTE: We no longer include m4a_data here as it's available through the dedicated downloads page
-
-    return prepared_data
 
 
 def upload_story_image(
