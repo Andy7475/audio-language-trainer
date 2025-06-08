@@ -95,7 +95,7 @@
         <a href="https://claude.ai" target="_blank" class="insights-button" onclick="return copyPromptBeforeNavigate(event)">
             Learning Insights
         </a>
-        <a href="https://storage.googleapis.com/audio-language-trainer-stories/index.html#{{TargetLanguageName}}" target="_blank" class="logo-link"
+        <a href="#" id="storyLink" target="_blank" class="logo-link"
         title="FirePhrase - Language Learning Stories and Resources">
             <img alt="Logo" class="logo-image">
         </a>
@@ -170,8 +170,23 @@ function copyInsightsTemplate() {
         });
     }
     
+    // Function to update story link with lowercase language
+    function updateStoryLink() {
+        const languageName = "{{TargetLanguageName}}";
+        const storyLink = document.getElementById('storyLink');
+        if (storyLink) {
+            storyLink.href = `https://storage.googleapis.com/audio-language-trainer-stories/${languageName.toLowerCase()}/index.html`;
+        }
+    }
+    
     // Run when content is loaded
-    document.addEventListener('DOMContentLoaded', insertLogoImages);
+    document.addEventListener('DOMContentLoaded', () => {
+        insertLogoImages();
+        updateStoryLink();
+    });
     // Also run immediately (for Anki which might not trigger DOMContentLoaded)
-    setTimeout(insertLogoImages, 0);
+    setTimeout(() => {
+        insertLogoImages();
+        updateStoryLink();
+    }, 0);
 </script>

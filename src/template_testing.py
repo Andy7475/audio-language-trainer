@@ -189,7 +189,7 @@ def generate_test_html(
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
             ("{{WiktionaryLinks}}", wiktionary_links),
-            ("{{TargetLanguageName}}", config.TARGET_LANGUAGE_NAME),
+            ("{{TargetLanguageName}}", config.TARGET_LANGUAGE_NAME.lower()),
             ("{{Tags}}", "story_test_story"),
         ]:
             back_content = back_content.replace(placeholder, value)

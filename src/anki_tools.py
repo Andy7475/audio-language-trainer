@@ -187,7 +187,7 @@ def update_language_model_templates(model_id: int, model_name: str):
             if success:
                 print("Successfully updated templates")
                 # Print details for verification
-                reader.print_model_details("Language Practice With Images")
+                reader.print_model_details("FirePhrase")
             else:
                 print("Failed to update templates")
 
@@ -965,7 +965,7 @@ def export_phrases_to_anki(
 
     language_practice_model = genanki.Model(
         1607392313,  # Model ID
-        "Language Practice With Images",
+        "FirePhrase",
         fields=[
             {"name": "SortOrder"},
             {"name": "TargetText"},
@@ -1063,7 +1063,7 @@ def export_phrases_to_anki(
                     phrase_data["english_text"],
                     phrase_data["wiktionary_links"] or "",
                     f'<img src="{image_filename}">' if image_filename else "",
-                    language_cap,
+                    language.lower(),
                 ],
                 guid=string_to_large_int(phrase_data["target_text"] + "image"),
             )
