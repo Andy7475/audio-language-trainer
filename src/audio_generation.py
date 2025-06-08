@@ -34,7 +34,8 @@ from src.translation import tokenize_text
 
 
 def generate_translated_phrase_audio(
-    translated_phrases: List[Tuple[str, str]], source_language_audio: bool = False
+    translated_phrases: List[Tuple[str, str]],
+    gender: Literal["MALE", "FEMALE"] = "FEMALE",
 ) -> List[List[AudioSegment]]:
     """
     Generate audio for a list of translated phrases.
@@ -56,22 +57,13 @@ def generate_translated_phrase_audio(
         cleaned_eng = clean_tts_text(eng_text)
         cleaned_target = clean_tts_text(target_text)
 
-        # Generate English audio
-        if source_language_audio:
-            english_audio = text_to_speech(
-                text=cleaned_eng,
-                config_language="source",
-                gender="MALE",
-                voice_setting="phrases",
-            )
-        else:
-            english_audio = AudioSegment.silent(100)
+        english_audio = AudioSegment.silent(100)
 
         # Generate slow target language audio with word breaks
         target_slow = slow_text_to_speech(
             text=cleaned_target,
             config_language="target",
-            gender="FEMALE",
+            gender=gender,
             speaking_rate=config.SPEAKING_RATE_SLOW,
             word_break_ms=config.WORD_BREAK_MS,
             voice_setting="phrases",
@@ -81,7 +73,7 @@ def generate_translated_phrase_audio(
         target_normal = text_to_speech(
             text=cleaned_target,
             config_language="target",
-            gender="FEMALE",
+            gender=gender,
             speaking_rate=1.0,
             voice_setting="phrases",
         )
