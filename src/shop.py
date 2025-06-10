@@ -108,7 +108,7 @@ def create_product_templates(
                 story_position = story["position"]
                 story_title = story["title"]
                 story_theme = story["theme"]
-                phrase_count = story["phrase_count"]
+                phrase_count = math.floor(story["phrase_count"] / 10) * 10
                 sample_phrases = story["sample_phrases"]
                 sample_phrases_html = "\n".join(
                     [f"<li>{phrase}</li>" for phrase in sample_phrases]
@@ -149,14 +149,13 @@ def create_product_templates(
                 ]
             )
             story_count = len(bundle_stories)
-            vocab_count = sum(s["phrase_count"] for s in bundle_stories)
+            vocab_count = math.floor(sum(s["phrase_count"] for s in bundle_stories) / 10) * 10
             template = bundle_template.replace("${collection}", collection)
             template = template.replace("${collection_title}", collection_title)
             template = template.replace("${range_display}", range_display)
             template = template.replace("${story_list}", story_list)
             template = template.replace("${story_count}", str(story_count))
             template = template.replace("${vocab_count}", str(vocab_count))
-            template = template.replace("${total_phrases}", str(total_phrases))
             bundle_templates[f"bundle_{start}_{end}"] = template
         templates["bundle_templates"] = bundle_templates
 
@@ -179,7 +178,7 @@ def create_product_templates(
         )
         complete_template = complete_template.replace("${verb_count}", str(verb_count))
         complete_template = complete_template.replace(
-            "${total_phrases}", str(total_phrases)
+            "${total_phrases}", str(math.floor(total_phrases / 10) * 10)
         )
         complete_template = complete_template.replace(
             "${audio_files}", str(total_audio_files)
@@ -324,8 +323,11 @@ def generate_shopify_csv(
                     if story["position"] <= free_individual_count
                     else individual_price
                 )
+                # Convert story name from "story_better_than_a_movie" to "better-than-a-movie"
+                story_name_for_handle = story["name"].replace("story_", "").replace("_", "-")
+                
                 base_product = {
-                    "Handle": f"{target_language.lower()}-{collection.lower()}-story-{story['position']:02d}",
+                    "Handle": f"{target_language.lower()}-{collection.lower()}-story-{story['position']:02d}-{story_name_for_handle}",
                     "Title": f"{target_language} - {collection_title} - Story {story['position']:02d}: {story['title']}",
                     "Body (HTML)": templates["individual_templates"][
                         f"story_{story['position']}"
