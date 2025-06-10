@@ -16,23 +16,23 @@ from src.utils import get_story_position
 
 
 def create_m4a_zip_collections(
-    bundle_config: Dict[str, List[int]],
+    product_config: Dict,
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
     output_base_dir: str = "../outputs/gcs",
     use_local_files: bool = True,
 ) -> Dict[str, str]:
     """
-    Create zip files for M4A audio collections based on bundle configuration.
+    Create zip files for M4A audio collections based on product configuration.
 
     Creates:
     - Complete collection zip (all M4A files)
-    - Bundle zips (based on bundle_config)
-    - Individual story zips (one per story)
+    - Bundle zips (based on product_config['bundle']['ranges'])
+    - Individual story zips (based on product_config['individual']['indices'])
 
     Args:
-        bundle_config: Dict mapping bundle names to story position ranges
-                      e.g., {"Bundle 01-08": [1, 8], "Bundle 09-14": [9, 14]}
+        product_config: Dict mapping product types ('individual', 'bundle', 'complete') to their configs.
+                       Each config should include 'template' and optionally 'indices' or 'ranges'.
         collection: Collection name (default: "LM1000")
         bucket_name: GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
         output_base_dir: Base directory for outputs (default: "../outputs/gcs")
@@ -73,87 +73,96 @@ def create_m4a_zip_collections(
     print(f"Found {len(all_stories)} stories total")
 
     # 1. Create Complete Collection Zip
-    print("\n=== Creating Complete Collection Zip ===")
-    complete_zip_name = f"{language}_{collection.lower()}_complete_audio_collection.zip"
-    complete_zip_path = zip_output_dir / complete_zip_name
-
-    complete_m4a_files = []
-    for story in all_stories:
-        story_files = _get_story_m4a_files(
-            story, collection, bucket_name, use_local_files, output_base_dir
+    if "complete" in product_config:
+        print("\n=== Creating Complete Collection Zip ===")
+        complete_zip_name = (
+            f"{language}_{collection.lower()}_complete_audio_collection.zip"
         )
-        complete_m4a_files.extend(story_files)
+        complete_zip_path = zip_output_dir / complete_zip_name
 
-    _create_zip_file(
-        complete_m4a_files,
-        complete_zip_path,
-        f"Complete {target_language_name} {collection} Audio Collection",
-        bucket_name,
-    )
-    created_zips["complete"] = str(complete_zip_path)
-
-    # 2. Create Bundle Zips
-    print("\n=== Creating Bundle Zips ===")
-    for bundle_name, (start_pos, end_pos) in bundle_config.items():
-        bundle_stories = [
-            story
-            for story in all_stories
-            if start_pos <= get_story_position(story, collection) <= end_pos
-        ]
-
-        if not bundle_stories:
-            print(f"No stories found for {bundle_name}")
-            continue
-
-        bundle_zip_name = f"{language}_{collection.lower()}_bundle_{start_pos:02d}_{end_pos:02d}_audio.zip"
-        bundle_zip_path = zip_output_dir / bundle_zip_name
-
-        bundle_m4a_files = []
-        for story in bundle_stories:
+        complete_m4a_files = []
+        for story in all_stories:
             story_files = _get_story_m4a_files(
                 story, collection, bucket_name, use_local_files, output_base_dir
             )
-            bundle_m4a_files.extend(story_files)
+            complete_m4a_files.extend(story_files)
 
         _create_zip_file(
-            bundle_m4a_files,
-            bundle_zip_path,
-            f"{target_language_name} {collection} {bundle_name} Audio",
+            complete_m4a_files,
+            complete_zip_path,
+            f"Complete {target_language_name} {collection} Audio Collection",
             bucket_name,
         )
-        created_zips[f"bundle_{start_pos:02d}_{end_pos:02d}"] = str(bundle_zip_path)
+        created_zips["complete"] = str(complete_zip_path)
 
-    # 3. Create Individual Story Zips
-    print("\n=== Creating Individual Story Zips ===")
-    for story in tqdm(all_stories, desc="Creating individual zips"):
-        try:
-            story_position = get_story_position(story, collection)
-            story_files = _get_story_m4a_files(
-                story, collection, bucket_name, use_local_files, output_base_dir
-            )
+    # 2. Create Bundle Zips
+    if "bundle" in product_config:
+        print("\n=== Creating Bundle Zips ===")
+        bundle_ranges = product_config["bundle"].get("ranges", [])
+        for start_pos, end_pos in bundle_ranges:
+            bundle_stories = [
+                story
+                for story in all_stories
+                if start_pos <= get_story_position(story, collection) <= end_pos
+            ]
 
-            if not story_files:
-                print(f"No M4A files found for {story}")
+            if not bundle_stories:
+                print(f"No stories found for bundle {start_pos}-{end_pos}")
                 continue
 
-            individual_zip_name = f"{language}_{collection.lower()}_story_{story_position:02d}_{story.replace('story_', '').replace('_', '-')}_audio.zip"
-            individual_zip_path = zip_output_dir / individual_zip_name
+            bundle_zip_name = f"{language}_{collection.lower()}_bundle_{start_pos:02d}_{end_pos:02d}_audio.zip"
+            bundle_zip_path = zip_output_dir / bundle_zip_name
 
-            from src.convert import get_story_title
-
-            story_title = get_story_title(story)
+            bundle_m4a_files = []
+            for story in bundle_stories:
+                story_files = _get_story_m4a_files(
+                    story, collection, bucket_name, use_local_files, output_base_dir
+                )
+                bundle_m4a_files.extend(story_files)
 
             _create_zip_file(
-                story_files,
-                individual_zip_path,
-                f"{target_language_name} {collection} Story {story_position:02d}: {story_title} Audio",
+                bundle_m4a_files,
+                bundle_zip_path,
+                f"{target_language_name} {collection} Bundle {start_pos}-{end_pos} Audio",
                 bucket_name,
             )
-            created_zips[f"individual_{story}"] = str(individual_zip_path)
+            created_zips[f"bundle_{start_pos:02d}_{end_pos:02d}"] = str(bundle_zip_path)
 
-        except ValueError as e:
-            print(f"Skipping story {story}: {e}")
-            continue
+    # 3. Create Individual Story Zips
+    if "individual" in product_config:
+        print("\n=== Creating Individual Story Zips ===")
+        individual_indices = product_config["individual"].get("indices", [])
+        for story in tqdm(all_stories, desc="Creating individual zips"):
+            try:
+                story_position = get_story_position(story, collection)
+                if story_position not in individual_indices:
+                    continue
+                story_files = _get_story_m4a_files(
+                    story, collection, bucket_name, use_local_files, output_base_dir
+                )
+
+                if not story_files:
+                    print(f"No M4A files found for {story}")
+                    continue
+
+                individual_zip_name = f"{language}_{collection.lower()}_story_{story_position:02d}_{story.replace('story_', '').replace('_', '-')}_audio.zip"
+                individual_zip_path = zip_output_dir / individual_zip_name
+
+                from src.convert import get_story_title
+
+                story_title = get_story_title(story)
+
+                _create_zip_file(
+                    story_files,
+                    individual_zip_path,
+                    f"{target_language_name} {collection} Story {story_position:02d}: {story_title} Audio",
+                    bucket_name,
+                )
+                created_zips[f"individual_{story}"] = str(individual_zip_path)
+
+            except ValueError as e:
+                print(f"Skipping story {story}: {e}")
+                continue
 
     print(f"\n🎉 Created {len(created_zips)} zip files successfully!")
     print(f"Zip files saved to: {zip_output_dir}")

@@ -436,6 +436,7 @@ def get_story_translated_challenges_path(
     collection_folder = sanitize_path_component(collection.lower())
     return f"{language}/{collection_folder}/{story_name}/challenges.html"
 
+
 def get_m4a_file_path(
     story_name: str,
     story_part: str,
@@ -517,7 +518,9 @@ def get_story_dialogue_path(story_name: str, collection: str = "LM1000") -> str:
     return f"collections/{collection}/common/stories/{story_name}/dialogue.json"
 
 
-def get_public_story_path(story_name: str, collection: str = "LM1000") -> str:
+def get_public_story_path(
+    story_name: Optional[str] = None, collection: str = "LM1000"
+) -> str:
     """Get the GCS blob path for a story's public HTML file.
     Meant to go to the GCS public bucket which is for holding stories."""
 
@@ -525,10 +528,14 @@ def get_public_story_path(story_name: str, collection: str = "LM1000") -> str:
     language_folder = sanitize_path_component(language.lower())
     collection_folder = sanitize_path_component(collection.lower())
     story_folder = sanitize_path_component(story_name)
-    blob_path = (
+    index_path = f"{language_folder}/{collection_folder}/index.html"
+    story_path = (
         f"{language_folder}/{collection_folder}/{story_folder}/{story_name}.html"
     )
-    return blob_path
+    if story_name is None:
+        return index_path
+    else:
+        return story_path
 
 
 def get_story_translated_dialogue_path(

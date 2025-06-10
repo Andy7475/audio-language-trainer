@@ -489,9 +489,7 @@ def get_sentences_from_text(phrases: List[str]) -> List[str]:
 
 def get_phrase_multimedia(
     phrase_key: str,
-    language: str = config.TARGET_LANGUAGE_NAME.lower(),
     bucket_name: str = config.GCS_PRIVATE_BUCKET,
-    collection: str = "LM1000",
 ) -> Dict[str, Any]:
     """
     Get all multimedia data for a single phrase from GCS.
@@ -640,9 +638,7 @@ def build_phrase_dict_from_gcs(
             # Get multimedia data for this phrase
             multimedia_data = get_phrase_multimedia(
                 phrase_key=phrase_key,
-                language=language,
                 bucket_name=bucket_name,
-                collection=collection,
             )
 
             if not multimedia_data:
