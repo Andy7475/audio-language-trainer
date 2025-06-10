@@ -114,8 +114,11 @@ def create_product_templates(
                     [f"<li>{phrase}</li>" for phrase in sample_phrases]
                 )
                 story_hyperlink = get_public_story_path(story["name"], collection)
+                # Convert to full public URL
+                public_bucket_name = config.GCS_PUBLIC_BUCKET
+                story_hyperlink = f"https://storage.googleapis.com/{public_bucket_name}/{story_hyperlink}"
                 template = individual_template.replace("${story_title}", story_title)
-                template = template.replace("${story_position}", str(story_position))
+                template = template.replace("${story_position}", f"{story_position:02d}")
                 template = template.replace("${collection}", collection)
                 template = template.replace("${collection_title}", collection_title)
                 template = template.replace("${story_theme}", story_theme)
@@ -141,7 +144,7 @@ def create_product_templates(
             range_display = f"{start}-{end}"
             story_list = "\n".join(
                 [
-                    f'<li><a href="{get_public_story_path(s["name"], collection)}">Story {s["position"]}: {s["title"]}</a></li>'
+                    f'<li><a href="https://storage.googleapis.com/{config.GCS_PUBLIC_BUCKET}/{get_public_story_path(s["name"], collection)}">Story {s["position"]}: {s["title"]}</a></li>'
                     for s in bundle_stories
                 ]
             )
@@ -163,7 +166,7 @@ def create_product_templates(
         complete_template = load_template(complete_config["template"])
         story_list = "\n".join(
             [
-                f'<li><a href="{get_public_story_path(s["name"], collection)}">Story {s["position"]}: {s["title"]}</a></li>'
+                f'<li><a href="https://storage.googleapis.com/{config.GCS_PUBLIC_BUCKET}/{get_public_story_path(s["name"], collection)}">Story {s["position"]}: {s["title"]}</a></li>'
                 for s in stories
             ]
         )
@@ -294,10 +297,20 @@ def generate_shopify_csv(
 
         # Add product with images
         for i, image_filename in enumerate(image_paths):
-            product = base_product.copy()
-            product["Image Src"] = shopify_cdn_base + image_filename
-            product["Image Position"] = i + 1
-            csv_data.append(product)
+            if i == 0:
+                # First row: include all product details
+                product = base_product.copy()
+                product["Image Src"] = shopify_cdn_base + image_filename
+                product["Image Position"] = i + 1
+                csv_data.append(product)
+            else:
+                # Subsequent rows: only Handle, Image Src, and Image Position
+                image_row = {
+                    "Handle": base_product["Handle"],
+                    "Image Src": shopify_cdn_base + image_filename,
+                    "Image Position": i + 1
+                }
+                csv_data.append(image_row)
 
     # Add individual products
     if "individual" in product_config:
@@ -329,7 +342,7 @@ def generate_shopify_csv(
                     "Variant Taxable": "TRUE",
                     "source language (product.metafields.custom.source_language)": source_language,
                     "target language (product.metafields.custom.target_language)": target_language,
-                    "pack type (product.metafields.custom.pack_type)": "Individual",
+                    "pack type (product.metafields.custom.pack_type)": "Single",
                 }
                 add_product_with_images(
                     base_product, "individual", story_name=story["name"]

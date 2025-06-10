@@ -26,7 +26,7 @@ def create_session(request):
             return (jsonify({"error": "Missing API key"}), 400, headers)
 
         api_key = request_json["api_key"]
-        model = request_json.get("model", "gpt-4o-realtime-preview-2024-12-17")
+        model = request_json.get("model", "gpt-4o-realtime-preview-2025-06-03")
         voice = request_json.get("voice", "verse")
         instructions = request_json.get(
             "instructions",

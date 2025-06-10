@@ -185,7 +185,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage, collectionName,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     api_key: apiKey,
-                    model: 'gpt-4o-realtime-preview-2024-12-17',
+                    model: 'gpt-4o-realtime-preview-2025-06-03',
                     voice: 'verse',
                     instructions: prompt,
                     modalities: ['text', 'audio'],
@@ -200,7 +200,7 @@ const ChallengeViewer = ({ challengeData, title, targetLanguage, collectionName,
             const ephemeralKey = data.client_secret.value;
 
             const ws = new WebSocket(
-                "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
+                "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2025-06-03",
                 ["realtime", "openai-insecure-api-key." + ephemeralKey, "openai-beta.realtime-v1"]
             );
 
