@@ -13,6 +13,7 @@ from src.config_loader import config
 from src.utils import anthropic_generate, ok_to_query_api, load_json
 from src.convert import clean_filename
 from pathlib import Path
+from src.gcs_storage import get_phrase_image_path, upload_to_gcs, check_blob_exists
 
 load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
@@ -429,38 +430,57 @@ def generate_image(
         Optional[Image.Image]: Generated image or None if all attempts fail
     """
 
-    def print_prompt(prompt, model):
-        print(f"Generated image with {model} using prompt: {prompt}")
+    def print_success(prompt, model):
+        print(f"✅ Successfully generated image with {model}")
+        print(f"   Prompt: {prompt}")
+
+    def print_failure(model, reason):
+        print(f"❌ Failed to generate image with {model}: {reason}")
+
+    def print_attempt(model):
+        print(f"🔄 Attempting image generation with {model}...")
 
     if style is None:
         style = config.IMAGE_STYLE
     prompt = add_image_style(prompt, style)
+    
+    print(f"🎨 Starting image generation process for prompt: {prompt}")
+    print(f"📋 Will try providers in order: {model_order}")
+    
     for model in model_order:
         try:
+            print_attempt(model)
             ok_to_query_api()
 
             if model == "imagen":
                 image = generate_image_imagen(prompt, model="imagen-3.0-generate-001")
                 if image:
-                    print_prompt(prompt, model)
+                    print_success(prompt, model)
                     return image
+                else:
+                    print_failure(model, "API returned None - possible content filtering, quota limits, or service unavailable")
 
             elif model == "stability":
                 image = generate_image_stability(prompt)
                 if image:
-                    print_prompt(prompt, model)
+                    print_success(prompt, model)
                     return image
+                else:
+                    print_failure(model, "API returned None - possible content filtering, API limits, or service error")
 
             elif model == "deepai":
                 image = generate_image_deepai(prompt)
                 if image:
-                    print_prompt(prompt, model)
+                    print_success(prompt, model)
                     return image
+                else:
+                    print_failure(model, "API returned None - unexpected response format or service error")
 
         except Exception as e:
-            print(f"Error with {model} provider: {str(e)}")
+            print_failure(model, f"Exception occurred: {str(e)}")
             continue
 
+    print(f"🚫 All image generation attempts failed for prompt: {prompt}")
     return None
 
 
@@ -533,71 +553,99 @@ def generate_and_save_story_images(
 
 def generate_images_from_phrases(
     phrases: List[str],
-    output_dir: str,
     style: str = None,
-    image_format: str = "png",
+    bucket_name: Optional[str] = None,
+    use_language_folder: bool = False,
+    overwrite: bool = False,
     anthropic_model=config.ANTHROPIC_MODEL_NAME,
 ) -> Dict:
     """
-    Process a list of phrases to create a dictionary with prompts and image paths.
+    Generate images for a list of phrases and upload them directly to GCS.
 
     Args:
         phrases: List of English phrases
-        output_dir: Directory where images will be saved
-        generate_image_prompt: Function that takes a phrase and returns a prompt
-        generate_image: Function that takes a prompt and returns image data
-        image_format: Image file format (default: 'png')
+        style: Image style to apply (defaults to config.IMAGE_STYLE)
+        bucket_name: GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
+        use_language_folder: Whether to store images in language-specific folder
+        overwrite: Whether to overwrite existing images in GCS
+        anthropic_model: Model name for prompt generation
 
     Returns:
-        Dictionary containing phrases, prompts, and image paths
+        Dictionary containing phrases, prompts, and GCS URIs
+        Format:
+        {
+            "phrase_key": {
+                "phrase": str,
+                "prompt": str,
+                "gcs_uri": str,
+            },
+            ...
+        }
     """
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
 
     # Initialize results dictionary
     results = {}
 
-    for phrase in tqdm(phrases):
+    for phrase in tqdm(phrases, desc="Generating phrase images"):
         # Create a clean filename from the phrase
         clean_name = clean_filename(phrase)
 
-        # Generate image filename
-        image_filename = f"{clean_name}.{image_format}"
-        image_path = os.path.join(output_dir, image_filename)
+        # Get the correct GCS path for this phrase image
+        image_path = get_phrase_image_path(clean_name, use_language=use_language_folder)
 
-        if os.path.exists(image_path):
-            print(f"Warning: Image already exists for '{phrase}', skipping generation")
+        # Check if image already exists in GCS (if not overwriting)
+        if not overwrite and check_blob_exists(bucket_name, image_path):
+            print(f"Image already exists for '{phrase}', skipping generation")
             results[clean_name] = {
                 "phrase": phrase,
                 "prompt": None,
-                "image_path": image_path,
+                "gcs_uri": f"gs://{bucket_name}/{image_path}",
             }
             continue
-        # Generate prompt for the phrase
-        ok_to_query_api()
-        prompt = create_image_generation_prompt(phrase, anthropic_model)
 
-        # Generate and save the image
+        # Generate prompt for the phrase
+        try:
+            ok_to_query_api()
+            prompt = create_image_generation_prompt(phrase, anthropic_model)
+        except Exception as e:
+            print(f"Error generating prompt for phrase '{phrase}': {str(e)}")
+            continue
+
+        # Generate and upload the image
         try:
             ok_to_query_api()
             image = generate_image(prompt, style=style)
             if image is None:
-                print("All image generation attempts failed, skipping")
+                print(f"Failed to generate image for phrase '{phrase}' with all providers")
                 continue
-            # Save image to file
-            image.save(image_path)
+
+            # Resize image to standard size
+            image = resize_image(image, height=500, width=500)
+
+            # Upload image directly to GCS
+            gcs_uri = upload_to_gcs(
+                obj=image,
+                bucket_name=bucket_name,
+                file_name=image_path,
+                content_type="image/png"
+            )
 
             # Store results in dictionary
             results[clean_name] = {
                 "phrase": phrase,
                 "prompt": prompt,
-                "image_path": image_path,
+                "gcs_uri": gcs_uri,
             }
+
+            print(f"✅ Generated and uploaded image for '{phrase}' to {gcs_uri}")
 
         except Exception as e:
             print(f"Error processing phrase '{phrase}': {str(e)}")
             continue
 
+    print(f"\n🎯 Successfully generated {len(results)} images out of {len(phrases)} phrases")
     return results
 
 

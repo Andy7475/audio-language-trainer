@@ -279,96 +279,150 @@ def generate_phrases_from_vocab_dict(
     LONGMAN_PHRASES = []
     all_verbs_used = set()
     iteration_count = 0
+    consecutive_failures = 0
+    max_consecutive_failures = 3
 
-    while (len(vocab_list_set) >= 5) and iteration_count < max_iterations:
+    while (len(vocab_list_set) >= 5) and iteration_count < max_iterations and consecutive_failures < max_consecutive_failures:
         iteration_count += 1
 
-        if len(vocab_list_set) < 150:
-            # Switch to minimal phrase generation and use any verbs
-            response = generate_minimal_phrases_with_llm(
-                list(vocab_list_set) + list(verb_list_set),
-                length_phrase=length_phrase,
-                verbs_per_phrase=verbs_per_phrase,
-            )
-            new_phrases = extract_json_from_llm_response(response)["phrases"]
-            vocab_used = extract_vocab_and_pos(new_phrases)
-            words_used = get_verb_and_vocab_lists(vocab_used)
+        try:
+            if len(vocab_list_set) < 150:
+                # Switch to minimal phrase generation and use any verbs
+                try:
+                    print(f"Iteration {iteration_count}/{max_iterations} - Using minimal phrase generation")
+                    response = generate_minimal_phrases_with_llm(
+                        list(vocab_list_set) + list(verb_list_set),
+                        length_phrase=length_phrase,
+                        verbs_per_phrase=verbs_per_phrase,
+                    )
+                    
+                    # Extract JSON with error handling
+                    json_data = extract_json_from_llm_response(response)
+                    if not json_data or "phrases" not in json_data:
+                        raise ValueError("Failed to extract valid JSON or 'phrases' key missing")
+                    
+                    new_phrases = json_data["phrases"]
+                    if not new_phrases:
+                        raise ValueError("No phrases returned from LLM")
+                        
+                except Exception as e:
+                    print(f"Error in minimal phrase generation: {str(e)}")
+                    print("Skipping this iteration and continuing...")
+                    consecutive_failures += 1
+                    continue
 
-            verb_list_set = remove_matching_words(words_used["verbs"], verb_list_set)
-            vocab_list_set = remove_matching_words(words_used["vocab"], vocab_list_set)
+                try:
+                    vocab_used = extract_vocab_and_pos(new_phrases)
+                    words_used = get_verb_and_vocab_lists(vocab_used)
 
-            # match on text as well
-            all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
-            verb_list_set = remove_matching_words(all_lowercase_words, verb_list_set)
-            vocab_list_set = remove_matching_words(all_lowercase_words, vocab_list_set)
+                    verb_list_set = remove_matching_words(words_used["verbs"], verb_list_set)
+                    vocab_list_set = remove_matching_words(words_used["vocab"], vocab_list_set)
 
-            # match on substring - to account for 'words' in the longman dictionary that are > 1 words like 'aware of'
-            substring_matches = extract_substring_matches(new_phrases, vocab_list_set)
-            vocab_list_set = remove_matching_words(substring_matches, vocab_list_set)
+                    # match on text as well
+                    all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
+                    verb_list_set = remove_matching_words(all_lowercase_words, verb_list_set)
+                    vocab_list_set = remove_matching_words(all_lowercase_words, vocab_list_set)
 
-            LONGMAN_PHRASES.extend(new_phrases)
+                    # match on substring - to account for 'words' in the longman dictionary that are > 1 words like 'aware of'
+                    substring_matches = extract_substring_matches(new_phrases, vocab_list_set)
+                    vocab_list_set = remove_matching_words(substring_matches, vocab_list_set)
 
-            print(f"Iteration {iteration_count}/{max_iterations}")
-            print(f"Generated {len(new_phrases)} phrases - with minimal phrase prompt")
-            print(
-                f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left"
-            )
-            continue
-        else:
-            if len(verb_list_set) < 10:
-                num_phrases = min(len(vocab_list_set), 100)  # Focus on exhausting vocab
-                verb_list_set.update(all_verbs_used)  # Reintroduce all used verbs
-            elif len(verb_list_set) < 50 and len(vocab_list_set) > 100:
-                num_phrases = min(
-                    len(verb_list_set) * 2, 100
-                )  # Ensure we use all verbs
+                    LONGMAN_PHRASES.extend(new_phrases)
+                    consecutive_failures = 0  # Reset failure counter on success
+
+                    print(f"Generated {len(new_phrases)} phrases - with minimal phrase prompt")
+                    print(f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left")
+                    
+                except Exception as e:
+                    print(f"Error processing minimal phrases: {str(e)}")
+                    # Still add the phrases even if processing failed
+                    LONGMAN_PHRASES.extend(new_phrases)
+                    consecutive_failures += 1
+                    print("Added phrases but failed to process vocabulary. Continuing...")
+                
+                continue
             else:
-                num_phrases = 100
+                if len(verb_list_set) < 10:
+                    num_phrases = min(len(vocab_list_set), 100)  # Focus on exhausting vocab
+                    verb_list_set.update(all_verbs_used)  # Reintroduce all used verbs
+                elif len(verb_list_set) < 50 and len(vocab_list_set) > 100:
+                    num_phrases = min(
+                        len(verb_list_set) * 2, 100
+                    )  # Ensure we use all verbs
+                else:
+                    num_phrases = 100
 
-        verb_sample_size = min(75, len(verb_list_set))
-        vocab_sample_size = min(75 * 3, len(vocab_list_set))
+            verb_sample_size = min(75, len(verb_list_set))
+            vocab_sample_size = min(75 * 3, len(vocab_list_set))
 
-        verb_list_for_prompt = random.sample(list(verb_list_set), k=verb_sample_size)
-        vocab_list_for_prompt = random.sample(list(vocab_list_set), k=vocab_sample_size)
+            verb_list_for_prompt = random.sample(list(verb_list_set), k=verb_sample_size)
+            vocab_list_for_prompt = random.sample(list(vocab_list_set), k=vocab_sample_size)
 
-        response = generate_phrases_with_llm(
-            verb_list=verb_list_for_prompt,
-            vocab_list=vocab_list_for_prompt,
-            num_phrases=num_phrases,
-            length_phrase=length_phrase,
-            verbs_per_phrase=verbs_per_phrase,
-            localise=localise,
-        )
+            try:
+                print(f"Iteration {iteration_count}/{max_iterations} - Generating {num_phrases} phrases")
+                response = generate_phrases_with_llm(
+                    verb_list=verb_list_for_prompt,
+                    vocab_list=vocab_list_for_prompt,
+                    num_phrases=num_phrases,
+                    length_phrase=length_phrase,
+                    verbs_per_phrase=verbs_per_phrase,
+                    localise=localise,
+                )
 
-        new_phrases = extract_json_from_llm_response(response)["phrases"]
-        LONGMAN_PHRASES.extend(new_phrases)
+                # Extract JSON with error handling
+                json_data = extract_json_from_llm_response(response)
+                if not json_data or "phrases" not in json_data:
+                    raise ValueError("Failed to extract valid JSON or 'phrases' key missing")
+                
+                new_phrases = json_data["phrases"]
+                if not new_phrases:
+                    raise ValueError("No phrases returned from LLM")
+                    
+            except Exception as e:
+                print(f"Error in phrase generation: {str(e)}")
+                print("Skipping this iteration and continuing...")
+                consecutive_failures += 1
+                continue
 
-        # we now pull out the POS and words used in the phrases we just generated and split them back into
-        # a dictionary with keys 'verbs' and 'vocab'
-        vocab_pos_used = extract_vocab_and_pos(new_phrases)
-        words_used = get_verb_and_vocab_lists(vocab_pos_used)
+            try:
+                LONGMAN_PHRASES.extend(new_phrases)
 
-        verb_list_set = remove_matching_words(words_used["verbs"], verb_list_set)
-        vocab_list_set = remove_matching_words(words_used["vocab"], vocab_list_set)
+                # we now pull out the POS and words used in the phrases we just generated and split them back into
+                # a dictionary with keys 'verbs' and 'vocab'
+                vocab_pos_used = extract_vocab_and_pos(new_phrases)
+                words_used = get_verb_and_vocab_lists(vocab_pos_used)
 
-        # match on exact word text as well as sometimes the word in the longman dictionary is not a 'lemma' as generated by spacy
-        all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
-        vocab_list_set = remove_matching_words(all_lowercase_words, vocab_list_set)
+                verb_list_set = remove_matching_words(words_used["verbs"], verb_list_set)
+                vocab_list_set = remove_matching_words(words_used["vocab"], vocab_list_set)
 
-        all_verbs_used.update(words_used["verbs"])
+                # match on exact word text as well as sometimes the word in the longman dictionary is not a 'lemma' as generated by spacy
+                all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
+                vocab_list_set = remove_matching_words(all_lowercase_words, vocab_list_set)
 
-        print(f"Iteration {iteration_count}/{max_iterations}")
-        print(f"Generated {len(new_phrases)} phrases")
-        print(
-            f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left"
-        )
+                all_verbs_used.update(words_used["verbs"])
+                consecutive_failures = 0  # Reset failure counter on success
 
-    if iteration_count == max_iterations:
-        print(
-            f"Reached maximum number of iterations ({max_iterations}). Stopping phrase generation."
-        )
+                print(f"Generated {len(new_phrases)} phrases")
+                print(f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left")
+                
+            except Exception as e:
+                print(f"Error processing generated phrases: {str(e)}")
+                # Phrases were already added to LONGMAN_PHRASES, so we don't lose them
+                consecutive_failures += 1
+                print("Added phrases but failed to process vocabulary. Continuing...")
+
+        except Exception as e:
+            print(f"Unexpected error in iteration {iteration_count}: {str(e)}")
+            consecutive_failures += 1
+            continue
+
+    # Final status messages
+    if consecutive_failures >= max_consecutive_failures:
+        print(f"Stopped due to {consecutive_failures} consecutive failures. Returning {len(LONGMAN_PHRASES)} phrases generated so far.")
+    elif iteration_count == max_iterations:
+        print(f"Reached maximum number of iterations ({max_iterations}). Returning {len(LONGMAN_PHRASES)} phrases.")
     else:
-        print("All words have been used. Phrase generation complete.")
+        print(f"All words have been used. Phrase generation complete. Generated {len(LONGMAN_PHRASES)} phrases.")
 
     return LONGMAN_PHRASES
 
