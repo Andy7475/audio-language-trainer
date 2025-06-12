@@ -8,8 +8,7 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
-
-from anthropic import AnthropicVertex
+from anthropic import AnthropicVertex, Anthropic
 from dotenv import load_dotenv
 from tqdm import tqdm
 from src.config_loader import config
@@ -282,34 +281,58 @@ def ok_to_query_api() -> bool:
 
 
 def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:
-    """given a prompt generates an LLM response. The default model is specified in the config file.
-    Most likely the largest Anthropic model. The region paramater in the config will have to match where that model
-    is available"""
+    """Generate an LLM response using either Anthropic's API or Vertex AI, depending on config.ANTHROPIC_SERVICE.
+    If ANTHROPIC_SERVICE == 'anthropic', use the Anthropic API (requires ANTHROPIC_API_KEY in .env).
+    If ANTHROPIC_SERVICE == 'google', use Vertex AI endpoint as before.
+    """
+
+
     print(
-        f"Function that called this one: {get_caller_name()}. Sleeping for 20 seconds"
-    )
-    ok_to_query_api()
-
-    client = AnthropicVertex(
-        region=config.ANTHROPIC_REGION, project_id=config.PROJECT_ID
+        f"Function that called this one: {get_caller_name()}"
     )
 
+    service = config.ANTHROPIC_SERVICE.lower()
     if model is None:
         model = config.ANTHROPIC_MODEL_NAME
-    message = client.messages.create(
-        max_tokens=max_tokens,
-        messages=[
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        ],
-        model=model,
-    )
-    response_json = message.model_dump_json(indent=2)
 
-    response = json.loads(response_json)
-    return response["content"][0]["text"]
+    if service == "anthropic":
+        # Use Anthropic's official Python client
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise EnvironmentError("ANTHROPIC_API_KEY not set in environment or .env file.")
+        # If model name contains '@', strip from '@' onward and append '-latest'
+        if '@' in model:
+            model = model.split('@', 1)[0] + "-latest"
+        client = Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model=model,
+            max_tokens=max_tokens,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        # The client returns a dict with 'content' as a list of dicts with 'text'
+        return message.content[0].text
+
+    elif service == "google":
+        ok_to_query_api()
+        # Use Vertex AI (AnthropicVertex)
+        client = AnthropicVertex(
+            region=config.ANTHROPIC_REGION, project_id=config.PROJECT_ID
+        )
+        message = client.messages.create(
+            max_tokens=max_tokens,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
+            ],
+            model=model,
+        )
+        response_json = message.model_dump_json(indent=2)
+        response = json.loads(response_json)
+        return response["content"][0]["text"]
+    else:
+        raise ValueError(f"Unknown ANTHROPIC_SERVICE: {service}. Must be 'anthropic' or 'google'.")
 
 
 def extract_json_from_llm_response(response):

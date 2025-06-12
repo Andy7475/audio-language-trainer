@@ -13,7 +13,7 @@ from src.config_loader import config
 from src.utils import anthropic_generate, ok_to_query_api, load_json
 from src.convert import clean_filename
 from pathlib import Path
-from src.gcs_storage import get_phrase_image_path, upload_to_gcs, check_blob_exists
+from src.gcs_storage import get_phrase_image_path, upload_to_gcs, check_blob_exists, get_image_path
 
 load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
@@ -486,7 +486,6 @@ def generate_image(
 
 def generate_and_save_story_images(
     story_dict: Dict[str, Dict],
-    output_dir: str,
     story_name: str,
     model_order: List[Literal["imagen", "stability", "deepai"]] = [
         "imagen",
@@ -495,39 +494,27 @@ def generate_and_save_story_images(
     ],
     style="ghibli",
     anthropic_model: Optional[str] = None,
+    collection: str = "LM1000",
 ) -> Dict[str, str]:
     """
-    Generate and save images for each part of a story.
+    Generate and upload images for each part of a story to GCS.
 
     Args:
         story_dict: Dictionary containing story data
-        output_dir: Directory to save generated images
+        output_dir: (ignored, kept for compatibility)
         story_name: Name of the story (used for filenames)
         model_order: Order of image generation models to try
         anthropic_model: Optional model name for prompt generation
+        collection: Collection name (default: "LM1000")
 
     Returns:
-        Dict[str, str]: Mapping of story parts to image file paths
+        Dict[str, str]: Mapping of story parts to GCS URIs
     """
-    # Create output directory if it doesn't exist
-    os.makedirs(output_dir, exist_ok=True)
-
-    # Store image paths for each story part
+    # Store image GCS URIs for each story part
     image_paths = {}
 
     for story_part, content in tqdm(story_dict.items(), desc="Generating story images"):
-        # Construct image filename
-        image_filename = f"{story_name}_{story_part}.png"
-        image_path = os.path.join(output_dir, image_filename)
-
-        # Skip if image already exists
-        if os.path.exists(image_path):
-            print(f"Image already exists for {story_part}, skipping generation")
-            image_paths[story_part] = image_path
-            continue
-
         # Generate prompt
-        ok_to_query_api()
         prompt = create_image_generation_prompt_for_story_part(content, anthropic_model)
 
         # Try to generate image
@@ -538,11 +525,21 @@ def generate_and_save_story_images(
                 print(f"Failed to generate image for {story_part} with all providers")
                 continue
 
-            # Save the image
+            # Resize the image
             image = resize_image(image)  # 500 x 500
-            image.save(image_path)
-            image_paths[story_part] = image_path
-            print(f"Successfully generated and saved image for {story_part}")
+
+            # Get the GCS file path for this image
+            gcs_image_path = get_image_path(story_name, story_part, collection)
+
+            # Upload the image to GCS
+            gcs_uri = upload_to_gcs(
+                obj=image,
+                bucket_name=config.GCS_PRIVATE_BUCKET,
+                file_name=gcs_image_path,
+                content_type="image/png"
+            )
+            image_paths[story_part] = gcs_uri
+            print(f"Successfully generated and uploaded image for {story_part} to {gcs_uri}")
 
         except Exception as e:
             print(f"Error processing {story_part}: {str(e)}")

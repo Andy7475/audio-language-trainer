@@ -9,7 +9,7 @@ from src.utils import (
     extract_json_from_llm_response,
 )
 from src.generate import add_translations
-from src.gcs_storage import upload_to_gcs, get_story_translated_dialogue_path
+from src.gcs_storage import upload_to_gcs, get_story_translated_dialogue_path, get_story_dialogue_path
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -200,16 +200,11 @@ def upload_dialogue_to_gcs(
         f"story_{story_name}" if not story_name.startswith("story_") else story_name
     )
 
-    # Create the base prefix and filename
-    base_prefix = f"collections/{collection}/stories/{story_name}"
-    file_name = "dialogue.json"
-
     # Upload the JSON data using the utility function
     gcs_uri = upload_to_gcs(
         obj=dialogue_dict,
         bucket_name=bucket_name,
-        file_name=file_name,
-        base_prefix=base_prefix,
+        file_name=get_story_dialogue_path(story_name=story_name, collection=collection),
     )
 
     print(f"Dialogue uploaded to {gcs_uri}")

@@ -896,3 +896,89 @@ def assign_phrases_to_stories(
                 print(f"  Average new words per flashcard: {avg_new_words:.2f}")
 
     return assignments
+
+
+def plot_vocabulary_growth_from_assignments(assignments: Dict[str, List[Dict[str, Any]]], window: int = 15) -> None:
+    """
+    Plot vocabulary growth using the assignments dictionary format.
+    Uses the 'total_new_words' key for each phrase.
+
+    Args:
+        assignments: Dictionary mapping story names to lists of phrase dicts
+        window: Window size for rolling mean calculation
+    """
+    # Flatten all phrase dicts in story order
+    all_phrase_dicts = []
+    for story in assignments:
+        all_phrase_dicts.extend(assignments[story])
+
+    # Use total_new_words for each phrase
+    new_words_per_phrase = [d.get("total_new_words", 0) for d in all_phrase_dicts]
+    cumulative_counts = []
+    cumulative = 0
+    for n in new_words_per_phrase:
+        cumulative += n
+        cumulative_counts.append(cumulative)
+
+    # Calculate rolling mean and overall mean
+    df = pd.DataFrame({"new_words": new_words_per_phrase})
+    rolling_mean = (
+        df["new_words"].rolling(window=min(window, len(new_words_per_phrase)), min_periods=1).mean()
+    )
+    overall_mean = np.mean(new_words_per_phrase)
+
+    # Create plot with secondary y-axis
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Add cumulative vocabulary trace
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(new_words_per_phrase) + 1)),
+            y=cumulative_counts,
+            name="Total Vocabulary (cumulative sum)",
+            line=dict(color="blue"),
+        ),
+        secondary_y=False,
+    )
+
+    # Add rolling mean line
+    fig.add_trace(
+        go.Scatter(
+            x=list(range(1, len(new_words_per_phrase) + 1)),
+            y=rolling_mean,
+            name="New Words per Phrase\n(rolling mean)",
+            line=dict(color="red"),
+        ),
+        secondary_y=True,
+    )
+
+    # Add overall mean line
+    fig.add_trace(
+        go.Scatter(
+            x=[1, len(new_words_per_phrase)],
+            y=[overall_mean, overall_mean],
+            name="Overall new words per phrase",
+            line=dict(color="purple", dash="dot"),
+        ),
+        secondary_y=True,
+    )
+
+    # Update layout
+    fig.update_layout(
+        title="Vocabulary Growth Analysis (Assignments)",
+        xaxis_title="Phrase Number",
+        showlegend=True,
+        margin=dict(r=150),
+        legend=dict(yanchor="top", y=0.99, xanchor="left", x=1.05),
+    )
+
+    # Update y-axes titles
+    fig.update_yaxes(
+        title_text="Total Unique Words (Cumulative)", secondary_y=False, gridcolor="lightgrey"
+    )
+    fig.update_yaxes(
+        title_text="New Words per Phrase", secondary_y=True, gridcolor="lightgrey"
+    )
+
+    # Show plot
+    fig.show()

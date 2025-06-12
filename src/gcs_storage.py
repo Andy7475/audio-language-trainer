@@ -589,27 +589,37 @@ def get_image_path(story_name: str, story_part: str, collection: str = "LM1000")
     )
 
 
-def get_stories_from_collection(
-    bucket_name: str = config.GCS_PRIVATE_BUCKET, collection: str = "LM1000"
-) -> List[str]:
+def get_story_names(collection: str = "LM1000", bucket_name: Optional[str] = None) -> List[str]:
     """
-    Get list of story names from a collection file.
+    List all story names in the given collection by listing blobs in the 'collections/{collection}/common/stories/' folder.
+    Returns a list of story names in the format 'story_this_is_the_name'.
 
     Args:
-        bucket_name: GCS bucket name
-        collection: Collection name
+        collection: Collection name (default: "LM1000")
+        bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
 
     Returns:
-        List[str]: List of story names
+        List[str]: List of story names (e.g. ['story_sunset_adventure_documentary', ...])
     """
-    collection_path = get_story_collection_path(collection)
-    try:
-        collection_data = read_from_gcs(bucket_name, collection_path, "json")
-        # Assuming the collection file has story names as keys
-        return list(collection_data.keys())
-    except Exception as e:
-        print(f"Error loading collection {collection}: {str(e)}")
-        return []
+    if bucket_name is None:
+        bucket_name = config.GCS_PRIVATE_BUCKET
+    from google.cloud import storage
+    # Use get_story_dialogue_path to get the stories folder prefix
+    dummy_story = "story_dummy"
+    dialogue_path = get_story_dialogue_path(dummy_story, collection)
+    # Remove '/story_dummy/dialogue.json' to get the prefix
+    prefix = "/".join(dialogue_path.split("/")[:-2]) + "/"
+    storage_client = storage.Client()
+    bucket = storage_client.bucket(bucket_name)
+    blobs = bucket.list_blobs(prefix=prefix)
+    story_names = set()
+    for blob in blobs:
+        parts = blob.name.split("/")
+        if len(parts) >= 5:
+            story_name = parts[4]
+            if story_name.startswith("story_"):
+                story_names.add(story_name)
+    return sorted(story_names)
 
 
 def get_phrase_audio_path(
@@ -800,3 +810,26 @@ def get_shopify_image_path(filename: str, bucket_name: Optional[str] = None) -> 
     if bucket_name is None:
         bucket_name = config.GCS_PRIVATE_BUCKET
     return f"{bucket_name}/resources/shopify/images/{filename}"
+
+
+def get_stories_from_collection(
+    bucket_name: str = config.GCS_PRIVATE_BUCKET, collection: str = "LM1000"
+) -> List[str]:
+    """
+    Get list of story names from a collection file, preserving their order.
+
+    Args:
+        bucket_name: GCS bucket name
+        collection: Collection name
+
+    Returns:
+        List[str]: List of story names in order
+    """
+    collection_path = get_story_collection_path(collection)
+    try:
+        collection_data = read_from_gcs(bucket_name, collection_path, "json")
+        # Assuming the collection file has story names as keys
+        return list(collection_data.keys())
+    except Exception as e:
+        print(f"Error loading collection {collection}: {str(e)}")
+        return []

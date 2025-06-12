@@ -36,7 +36,7 @@ def get_collection_title(collection: str) -> str:
         'LM1000'
     """
 
-    MAPPING = {"LM1000": "First1000", "LM2000": "Second1000"}
+    MAPPING = {"LM1000": "First1000", "LM2000": "Second1000", "WarmUp150": "WarmUp1000"}
 
     return MAPPING.get(collection, collection.title())
 

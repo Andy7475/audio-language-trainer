@@ -15,5 +15,6 @@
     "API_DELAY_SECONDS":20,
     "GCS_PUBLIC_BUCKET":"audio-language-trainer-stories",
     "GCS_PRIVATE_BUCKET":"audio-language-trainer-private-content",
-    "IMAGE_STYLE" : "default"
+    "IMAGE_STYLE" : "default",
+    "ANTHROPIC_SERVICE" : "google"
 }
