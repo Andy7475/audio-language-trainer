@@ -256,31 +256,18 @@ body {
     text-decoration: underline;
 }
 
-/* FirePhrase navigation link */
+/* FirePhrase navigation link - minimal styling */
 .firephrase-nav-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
-    color: white;
-    text-decoration: none;
-    padding: 8px 16px;
-    border-radius: 20px;
     font-size: 14px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease;
     white-space: nowrap;
 }
 
 .firephrase-nav-link:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
-}
-
-.firephrase-nav-link:active {
-    transform: translateY(0);
+    color: var(--primary-color);
 }
 
 /* Mobile responsive navigation */
@@ -299,9 +286,7 @@ body {
     
     .firephrase-nav-link {
         order: 2;
-        justify-content: center;
-        align-self: center;
-        max-width: 150px;
+        text-align: center;
     }
 }
 
