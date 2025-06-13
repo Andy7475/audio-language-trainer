@@ -234,11 +234,17 @@ body {
     padding: 15px;
     margin-bottom: 20px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
 .breadcrumb {
     font-size: 14px;
     color: var(--text-secondary);
+    flex-grow: 1;
 }
 
 .breadcrumb a {
@@ -248,6 +254,55 @@ body {
 
 .breadcrumb a:hover {
     text-decoration: underline;
+}
+
+/* FirePhrase navigation link */
+.firephrase-nav-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: white;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    white-space: nowrap;
+}
+
+.firephrase-nav-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+}
+
+.firephrase-nav-link:active {
+    transform: translateY(0);
+}
+
+/* Mobile responsive navigation */
+@media (max-width: 639px) {
+    .navigation {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .breadcrumb {
+        order: 1;
+        text-align: center;
+    }
+    
+    .firephrase-nav-link {
+        order: 2;
+        justify-content: center;
+        align-self: center;
+        max-width: 150px;
+    }
 }
 
 /* Card styles */
@@ -1108,5 +1163,167 @@ textarea:focus {
     
     .mobile-full-width {
         width: 100% !important;
+    }
+}
+
+/* FirePhrase Prominent Footer Bar */
+.firephrase-footer-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(135deg, #3b82f6 0%, #6366f1 100%);
+    color: white;
+    padding: 12px 20px;
+    box-shadow: 0 -6px 25px rgba(0, 0, 0, 0.2);
+    z-index: 9999;
+    border-top: 3px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    transition: transform 0.3s ease-in-out;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+.firephrase-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.firephrase-icon {
+    font-size: 26px;
+    animation: pulse 2s infinite;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+.firephrase-text {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    min-width: 220px;
+}
+
+.firephrase-text strong {
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.firephrase-text span {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.3;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+}
+
+.firephrase-button {
+    background: #ffffff;
+    color: #3b82f6;
+    padding: 14px 28px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
+    border: 2px solid transparent;
+}
+
+.firephrase-button:hover {
+    background: #f8fafc;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    color: #2563eb;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.firephrase-button:active {
+    transform: translateY(-1px);
+}
+
+/* Ensure footer stays above all content */
+.firephrase-footer-bar {
+    position: fixed !important;
+    bottom: 0 !important;
+    z-index: 999999 !important;
+}
+
+/* Add bottom padding to body when footer bar is present */
+.template-body {
+    padding-bottom: 100px !important; /* Space for the fixed footer bar */
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 639px) {
+    .firephrase-footer-bar {
+        padding: 10px 16px;
+        min-height: 80px;
+    }
+    
+    .firephrase-content {
+        gap: 12px;
+        text-align: center;
+        justify-content: center;
+        flex-direction: column;
+    }
+    
+    .firephrase-text {
+        min-width: auto;
+        order: 1;
+        text-align: center;
+    }
+    
+    .firephrase-icon {
+        order: 0;
+        font-size: 22px;
+    }
+    
+    .firephrase-button {
+        order: 2;
+        padding: 12px 24px;
+        font-size: 15px;
+        width: 100%;
+        max-width: 280px;
+    }
+    
+    .firephrase-text strong {
+        font-size: 17px;
+    }
+    
+    .firephrase-text span {
+        font-size: 13px;
+    }
+    
+    .template-body {
+        padding-bottom: 120px !important; /* More space on mobile */
     }
 } 
