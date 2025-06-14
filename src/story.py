@@ -23,7 +23,6 @@ from src.convert import (
 )
 from src.gcs_storage import (
     check_blob_exists,
-    get_fast_audio_path,
     get_image_path,
     get_m4a_file_path,
     get_m4a_filename,
@@ -39,9 +38,10 @@ from src.gcs_storage import (
 from src.utils import load_template, get_story_position
 from src.wiktionary import generate_wiktionary_links
 
+
 def upload_styles_to_gcs():
     """Upload the styles.css file to the public GCS bucket."""
-    
+
     # Load the CSS content with correct path handling
     try:
         # Try current directory first (when running from project root)
@@ -49,7 +49,7 @@ def upload_styles_to_gcs():
     except FileNotFoundError:
         # Fallback to relative path (when running from subdirectory)
         styles_content = load_template("styles.css", "../src/templates")
-    
+
     # Upload to GCS
     public_url = upload_to_gcs(
         obj=styles_content,
@@ -57,11 +57,12 @@ def upload_styles_to_gcs():
         file_name="styles.css",
         content_type="text/css",
     )
-    
+
     print(f"✅ Styles uploaded successfully!")
     print(f"🌐 Public URL: {public_url}")
-    
+
     return public_url
+
 
 def create_and_upload_html_story(
     prepared_data: Dict,
@@ -160,7 +161,6 @@ def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
         {links_html}
     </div>
     """
-
 
 
 def create_album_files(
@@ -405,9 +405,12 @@ def prepare_story_data_from_gcs(
         story_dialogue.items(), desc=f"Preparing {story_name} in {language_name}"
     ):
         # Initialize the section data structure
+        story_position = get_story_position(story_name, collection)
         fast_audio_segment = read_from_gcs(
             config.GCS_PRIVATE_BUCKET,
-            get_fast_audio_path(story_name, story_part, collection=collection),
+            get_m4a_file_path(
+                story_name, story_part, story_position, fast=True, collection=collection
+            ),
             "audio",
         )
 
@@ -497,11 +500,13 @@ def update_all_index_pages_hierarchical(
 
     # Filter to only existing languages and collections
     existing_languages = get_existing_languages(languages, collections, bucket_name)
-    
+
     if verbose:
         print(f"Found existing languages: {existing_languages}")
         if not existing_languages:
-            print("❌ No existing languages found with content. Skipping index generation.")
+            print(
+                "❌ No existing languages found with content. Skipping index generation."
+            )
             return {"error": "No existing languages found with content"}
 
     # Upload latest styles first
@@ -592,7 +597,7 @@ def generate_hierarchical_index_system(
         existing_collections = get_existing_collections_for_language(
             language, collections, bucket_name
         )
-        
+
         if existing_collections:
             results["language_indexes"][language] = generate_language_collection_index(
                 language=language,
@@ -635,14 +640,14 @@ def generate_main_language_index(
         existing_collections = get_existing_collections_for_language(
             language, collections, bucket_name
         )
-        
+
         if not existing_collections:
             print(f"Skipping language {language} - no existing collections found")
             continue
 
         # Get stats for this language across existing collections
         total_stories = 0
-        
+
         for collection in existing_collections:
             try:
                 collection_data = read_from_gcs(
@@ -655,9 +660,7 @@ def generate_main_language_index(
             except:
                 continue
 
-        stats_text = (
-            f"{len(existing_collections)} collections, {total_stories} stories"
-        )
+        stats_text = f"{len(existing_collections)} collections, {total_stories} stories"
         language_url = f"{language.lower()}/index.html"
 
         language_cards += f"""
@@ -670,7 +673,9 @@ def generate_main_language_index(
 
     # Only generate main index if there are languages with content
     if not language_cards.strip():
-        print("No languages with existing content found. Skipping main index generation.")
+        print(
+            "No languages with existing content found. Skipping main index generation."
+        )
         return None
 
     # Generate special pages section
@@ -728,8 +733,12 @@ def generate_language_collection_index(
             )
 
             # Double-check that this collection exists for this language
-            if not check_collection_exists_for_language(collection, language, bucket_name):
-                print(f"Collection {collection} doesn't exist for language {language}, skipping")
+            if not check_collection_exists_for_language(
+                collection, language, bucket_name
+            ):
+                print(
+                    f"Collection {collection} doesn't exist for language {language}, skipping"
+                )
                 continue
 
             story_count = len(collection_data)
@@ -753,7 +762,9 @@ def generate_language_collection_index(
 
     # Only generate language index if there are collections with content
     if not collection_cards.strip():
-        print(f"No collections with existing content found for language {language}. Skipping language index generation.")
+        print(
+            f"No collections with existing content found for language {language}. Skipping language index generation."
+        )
         return None
 
     # Load and fill template
@@ -799,10 +810,14 @@ def generate_collection_story_index(
         # Generate story cards ordered by position - only for existing stories
         for position, (story_name, story_data) in enumerate(collection_data.items(), 1):
             # Check if this story actually exists for this language
-            if not check_story_exists_for_language(story_name, collection, language, bucket_name):
-                print(f"Story {story_name} doesn't exist for language {language}, skipping")
+            if not check_story_exists_for_language(
+                story_name, collection, language, bucket_name
+            ):
+                print(
+                    f"Story {story_name} doesn't exist for language {language}, skipping"
+                )
                 continue
-            
+
             existing_story_count += 1
             story_title = get_story_title(story_name)
             phrase_count = len(story_data) if isinstance(story_data, list) else 0
@@ -825,7 +840,9 @@ def generate_collection_story_index(
 
         # Only generate collection index if there are existing stories
         if existing_story_count == 0:
-            print(f"No existing stories found for collection {collection} in language {language}. Skipping collection index generation.")
+            print(
+                f"No existing stories found for collection {collection} in language {language}. Skipping collection index generation."
+            )
             return None
 
         collection_title = get_collection_title(collection)
@@ -896,18 +913,18 @@ def check_collection_exists_for_language(
 ) -> bool:
     """
     Check if a collection has any content for a specific language.
-    
+
     Args:
         collection: Collection name (e.g., "LM1000")
         language: Language name (e.g., "French")
         bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
-        
+
     Returns:
         bool: True if the collection exists and has content for the language
     """
     if bucket_name is None:
         bucket_name = config.GCS_PUBLIC_BUCKET
-    
+
     try:
         # First check if the collection data file exists
         collection_data = read_from_gcs(
@@ -915,27 +932,27 @@ def check_collection_exists_for_language(
             get_story_collection_path(collection),
             "json",
         )
-        
+
         if not collection_data:
             return False
-        
+
         # Check if there's at least one story published for this language/collection
         language_folder = sanitize_path_component(language.lower())
         collection_folder = sanitize_path_component(collection.lower())
-        
+
         # Check for any story HTML files in the public bucket
         storage_client = storage.Client()
         bucket = storage_client.bucket(bucket_name)
         prefix = f"{language_folder}/{collection_folder}/"
-        
+
         # Look for any .html files in the collection folder
         blobs = bucket.list_blobs(prefix=prefix)
         for blob in blobs:
             if blob.name.endswith(".html"):
                 return True
-        
+
         return False
-        
+
     except Exception as e:
         print(f"Error checking collection {collection} for language {language}: {e}")
         return False
@@ -949,27 +966,29 @@ def check_story_exists_for_language(
 ) -> bool:
     """
     Check if a specific story exists for a given language and collection.
-    
+
     Args:
         story_name: Name of the story
         collection: Collection name
         language: Language name
         bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
-        
+
     Returns:
         bool: True if the story exists for the language
     """
     if bucket_name is None:
         bucket_name = config.GCS_PUBLIC_BUCKET
-    
+
     # Check if the story HTML file exists
     story_path = get_public_story_path(story_name, collection)
     # The path uses config.TARGET_LANGUAGE_NAME, so we need to construct it manually
     language_folder = sanitize_path_component(language.lower())
     collection_folder = sanitize_path_component(collection.lower())
     story_folder = sanitize_path_component(story_name)
-    story_path = f"{language_folder}/{collection_folder}/{story_folder}/{story_name}.html"
-    
+    story_path = (
+        f"{language_folder}/{collection_folder}/{story_folder}/{story_name}.html"
+    )
+
     return check_blob_exists(bucket_name, story_path)
 
 
@@ -980,21 +999,21 @@ def get_existing_collections_for_language(
 ) -> List[str]:
     """
     Get list of collections that actually exist for a specific language.
-    
+
     Args:
         language: Language name
         collections: List of collection names to check
         bucket_name: GCS bucket name
-        
+
     Returns:
         List[str]: Collections that exist for the language
     """
     existing_collections = []
-    
+
     for collection in collections:
         if check_collection_exists_for_language(collection, language, bucket_name):
             existing_collections.append(collection)
-    
+
     return existing_collections
 
 
@@ -1005,17 +1024,17 @@ def get_existing_languages(
 ) -> List[str]:
     """
     Get list of languages that have at least one collection with content.
-    
+
     Args:
         languages: List of language names to check
         collections: List of collection names to check
         bucket_name: GCS bucket name
-        
+
     Returns:
         List[str]: Languages that have existing content
     """
     existing_languages = []
-    
+
     for language in languages:
         # Check if this language has any existing collections
         existing_collections = get_existing_collections_for_language(
@@ -1023,5 +1042,5 @@ def get_existing_languages(
         )
         if existing_collections:
             existing_languages.append(language)
-    
+
     return existing_languages

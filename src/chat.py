@@ -5,6 +5,7 @@ from typing import Dict, List, Tuple
 from src.convert import get_story_title, get_collection_title
 from src.anki_tools import load_template
 from src.config_loader import config
+from src.gcs_storage import get_story_translated_challenges_path, upload_to_gcs
 
 
 def get_challenge_generation_prompt(story_dialogue: dict) -> str:
@@ -269,7 +270,7 @@ def create_html_challenges(
     react_component = load_template(component_path)
     template = Template(load_template(template_path))
     title = get_story_title(story_name)
-    
+
     # Create the HTML content
     html_content = template.substitute(
         title=title,
@@ -280,10 +281,10 @@ def create_html_challenges(
         collection_raw=collection,
     )
 
-    from src.gcs_storage import get_story_translated_challenges_path, upload_to_gcs
-
     # Create output directory if it doesn't exist
-    output_path = get_story_translated_challenges_path(story_name)
+    output_path = get_story_translated_challenges_path(
+        story_name, collection=collection
+    )
 
     gcs_uri = upload_to_gcs(html_content, config.GCS_PUBLIC_BUCKET, output_path)
 

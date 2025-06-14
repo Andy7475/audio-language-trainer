@@ -574,14 +574,6 @@ def get_utterance_audio_path(
     return f"collections/{collection}/{language}/stories/{story_name}/audio/{story_part}/{filename}"
 
 
-def get_fast_audio_path(
-    story_name: str, story_part: str, collection: str = "LM1000"
-) -> str:
-    language = config.TARGET_LANGUAGE_NAME.lower()
-    """Get the GCS path for a fast audio file."""
-    return f"collections/{collection}/{language}/stories/{story_name}/audio/{story_part}/fast.mp3"
-
-
 def get_image_path(story_name: str, story_part: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story part image."""
     return (
@@ -589,7 +581,9 @@ def get_image_path(story_name: str, story_part: str, collection: str = "LM1000")
     )
 
 
-def get_story_names(collection: str = "LM1000", bucket_name: Optional[str] = None) -> List[str]:
+def get_story_names(
+    collection: str = "LM1000", bucket_name: Optional[str] = None
+) -> List[str]:
     """
     List all story names in the given collection by listing blobs in the 'collections/{collection}/common/stories/' folder.
     Returns a list of story names in the format 'story_this_is_the_name'.
@@ -604,6 +598,7 @@ def get_story_names(collection: str = "LM1000", bucket_name: Optional[str] = Non
     if bucket_name is None:
         bucket_name = config.GCS_PRIVATE_BUCKET
     from google.cloud import storage
+
     # Use get_story_dialogue_path to get the stories folder prefix
     dummy_story = "story_dummy"
     dialogue_path = get_story_dialogue_path(dummy_story, collection)

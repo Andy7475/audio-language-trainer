@@ -118,7 +118,9 @@ def create_product_templates(
                 public_bucket_name = config.GCS_PUBLIC_BUCKET
                 story_hyperlink = f"https://storage.googleapis.com/{public_bucket_name}/{story_hyperlink}"
                 template = individual_template.replace("${story_title}", story_title)
-                template = template.replace("${story_position}", f"{story_position:02d}")
+                template = template.replace(
+                    "${story_position}", f"{story_position:02d}"
+                )
                 template = template.replace("${collection}", collection)
                 template = template.replace("${collection_title}", collection_title)
                 template = template.replace("${story_theme}", story_theme)
@@ -149,7 +151,9 @@ def create_product_templates(
                 ]
             )
             story_count = len(bundle_stories)
-            vocab_count = math.floor(sum(s["phrase_count"] for s in bundle_stories) / 10) * 10
+            vocab_count = (
+                math.floor(sum(s["phrase_count"] for s in bundle_stories) / 10) * 10
+            )
             template = bundle_template.replace("${collection}", collection)
             template = template.replace("${collection_title}", collection_title)
             template = template.replace("${range_display}", range_display)
@@ -307,7 +311,7 @@ def generate_shopify_csv(
                 image_row = {
                     "Handle": base_product["Handle"],
                     "Image Src": shopify_cdn_base + image_filename,
-                    "Image Position": i + 1
+                    "Image Position": i + 1,
                 }
                 csv_data.append(image_row)
 
@@ -324,8 +328,10 @@ def generate_shopify_csv(
                     else individual_price
                 )
                 # Convert story name from "story_better_than_a_movie" to "better-than-a-movie"
-                story_name_for_handle = story["name"].replace("story_", "").replace("_", "-")
-                
+                story_name_for_handle = (
+                    story["name"].replace("story_", "").replace("_", "-")
+                )
+
                 base_product = {
                     "Handle": f"{target_language.lower()}-{collection.lower()}-story-{story['position']:02d}-{story_name_for_handle}",
                     "Title": f"{target_language} - {collection_title} - Story {story['position']:02d}: {story['title']}",
@@ -335,7 +341,7 @@ def generate_shopify_csv(
                     "Vendor": "FirePhrase",
                     "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
                     "Type": "Digital Flashcards",
-                    "Tags": f"{target_language}, {source_language}, {collection_title}, Digital Download, Language Learning",
+                    "Tags": f"{target_language}, {collection_title}, Digital Download, Language Learning",
                     "Published": "TRUE",
                     "Option1 Name": "Format",
                     "Option1 Value": "Digital Download",
@@ -345,6 +351,7 @@ def generate_shopify_csv(
                     "source language (product.metafields.custom.source_language)": source_language,
                     "target language (product.metafields.custom.target_language)": target_language,
                     "pack type (product.metafields.custom.pack_type)": "Single",
+                    "collection (product.metafields.custom.collection)": collection_title,
                 }
                 add_product_with_images(
                     base_product, "individual", story_name=story["name"]
@@ -368,7 +375,7 @@ def generate_shopify_csv(
                     "Vendor": "FirePhrase",
                     "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
                     "Type": "Digital Flashcards",
-                    "Tags": f"{target_language}, {source_language}, {collection_title}, Bundle, Digital Download, Language Learning",
+                    "Tags": f"{target_language}, {collection_title}, Continue, Digital Download, Language Learning",
                     "Published": "TRUE",
                     "Option1 Name": "Format",
                     "Option1 Value": "Digital Download",
@@ -378,6 +385,7 @@ def generate_shopify_csv(
                     "source language (product.metafields.custom.source_language)": source_language,
                     "target language (product.metafields.custom.target_language)": target_language,
                     "pack type (product.metafields.custom.pack_type)": "Bundle",
+                    "collection (product.metafields.custom.collection)": collection_title,
                 }
                 add_product_with_images(
                     base_product, "bundle", bundle_range=f"{start:02d}-{end:02d}"
@@ -394,7 +402,7 @@ def generate_shopify_csv(
             "Vendor": "FirePhrase",
             "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
             "Type": "Digital Flashcards",
-            "Tags": f"{target_language}, {source_language}, {collection_title}, Complete, Bundle, Digital Download, Language Learning",
+            "Tags": f"{target_language}, {collection_title}, Complete, Digital Download, Language Learning",
             "Published": "TRUE",
             "Option1 Name": "Format",
             "Option1 Value": "Digital Download",
@@ -404,6 +412,7 @@ def generate_shopify_csv(
             "source language (product.metafields.custom.source_language)": source_language,
             "target language (product.metafields.custom.target_language)": target_language,
             "pack type (product.metafields.custom.pack_type)": "Complete",
+            "collection (product.metafields.custom.collection)": collection_title,
         }
         add_product_with_images(base_product, "complete")
 

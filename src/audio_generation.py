@@ -23,7 +23,7 @@ from src.config_loader import VoiceInfo, VoiceProvider, config
 from src.convert import clean_filename
 from src.gcs_storage import (
     check_blob_exists,
-    get_fast_audio_path,
+    get_m4a_file_path,
     get_story_translated_dialogue_path,
     get_utterance_audio_path,
     read_from_gcs,
@@ -31,6 +31,7 @@ from src.gcs_storage import (
     get_phrase_audio_path,
 )
 from src.translation import tokenize_text
+from src.utils import get_story_position
 
 
 def generate_translated_phrase_audio(
@@ -692,7 +693,10 @@ def generate_and_upload_fast_audio(
         story_dialogue.items(), desc=f"Processing {story_name} in {language_name}"
     ):
         # Check if fast audio already exists and we're not overwriting
-        fast_audio_path = get_fast_audio_path(story_name, story_part, collection)
+        story_position = get_story_position(story_name, collection)
+        fast_audio_path = get_m4a_file_path(
+            story_name, story_part, story_position, fast=True, collection=collection
+        )
 
         if not overwrite and check_blob_exists(bucket_name, fast_audio_path):
             print(f"Fast audio for {story_part} already exists, skipping.")
@@ -732,14 +736,11 @@ def generate_and_upload_fast_audio(
         normal_audio, fast_audio = generate_normal_and_fast_audio(audio_segments)
 
         # Upload fast audio to GCS
-        filename = os.path.basename(fast_audio_path)
-        base_prefix = os.path.dirname(fast_audio_path)
 
         uri = upload_to_gcs(
             obj=fast_audio,
             bucket_name=bucket_name,
-            file_name=filename,
-            base_prefix=base_prefix,
+            file_name=fast_audio_path,
             content_type="audio/mpeg",
         )
 
