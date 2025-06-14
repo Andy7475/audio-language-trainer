@@ -509,7 +509,7 @@ Examples:
         ),
         ("challenges", lambda: create_challenges(args.collection)),
         ("stories", lambda: create_story_pages(args.collection)),
-        ("index", lambda: update_index_pages(args.languages, args.collections)),
+        ("index", lambda: update_index_pages()),
         ("anki", lambda: create_anki_decks(args.collection)),
     ]
 
