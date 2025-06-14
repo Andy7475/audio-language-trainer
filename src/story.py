@@ -258,6 +258,7 @@ def create_album_files(
             story_part=story_part,
             fast=True,
             story_position=story_position,
+            collection=collection,
         )
         m4a_path = create_m4a_with_timed_lyrics(
             audio_segments=audio_list,
