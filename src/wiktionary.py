@@ -59,13 +59,14 @@ def generate_wiktionary_links(
 
         # No cache hit, try to create wiktionary link
         try:
-            # Use lowercase for URL but keep original case for display
+            # Try lowercase first (works for most languages)
             lookup_word = clean_word.lower()
-            # Properly encode the word for URL - this handles apostrophes and other special chars
             encoded_word = urllib.parse.quote(lookup_word)
             url = f"https://en.wiktionary.org/wiki/{encoded_word}"
 
             response = requests.get(url)
+            found_section = False
+            
             if response.status_code == 200:
                 soup = BeautifulSoup(response.content, "html.parser")
                 if section_name := find_language_section(soup, language_name):
@@ -73,12 +74,30 @@ def generate_wiktionary_links(
                     links.append(link)
                     # Cache with the original case
                     word_link_cache[clean_word] = link.replace(word, clean_word)
-                    continue
+                    found_section = True
 
-            # If any step fails, fall back to original word
-            links.append(word)
-            # Cache the failure case too (as the word itself)
-            word_link_cache[clean_word] = clean_word
+            # If lowercase didn't work, try capitalized (for languages like German)
+            if not found_section:
+                lookup_word_cap = clean_word.capitalize()
+                if lookup_word_cap != lookup_word:  # Only try if different from lowercase
+                    encoded_word_cap = urllib.parse.quote(lookup_word_cap)
+                    url_cap = f"https://en.wiktionary.org/wiki/{encoded_word_cap}"
+
+                    response_cap = requests.get(url_cap)
+                    if response_cap.status_code == 200:
+                        soup_cap = BeautifulSoup(response_cap.content, "html.parser")
+                        if section_name := find_language_section(soup_cap, language_name):
+                            link = f'<a href="{url_cap}#{section_name}">{word}</a>'
+                            links.append(link)
+                            # Cache with the original case
+                            word_link_cache[clean_word] = link.replace(word, clean_word)
+                            found_section = True
+
+            # If neither worked, fall back to original word
+            if not found_section:
+                links.append(word)
+                # Cache the failure case too (as the word itself)
+                word_link_cache[clean_word] = clean_word
 
         except requests.RequestException:
             links.append(word)

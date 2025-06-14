@@ -372,14 +372,12 @@ def create_story_pages(collection: str):
     print("✅ Story pages and albums created")
 
 
-def update_index_pages(languages: list = None, collections: list = None):
+def update_index_pages():
     """Step 12: Update index pages."""
     print("\n🔄 Step 12: Updating index pages...")
 
-    if languages is None:
-        languages = [config.TARGET_LANGUAGE_NAME]
-    if collections is None:
-        collections = ["LM1000", "WarmUp150"]
+    languages = ["French", "Spanish", "German", "Swedish"]
+    collections = ["LM1000", "WarmUp150"]
 
     upload_styles_to_gcs()
     result = update_all_index_pages_hierarchical(
