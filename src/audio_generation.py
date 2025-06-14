@@ -18,20 +18,18 @@ from mutagen.mp4 import MP4, MP4Cover
 from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
-
-from src.config_loader import VoiceInfo, VoiceProvider, config
 from src.convert import clean_filename
+from src.config_loader import VoiceInfo, VoiceProvider, config
 from src.gcs_storage import (
-    check_blob_exists,
-    get_m4a_file_path,
+    get_fast_audio_path,
     get_story_translated_dialogue_path,
     get_utterance_audio_path,
     read_from_gcs,
     upload_to_gcs,
     get_phrase_audio_path,
+    check_blob_exists,
 )
 from src.translation import tokenize_text
-from src.utils import get_story_position
 
 
 def generate_translated_phrase_audio(
@@ -693,9 +691,8 @@ def generate_and_upload_fast_audio(
         story_dialogue.items(), desc=f"Processing {story_name} in {language_name}"
     ):
         # Check if fast audio already exists and we're not overwriting
-        story_position = get_story_position(story_name, collection)
-        fast_audio_path = get_m4a_file_path(
-            story_name, story_part, story_position, fast=True, collection=collection
+        fast_audio_path = get_fast_audio_path(
+            story_name, story_part, collection=collection
         )
 
         if not overwrite and check_blob_exists(bucket_name, fast_audio_path):

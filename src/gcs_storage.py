@@ -574,6 +574,14 @@ def get_utterance_audio_path(
     return f"collections/{collection}/{language}/stories/{story_name}/audio/{story_part}/{filename}"
 
 
+def get_fast_audio_path(
+    story_name: str, story_part: str, collection: str = "LM1000"
+) -> str:
+    language = config.TARGET_LANGUAGE_NAME.lower()
+    """Get the GCS path for a fast audio file."""
+    return f"collections/{collection}/{language}/stories/{story_name}/audio/{story_part}/fast.mp3"
+
+
 def get_image_path(story_name: str, story_part: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story part image."""
     return (

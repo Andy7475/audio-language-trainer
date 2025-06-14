@@ -25,7 +25,7 @@ from src.gcs_storage import (
     check_blob_exists,
     get_image_path,
     get_m4a_file_path,
-    get_m4a_filename,
+    get_fast_audio_path,
     get_public_story_path,
     get_story_translated_dialogue_path,
     get_utterance_audio_path,
@@ -405,12 +405,9 @@ def prepare_story_data_from_gcs(
         story_dialogue.items(), desc=f"Preparing {story_name} in {language_name}"
     ):
         # Initialize the section data structure
-        story_position = get_story_position(story_name, collection)
         fast_audio_segment = read_from_gcs(
             config.GCS_PRIVATE_BUCKET,
-            get_m4a_file_path(
-                story_name, story_part, story_position, fast=True, collection=collection
-            ),
+            get_fast_audio_path(story_name, story_part, collection),
             "audio",
         )
 
@@ -606,7 +603,9 @@ def generate_hierarchical_index_system(
         )
 
         if existing_collections:
-            print(f"   Found existing collections for {language}: {existing_collections}")
+            print(
+                f"   Found existing collections for {language}: {existing_collections}"
+            )
             results["language_indexes"][language] = generate_language_collection_index(
                 language=language,
                 collections=existing_collections,  # Only pass existing collections
@@ -644,7 +643,7 @@ def generate_main_language_index(
         collections = ["LM1000"]
 
     print(f"   🔍 Checking content for languages: {languages}")
-    
+
     # Get language statistics - only for languages with existing content
     language_cards = ""
     special_pages = get_special_pages_from_bucket(bucket_name)
@@ -659,7 +658,9 @@ def generate_main_language_index(
             print(f"   ❌ Skipping language {language} - no existing collections found")
             continue
 
-        print(f"   ✅ Including language {language} with collections: {existing_collections}")
+        print(
+            f"   ✅ Including language {language} with collections: {existing_collections}"
+        )
 
         # Get stats for this language across existing collections
         total_stories = 0
@@ -689,7 +690,9 @@ def generate_main_language_index(
 
     # Only generate main index if there are languages with content
     if not language_cards.strip():
-        print("   ❌ No languages with existing content found. Skipping main index generation.")
+        print(
+            "   ❌ No languages with existing content found. Skipping main index generation."
+        )
         return None
 
     # Generate special pages section
@@ -738,8 +741,10 @@ def generate_language_collection_index(
     """Generate a language-level index showing available collections.
     Only includes collections that exist for the given language."""
 
-    print(f"     🔍 Generating language index for {language} with collections: {collections}")
-    
+    print(
+        f"     🔍 Generating language index for {language} with collections: {collections}"
+    )
+
     collection_cards = ""
 
     for collection in collections:
@@ -753,7 +758,9 @@ def generate_language_collection_index(
             if not check_collection_exists_for_language(
                 collection, language, bucket_name
             ):
-                print(f"     ❌ Collection {collection} doesn't exist for language {language}, skipping")
+                print(
+                    f"     ❌ Collection {collection} doesn't exist for language {language}, skipping"
+                )
                 continue
 
             story_count = len(collection_data)
@@ -778,7 +785,9 @@ def generate_language_collection_index(
 
     # Only generate language index if there are collections with content
     if not collection_cards.strip():
-        print(f"     ❌ No collections with existing content found for language {language}. Skipping language index generation.")
+        print(
+            f"     ❌ No collections with existing content found for language {language}. Skipping language index generation."
+        )
         return None
 
     # Load and fill template
@@ -830,14 +839,18 @@ def generate_collection_story_index(
             if not check_story_exists_for_language(
                 story_name, collection, language, bucket_name
             ):
-                print(f"       ❌ Story {story_name} doesn't exist for language {language}, skipping")
+                print(
+                    f"       ❌ Story {story_name} doesn't exist for language {language}, skipping"
+                )
                 continue
 
             existing_story_count += 1
             story_title = get_story_title(story_name)
             phrase_count = len(story_data) if isinstance(story_data, list) else 0
 
-            print(f"       ✅ Including story {position:02d}: {story_title} ({phrase_count} phrases)")
+            print(
+                f"       ✅ Including story {position:02d}: {story_title} ({phrase_count} phrases)"
+            )
 
             # Generate URLs - relative from collection index to story folder
             story_url = f"{story_name}/{story_name}.html"
@@ -857,7 +870,9 @@ def generate_collection_story_index(
 
         # Only generate collection index if there are existing stories
         if existing_story_count == 0:
-            print(f"       ❌ No existing stories found for collection {collection} in language {language}. Skipping collection index generation.")
+            print(
+                f"       ❌ No existing stories found for collection {collection} in language {language}. Skipping collection index generation."
+            )
             return None
 
         collection_title = get_collection_title(collection)
@@ -882,13 +897,17 @@ def generate_collection_story_index(
                 file_name=blob_path,
                 content_type="text/html",
             )
-            print(f"       ✅ Created collection index for {language}/{collection}: {url}")
+            print(
+                f"       ✅ Created collection index for {language}/{collection}: {url}"
+            )
             return url
 
         return None
 
     except Exception as e:
-        print(f"       ❌ Error generating collection index for {language}/{collection}: {e}")
+        print(
+            f"       ❌ Error generating collection index for {language}/{collection}: {e}"
+        )
         return None
 
 
