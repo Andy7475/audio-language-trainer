@@ -17,6 +17,7 @@ module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
+from src.anki_tools import create_anki_deck_from_gcs
 from src.audio_generation import (
     generate_and_upload_fast_audio,
     generate_dialogue_audio_and_upload,
@@ -388,6 +389,20 @@ def update_index_pages():
     return result
 
 
+def create_anki_decks(collection: str):
+    """Step 13: Create Anki decks from GCS data."""
+    print("\n🔄 Step 13: Creating Anki decks...")
+
+    try:
+        create_anki_deck_from_gcs(
+            collection=collection,
+            output_dir="../outputs/gcs"
+        )
+        print("✅ Anki decks created successfully")
+    except Exception as e:
+        print(f"❌ Failed to create Anki decks: {e}")
+
+
 def main():
     """Main function to process a collection into a new language."""
     parser = argparse.ArgumentParser(
@@ -425,6 +440,9 @@ Examples:
         "--skip-index", action="store_true", help="Skip index page updates"
     )
     parser.add_argument(
+        "--skip-anki", action="store_true", help="Skip Anki deck creation"
+    )
+    parser.add_argument(
         "--languages",
         nargs="+",
         help="Languages for index page generation (default: current target language)",
@@ -450,6 +468,7 @@ Examples:
             "challenges",
             "stories",
             "index",
+            "anki",
         ],
         help="Start processing from a specific step",
     )
@@ -491,6 +510,7 @@ Examples:
         ("challenges", lambda: create_challenges(args.collection)),
         ("stories", lambda: create_story_pages(args.collection)),
         ("index", lambda: update_index_pages(args.languages, args.collections)),
+        ("anki", lambda: create_anki_decks(args.collection)),
     ]
 
     # Find starting point
@@ -526,6 +546,7 @@ Examples:
                 or (step_name == "challenges" and args.skip_challenges)
                 or (step_name == "stories" and args.skip_stories)
                 or (step_name == "index" and args.skip_index)
+                or (step_name == "anki" and args.skip_anki)
             ):
                 print(f"\n⏭️  Skipping step {i}: {step_name}")
                 continue
