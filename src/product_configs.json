@@ -1,0 +1,50 @@
+{
+    "LM1000": {
+        "individual": {
+            "price": 2.99,
+            "template": "shop/individual_pack_template.html",
+            "indices": [1]
+        },
+        "bundle": {
+            "price": 5.99,
+            "template": "shop/bundle_pack_template.html",
+            "ranges": [[2, 3]]
+        },
+        "complete": {
+            "price": 19.99,
+            "template": "shop/complete_pack_template.html"
+        }
+    },
+    "LM2000": {
+        "individual": {
+            "price": 2.99,
+            "template": "shop/individual_pack_template.html",
+            "indices": [1]
+        },
+        "bundle": {
+            "price": 5.99,
+            "template": "shop/bundle_pack_template.html",
+            "ranges": [[2, 3]]
+        },
+        "complete": {
+            "price": 12.99,
+            "template": "shop/complete_pack_template.html"
+        }
+    },
+    "WarmUp150": {
+        "individual": {
+            "price": 1.99,
+            "template": "shop/individual_pack_warmup_template.html",
+            "indices": [1]
+        },
+        "bundle": {
+            "price": 4.99,
+            "template": "shop/bundle_pack_template.html",
+            "ranges": [[2, 3]]
+        },
+        "complete": {
+            "price": 14.99,
+            "template": "shop/complete_pack_warmup_template.html"
+        }
+    }
+} 

@@ -8,6 +8,7 @@ web page creation.
 """
 
 import argparse
+import json
 import os
 import sys
 from tqdm import tqdm
@@ -27,6 +28,8 @@ from src.chat import create_html_challenges, get_html_challenge_inputs
 from src.config_loader import config
 from src.convert import clean_filename
 from src.dialogue_generation import translate_and_upload_dialogue
+from src.shop import generate_product_images, generate_shopify_csv
+from src.zip import create_m4a_zip_collections
 from src.gcs_storage import (
     check_blob_exists,
     get_stories_from_collection,
@@ -394,13 +397,94 @@ def create_anki_decks(collection: str):
     print("\n🔄 Step 13: Creating Anki decks...")
 
     try:
-        create_anki_deck_from_gcs(
-            collection=collection,
-            output_dir="../outputs/gcs"
-        )
+        create_anki_deck_from_gcs(collection=collection, output_dir="../outputs/gcs")
         print("✅ Anki decks created successfully")
     except Exception as e:
         print(f"❌ Failed to create Anki decks: {e}")
+
+
+def load_product_config(collection: str):
+    """Load product configuration from JSON file."""
+    config_path = os.path.join(os.path.dirname(__file__), "product_configs.json")
+
+    try:
+        with open(config_path, "r") as f:
+            all_configs = json.load(f)
+
+        if collection not in all_configs:
+            print(f"⚠️  No product config found for {collection}, using default")
+            return None
+
+        return all_configs[collection]
+    except Exception as e:
+        print(f"❌ Failed to load product config: {e}")
+        return None
+
+
+def create_zip_files(collection: str):
+    """Step 14: Create M4A zip collections for products."""
+    print("\n🔄 Step 14: Creating M4A zip collections...")
+
+    product_config = load_product_config(collection)
+    if not product_config:
+        print("❌ Cannot create zip files without product config")
+        return
+
+    try:
+        zips = create_m4a_zip_collections(
+            product_config=product_config,
+            collection=collection,
+            bucket_name=config.GCS_PRIVATE_BUCKET,
+            output_base_dir="../outputs/gcs",
+            use_local_files=True,
+        )
+        print(f"✅ Created {len(zips)} zip files")
+        for zip_type, zip_path in zips.items():
+            print(f"  {zip_type}: {zip_path}")
+    except Exception as e:
+        print(f"❌ Failed to create zip files: {e}")
+
+
+def generate_images(collection: str):
+    """Step 15: Generate product images."""
+    print("\n🔄 Step 15: Generating product images...")
+
+    product_config = load_product_config(collection)
+    if not product_config:
+        print("❌ Cannot generate images without product config")
+        return
+
+    try:
+        generated_images = generate_product_images(
+            product_config=product_config,
+            collection=collection,
+            generate_individual=True,
+        )
+        print(f"✅ Generated {len(generated_images)} product images")
+        for product_type, uri in generated_images.items():
+            print(f"  {product_type}: {uri}")
+    except Exception as e:
+        print(f"❌ Failed to generate product images: {e}")
+
+
+def generate_csv(collection: str):
+    """Step 16: Generate Shopify CSV."""
+    print("\n🔄 Step 16: Generating Shopify CSV...")
+
+    product_config = load_product_config(collection)
+    if not product_config:
+        print("❌ Cannot generate CSV without product config")
+        return
+
+    try:
+        csv_path = generate_shopify_csv(
+            product_config=product_config,
+            collection=collection,
+            free_individual_count=1,
+        )
+        print(f"✅ Shopify CSV generated at: {csv_path}")
+    except Exception as e:
+        print(f"❌ Failed to generate Shopify CSV: {e}")
 
 
 def main():
@@ -413,6 +497,8 @@ Examples:
   python process_collection_to_new_language.py WarmUp150
   python process_collection_to_new_language.py LM1000 --skip-audio
   python process_collection_to_new_language.py WarmUp150 --overwrite-audio --languages French Spanish
+  python process_collection_to_new_language.py LM1000 --start-from zip
+  python process_collection_to_new_language.py WarmUp150 --skip-phrases --skip-audio --start-from zip
         """,
     )
 
@@ -443,6 +529,15 @@ Examples:
         "--skip-anki", action="store_true", help="Skip Anki deck creation"
     )
     parser.add_argument(
+        "--skip-zip", action="store_true", help="Skip M4A zip file creation"
+    )
+    parser.add_argument(
+        "--skip-images", action="store_true", help="Skip product image generation"
+    )
+    parser.add_argument(
+        "--skip-csv", action="store_true", help="Skip Shopify CSV generation"
+    )
+    parser.add_argument(
         "--languages",
         nargs="+",
         help="Languages for index page generation (default: current target language)",
@@ -469,6 +564,9 @@ Examples:
             "stories",
             "index",
             "anki",
+            "zip",
+            "images",
+            "csv",
         ],
         help="Start processing from a specific step",
     )
@@ -511,6 +609,9 @@ Examples:
         ("stories", lambda: create_story_pages(args.collection)),
         ("index", lambda: update_index_pages()),
         ("anki", lambda: create_anki_decks(args.collection)),
+        ("zip", lambda: create_zip_files(args.collection)),
+        ("images", lambda: generate_images(args.collection)),
+        ("csv", lambda: generate_csv(args.collection)),
     ]
 
     # Find starting point
@@ -547,6 +648,9 @@ Examples:
                 or (step_name == "stories" and args.skip_stories)
                 or (step_name == "index" and args.skip_index)
                 or (step_name == "anki" and args.skip_anki)
+                or (step_name == "zip" and args.skip_zip)
+                or (step_name == "images" and args.skip_images)
+                or (step_name == "csv" and args.skip_csv)
             ):
                 print(f"\n⏭️  Skipping step {i}: {step_name}")
                 continue

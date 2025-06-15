@@ -1,7 +1,7 @@
 import json
 import os
 import re
-from typing import Any, Dict, List, Tuple, Union, Literal
+from typing import Any, Dict, List, Optional, Tuple, Union, Literal
 from dotenv import load_dotenv
 from anthropic import Anthropic
 from google.cloud import language_v1
@@ -187,9 +187,7 @@ def translate_phrases(corrected_phrases: List[str]) -> List[Tuple[str, str]]:
     return list(zip(corrected_phrases, translated_phrases))
 
 
-def tokenize_text(
-    text: str, language_code: str = config.TARGET_LANGUAGE_CODE
-) -> List[str]:
+def tokenize_text(text: str, language_code: Optional[str] = None) -> List[str]:
     """
     Tokenize text using language-appropriate methods.
 
@@ -198,11 +196,15 @@ def tokenize_text(
 
     Args:
         text: Text to tokenize
-        language_code: Two-letter language code (e.g. 'en', 'ja')
+        language_code: Two-letter language code (e.g. 'en', 'ja', defaults to current config language)
 
     Returns:
         List of tokens suitable for TTS breaks and Wiktionary lookups
     """
+    # Evaluate language_code at runtime to pick up config changes
+    if language_code is None:
+        language_code = config.TARGET_LANGUAGE_CODE
+
     if not text:
         return []
 

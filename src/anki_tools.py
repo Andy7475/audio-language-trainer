@@ -910,7 +910,7 @@ def create_anki_deck_from_gcs(
 def export_phrases_to_anki(
     phrase_dict: Dict[str, Dict[str, Any]],
     output_dir: str = "../outputs/gcs",
-    language: str = config.TARGET_LANGUAGE_NAME.lower(),
+    language: Optional[str] = None,
     story_name: Optional[str] = None,
     deck_name: Optional[str] = None,
     collection: str = "LM1000",
@@ -934,11 +934,15 @@ def export_phrases_to_anki(
             }
         output_dir: Directory to save the Anki deck
         deck_name: Name of the Anki deck (if left out one will be generated based off language, collection and story_name)
-        language: Target language name (e.g. 'french')
+        language: Target language name (e.g. 'french', defaults to current config language)
         story_name: Optional name of the story (e.g. 'story_community_park')
         collection: Collection name (default: "LM1000")
         story_position: Optional position of story in sequence (e.g. 1 becomes "01")
     """
+    # Evaluate language at runtime to pick up config changes
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+
     output_dir = os.path.join(output_dir, config.GCS_PRIVATE_BUCKET)
     os.makedirs(output_dir, exist_ok=True)
     language_cap = language.title()
