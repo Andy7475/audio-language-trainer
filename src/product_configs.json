@@ -34,7 +34,7 @@
     "WarmUp150": {
         "individual": {
             "price": 1.99,
-            "template": "shop/individual_pack_warmup_template.html",
+            "template": "shop/individual_warmup_pack_template.html",
             "indices": [1]
         },
         "bundle": {
@@ -44,7 +44,7 @@
         },
         "complete": {
             "price": 14.99,
-            "template": "shop/complete_pack_warmup_template.html"
+            "template": "shop/complete_warmup_pack_template.html"
         }
     }
 } 
