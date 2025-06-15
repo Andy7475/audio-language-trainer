@@ -353,8 +353,8 @@ def create_challenges(collection: str):
 
 
 def create_story_pages(collection: str):
-    """Step 11: Create story HTML pages and album files."""
-    print("\n🔄 Step 11: Creating story pages and albums...")
+    """Step 11: Create story HTML pages."""
+    print("\n🔄 Step 11: Creating story pages...")
 
     all_stories = get_stories_from_collection(collection=collection)
 
@@ -368,17 +368,39 @@ def create_story_pages(collection: str):
                 continue
 
             create_and_upload_html_story(story_data, story_name, collection=collection)
-            create_album_files(story_data, story_name, collection=collection)
-            print(f"  ✅ Created pages and album for {story_name}")
+            print(f"  ✅ Created pages for {story_name}")
         except Exception as e:
             print(f"  ❌ Failed to create pages for {story_name}: {e}")
 
-    print("✅ Story pages and albums created")
+    print("✅ Story pages created")
+
+
+def create_albums(collection: str):
+    """Step 12: Create album files."""
+    print("\n🔄 Step 12: Creating album files...")
+
+    all_stories = get_stories_from_collection(collection=collection)
+
+    for story_name in tqdm(all_stories, desc="Creating albums"):
+        try:
+            print(f"  Processing {story_name}...")
+            story_data = prepare_story_data_from_gcs(story_name, collection=collection)
+
+            if not story_data:
+                print(f"  ⚠️  No story data found for {story_name}, skipping")
+                continue
+
+            create_album_files(story_data, story_name, collection=collection)
+            print(f"  ✅ Created album for {story_name}")
+        except Exception as e:
+            print(f"  ❌ Failed to create album for {story_name}: {e}")
+
+    print("✅ Album files created")
 
 
 def update_index_pages():
-    """Step 12: Update index pages."""
-    print("\n🔄 Step 12: Updating index pages...")
+    """Step 13: Update index pages."""
+    print("\n🔄 Step 13: Updating index pages...")
 
     languages = ["French", "Spanish", "German", "Swedish"]
     collections = ["LM1000", "WarmUp150"]
@@ -393,8 +415,8 @@ def update_index_pages():
 
 
 def create_anki_decks(collection: str):
-    """Step 13: Create Anki decks from GCS data."""
-    print("\n🔄 Step 13: Creating Anki decks...")
+    """Step 14: Create Anki decks from GCS data."""
+    print("\n🔄 Step 14: Creating Anki decks...")
 
     try:
         create_anki_deck_from_gcs(collection=collection, output_dir="../outputs/gcs")
@@ -422,8 +444,8 @@ def load_product_config(collection: str):
 
 
 def create_zip_files(collection: str):
-    """Step 14: Create M4A zip collections for products."""
-    print("\n🔄 Step 14: Creating M4A zip collections...")
+    """Step 15: Create M4A zip collections for products."""
+    print("\n🔄 Step 15: Creating M4A zip collections...")
 
     product_config = load_product_config(collection)
     if not product_config:
@@ -446,8 +468,8 @@ def create_zip_files(collection: str):
 
 
 def generate_images(collection: str):
-    """Step 15: Generate product images."""
-    print("\n🔄 Step 15: Generating product images...")
+    """Step 16: Generate product images."""
+    print("\n🔄 Step 16: Generating product images...")
 
     product_config = load_product_config(collection)
     if not product_config:
@@ -468,8 +490,8 @@ def generate_images(collection: str):
 
 
 def generate_csv(collection: str):
-    """Step 16: Generate Shopify CSV."""
-    print("\n🔄 Step 16: Generating Shopify CSV...")
+    """Step 17: Generate Shopify CSV."""
+    print("\n🔄 Step 17: Generating Shopify CSV...")
 
     product_config = load_product_config(collection)
     if not product_config:
@@ -499,6 +521,9 @@ Examples:
   python process_collection_to_new_language.py WarmUp150 --overwrite-audio --languages French Spanish
   python process_collection_to_new_language.py LM1000 --start-from zip
   python process_collection_to_new_language.py WarmUp150 --skip-phrases --skip-audio --start-from zip
+  python process_collection_to_new_language.py LM1000 --only zip
+  python process_collection_to_new_language.py WarmUp150 --only zip anki images csv
+  python process_collection_to_new_language.py LM1000 --only albums
         """,
     )
 
@@ -521,6 +546,9 @@ Examples:
     )
     parser.add_argument(
         "--skip-stories", action="store_true", help="Skip story page creation"
+    )
+    parser.add_argument(
+        "--skip-albums", action="store_true", help="Skip album file creation"
     )
     parser.add_argument(
         "--skip-index", action="store_true", help="Skip index page updates"
@@ -562,6 +590,7 @@ Examples:
             "fast-audio",
             "challenges",
             "stories",
+            "albums",
             "index",
             "anki",
             "zip",
@@ -570,8 +599,37 @@ Examples:
         ],
         help="Start processing from a specific step",
     )
+    parser.add_argument(
+        "--only",
+        nargs="+",
+        choices=[
+            "phrases",
+            "refine-phrases",
+            "wiktionary-phrases",
+            "phrase-audio",
+            "story-translate",
+            "refine-stories",
+            "wiktionary-stories",
+            "story-audio",
+            "fast-audio",
+            "challenges",
+            "stories",
+            "albums",
+            "index",
+            "anki",
+            "zip",
+            "images",
+            "csv",
+        ],
+        help="Run only the specified steps in order (cannot be used with --start-from)",
+    )
 
     args = parser.parse_args()
+
+    # Validate argument combinations
+    if args.only and args.start_from:
+        print("❌ Cannot use --only and --start-from together")
+        sys.exit(1)
 
     print(
         f"🚀 Processing collection '{args.collection}' into {config.TARGET_LANGUAGE_NAME}"
@@ -607,6 +665,7 @@ Examples:
         ),
         ("challenges", lambda: create_challenges(args.collection)),
         ("stories", lambda: create_story_pages(args.collection)),
+        ("albums", lambda: create_albums(args.collection)),
         ("index", lambda: update_index_pages()),
         ("anki", lambda: create_anki_decks(args.collection)),
         ("zip", lambda: create_zip_files(args.collection)),
@@ -614,23 +673,52 @@ Examples:
         ("csv", lambda: generate_csv(args.collection)),
     ]
 
-    # Find starting point
-    start_index = 0
-    if args.start_from:
+    # Determine which steps to run
+    if args.only:
+        # Run only the specified steps in the order they appear in the steps list
+        steps_to_run = []
+        for step_name, step_func in steps:
+            if step_name in args.only:
+                steps_to_run.append((step_name, step_func))
+
+        if not steps_to_run:
+            print("❌ No valid steps specified with --only")
+            sys.exit(1)
+
+        print(f"🔄 Running only steps: {', '.join(args.only)}")
+
+    elif args.start_from:
+        # Find starting point and run from there
         try:
             start_index = next(
                 i for i, (name, _) in enumerate(steps) if name == args.start_from
             )
+            steps_to_run = list(enumerate(steps[start_index:], start_index + 1))
             print(f"🔄 Starting from step: {args.start_from}")
         except StopIteration:
             print(f"❌ Invalid start step: {args.start_from}")
             sys.exit(1)
+    else:
+        # Run all steps
+        steps_to_run = list(enumerate(steps, 1))
 
     # Execute steps
     try:
-        for i, (step_name, step_func) in enumerate(
-            steps[start_index:], start_index + 1
-        ):
+        for item in steps_to_run:
+            if args.only:
+                # For --only, steps_to_run contains (step_name, step_func) tuples
+                step_name, step_func = item
+                step_number = next(
+                    i for i, (name, _) in enumerate(steps, 1) if name == step_name
+                )
+                total_steps = len(steps_to_run)
+                current_step = steps_to_run.index(item) + 1
+            else:
+                # For --start-from or default, steps_to_run contains (i, (step_name, step_func)) tuples
+                step_number, (step_name, step_func) = item
+                total_steps = len(steps)
+                current_step = step_number
+
             # Skip steps based on arguments
             if (
                 (
@@ -646,16 +734,20 @@ Examples:
                 or (step_name in ["story-audio", "fast-audio"] and args.skip_audio)
                 or (step_name == "challenges" and args.skip_challenges)
                 or (step_name == "stories" and args.skip_stories)
+                or (step_name == "albums" and args.skip_albums)
                 or (step_name == "index" and args.skip_index)
                 or (step_name == "anki" and args.skip_anki)
                 or (step_name == "zip" and args.skip_zip)
                 or (step_name == "images" and args.skip_images)
                 or (step_name == "csv" and args.skip_csv)
             ):
-                print(f"\n⏭️  Skipping step {i}: {step_name}")
+                print(f"\n⏭️  Skipping step {current_step}: {step_name}")
                 continue
 
-            print(f"\n📍 Running step {i}/{len(steps)}: {step_name}")
+            if args.only:
+                print(f"\n📍 Running step {current_step}/{total_steps}: {step_name}")
+            else:
+                print(f"\n📍 Running step {step_number}/{total_steps}: {step_name}")
             step_func()
 
         print("\n" + "=" * 60)
