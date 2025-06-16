@@ -11,7 +11,10 @@ import argparse
 import json
 import os
 import sys
+from datetime import datetime
 from tqdm import tqdm
+import pandas as pd
+import glob
 
 # Add the parent directory to the path to import src modules
 module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -509,6 +512,62 @@ def generate_csv(collection: str):
         print(f"❌ Failed to generate Shopify CSV: {e}")
 
 
+def merge_csv_files():
+    """Step 18: Merge all CSV files into a single dated CSV."""
+    print("\n🔄 Step 18: Merging CSV files...")
+
+    # Define the output directory where CSV files are generated
+    output_dir = "../outputs/shopify"
+    csv_pattern = os.path.join(output_dir, "*.csv")
+
+    try:
+        # Find all CSV files in the output directory
+        csv_files = glob.glob(csv_pattern)
+
+        if not csv_files:
+            print(f"⚠️  No CSV files found in {output_dir}")
+            return
+
+        print(f"Found {len(csv_files)} CSV files to merge:")
+        for csv_file in csv_files:
+            print(f"  - {os.path.basename(csv_file)}")
+
+        # Read and merge all CSV files
+        dataframes = []
+        for csv_file in csv_files:
+            try:
+                df = pd.read_csv(csv_file)
+                dataframes.append(df)
+                print(f"  ✅ Loaded {csv_file} ({len(df)} rows)")
+            except Exception as e:
+                print(f"  ⚠️  Failed to load {csv_file}: {e}")
+
+        if not dataframes:
+            print("❌ No CSV files could be loaded")
+            return
+
+        # Merge all dataframes
+        merged_df = pd.concat(dataframes, ignore_index=True)
+
+        # Create output filename with current date
+        current_date = datetime.now().strftime("%Y%m%d")
+        output_filename = f"{current_date}_shopify.csv"
+        output_path = os.path.join(output_dir, output_filename)
+
+        # Ensure output directory exists
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Save merged CSV
+        merged_df.to_csv(output_path, index=False)
+
+        print(f"✅ Merged {len(dataframes)} CSV files into {output_path}")
+        print(f"   Total rows: {len(merged_df)}")
+        print(f"   Columns: {', '.join(merged_df.columns.tolist())}")
+
+    except Exception as e:
+        print(f"❌ Failed to merge CSV files: {e}")
+
+
 def main():
     """Main function to process a collection into a new language."""
     parser = argparse.ArgumentParser(
@@ -524,6 +583,7 @@ Examples:
   python process_collection_to_new_language.py LM1000 --only zip
   python process_collection_to_new_language.py WarmUp150 --only zip anki images csv
   python process_collection_to_new_language.py LM1000 --only albums
+  python process_collection_to_new_language.py LM1000 --only merge-csv
         """,
     )
 
@@ -566,6 +626,9 @@ Examples:
         "--skip-csv", action="store_true", help="Skip Shopify CSV generation"
     )
     parser.add_argument(
+        "--skip-merge-csv", action="store_true", help="Skip CSV file merging"
+    )
+    parser.add_argument(
         "--languages",
         nargs="+",
         help="Languages for index page generation (default: current target language)",
@@ -596,6 +659,7 @@ Examples:
             "zip",
             "images",
             "csv",
+            "merge-csv",
         ],
         help="Start processing from a specific step",
     )
@@ -620,6 +684,7 @@ Examples:
             "zip",
             "images",
             "csv",
+            "merge-csv",
         ],
         help="Run only the specified steps in order (cannot be used with --start-from)",
     )
@@ -671,6 +736,7 @@ Examples:
         ("zip", lambda: create_zip_files(args.collection)),
         ("images", lambda: generate_images(args.collection)),
         ("csv", lambda: generate_csv(args.collection)),
+        ("merge-csv", lambda: merge_csv_files()),
     ]
 
     # Determine which steps to run
@@ -740,6 +806,7 @@ Examples:
                 or (step_name == "zip" and args.skip_zip)
                 or (step_name == "images" and args.skip_images)
                 or (step_name == "csv" and args.skip_csv)
+                or (step_name == "merge-csv" and args.skip_merge_csv)
             ):
                 print(f"\n⏭️  Skipping step {current_step}: {step_name}")
                 continue
