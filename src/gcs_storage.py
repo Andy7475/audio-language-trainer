@@ -815,6 +815,25 @@ def get_shopify_image_path(filename: str, bucket_name: Optional[str] = None) -> 
     return f"{bucket_name}/resources/shopify/images/{filename}"
 
 
+def get_tutorial_path(language: Optional[str] = None) -> str:
+    """
+    Get the GCS path for a language's flashcard tutorial.
+
+    Args:
+        language: Target language (defaults to config.TARGET_LANGUAGE_NAME)
+
+    Returns:
+        str: Path to the tutorial file in GCS
+        Format: tutorial/{language_lower}/tutorial.html
+    """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+    else:
+        language = language.lower()
+
+    return f"tutorial/{language}/tutorial.html"
+
+
 def get_stories_from_collection(
     bucket_name: str = config.GCS_PRIVATE_BUCKET, collection: str = "LM1000"
 ) -> List[str]:
