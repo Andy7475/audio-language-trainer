@@ -282,29 +282,37 @@ def generate_phrases_from_vocab_dict(
     consecutive_failures = 0
     max_consecutive_failures = 3
 
-    while (len(vocab_list_set) >= 5) and iteration_count < max_iterations and consecutive_failures < max_consecutive_failures:
+    while (
+        (len(vocab_list_set) >= 5)
+        and iteration_count < max_iterations
+        and consecutive_failures < max_consecutive_failures
+    ):
         iteration_count += 1
 
         try:
             if len(vocab_list_set) < 150:
                 # Switch to minimal phrase generation and use any verbs
                 try:
-                    print(f"Iteration {iteration_count}/{max_iterations} - Using minimal phrase generation")
+                    print(
+                        f"Iteration {iteration_count}/{max_iterations} - Using minimal phrase generation"
+                    )
                     response = generate_minimal_phrases_with_llm(
                         list(vocab_list_set) + list(verb_list_set),
                         length_phrase=length_phrase,
                         verbs_per_phrase=verbs_per_phrase,
                     )
-                    
+
                     # Extract JSON with error handling
                     json_data = extract_json_from_llm_response(response)
                     if not json_data or "phrases" not in json_data:
-                        raise ValueError("Failed to extract valid JSON or 'phrases' key missing")
-                    
+                        raise ValueError(
+                            "Failed to extract valid JSON or 'phrases' key missing"
+                        )
+
                     new_phrases = json_data["phrases"]
                     if not new_phrases:
                         raise ValueError("No phrases returned from LLM")
-                        
+
                 except Exception as e:
                     print(f"Error in minimal phrase generation: {str(e)}")
                     print("Skipping this iteration and continuing...")
@@ -315,35 +323,55 @@ def generate_phrases_from_vocab_dict(
                     vocab_used = extract_vocab_and_pos(new_phrases)
                     words_used = get_verb_and_vocab_lists(vocab_used)
 
-                    verb_list_set = remove_matching_words(words_used["verbs"], verb_list_set)
-                    vocab_list_set = remove_matching_words(words_used["vocab"], vocab_list_set)
+                    verb_list_set = remove_matching_words(
+                        words_used["verbs"], verb_list_set
+                    )
+                    vocab_list_set = remove_matching_words(
+                        words_used["vocab"], vocab_list_set
+                    )
 
                     # match on text as well
                     all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
-                    verb_list_set = remove_matching_words(all_lowercase_words, verb_list_set)
-                    vocab_list_set = remove_matching_words(all_lowercase_words, vocab_list_set)
+                    verb_list_set = remove_matching_words(
+                        all_lowercase_words, verb_list_set
+                    )
+                    vocab_list_set = remove_matching_words(
+                        all_lowercase_words, vocab_list_set
+                    )
 
                     # match on substring - to account for 'words' in the longman dictionary that are > 1 words like 'aware of'
-                    substring_matches = extract_substring_matches(new_phrases, vocab_list_set)
-                    vocab_list_set = remove_matching_words(substring_matches, vocab_list_set)
+                    substring_matches = extract_substring_matches(
+                        new_phrases, vocab_list_set
+                    )
+                    vocab_list_set = remove_matching_words(
+                        substring_matches, vocab_list_set
+                    )
 
                     LONGMAN_PHRASES.extend(new_phrases)
                     consecutive_failures = 0  # Reset failure counter on success
 
-                    print(f"Generated {len(new_phrases)} phrases - with minimal phrase prompt")
-                    print(f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left")
-                    
+                    print(
+                        f"Generated {len(new_phrases)} phrases - with minimal phrase prompt"
+                    )
+                    print(
+                        f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left"
+                    )
+
                 except Exception as e:
                     print(f"Error processing minimal phrases: {str(e)}")
                     # Still add the phrases even if processing failed
                     LONGMAN_PHRASES.extend(new_phrases)
                     consecutive_failures += 1
-                    print("Added phrases but failed to process vocabulary. Continuing...")
-                
+                    print(
+                        "Added phrases but failed to process vocabulary. Continuing..."
+                    )
+
                 continue
             else:
                 if len(verb_list_set) < 10:
-                    num_phrases = min(len(vocab_list_set), 100)  # Focus on exhausting vocab
+                    num_phrases = min(
+                        len(vocab_list_set), 100
+                    )  # Focus on exhausting vocab
                     verb_list_set.update(all_verbs_used)  # Reintroduce all used verbs
                 elif len(verb_list_set) < 50 and len(vocab_list_set) > 100:
                     num_phrases = min(
@@ -355,11 +383,17 @@ def generate_phrases_from_vocab_dict(
             verb_sample_size = min(75, len(verb_list_set))
             vocab_sample_size = min(75 * 3, len(vocab_list_set))
 
-            verb_list_for_prompt = random.sample(list(verb_list_set), k=verb_sample_size)
-            vocab_list_for_prompt = random.sample(list(vocab_list_set), k=vocab_sample_size)
+            verb_list_for_prompt = random.sample(
+                list(verb_list_set), k=verb_sample_size
+            )
+            vocab_list_for_prompt = random.sample(
+                list(vocab_list_set), k=vocab_sample_size
+            )
 
             try:
-                print(f"Iteration {iteration_count}/{max_iterations} - Generating {num_phrases} phrases")
+                print(
+                    f"Iteration {iteration_count}/{max_iterations} - Generating {num_phrases} phrases"
+                )
                 response = generate_phrases_with_llm(
                     verb_list=verb_list_for_prompt,
                     vocab_list=vocab_list_for_prompt,
@@ -372,12 +406,14 @@ def generate_phrases_from_vocab_dict(
                 # Extract JSON with error handling
                 json_data = extract_json_from_llm_response(response)
                 if not json_data or "phrases" not in json_data:
-                    raise ValueError("Failed to extract valid JSON or 'phrases' key missing")
-                
+                    raise ValueError(
+                        "Failed to extract valid JSON or 'phrases' key missing"
+                    )
+
                 new_phrases = json_data["phrases"]
                 if not new_phrases:
                     raise ValueError("No phrases returned from LLM")
-                    
+
             except Exception as e:
                 print(f"Error in phrase generation: {str(e)}")
                 print("Skipping this iteration and continuing...")
@@ -392,19 +428,27 @@ def generate_phrases_from_vocab_dict(
                 vocab_pos_used = extract_vocab_and_pos(new_phrases)
                 words_used = get_verb_and_vocab_lists(vocab_pos_used)
 
-                verb_list_set = remove_matching_words(words_used["verbs"], verb_list_set)
-                vocab_list_set = remove_matching_words(words_used["vocab"], vocab_list_set)
+                verb_list_set = remove_matching_words(
+                    words_used["verbs"], verb_list_set
+                )
+                vocab_list_set = remove_matching_words(
+                    words_used["vocab"], vocab_list_set
+                )
 
                 # match on exact word text as well as sometimes the word in the longman dictionary is not a 'lemma' as generated by spacy
                 all_lowercase_words = extract_spacy_lowercase_words(new_phrases)
-                vocab_list_set = remove_matching_words(all_lowercase_words, vocab_list_set)
+                vocab_list_set = remove_matching_words(
+                    all_lowercase_words, vocab_list_set
+                )
 
                 all_verbs_used.update(words_used["verbs"])
                 consecutive_failures = 0  # Reset failure counter on success
 
                 print(f"Generated {len(new_phrases)} phrases")
-                print(f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left")
-                
+                print(
+                    f"We have {len(verb_list_set)} verbs and {len(vocab_list_set)} vocab words left"
+                )
+
             except Exception as e:
                 print(f"Error processing generated phrases: {str(e)}")
                 # Phrases were already added to LONGMAN_PHRASES, so we don't lose them
@@ -418,11 +462,17 @@ def generate_phrases_from_vocab_dict(
 
     # Final status messages
     if consecutive_failures >= max_consecutive_failures:
-        print(f"Stopped due to {consecutive_failures} consecutive failures. Returning {len(LONGMAN_PHRASES)} phrases generated so far.")
+        print(
+            f"Stopped due to {consecutive_failures} consecutive failures. Returning {len(LONGMAN_PHRASES)} phrases generated so far."
+        )
     elif iteration_count == max_iterations:
-        print(f"Reached maximum number of iterations ({max_iterations}). Returning {len(LONGMAN_PHRASES)} phrases.")
+        print(
+            f"Reached maximum number of iterations ({max_iterations}). Returning {len(LONGMAN_PHRASES)} phrases."
+        )
     else:
-        print(f"All words have been used. Phrase generation complete. Generated {len(LONGMAN_PHRASES)} phrases.")
+        print(
+            f"All words have been used. Phrase generation complete. Generated {len(LONGMAN_PHRASES)} phrases."
+        )
 
     return LONGMAN_PHRASES
 
@@ -544,15 +594,15 @@ def get_sentences_from_text(phrases: List[str]) -> List[str]:
 def get_phrase_multimedia(
     phrase_key: str,
     bucket_name: str = config.GCS_PRIVATE_BUCKET,
+    language: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Get all multimedia data for a single phrase from GCS.
 
     Args:
         phrase_key: Key identifying the phrase
-        language: Target language code (e.g. 'french')
         bucket_name: GCS bucket name
-        collection: Collection name (default: "LM1000")
+        language: Target language code (e.g. 'french') - defaults to config.TARGET_LANGUAGE_NAME
 
     Returns:
         Dictionary containing:
@@ -562,14 +612,23 @@ def get_phrase_multimedia(
             "image": Image or None,
         }
     """
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+    else:
+        language = language.lower()
+
     try:
         # Get the translated phrases data
 
         normal_audio = None
         slow_audio = None
         try:
-            normal_audio_path = get_phrase_audio_path(phrase_key, "normal")
-            slow_audio_path = get_phrase_audio_path(phrase_key, "slow")
+            normal_audio_path = get_phrase_audio_path(
+                phrase_key, "normal", language=language
+            )
+            slow_audio_path = get_phrase_audio_path(
+                phrase_key, "slow", language=language
+            )
 
             normal_audio = read_from_gcs(bucket_name, normal_audio_path, "audio")
             slow_audio = read_from_gcs(bucket_name, slow_audio_path, "audio")
@@ -640,6 +699,7 @@ def build_phrase_dict_from_gcs(
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
     phrase_keys: Optional[List[str]] = None,
+    language: Optional[str] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
     Build a dictionary containing translated phrase data from GCS.
@@ -648,6 +708,7 @@ def build_phrase_dict_from_gcs(
         collection: Collection name (default: "LM1000")
         bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
         phrase_keys: Optional list of phrase keys to include. If None, includes all phrases.
+        language: Target language name (defaults to config.TARGET_LANGUAGE_NAME)
 
     Returns:
         Dictionary in format:
@@ -667,10 +728,13 @@ def build_phrase_dict_from_gcs(
     if bucket_name is None:
         bucket_name = config.GCS_PRIVATE_BUCKET
 
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME
+
     try:
-        language = config.TARGET_LANGUAGE_NAME.lower()
-        # Get the translated phrases data
-        phrases_path = get_translated_phrases_path(collection=collection)
+        language_lower = language.lower()
+        # Get the translated phrases data - use custom path with specific language
+        phrases_path = f"collections/{collection}/{language_lower}/translations.json"
         phrases_data = read_from_gcs(bucket_name, phrases_path, "json")
 
         if not phrases_data:
@@ -693,6 +757,7 @@ def build_phrase_dict_from_gcs(
             multimedia_data = get_phrase_multimedia(
                 phrase_key=phrase_key,
                 bucket_name=bucket_name,
+                language=language_lower,
             )
 
             if not multimedia_data:
@@ -701,7 +766,7 @@ def build_phrase_dict_from_gcs(
             # Create entry for this phrase
             phrase_dict[phrase_key] = {
                 "english_text": phrase_info["english"],
-                "target_text": phrase_info[language],
+                "target_text": phrase_info[language_lower],
                 "audio_normal": multimedia_data["normal_audio"],
                 "audio_slow": multimedia_data["slow_audio"],
                 "image": multimedia_data["image"],

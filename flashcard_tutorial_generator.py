@@ -329,6 +329,55 @@ def generate_flashcard_tutorial(
         },
         {
             "type": "text",
+            "title": "Ready for Real Stories? 📖✨",
+            "content": """
+                <div class="info-content">
+                    <h3>Here's where FirePhrase gets really exciting - your flashcard vocabulary comes alive in real stories!</h3>
+                    
+                    <div class="card-type-grid">
+                        <div class="card-type-item">
+                            <h3>🎯 80% Recognition</h3>
+                            <p>Every story uses vocabulary from your deck - giving you about 80% word recognition</p>
+                        </div>
+                        <div class="card-type-item">
+                            <h3>🔄 New Contexts</h3>
+                            <p>See your familiar words in fresh situations - this is how you develop true fluency and flexibility!</p>
+                        </div>
+                        <div class="card-type-item">
+                            <h3>👂 Listening Skills</h3>
+                            <p>Practice picking out words you know from continuous speech - a crucial real-world conversation skill!</p>
+                        </div>
+                    </div>
+                    
+                    <div class="story-features">
+                        <div class="story-feature">
+                            <span class="story-icon">🎧</span>
+                            <div>
+                                <strong>Normal Speed Audio</strong>
+                                <p>Listen at natural pace while following along with the text to build comprehension</p>
+                            </div>
+                        </div>
+                        
+                        <div class="story-feature">
+                            <span class="story-icon">⚡</span>
+                            <div>
+                                <strong>Fast Audio Challenge</strong>
+                                <p>Once familiar, try the fast version! This trains your brain's word segmentation - how natives separate words in rapid speech</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p><strong>The magic moment:</strong> When you realize you're understanding a whole story using words you learned as individual phrases!</p>
+                    
+                    <div class="story-cta">
+                        <p><strong>Ready to see a story?</strong></p>
+                        <a href="https://storage.googleapis.com/audio-language-trainer-stories/index.html" target="_blank" rel="noopener" class="collection-link">Explore FirePhrase Stories →</a>
+                    </div>
+                </div>
+            """,
+        },
+        {
+            "type": "text",
             "title": "Pro Tips for Success 💡",
             "content": """
                 <div class="tips-content">
@@ -431,16 +480,23 @@ def generate_flashcard_tutorial(
         },
     ]
 
+    # Set default language if not provided
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME
+
     # Try to get phrase data for examples
     example_cards = {}
     try:
         phrase_dict = build_phrase_dict_from_gcs(
-            collection=collection, bucket_name=bucket_name, phrase_keys=[phrase_key]
+            collection=collection,
+            bucket_name=bucket_name,
+            phrase_keys=[phrase_key],
+            language=language,
         )
 
         if phrase_dict and phrase_key in phrase_dict:
             phrase_data = phrase_dict[phrase_key]
-            example_cards = generate_example_card_content(phrase_data)
+            example_cards = generate_example_card_content(phrase_data, language)
             print(f"✅ Loaded example phrase data for: {phrase_key}")
         else:
             print(
@@ -464,7 +520,6 @@ def generate_flashcard_tutorial(
             bucket_name=gcs_bucket,
             file_name=tutorial_path,
             content_type="text/html",
-            cache_control="no-cache, max-age=0",  # Ensure immediate updates
             save_local=True,  # This creates local copy automatically
             local_base_dir="outputs/gcs",
         )
@@ -483,7 +538,71 @@ def generate_flashcard_tutorial(
         return None
 
 
-def generate_example_card_content(phrase_data: Dict[str, Any]) -> Dict[str, str]:
+def generate_flashcard_tutorials_batch(
+    languages: List[str],
+    phrase_key: str = "the_cake_tastes_delicious",
+    collection: str = "WarmUp150",
+    bucket_name: str = None,
+) -> Dict[str, str]:
+    """
+    Generate flashcard tutorials for multiple languages.
+
+    Args:
+        languages: List of language names to generate tutorials for
+        phrase_key: The example phrase to use for demonstrations
+        collection: Collection to pull the example from
+        bucket_name: GCS bucket name (uses config default if None)
+
+    Returns:
+        Dict[str, str]: Dictionary mapping language names to their generated tutorial paths/URIs
+    """
+    results = {}
+
+    print(f"🚀 Generating tutorials for {len(languages)} languages...")
+
+    for i, language in enumerate(languages, 1):
+        print(f"\n📝 [{i}/{len(languages)}] Generating tutorial for {language}...")
+
+        try:
+            result = generate_flashcard_tutorial(
+                phrase_key=phrase_key,
+                collection=collection,
+                bucket_name=bucket_name,
+                language=language,
+            )
+
+            if result:
+                results[language] = result
+                print(f"✅ {language} tutorial completed: {result}")
+            else:
+                results[language] = None
+                print(f"❌ {language} tutorial failed")
+
+        except Exception as e:
+            results[language] = None
+            print(f"❌ {language} tutorial failed with error: {str(e)}")
+
+    # Summary
+    successful = sum(1 for result in results.values() if result)
+    failed = len(results) - successful
+
+    print(f"\n🎯 Batch Generation Complete!")
+    print(f"✅ Successful: {successful}")
+    print(f"❌ Failed: {failed}")
+
+    if successful > 0:
+        print(f"\n🌐 Generated tutorials:")
+        for lang, result in results.items():
+            if result:
+                public_url = result.replace("gs://", "https://storage.googleapis.com/")
+                print(f"  {lang}: {public_url}")
+
+    return results
+
+
+def generate_example_card_content(
+    phrase_data: Dict[str, Any], language: str
+) -> Dict[str, str]:
     """Generate the example card HTML content."""
 
     try:
@@ -583,7 +702,7 @@ def generate_example_card_content(phrase_data: Dict[str, Any]) -> Dict[str, str]
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
             ("{{WiktionaryLinks}}", wiktionary_links),
-            ("{{TargetLanguageName}}", config.TARGET_LANGUAGE_NAME.lower()),
+            ("{{TargetLanguageName}}", language.lower()),
             ("{{Tags}}", "tutorial_example"),
         ]:
             back_content = back_content.replace(placeholder, value)
@@ -926,6 +1045,26 @@ def generate_tutorial_html(
             min-width: 40px;
         }}
         
+        .story-features {{
+            margin: 30px 0;
+        }}
+        
+        .story-feature {{
+            display: flex;
+            align-items: flex-start;
+            gap: 20px;
+            margin: 20px 0;
+            padding: 20px;
+            background: #3d3d3d;
+            border-radius: 8px;
+            text-align: left;
+        }}
+        
+        .story-icon {{
+            font-size: 2rem;
+            min-width: 40px;
+        }}
+        
         .shop-cta {{
             margin-top: 30px;
             padding: 20px;
@@ -936,7 +1075,7 @@ def generate_tutorial_html(
         }}
         
         /* Link styles */
-        .collection-link, .free-link {{
+        .collection-link, .free-link, .story-link {{
             color: #ffffff !important;
             text-decoration: none;
             font-weight: 600;
@@ -945,10 +1084,18 @@ def generate_tutorial_html(
             transition: all 0.3s ease;
         }}
         
-        .collection-link:hover, .free-link:hover {{
+        .collection-link:hover, .free-link:hover, .story-link:hover {{
             color: #e9a649 !important;
             border-bottom-color: #ffffff;
             text-decoration: none;
+        }}
+        
+        .story-cta {{
+            margin-top: 30px;
+            padding: 20px;
+            background: #3d3d3d;
+            border-radius: 8px;
+            text-align: center;
         }}
         
         .conclusion-summary {{
@@ -1143,7 +1290,7 @@ def generate_tutorial_html(
                 grid-template-columns: 1fr;
             }}
             
-            .tip-item, .shop-feature {{
+            .tip-item, .shop-feature, .story-feature {{
                 flex-direction: column;
                 text-align: center;
                 gap: 10px;
@@ -1474,30 +1621,66 @@ def add_tutorial_card(cards_list, position, card_type, title, content):
 
 
 if __name__ == "__main__":
-    # Generate the tutorial with default settings
-    output_file = generate_flashcard_tutorial()
+    import sys
 
-    if output_file and output_file.startswith("gs://"):
-        print(f"Tutorial uploaded to GCS: {output_file}")
-        public_url = output_file.replace("gs://", "https://storage.googleapis.com/")
-        print(f"🔗 Access at: {public_url}")
-        print()
-        print("🎯 Next steps:")
-        print("1. Test the public URL to ensure it's accessible")
-        print("2. Add a redirect from your shop to this tutorial")
+    # Check if languages are provided as command line arguments
+    if len(sys.argv) > 1:
+        # Batch mode - generate for multiple languages
+        languages = sys.argv[1:]  # All arguments after script name
         print(
-            "3. Customize tutorial cards by editing the tutorial_cards list in this file"
+            f"🌍 Batch mode: Generating tutorials for languages: {', '.join(languages)}"
         )
-    elif output_file:
-        print(f"Tutorial generated locally: {output_file}")
-        print("Manual upload needed to your GCS bucket to make it accessible!")
-        print()
-        print("🎯 Next steps:")
-        print("1. Upload flashcard-tutorial.html to your public GCS bucket")
-        print("2. Make it publicly accessible")
-        print("3. Add a redirect from your shop to this tutorial")
-        print(
-            "4. Customize tutorial cards by editing the tutorial_cards list in this file"
-        )
+
+        results = generate_flashcard_tutorials_batch(languages)
+
+        # Final summary
+        successful_count = sum(1 for result in results.values() if result)
+        if successful_count > 0:
+            print(f"\n🎉 Successfully generated {successful_count} tutorials!")
+            print("\n🎯 Next steps:")
+            print("1. Test the public URLs to ensure they're accessible")
+            print("2. Add redirects from your shop to these tutorials")
+            print(
+                "3. Customize tutorial cards by editing the tutorial_cards list in this file"
+            )
+        else:
+            print("\n❌ No tutorials were generated successfully!")
+
     else:
-        print("❌ Tutorial generation failed!")
+        # Single mode - generate for default language
+        print("🔥 Single mode: Generating tutorial with default settings...")
+        output_file = generate_flashcard_tutorial()
+
+        if output_file and output_file.startswith("gs://"):
+            print(f"Tutorial uploaded to GCS: {output_file}")
+            public_url = output_file.replace("gs://", "https://storage.googleapis.com/")
+            print(f"🔗 Access at: {public_url}")
+            print()
+            print("🎯 Next steps:")
+            print("1. Test the public URL to ensure it's accessible")
+            print("2. Add a redirect from your shop to this tutorial")
+            print(
+                "3. Customize tutorial cards by editing the tutorial_cards list in this file"
+            )
+            print()
+            print("💡 Tip: To generate for multiple languages, run:")
+            print("    python flashcard_tutorial_generator.py Spanish French German")
+        elif output_file:
+            print(f"Tutorial generated locally: {output_file}")
+            print("Manual upload needed to your GCS bucket to make it accessible!")
+            print()
+            print("🎯 Next steps:")
+            print("1. Upload flashcard-tutorial.html to your public GCS bucket")
+            print("2. Make it publicly accessible")
+            print("3. Add a redirect from your shop to this tutorial")
+            print(
+                "4. Customize tutorial cards by editing the tutorial_cards list in this file"
+            )
+            print()
+            print("💡 Tip: To generate for multiple languages, run:")
+            print("    python flashcard_tutorial_generator.py Spanish French German")
+        else:
+            print("❌ Tutorial generation failed!")
+            print()
+            print("💡 Tip: To generate for multiple languages, run:")
+            print("    python flashcard_tutorial_generator.py Spanish French German")

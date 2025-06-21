@@ -546,10 +546,15 @@ def get_story_translated_dialogue_path(
     return f"collections/{collection}/{language}/stories/{story_name}/translated_dialogue.json"
 
 
-def get_translated_phrases_path(collection: str = "LM1000") -> str:
+def get_translated_phrases_path(
+    collection: str = "LM1000", language: Optional[str] = None
+) -> str:
     """Get the GCS path for a collections's translated phrases file. These are dictionaries keyed of the phrase key
     and contain translations and wiktionary links."""
-    language = config.TARGET_LANGUAGE_NAME.lower()
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+    else:
+        language = language.lower()
     return f"collections/{collection}/{language}/translations.json"
 
 
@@ -626,7 +631,9 @@ def get_story_names(
 
 
 def get_phrase_audio_path(
-    phrase_key: str, speed: Literal["normal", "slow"] = "normal"
+    phrase_key: str,
+    speed: Literal["normal", "slow"] = "normal",
+    language: Optional[str] = None,
 ) -> str:
     """
     Get the GCS path for a phrase's audio file.
@@ -634,11 +641,15 @@ def get_phrase_audio_path(
     Args:
         phrase_key: Key identifying the phrase
         speed: "normal" or "slow" speed version
+        language: Target language code (e.g. 'french') - defaults to config.TARGET_LANGUAGE_NAME
 
     Returns:
         str: Path to the audio file in GCS
     """
-    language = config.TARGET_LANGUAGE_NAME.lower()
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+    else:
+        language = language.lower()
     return f"phrases/{language}/audio/{speed}/{phrase_key}.mp3"
 
 
