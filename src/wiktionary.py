@@ -66,11 +66,11 @@ def generate_wiktionary_links(
 
             response = requests.get(url)
             found_section = False
-            
+
             if response.status_code == 200:
                 soup = BeautifulSoup(response.content, "html.parser")
                 if section_name := find_language_section(soup, language_name):
-                    link = f'<a href="{url}#{section_name}">{word}</a>'
+                    link = f'<a href="{url}#{section_name}" target="_blank" rel="noopener">{word}</a>'
                     links.append(link)
                     # Cache with the original case
                     word_link_cache[clean_word] = link.replace(word, clean_word)
@@ -79,15 +79,19 @@ def generate_wiktionary_links(
             # If lowercase didn't work, try capitalized (for languages like German)
             if not found_section:
                 lookup_word_cap = clean_word.capitalize()
-                if lookup_word_cap != lookup_word:  # Only try if different from lowercase
+                if (
+                    lookup_word_cap != lookup_word
+                ):  # Only try if different from lowercase
                     encoded_word_cap = urllib.parse.quote(lookup_word_cap)
                     url_cap = f"https://en.wiktionary.org/wiki/{encoded_word_cap}"
 
                     response_cap = requests.get(url_cap)
                     if response_cap.status_code == 200:
                         soup_cap = BeautifulSoup(response_cap.content, "html.parser")
-                        if section_name := find_language_section(soup_cap, language_name):
-                            link = f'<a href="{url_cap}#{section_name}">{word}</a>'
+                        if section_name := find_language_section(
+                            soup_cap, language_name
+                        ):
+                            link = f'<a href="{url_cap}#{section_name}" target="_blank" rel="noopener">{word}</a>'
                             links.append(link)
                             # Cache with the original case
                             word_link_cache[clean_word] = link.replace(word, clean_word)
