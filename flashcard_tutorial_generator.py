@@ -1322,6 +1322,25 @@ def generate_tutorial_html(
         
 
         
+        /* Mobile tooltip styles */
+        .mobile-tooltip {{
+            position: fixed;
+            background: #333 !important;
+            color: white !important;
+            padding: 8px 12px !important;
+            border-radius: 4px !important;
+            font-size: 0.8rem !important;
+            z-index: 10000 !important;
+            white-space: nowrap !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+            pointer-events: none !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            max-width: 250px;
+            white-space: normal !important;
+            text-align: center;
+            line-height: 1.3;
+        }}
+        
         /* Additional styles for interactive elements */
         .hide-button {{
             background: #ff6b6b;
@@ -1520,8 +1539,85 @@ def generate_tutorial_html(
             }});
         }}
         
+        // Function to show mobile tooltip
+        function showMobileTooltip(button, message) {{
+            // Remove any existing mobile tooltips
+            const existingTooltip = document.querySelector('.mobile-tooltip');
+            if (existingTooltip) {{
+                existingTooltip.remove();
+            }}
+            
+            // Create tooltip element
+            const tooltip = document.createElement('div');
+            tooltip.className = 'mobile-tooltip';
+            tooltip.textContent = message;
+            
+            // Position it relative to the button
+            const rect = button.getBoundingClientRect();
+            tooltip.style.position = 'fixed';
+            tooltip.style.top = (rect.top - 60) + 'px';
+            tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+            tooltip.style.background = '#333';
+            tooltip.style.color = 'white';
+            tooltip.style.padding = '8px 12px';
+            tooltip.style.borderRadius = '4px';
+            tooltip.style.fontSize = '0.8rem';
+            tooltip.style.zIndex = '10000';
+            tooltip.style.whiteSpace = 'nowrap';
+            tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)';
+            tooltip.style.pointerEvents = 'none';
+            
+            // Add animation
+            tooltip.style.opacity = '0';
+            tooltip.style.transition = 'opacity 0.3s ease';
+            
+            // Add to body
+            document.body.appendChild(tooltip);
+            
+            // Trigger animation
+            setTimeout(() => {{
+                tooltip.style.opacity = '1';
+            }}, 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {{
+                if (tooltip.parentNode) {{
+                    tooltip.style.opacity = '0';
+                    setTimeout(() => {{
+                        if (tooltip.parentNode) {{
+                            tooltip.remove();
+                        }}
+                    }}, 300);
+                }}
+            }}, 3000);
+        }}
+        
         // Initialize any card-specific functionality
         document.addEventListener('DOMContentLoaded', function() {{
+            // Initialize Anki button click handlers for mobile tooltips
+            setTimeout(() => {{
+                                 document.querySelectorAll('.anki-button').forEach(button => {{
+                     button.addEventListener('click', function(e) {{
+                         e.preventDefault(); // Prevent any default action
+                         
+                         // Add visual feedback
+                         this.style.transform = 'scale(0.95)';
+                         setTimeout(() => {{
+                             this.style.transform = 'scale(1)';
+                         }}, 150);
+                         
+                         const message = this.getAttribute('data-tooltip');
+                         if (message) {{
+                             showMobileTooltip(this, message);
+                         }}
+                     }});
+                     
+                     // Add CSS transition for the click effect
+                     button.style.transition = 'transform 0.15s ease, background-color 0.2s ease, box-shadow 0.2s ease';
+                 }});
+            }}, 200);
+            
             // Re-run any card-specific JavaScript after content loads
             setTimeout(() => {{
                 // Initialize flip containers with proper event handling
