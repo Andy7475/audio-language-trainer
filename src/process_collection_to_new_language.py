@@ -405,7 +405,7 @@ def update_index_pages():
     """Step 13: Update index pages."""
     print("\n🔄 Step 13: Updating index pages...")
 
-    languages = ["French", "Spanish", "German", "Swedish"]
+    languages = ["French", "Spanish", "German", "Swedish", "Italian"]
     collections = ["LM1000", "WarmUp150"]
 
     upload_styles_to_gcs()
