@@ -49,132 +49,130 @@ def generate_flashcard_tutorial(
     tutorial_cards = [
         {
             "type": "welcome",
-            "title": "Why Phrases Will Transform Your Learning 🔥",
+            "title": "How FirePhrase Transforms Language Learning",
             "content": """
                 <div class="welcome-content">
-                    <h3>Most people learn individual words in isolation. But here's what successful language learners know...</h3>
+                    <h3>FirePhrase uses a phrase-based approach developed by researcher Michael Lewis. Instead of memorizing individual words, you learn complete meaningful phrases that your brain naturally mixes and matches to create new sentences.</h3>
                     
                     <div class="feature-list">
                         <div class="feature-item">
-                            <span class="feature-icon">🧩</span>
+                            <span class="feature-icon">🧠</span>
                             <div>
-                                <strong>Phrases stick better than isolated words</strong>
-                                <p>Your brain remembers meaningful chunks, not random vocabulary lists</p>
-                            </div>
-                        </div>
-                        
-                        <div class="feature-item">
-                            <span class="feature-icon">💬</span>
-                            <div>
-                                <strong>Phrases are ready-to-use language</strong>
-                                <p>Learn "The cake tastes delicious" and you can use it immediately</p>
+                                <strong>Learn Phrases, Not Words</strong>
+                                <p>When you learn phrases, your brain automatically picks up patterns and starts creating new combinations on its own</p>
                             </div>
                         </div>
                         
                         <div class="feature-item">
                             <span class="feature-icon">🎯</span>
                             <div>
-                                <strong>Context gives meaning</strong>
-                                <p>Words change meaning - phrases show you exactly when and how to use them</p>
+                                <strong>Real Language from Native Speakers</strong>
+                                <p>Every phrase comes from how native speakers actually talk, not from textbooks</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <span class="feature-icon">🔄</span>
+                            <div>
+                                <strong>How Natives Actually Learn</strong>
+                                <p>This copies how native speakers learned their language - through meaningful chunks, not grammar rules</p>
                             </div>
                         </div>
                     </div>
                     
-                    <p><strong>Let's see how FirePhrase makes phrase learning even more powerful...</strong></p>
+                    <p><strong>The result: After learning hundreds of phrases, your brain automatically starts creating completely new sentences by mixing and matching the patterns you've absorbed.</strong></p>
                 </div>
             """,
         },
         {
             "type": "text",
-            "title": "The Science: Why Images + Audio Work 🧠",
+            "title": "Why Images + Audio Work So Well",
             "content": """
                 <div class="info-content">
-                    <h3>Your brain has three different memory pathways - let's use them all!</h3>
+                    <h3>FirePhrase combines pictures, sound, and context because research shows that using multiple senses helps you remember much better than just reading text.</h3>
                     
                     <div class="card-type-grid">
                         <div class="card-type-item">
-                            <h3>👁️ Visual Memory</h3>
-                            <p>Images create stronger, longer-lasting memories than text alone. When you see a cake, you'll remember the phrase!</p>
+                            <h3>👁️ Pictures Help Memory</h3>
+                            <p>Your brain remembers words much better when they're paired with images instead of just text alone.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>👂 Auditory Memory</h3>
-                            <p>Hearing native pronunciation trains your ear and speaking muscles. You learn the RIGHT sounds.</p>
+                            <h3>👂 Normal and Slow Speaker Audio</h3>
+                            <p>Hearing high quality audio helps you learn proper pronunciation and recognize speech patterns.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>🔗 Context Memory</h3>
-                            <p>Stories and situations help you remember when and how to use phrases in real conversation.</p>
+                            <h3>🔗 Situational Context</h3>
+                            <p>Seeing when and where phrases are used helps you remember them and use them correctly.</p>
                         </div>
                     </div>
                     
-                    <p><strong>Result:</strong> When you see a similar situation in real life, your brain automatically recalls the phrase!</p>
-                    <p>This is why every FirePhrase card combines images, audio, and story context.</p>
+                    <p><strong>This approach works especially well because most natural speech is made up of common phrases and chunks that people use over and over.</strong></p>
                 </div>
             """,
         },
         {
             "type": "text",
-            "title": "Don't Worry - You're Not Expected to Know! 😌",
+            "title": "Don't Worry - You're Not Expected to Know Everything",
             "content": """
                 <div class="info-content">
-                    <h3>Here's something important: It's perfectly normal not to know the answer on your first try!</h3>
+                    <h3>Flashcard systems are designed for learning, not testing. Not knowing an answer at first is completely normal and actually helps you learn better.</h3>
                     
                     <div class="card-type-grid">
                         <div class="card-type-item">
-                            <h3>✅ First Time? No Problem!</h3>
-                            <p>Don't know the answer? Go straight to the back of the card to learn it. This is how learning works!</p>
+                            <h3>🔬 Testing Helps Learning</h3>
+                            <p>Studies show that trying to recall something (even when you get it wrong) actually strengthens your memory.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>🔄 It's a Process</h3>
-                            <p>Each time you see a card, you're building the memory pathway a little stronger. Repetition creates mastery.</p>
+                            <h3>🧠 Struggling Helps</h3>
+                            <p>Having to think hard about an answer creates stronger memories than when things are too easy.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>🎯 No Pressure</h3>
-                            <p>The system shows you cards until you master them. Focus on progress, not perfection!</p>
+                            <h3>📈 The System Adapts</h3>
+                            <p>The app learns from your answers and shows difficult cards more often, easy cards less often.</p>
                         </div>
                     </div>
                     
-                    <p><strong>Remember:</strong> Every expert was once a beginner. Your only job is to keep going!</p>
+                    <p><strong>Focus on getting lots of exposure and practice rather than perfect recall right away.</strong></p>
                 </div>
             """,
         },
         {
             "type": "text",
-            "title": "Speaking Practice Comes First! 🗣️",
+            "title": "Speaking Practice Comes First",
             "content": """
                 <div class="info-content">
-                    <h3>The most important skill to develop is ACTIVE production of language</h3>
+                    <h3>Research shows that actually trying to speak creates stronger memories than just reading or listening.</h3>
                     
                     <div class="card-type-grid">
                         <div class="card-type-item">
-                            <h3>🗣️ Speak Out Loud</h3>
-                            <p>Don't just think the answer - actually say it! This trains your mouth muscles and builds confidence.</p>
+                            <h3>🗣️ Speaking Builds Memory</h3>
+                            <p>When you speak, your brain creates stronger connections that help you remember better and speak more fluently.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>⚡ No Passive Learning</h3>
-                            <p>Avoid just reading and nodding. Force yourself to produce the phrase before checking the answer.</p>
+                            <h3>⚡ Active Recall Works</h3>
+                            <p>Trying to remember and say something builds stronger memory pathways than just reading it.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>🎯 Real Conversation Skills</h3>
-                            <p>Speaking practice prepares you for actual conversations where you need to produce language quickly.</p>
+                            <h3>🎯 Practice for Real Conversations</h3>
+                            <p>Speaking practice builds the automatic responses you need for real-time conversation.</p>
                         </div>
                     </div>
                     
-                    <p><strong>Let's try a Speaking Card first!</strong> You'll see English, then try to say it in your target language.</p>
+                    <p><strong>Start with Speaking Cards to build your speaking skills from day one.</strong></p>
                 </div>
             """,
         },
         {
             "type": "example_speaking_front",
-            "title": "Try This: Speaking Card 🗣️",
+            "title": "Speaking Card Practice",
             "content": """
                 <div class="example-explanation">
-                    <p><strong>Practice with this live Speaking Card example:</strong></p>
+                    <p><strong>Practice with this Speaking Card example:</strong></p>
                     <ul>
-                        <li>You see the English text below</li>
-                        <li><strong>Say it out loud</strong> in your target language (don't just think it!)</li>
-                        <li>Click <strong>"Next"</strong> only after you've tried to speak</li>
-                        <li>Don't worry if you don't know this specific example yet, just play along</li>
-                        <li>Remember that good translations capture how native speakers actually talk, rather than translating word-for-word</li>
+                        <li>Read the English text below</li>
+                        <li>Try to say it in your target language before checking</li>
+                        <li>Focus on meaning, not word-for-word translation</li>
+                        <li>Natural expressions often differ significantly from literal translations</li>
                     </ul>
                 </div>
                 <div class="example-card">
@@ -209,31 +207,31 @@ def generate_flashcard_tutorial(
         },
         {
             "type": "text",
-            "title": "Master the Anki Buttons 🎯",
+            "title": "Master the Anki Buttons",
             "content": """
                 <div class="info-content">
-                    <h3>Here's how to use Anki's smart learning system effectively:</h3>
+                    <h3>Use these buttons to tell the app how well you knew each phrase:</h3>
                     
                     <div class="card-type-grid">
                         <div class="card-type-item">
-                            <h3>❌ "Again" Button</h3>
-                            <p>Click this if you didn't know the answer or got it wrong. The card will appear again soon.</p>
+                            <h3>❌ "Again"</h3>
+                            <p>Didn't know it or got it wrong. You'll see this card again soon.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>⏱️ "Hard" Button</h3>
-                            <p>You got it right but it took more than 10 seconds to remember. Next appearance: medium interval.</p>
+                            <h3>⏱️ "Hard"</h3>
+                            <p>Got it right but took more than 10 seconds to remember.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>✅ "Good" Button</h3>
-                            <p>You got it right within a few seconds. This is the most common choice for most cards.</p>
+                            <h3>✅ "Good"</h3>
+                            <p>Got it right within a few seconds - this is your most common choice.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>⚡ "Easy" Button</h3>
-                            <p>You knew it immediately without hesitation. The card will appear after a longer interval.</p>
+                            <h3>⚡ "Easy"</h3>
+                            <p>Knew it immediately without any hesitation.</p>
                         </div>
                     </div>
                     
-                    <p><strong>Be honest with yourself!</strong> This helps Anki show you cards at the perfect time for maximum retention.</p>
+                    <p><strong>Being honest about how well you knew each card helps the app show you the right cards at the right time.</strong></p>
                 </div>
             """,
         },
@@ -332,7 +330,7 @@ def generate_flashcard_tutorial(
             "title": "Ready for Real Stories? 📖✨",
             "content": """
                 <div class="info-content">
-                    <h3>Here's where FirePhrase gets really exciting - your flashcard vocabulary comes alive in real stories!</h3>
+                    <h3>Here's where FirePhrase gets really exciting - your flashcard vocabulary comes alive in real stories</h3>
                     
                     <div class="card-type-grid">
                         <div class="card-type-item">
@@ -341,11 +339,11 @@ def generate_flashcard_tutorial(
                         </div>
                         <div class="card-type-item">
                             <h3>🔄 New Contexts</h3>
-                            <p>See your familiar words in fresh situations - this is how you develop true fluency and flexibility!</p>
+                            <p>See your familiar words in fresh situations - this is how you develop true fluency and flexibility</p>
                         </div>
                         <div class="card-type-item">
                             <h3>👂 Listening Skills</h3>
-                            <p>Practice picking out words you know from continuous speech - a crucial real-world conversation skill!</p>
+                            <p>Practice picking out words you know from continuous speech - a crucial real-world conversation skill</p>
                         </div>
                     </div>
                     
@@ -362,7 +360,7 @@ def generate_flashcard_tutorial(
                             <span class="story-icon">⚡</span>
                             <div>
                                 <strong>Fast Audio Challenge</strong>
-                                <p>Once familiar, try the fast version! This trains your brain's word segmentation - how natives separate words in rapid speech</p>
+                                <p>Once familiar, try the fast version. This trains your brain's word segmentation - how natives separate words in rapid speech</p>
                             </div>
                         </div>
                     </div>
@@ -372,50 +370,6 @@ def generate_flashcard_tutorial(
                     <div class="story-cta">
                         <p><strong>Ready to see a story?</strong></p>
                         <a href="https://storage.googleapis.com/audio-language-trainer-stories/index.html" target="_blank" rel="noopener" class="collection-link">Explore FirePhrase Stories →</a>
-                    </div>
-                </div>
-            """,
-        },
-        {
-            "type": "text",
-            "title": "Pro Tips for Success 💡",
-            "content": """
-                <div class="tips-content">
-                    <h3>Make the most of your flashcards:</h3>
-                    
-                    <div class="tip-item">
-                        <span class="tip-number">1</span>
-                        <div>
-                            <strong>Use both audio speeds</strong> - Start with slow, then practice with normal speed
-                        </div>
-                    </div>
-                    
-                    <div class="tip-item">
-                        <span class="tip-number">2</span>
-                        <div>
-                            <strong>Don't just memorize</strong> - Try to understand the context from the images
-                        </div>
-                    </div>
-                    
-                    <div class="tip-item">
-                        <span class="tip-number">3</span>
-                        <div>
-                            <strong>Use the Learning Insights</strong> - Click the button for detailed explanations
-                        </div>
-                    </div>
-                    
-                    <div class="tip-item">
-                        <span class="tip-number">4</span>
-                        <div>
-                            <strong>Practice actively</strong> - Try to speak out loud, don't just read silently
-                        </div>
-                    </div>
-                    
-                    <div class="tip-item">
-                        <span class="tip-number">5</span>
-                        <div>
-                            <strong>Review regularly</strong> - Use Anki's spaced repetition system consistently
-                        </div>
                     </div>
                 </div>
             """,
