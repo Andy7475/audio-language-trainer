@@ -1440,6 +1440,8 @@ def generate_tutorial_html(
                 currentCard = newCard;
                 showCard(currentCard);
                 updateNavigation();
+                // Scroll to top when changing cards for better reading experience
+                window.scrollTo({{ top: 0, behavior: 'smooth' }});
             }}
         }}
         
