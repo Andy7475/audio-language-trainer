@@ -251,7 +251,90 @@
 }
 
 /* Base flip container styles */
-.flip-container {
+/* Simple image reveal container */
+.image-reveal-container {
+    width: 90%;
+    margin: 0 auto;
+    position: relative;
+    height: 300px;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.image-content {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    z-index: 1;
+}
+
+.image-content img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Simple text reveal container */
+.text-reveal-container {
+    width: 90%;
+    margin: 20px auto;
+    position: relative;
+    min-height: 50px;
+}
+
+.text-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #f0f0f0;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    min-height: 50px;
+}
+
+.text-content {
+    position: relative;
+    width: 100%;
+    padding: 15px;
+    text-align: center;
+    font-size: 18px;
+    line-height: 1.4;
+    z-index: 1;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Keep flip styles for text-based cards that may still use them */
+.flip-container-text {
+    min-height: 50px;
+    height: auto;
     width: 90%;
     margin: 0 auto;
     position: relative;
@@ -260,24 +343,17 @@
     transition: transform 0.6s;
 }
 
-/* Image-specific flip container */
-.flip-container-image {
-    height: 300px;  /* Fixed height for images */
-}
-
-/* Text-specific flip container */
-.flip-container-text {
-    min-height: 50px;  /* Minimum height for text */
-    height: auto;      /* Allow expansion for longer phrases */
-}
-
-.flip-container.flipped {
+.flip-container-text.flipped {
     transform: rotateY(180deg);
 }
 
-.flip-front, .flip-back {
+.flip-container-text .flip-front,
+.flip-container-text .flip-back {
     position: absolute;
     width: 100%;
+    min-height: 50px;
+    height: auto;
+    padding: 15px;
     backface-visibility: hidden;
     display: flex;
     align-items: center;
@@ -285,28 +361,13 @@
     border-radius: 10px;
 }
 
-/* Front/back for images */
-.flip-container-image .flip-front,
-.flip-container-image .flip-back {
-    height: 100%;  /* Full height for images */
-}
-
-/* Front/back for text */
-.flip-container-text .flip-front,
-.flip-container-text .flip-back {
-    min-height: 50px;  /* Match container minimum */
-    height: auto;      /* Allow expansion */
-    padding: 15px;     /* Give text some breathing room */
-}
-
-.flip-front {
+.flip-container-text .flip-front {
     background-color: #f0f0f0;
     border: 2px dashed #ccc;
 }
 
-.flip-back {
+.flip-container-text .flip-back {
     transform: rotateY(180deg);
-   /* background-color: white;*/
 }
 
 .reveal-button {
