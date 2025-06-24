@@ -747,6 +747,8 @@ def get_flashcard_path(
     """
     if language is None:
         language = config.TARGET_LANGUAGE_NAME.lower()
+    else:
+        language = language.lower()
 
     # If story_name is None, return just the folder path
     if story_name is None:
