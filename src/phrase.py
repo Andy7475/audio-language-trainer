@@ -595,6 +595,7 @@ def get_phrase_multimedia(
     phrase_key: str,
     bucket_name: str = config.GCS_PRIVATE_BUCKET,
     language: Optional[str] = None,
+    use_language: bool = False,
 ) -> Dict[str, Any]:
     """
     Get all multimedia data for a single phrase from GCS.
@@ -638,7 +639,7 @@ def get_phrase_multimedia(
         # Get image
         image = None
         try:
-            image_path = get_phrase_image_path(phrase_key)
+            image_path = get_phrase_image_path(phrase_key, use_language=use_language)
             image = read_from_gcs(bucket_name, image_path, "image")
         except Exception as e:
             print(f"Error getting image for phrase {phrase_key}: {str(e)}")

@@ -286,10 +286,7 @@ def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -
     If ANTHROPIC_SERVICE == 'google', use Vertex AI endpoint as before.
     """
 
-
-    print(
-        f"Function that called this one: {get_caller_name()}"
-    )
+    print(f"Function that called this one: {get_caller_name()}")
 
     service = config.ANTHROPIC_SERVICE.lower()
     if model is None:
@@ -299,10 +296,12 @@ def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -
         # Use Anthropic's official Python client
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
-            raise EnvironmentError("ANTHROPIC_API_KEY not set in environment or .env file.")
+            raise EnvironmentError(
+                "ANTHROPIC_API_KEY not set in environment or .env file."
+            )
         # If model name contains '@', strip from '@' onward and append '-latest'
-        if '@' in model:
-            model = model.split('@', 1)[0] + "-latest"
+        if "@" in model:
+            model = model.split("@", 1)[0] + "-latest"
         client = Anthropic(api_key=api_key)
         message = client.messages.create(
             model=model,
@@ -332,7 +331,9 @@ def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -
         response = json.loads(response_json)
         return response["content"][0]["text"]
     else:
-        raise ValueError(f"Unknown ANTHROPIC_SERVICE: {service}. Must be 'anthropic' or 'google'.")
+        raise ValueError(
+            f"Unknown ANTHROPIC_SERVICE: {service}. Must be 'anthropic' or 'google'."
+        )
 
 
 def extract_json_from_llm_response(response):
@@ -402,6 +403,7 @@ def change_phrase(
     keep_image: bool = False,
     generate_audio: bool = True,
     review_translations: bool = True,
+    use_language: bool = False,
 ) -> None:
     """
     Change a phrase and update all related files in GCS.
@@ -542,8 +544,8 @@ def change_phrase(
     # First, get all files associated with the old phrase key
     old_audio_normal = get_phrase_audio_path(old_phrase_key, "normal")
     old_audio_slow = get_phrase_audio_path(old_phrase_key, "slow")
-    old_image = get_phrase_image_path(old_phrase_key)
-    new_image = get_phrase_image_path(new_phrase_key)
+    old_image = get_phrase_image_path(old_phrase_key, use_language=use_language)
+    new_image = get_phrase_image_path(new_phrase_key, use_language=use_language)
 
     # Delete old audio files
     storage_client = storage.Client()
@@ -663,6 +665,3 @@ def change_phrase(
             f"Note: Image file at {old_image} was preserved. You may want to update it manually if needed."
         )
     print(f"{'='*80}\n")
-
-
-
