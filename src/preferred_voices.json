@@ -152,5 +152,27 @@
                 "voice_id": "de-DE-Chirp-HD-D"
             }
         }
+    },
+    "cy-GB": {
+        "phrases": {
+            "female": {
+                "provider": "azure",
+                "voice_id": "cy-GB-NiaNeural"
+            },
+            "male": {
+                "provider": "azure",
+                "voice_id": "cy-GB-AledNeural"
+            }
+        },
+        "stories": {
+            "female": {
+                "provider": "azure",
+                "voice_id": "cy-GB-NiaNeural"
+            },
+            "male": {
+                "provider": "azure",
+                "voice_id": "cy-GB-AledNeural"
+            }
+        }
     }
 }
