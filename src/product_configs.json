@@ -11,7 +11,7 @@
             "ranges": [[2, 3]]
         },
         "complete": {
-            "price": 19.99,
+            "price": 24.99,
             "template": "shop/complete_pack_template.html"
         }
     },
@@ -43,7 +43,7 @@
             "ranges": [[2, 3]]
         },
         "complete": {
-            "price": 14.99,
+            "price": 19.99,
             "template": "shop/complete_warmup_pack_template.html"
         }
     }
