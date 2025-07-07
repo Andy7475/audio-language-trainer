@@ -30,6 +30,7 @@ from src.audio_generation import (
 from src.chat import create_html_challenges, get_html_challenge_inputs
 from src.config_loader import config
 from src.convert import clean_filename
+from contextlib import contextmanager
 from src.dialogue_generation import translate_and_upload_dialogue
 from src.shop import generate_product_images, generate_shopify_csv
 from src.zip import create_m4a_zip_collections
@@ -72,6 +73,41 @@ def setup_authentication():
     except Exception as e:
         print(f"❌ Failed to authenticate with Google Cloud: {e}")
         sys.exit(1)
+
+
+def normalize_language_name(language_name):
+    """
+    Normalize language name to title case for config consistency.
+    
+    Args:
+        language_name: Language name in any case (e.g., 'french', 'FRENCH', 'French')
+    
+    Returns:
+        Title case language name (e.g., 'French')
+    """
+    return language_name.strip().title()
+
+
+@contextmanager
+def language_context(language_name):
+    """Context manager to temporarily switch the target language."""
+    if language_name is None:
+        # No language switch needed
+        yield
+        return
+    
+    # Store original language
+    original_language = config.TARGET_LANGUAGE_NAME
+    
+    try:
+        # Switch to new language (normalize to title case)
+        normalized_language = normalize_language_name(language_name)
+        config.TARGET_LANGUAGE_NAME = normalized_language
+        print(f"🌍 Switched to language: {normalized_language}")
+        yield
+    finally:
+        # Restore original language
+        config.TARGET_LANGUAGE_NAME = original_language
 
 
 def print_config_info():
@@ -470,9 +506,10 @@ def create_zip_files(collection: str):
         print(f"❌ Failed to create zip files: {e}")
 
 
-def generate_images(collection: str):
+def generate_images(collection: str, language: str = None):
     """Step 16: Generate product images."""
-    print("\n🔄 Step 16: Generating product images...")
+    language_info = f" for {language}" if language else ""
+    print(f"\n🔄 Step 16: Generating product images{language_info}...")
 
     product_config = load_product_config(collection)
     if not product_config:
@@ -480,21 +517,23 @@ def generate_images(collection: str):
         return
 
     try:
-        generated_images = generate_product_images(
-            product_config=product_config,
-            collection=collection,
-            generate_individual=True,
-        )
-        print(f"✅ Generated {len(generated_images)} product images")
-        for product_type, uri in generated_images.items():
-            print(f"  {product_type}: {uri}")
+        with language_context(language):
+            generated_images = generate_product_images(
+                product_config=product_config,
+                collection=collection,
+                generate_individual=True,
+            )
+            print(f"✅ Generated {len(generated_images)} product images")
+            for product_type, uri in generated_images.items():
+                print(f"  {product_type}: {uri}")
     except Exception as e:
         print(f"❌ Failed to generate product images: {e}")
 
 
-def generate_csv(collection: str):
+def generate_csv(collection: str, language: str = None):
     """Step 17: Generate Shopify CSV."""
-    print("\n🔄 Step 17: Generating Shopify CSV...")
+    language_info = f" for {language}" if language else ""
+    print(f"\n🔄 Step 17: Generating Shopify CSV{language_info}...")
 
     product_config = load_product_config(collection)
     if not product_config:
@@ -502,28 +541,56 @@ def generate_csv(collection: str):
         return
 
     try:
-        csv_path = generate_shopify_csv(
-            product_config=product_config,
-            collection=collection,
-            free_individual_count=1,
-        )
-        print(f"✅ Shopify CSV generated at: {csv_path}")
+        with language_context(language):
+            csv_path = generate_shopify_csv(
+                product_config=product_config,
+                collection=collection,
+                free_individual_count=1,
+            )
+            print(f"✅ Shopify CSV generated at: {csv_path}")
     except Exception as e:
         print(f"❌ Failed to generate Shopify CSV: {e}")
 
 
-def merge_csv_files():
+def execute_multi_language_step(func, collection: str, languages: list = None):
+    """Execute a function for multiple languages or just the current language."""
+    if languages:
+        # Execute for each specified language
+        for language in languages:
+            func(collection, language)
+    else:
+        # Execute for current language only
+        func(collection)
+
+
+def merge_csv_files(languages: list = None):
     """Step 18: Merge all CSV files into a single dated CSV."""
     print("\n🔄 Step 18: Merging CSV files...")
 
     # Define the output directory where CSV files are generated
     output_dir = "../outputs/shopify"
-    csv_pattern = os.path.join(output_dir, "*.csv")
-
-    try:
-        # Find all CSV files in the output directory
+    
+    # If specific languages are provided, look for their CSV files
+    if languages:
+        csv_files = []
+        for lang in languages:
+            # CSV files use lowercase language names, so normalize for pattern matching
+            lang_lower = lang.lower()
+            lang_pattern = os.path.join(output_dir, f"*{lang_lower}*.csv")
+            lang_files = glob.glob(lang_pattern)
+            csv_files.extend(lang_files)
+            print(f"  Looking for CSV files matching pattern: *{lang_lower}*.csv")
+        
+        if not csv_files:
+            # Fallback to all CSV files
+            csv_pattern = os.path.join(output_dir, "*.csv")
+            csv_files = glob.glob(csv_pattern)
+            print(f"  No language-specific files found, using all CSV files in {output_dir}")
+    else:
+        csv_pattern = os.path.join(output_dir, "*.csv")
         csv_files = glob.glob(csv_pattern)
 
+    try:
         if not csv_files:
             print(f"⚠️  No CSV files found in {output_dir}")
             return
@@ -551,7 +618,9 @@ def merge_csv_files():
 
         # Create output filename with current date
         current_date = datetime.now().strftime("%Y%m%d")
-        output_filename = f"{current_date}_shopify.csv"
+        # Use lowercase for filename consistency
+        lang_suffix = f"_{'_'.join([lang.lower() for lang in languages])}" if languages else ""
+        output_filename = f"{current_date}{lang_suffix}_shopify.csv"
         output_path = os.path.join(output_dir, output_filename)
 
         # Ensure output directory exists
@@ -584,6 +653,10 @@ Examples:
   python process_collection_to_new_language.py WarmUp150 --only zip anki images csv
   python process_collection_to_new_language.py LM1000 --only albums
   python process_collection_to_new_language.py LM1000 --only merge-csv
+  python process_collection_to_new_language.py WarmUp150 --only csv images --languages French Spanish German
+  python process_collection_to_new_language.py LM1000 --only csv --languages French Spanish Italian
+  python process_collection_to_new_language.py WarmUp150 --only csv images --languages french spanish german
+  python process_collection_to_new_language.py LM1000 --only merge-csv --languages French Spanish Italian
         """,
     )
 
@@ -631,7 +704,7 @@ Examples:
     parser.add_argument(
         "--languages",
         nargs="+",
-        help="Languages for index page generation (default: current target language)",
+        help="Languages for index page generation and CSV/image processing (default: current target language)",
     )
     parser.add_argument(
         "--collections",
@@ -734,9 +807,9 @@ Examples:
         ("index", lambda: update_index_pages()),
         ("anki", lambda: create_anki_decks(args.collection)),
         ("zip", lambda: create_zip_files(args.collection)),
-        ("images", lambda: generate_images(args.collection)),
-        ("csv", lambda: generate_csv(args.collection)),
-        ("merge-csv", lambda: merge_csv_files()),
+        ("images", lambda: execute_multi_language_step(generate_images, args.collection, args.languages)),
+        ("csv", lambda: execute_multi_language_step(generate_csv, args.collection, args.languages)),
+        ("merge-csv", lambda: merge_csv_files(args.languages)),
     ]
 
     # Determine which steps to run
