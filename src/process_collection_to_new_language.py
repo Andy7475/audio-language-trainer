@@ -75,6 +75,19 @@ def setup_authentication():
         sys.exit(1)
 
 
+def normalize_language_name(language_name):
+    """
+    Normalize language name to title case for config consistency.
+    
+    Args:
+        language_name: Language name in any case (e.g., 'french', 'FRENCH', 'French')
+    
+    Returns:
+        Title case language name (e.g., 'French')
+    """
+    return language_name.strip().title()
+
+
 @contextmanager
 def language_context(language_name):
     """Context manager to temporarily switch the target language."""
@@ -87,9 +100,10 @@ def language_context(language_name):
     original_language = config.TARGET_LANGUAGE_NAME
     
     try:
-        # Switch to new language
-        config.TARGET_LANGUAGE_NAME = language_name
-        print(f"🌍 Switched to language: {language_name}")
+        # Switch to new language (normalize to title case)
+        normalized_language = normalize_language_name(language_name)
+        config.TARGET_LANGUAGE_NAME = normalized_language
+        print(f"🌍 Switched to language: {normalized_language}")
         yield
     finally:
         # Restore original language
@@ -560,14 +574,18 @@ def merge_csv_files(languages: list = None):
     if languages:
         csv_files = []
         for lang in languages:
-            lang_pattern = os.path.join(output_dir, f"*{lang}*.csv")
+            # CSV files use lowercase language names, so normalize for pattern matching
+            lang_lower = lang.lower()
+            lang_pattern = os.path.join(output_dir, f"*{lang_lower}*.csv")
             lang_files = glob.glob(lang_pattern)
             csv_files.extend(lang_files)
+            print(f"  Looking for CSV files matching pattern: *{lang_lower}*.csv")
         
         if not csv_files:
             # Fallback to all CSV files
             csv_pattern = os.path.join(output_dir, "*.csv")
             csv_files = glob.glob(csv_pattern)
+            print(f"  No language-specific files found, using all CSV files in {output_dir}")
     else:
         csv_pattern = os.path.join(output_dir, "*.csv")
         csv_files = glob.glob(csv_pattern)
@@ -600,7 +618,8 @@ def merge_csv_files(languages: list = None):
 
         # Create output filename with current date
         current_date = datetime.now().strftime("%Y%m%d")
-        lang_suffix = f"_{'_'.join(languages)}" if languages else ""
+        # Use lowercase for filename consistency
+        lang_suffix = f"_{'_'.join([lang.lower() for lang in languages])}" if languages else ""
         output_filename = f"{current_date}{lang_suffix}_shopify.csv"
         output_path = os.path.join(output_dir, output_filename)
 
@@ -636,6 +655,8 @@ Examples:
   python process_collection_to_new_language.py LM1000 --only merge-csv
   python process_collection_to_new_language.py WarmUp150 --only csv images --languages French Spanish German
   python process_collection_to_new_language.py LM1000 --only csv --languages French Spanish Italian
+  python process_collection_to_new_language.py WarmUp150 --only csv images --languages french spanish german
+  python process_collection_to_new_language.py LM1000 --only merge-csv --languages French Spanish Italian
         """,
     )
 
