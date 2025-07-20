@@ -132,15 +132,25 @@ For each translation, determine if it needs improvement and provide a more natur
         return []
 
 
-def batch_translate(texts, batch_size=128):
+def batch_translate(
+    texts,
+    batch_size=128,
+    target_language=None,
+    source_language=None,
+):
     """Translate texts in batches."""
+    if target_language is None:
+        target_language = config.TARGET_LANGUAGE_ALPHA2
+    if source_language is None:
+        source_language = config.SOURCE_LANGUAGE_ALPHA2
+
     translated_texts = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
         result = translate.Client().translate(
             batch,
-            target_language=config.TARGET_LANGUAGE_ALPHA2,
-            source_language="en",
+            target_language=target_language,
+            source_language=source_language,
             format_="text",
         )
         translated_texts.extend([item["translatedText"] for item in result])
@@ -155,7 +165,7 @@ def translate_from_english(
         target_language = config.TARGET_LANGUAGE_ALPHA2
 
     result = translate.Client().translate(
-        text, target_language=target_language, source_language="en"
+        text, target_language=target_language, source_language=config.SOURCE_LANGUAGE_ALPHA2
     )
 
     if isinstance(result, list):

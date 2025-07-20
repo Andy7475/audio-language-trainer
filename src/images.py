@@ -346,6 +346,101 @@ def generate_image_stability(
         return None
 
 
+def generate_image_from_sketch(
+    sketch_path: str,
+    object_string: str,
+    style: str = "in the style of a watercolour",
+    control_strength: float = 0.7,
+    output_format: str = "png"
+) -> Optional[Image.Image]:
+    """
+    Generate an image from a sketch using Stability AI's Sketch API.
+
+    Args:
+        sketch_path (str): Path to the input sketch PNG file
+        object_string (str): Description of what to draw (e.g., "apple", "letter A")
+        style (str): Style description to append to prompt (default: "in the style of a watercolour")
+        control_strength (float): How closely to follow the sketch (0.0-1.0, default: 0.7)
+        output_format (str): Output format - "png" or "webp" (default: "png")
+
+    Returns:
+        Optional[Image.Image]: PIL Image object of the generated image, or None if generation fails
+
+    Raises:
+        ValueError: If API key is missing
+        FileNotFoundError: If sketch file is not found
+        requests.RequestException: If the API request fails
+    """
+    STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
+    if not STABILITY_API_KEY:
+        raise ValueError("STABILITY_API_KEY environment variable not set")
+    
+    if not os.path.exists(sketch_path):
+        raise FileNotFoundError(f"Sketch file not found: {sketch_path}")
+    
+    # Create the prompt by combining object and style
+    prompt = f"{object_string} {style}"
+    
+    # Prepare headers
+    headers = {
+        "authorization": f"Bearer {STABILITY_API_KEY}",
+        "accept": "image/*"
+    }
+    
+    print(f"🎨 Generating image from sketch: {sketch_path}")
+    print(f"   Prompt: {prompt}")
+    print(f"   Control strength: {control_strength}")
+    
+    # Prepare files and data
+    try:
+        with open(sketch_path, "rb") as sketch_file:
+            files = {
+                "image": sketch_file
+            }
+            
+            data = {
+                "prompt": prompt,
+                "control_strength": control_strength,
+                "output_format": output_format
+            }
+            
+            # Make the API request
+            response = requests.post(
+                "https://api.stability.ai/v2beta/stable-image/control/sketch",
+                headers=headers,
+                files=files,
+                data=data
+            )
+        
+        # Check if request was successful
+        if response.status_code == 200:
+            # Create PIL Image from response content
+            image = Image.open(io.BytesIO(response.content))
+            print(f"✅ Successfully generated image from sketch")
+            return image
+        
+        else:
+            error_info = f"Status {response.status_code}"
+            try:
+                error_detail = response.json()
+                error_info += f" - {error_detail}"
+            except:
+                error_info += f" - {response.text}"
+            
+            print(f"❌ Sketch API request failed: {error_info}")
+            return None
+            
+    except requests.RequestException as e:
+        print(f"❌ Request failed: {str(e)}")
+        return None
+    except FileNotFoundError as e:
+        print(f"❌ File error: {str(e)}")
+        raise
+    except Exception as e:
+        print(f"❌ Unexpected error: {str(e)}")
+        return None
+
+
 def generate_image_imagen(
     prompt: str,
     model: Literal[
