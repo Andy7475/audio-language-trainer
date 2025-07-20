@@ -2,9 +2,86 @@ from src.translation import tokenize_text, translate_from_english
 import requests
 from bs4 import BeautifulSoup
 import urllib.parse
+import string
+import unicodedata
 from typing import List, Optional, Union, Tuple, Dict
 from src.config_loader import config
 from tqdm import tqdm
+
+
+def clean_word_for_lookup(word: str) -> str:
+    """
+    Clean a word for Wiktionary lookup by removing leading and trailing punctuation.
+    
+    This function provides a global solution for handling punctuation in multiple languages,
+    including Spanish inverted punctuation marks (¿, ¡), French quotation marks (« »), 
+    smart quotes, and other Unicode punctuation.
+    
+    Args:
+        word: The word to clean
+        
+    Returns:
+        Cleaned word with leading and trailing punctuation removed
+        
+    Examples:
+        >>> clean_word_for_lookup("¿Cómo")
+        "Cómo"
+        >>> clean_word_for_lookup("¡Hola!")
+        "Hola"
+        >>> clean_word_for_lookup("«word»")
+        "word"
+        >>> clean_word_for_lookup("Qu'est-ce")  # Keeps internal apostrophe
+        "Qu'est-ce"
+    """
+    if not word:
+        return word
+        
+    # Define comprehensive punctuation set
+    # Standard ASCII punctuation
+    ascii_punct = set(string.punctuation)
+    
+    # Add Unicode punctuation commonly used in various languages
+    unicode_punct = {
+        # Spanish inverted punctuation
+        '¿', '¡',  
+        # French/European quotation marks
+        '«', '»', '‹', '›',
+        # Smart quotes (using Unicode escape sequences)
+        '\u201c', '\u201d', '\u2018', '\u2019',  # " " ' '
+        # Ellipsis
+        '\u2026',  # …
+        # Dashes
+        '\u2013', '\u2014',  # – —
+        # Additional quotation marks
+        '\u201e', '\u201c', '\u201a', '\u2018',  # „ " ‚ '
+        # Mathematical and other symbols that might appear
+        '\u00b0', '\u2032', '\u2033',  # ° ′ ″
+    }
+    
+    # Get all Unicode punctuation categories for comprehensive coverage
+    # This catches punctuation we might not have explicitly listed
+    unicode_categories = {'Pc', 'Pd', 'Pe', 'Pf', 'Pi', 'Po', 'Ps'}
+    
+    def is_punctuation(char):
+        """Check if a character is punctuation using multiple methods"""
+        return (
+            char in ascii_punct or 
+            char in unicode_punct or 
+            unicodedata.category(char) in unicode_categories
+        )
+    
+    # Strip punctuation from both ends
+    cleaned = word
+    
+    # Remove leading punctuation
+    while cleaned and is_punctuation(cleaned[0]):
+        cleaned = cleaned[1:]
+        
+    # Remove trailing punctuation  
+    while cleaned and is_punctuation(cleaned[-1]):
+        cleaned = cleaned[:-1]
+        
+    return cleaned
 
 
 def generate_wiktionary_links(
@@ -46,8 +123,8 @@ def generate_wiktionary_links(
     links: List[str] = []
 
     for word in words:
-        # Remove any trailing punctuation that shouldn't be part of the lookup
-        clean_word = word.rstrip(",.;:!?")
+        # Use the new global cleaning function instead of just rstrip
+        clean_word = clean_word_for_lookup(word)
         if not clean_word:
             links.append(word)
             continue
