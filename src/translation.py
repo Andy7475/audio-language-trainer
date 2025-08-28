@@ -13,7 +13,7 @@ from src.config_loader import config
 def review_translations_with_anthropic(
     phrase_pairs: List[Dict[str, str]],
     target_language: str = None,
-    model: str = "claude-3-5-sonnet-latest",
+    model: str = None,
 ) -> List[Dict[str, Any]]:
     """
     Use Anthropic API to review and improve translations using the tool interface.
@@ -30,6 +30,8 @@ def review_translations_with_anthropic(
     if target_language is None:
         target_language = config.TARGET_LANGUAGE_NAME.lower()
 
+    if model is None:
+        model = config.ANTHROPIC_MODEL_NAME
     # Set up the Anthropic client
     load_dotenv()
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -64,18 +66,26 @@ def review_translations_with_anthropic(
         }
     ]
 
-    # Construct the prompt
-    system_prompt = f"""You are a professional translator specializing in natural-sounding {target_language}.
-Review the provided {config.SOURCE_LANGUAGE_NAME} phrases and their {target_language} translations.
-Improve translations to sound more natural for everyday spoken {target_language}.
-You are supporting a language learner, so keep to the {config.SOURCE_LANGUAGE_NAME} vocabulary, but use a natural word choice or phrase that a native speaker would use.
+    system_prompt = f"""You are a professional translator specializing in natural-sounding {target_language} for language learners. Review the provided {config.SOURCE_LANGUAGE_NAME} phrases and their {target_language} translations from Google Translate.
 
-For each translation pair:
-1. Assess if the current translation sounds natural in {target_language}
-2. If it doesn't sound natural for speech, provide an improved translation
-3. Set 'modified' to true if you changed the translation, false if original was good
+    Your goal: Make translations sound like natural spoken {target_language} while preserving the original vocabulary for learning purposes.
 
-Only change translations that need improvement to sound more natural in speech - maintain the exact meaning."""
+    Guidelines:
+    1. Keep the SAME core vocabulary and verbs from the {config.SOURCE_LANGUAGE_NAME} source wherever possible
+    2. Adjust word order, articles, prepositions, and grammatical structures to match natural {target_language} speech patterns  
+    3. Replace only overly formal/written language with conversational equivalents
+    4. Avoid idioms, colloquialisms, or phrases that stray from the source vocabulary
+    5. Maintain literal meaning - don't paraphrase or use completely different words
+
+    For each translation pair:
+    1. Assess if the current translation sounds natural in spoken {target_language}
+    2. If it sounds too formal/written/stiff, provide an improved version that:
+    - Uses the same key vocabulary words (especially verbs and nouns)
+    - Sounds like something a native speaker would actually say
+    - Maintains the exact meaning and learning value
+    3. Set 'modified' to true if you changed the translation, false if original was good
+
+    Focus on making the output sound conversational while keeping vocabulary intact for learning."""
 
     # Convert phrase pairs to the format expected in the prompt
     formatted_pairs = "\n".join(
@@ -243,7 +253,7 @@ def review_translated_phrases_batch(
     translated_phrases: Dict[str, Dict[str, str]],
     target_language: str = None,
     batch_size: int = 20,
-    model: str = "claude-3-5-sonnet-latest",
+    model: str = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
     Wrapper function to batch review translations from the translated_phrases format.
@@ -260,6 +270,8 @@ def review_translated_phrases_batch(
     if target_language is None:
         target_language = config.TARGET_LANGUAGE_NAME.lower()
 
+    if model is None:
+        model = config.ANTHROPIC_MODEL_NAME
     # Convert to list of (phrase_key, phrase_data) tuples for batching
     phrase_items = list(translated_phrases.items())
     result = {}
@@ -305,7 +317,7 @@ def review_translated_phrases_batch(
 def review_story_dialogue_translations(
     story_dialogue: Dict[str, Dict[str, Any]],
     target_language: str = None,
-    model: str = "claude-3-5-sonnet-latest",
+    model: str = None,
     verbose: bool = False,
 ) -> Dict[str, Dict[str, Any]]:
     """
@@ -323,7 +335,8 @@ def review_story_dialogue_translations(
     # Default to config target language if not specified
     if target_language is None:
         target_language = config.TARGET_LANGUAGE_NAME.lower()
-
+    if model is None:
+        model = config.ANTHROPIC_MODEL_NAME
     # Set up the Anthropic client
     load_dotenv()
     api_key = os.environ.get("ANTHROPIC_API_KEY")

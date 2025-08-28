@@ -8,9 +8,13 @@ import time
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
-from anthropic import AnthropicVertex, Anthropic
+
+import vertexai
+from anthropic import Anthropic, AnthropicVertex
 from dotenv import load_dotenv
+from google.cloud import aiplatform
 from tqdm import tqdm
+
 from src.config_loader import config
 from src.gcs_storage import get_story_collection_path, read_from_gcs
 
@@ -336,6 +340,103 @@ def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -
         )
 
 
+def list_anthropic_models(
+) -> List[Dict[str, Any]]:
+    """
+    List available Anthropic models in Vertex AI.
+    
+    Args:
+        project_id (str): Your Google Cloud project ID
+        location (str): The region/location (default: us-central1)
+        
+    Returns:
+        List[Dict[str, Any]]: List of available Anthropic models with their details
+    """
+
+    project_id = config.PROJECT_ID
+    location = config.ANTHROPIC_REGION
+    # Initialize Vertex AI
+    vertexai.init(project=project_id, location=location)
+    
+    try:
+        # Get the model registry client
+        client = aiplatform.gapic.ModelServiceClient(
+            client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"}
+        )
+        
+        # List models
+        parent = f"projects/{project_id}/locations/{location}"
+        request = aiplatform.gapic.ListModelsRequest(parent=parent)
+        
+        models = []
+        page_result = client.list_models(request=request)
+        
+        # Filter for Anthropic models
+        for model in page_result:
+            # Check if model is from Anthropic (Claude models)
+            if "claude" in model.display_name.lower() or "anthropic" in model.display_name.lower():
+                model_info = {
+                    "name": model.name,
+                    "display_name": model.display_name,
+                    "description": getattr(model, 'description', ''),
+                    "create_time": model.create_time,
+                    "update_time": model.update_time,
+                    "supported_deployment_resources_types": list(model.supported_deployment_resources_types),
+                    "supported_input_storage_formats": list(model.supported_input_storage_formats),
+                    "supported_output_storage_formats": list(model.supported_output_storage_formats),
+                }
+                models.append(model_info)
+        
+        return models
+        
+    except Exception as e:
+        print(f"Error listing models: {e}")
+        return []
+
+
+def get_anthropic_model_names(
+) -> List[str]:
+    """
+    Get a simple list of Anthropic model names available in Vertex AI.
+    
+    Args:
+        project_id (str): Your Google Cloud project ID
+        location (str): The region/location (default: us-central1)
+        
+    Returns:
+        List[str]: List of Anthropic model display names
+    """
+    models = list_anthropic_models()
+    return [model["display_name"] for model in models]
+
+
+def print_anthropic_models(
+) -> None:
+    """
+    Print available Anthropic models in a formatted way.
+    
+    Args:
+        project_id (str): Your Google Cloud project ID
+        location (str): The region/location (default: us-central1)
+    """
+    models = list_anthropic_models()
+    
+    if not models:
+        print("No Anthropic models found or error occurred.")
+        return
+    
+    print(f"Available Anthropic Models:")
+    print("=" * 50)
+    
+    for i, model in enumerate(models, 1):
+        print(f"{i}. {model['display_name']}")
+        print(f"   Name: {model['name']}")
+        if model['description']:
+            print(f"   Description: {model['description']}")
+        print(f"   Created: {model['create_time']}")
+        print("-" * 30)
+
+
 def extract_json_from_llm_response(response):
     """
     Extract JSON from an LLM response.
@@ -419,25 +520,26 @@ def change_phrase(
         generate_audio: If True, generates new audio for the new phrase
         review_translations: If True, uses Anthropic to review the translation
     """
+    from google.cloud import storage
+
+    from src.audio_generation import upload_phrases_audio_to_gcs
     from src.convert import clean_filename
     from src.gcs_storage import (
-        get_phrase_path,
-        get_translated_phrases_path,
-        get_story_collection_path,
         get_phrase_audio_path,
         get_phrase_image_path,
         get_phrase_index_path,
+        get_phrase_path,
+        get_story_collection_path,
         get_story_index_path,
+        get_translated_phrases_path,
         read_from_gcs,
         upload_to_gcs,
     )
-    from src.audio_generation import upload_phrases_audio_to_gcs
     from src.translation import (
         review_translations_with_anthropic,
         translate_from_english,
     )
     from src.wiktionary import generate_wiktionary_links
-    from google.cloud import storage
 
     print(f"\n{'='*80}")
     print(f"Starting phrase change from '{old_phrase}' to '{new_phrase}'")

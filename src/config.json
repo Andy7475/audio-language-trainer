@@ -1,7 +1,7 @@
 {
     "SOURCE_LANGUAGE_CODE": "en-GB",
-    "TARGET_LANGUAGE_CODE": "cy-GB",
-    "ANTHROPIC_MODEL_NAME":"claude-3-5-sonnet@20240620",
+    "TARGET_LANGUAGE_CODE": "sv-SE",
+    "ANTHROPIC_MODEL_NAME":"claude-sonnet-4-20250514",
     "ANTHROPIC_SMALL_MODEL_NAME":"claude-3-haiku@20240307",
     "ANTHROPIC_REGION":"europe-west1",
     "STABILITY_ENDPOINT":"https://api.stability.ai/v2beta/stable-image/generate/core",
@@ -16,5 +16,5 @@
     "GCS_PUBLIC_BUCKET":"audio-language-trainer-stories",
     "GCS_PRIVATE_BUCKET":"audio-language-trainer-private-content",
     "IMAGE_STYLE" : "default",
-    "ANTHROPIC_SERVICE" : "google"
+    "ANTHROPIC_SERVICE" : "anthropic"
 }
