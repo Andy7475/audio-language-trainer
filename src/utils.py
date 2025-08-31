@@ -284,13 +284,19 @@ def ok_to_query_api() -> bool:
     return True
 
 
-def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -> str:
+def anthropic_generate(
+    prompt: str, max_tokens: int = 1024, model: str = None, tools: Optional[list] = None
+) -> str:
     """Generate an LLM response using either Anthropic's API or Vertex AI, depending on config.ANTHROPIC_SERVICE.
     If ANTHROPIC_SERVICE == 'anthropic', use the Anthropic API (requires ANTHROPIC_API_KEY in .env).
     If ANTHROPIC_SERVICE == 'google', use Vertex AI endpoint as before.
+    Optionally, pass a list of tools for tool-use structured output.
     """
 
     print(f"Function that called this one: {get_caller_name()}")
+    print(
+        f"anthropic_generate: service={config.ANTHROPIC_SERVICE}, model={model}, max_tokens={max_tokens}, tools={'yes' if tools else 'no'}"
+    )
 
     service = config.ANTHROPIC_SERVICE.lower()
     if model is None:
@@ -300,55 +306,108 @@ def anthropic_generate(prompt: str, max_tokens: int = 1024, model: str = None) -
         # Use Anthropic's official Python client
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
+            print(
+                "[anthropic_generate] ERROR: ANTHROPIC_API_KEY not set in environment or .env file."
+            )
             raise EnvironmentError(
                 "ANTHROPIC_API_KEY not set in environment or .env file."
             )
         # If model name contains '@', strip from '@' onward and append '-latest'
         if "@" in model:
+            print(
+                f"[anthropic_generate] Model name contains '@', normalizing to latest: {model}"
+            )
             model = model.split("@", 1)[0] + "-latest"
         client = Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        # The client returns a dict with 'content' as a list of dicts with 'text'
-        return message.content[0].text
+        # Add tool use if provided
+        kwargs = {}
+        if tools is not None:
+            print("[anthropic_generate] Tool-use enabled for this request.")
+            kwargs["tools"] = tools
+        try:
+            message = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}],
+                **kwargs,
+            )
+        except Exception as e:
+            print(f"[anthropic_generate] Anthropic API error: {e}")
+            raise
+        # If tool-use, return the tool result, else return text
+        if hasattr(message, "content") and isinstance(message.content, list):
+            for c in message.content:
+                # Anthropic SDK v0.25+ returns ToolUseBlock for tool-use
+                if c.__class__.__name__ == "ToolUseBlock" and hasattr(c, "input"):
+                    print(
+                        "[anthropic_generate] ToolUseBlock detected, returning .input as JSON."
+                    )
+                    return json.dumps(c.input)
+                if hasattr(c, "tool_use") and c.tool_use:
+                    print("[anthropic_generate] Tool-use output returned.")
+                    return c.tool_use["output"]
+                if hasattr(c, "text"):
+                    return c.text
+        print("[anthropic_generate] Unexpected message format from Anthropic API.")
+        return str(message)
 
     elif service == "google":
-        ok_to_query_api()
+        print("[anthropic_generate] Checking API cooldown before Vertex AI call...")
+        ok = ok_to_query_api()
+        if not ok:
+            print(
+                "[anthropic_generate] Warning: ok_to_query_api() returned False, but proceeding anyway."
+            )
         # Use Vertex AI (AnthropicVertex)
         client = AnthropicVertex(
             region=config.ANTHROPIC_REGION, project_id=config.PROJECT_ID
         )
-        message = client.messages.create(
-            max_tokens=max_tokens,
-            messages=[
-                {
-                    "role": "user",
-                    "content": prompt,
-                }
-            ],
-            model=model,
-        )
+        kwargs = {}
+        if tools is not None:
+            print("[anthropic_generate] Tool-use enabled for this request (Vertex AI).")
+            kwargs["tools"] = tools
+        try:
+            message = client.messages.create(
+                max_tokens=max_tokens,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    }
+                ],
+                model=model,
+                **kwargs,
+            )
+        except Exception as e:
+            print(f"[anthropic_generate] Vertex AI error: {e}")
+            raise
         response_json = message.model_dump_json(indent=2)
         response = json.loads(response_json)
-        return response["content"][0]["text"]
+        # If tool-use, return the tool result, else return text
+        if "content" in response and isinstance(response["content"], list):
+            for c in response["content"]:
+                if "tool_use" in c and c["tool_use"]:
+                    print("[anthropic_generate] Tool-use output returned (Vertex AI).")
+                    return c["tool_use"]["output"]
+                if "text" in c:
+                    return c["text"]
+        print("[anthropic_generate] Unexpected message format from Vertex AI.")
+        return str(response)
     else:
+        print(f"[anthropic_generate] ERROR: Unknown ANTHROPIC_SERVICE: {service}")
         raise ValueError(
             f"Unknown ANTHROPIC_SERVICE: {service}. Must be 'anthropic' or 'google'."
         )
 
 
-def list_anthropic_models(
-) -> List[Dict[str, Any]]:
+def list_anthropic_models() -> List[Dict[str, Any]]:
     """
     List available Anthropic models in Vertex AI.
-    
+
     Args:
         project_id (str): Your Google Cloud project ID
         location (str): The region/location (default: us-central1)
-        
+
     Returns:
         List[Dict[str, Any]]: List of available Anthropic models with their details
     """
@@ -357,52 +416,60 @@ def list_anthropic_models(
     location = config.ANTHROPIC_REGION
     # Initialize Vertex AI
     vertexai.init(project=project_id, location=location)
-    
+
     try:
         # Get the model registry client
         client = aiplatform.gapic.ModelServiceClient(
             client_options={"api_endpoint": f"{location}-aiplatform.googleapis.com"}
         )
-        
+
         # List models
         parent = f"projects/{project_id}/locations/{location}"
         request = aiplatform.gapic.ListModelsRequest(parent=parent)
-        
+
         models = []
         page_result = client.list_models(request=request)
-        
+
         # Filter for Anthropic models
         for model in page_result:
             # Check if model is from Anthropic (Claude models)
-            if "claude" in model.display_name.lower() or "anthropic" in model.display_name.lower():
+            if (
+                "claude" in model.display_name.lower()
+                or "anthropic" in model.display_name.lower()
+            ):
                 model_info = {
                     "name": model.name,
                     "display_name": model.display_name,
-                    "description": getattr(model, 'description', ''),
+                    "description": getattr(model, "description", ""),
                     "create_time": model.create_time,
                     "update_time": model.update_time,
-                    "supported_deployment_resources_types": list(model.supported_deployment_resources_types),
-                    "supported_input_storage_formats": list(model.supported_input_storage_formats),
-                    "supported_output_storage_formats": list(model.supported_output_storage_formats),
+                    "supported_deployment_resources_types": list(
+                        model.supported_deployment_resources_types
+                    ),
+                    "supported_input_storage_formats": list(
+                        model.supported_input_storage_formats
+                    ),
+                    "supported_output_storage_formats": list(
+                        model.supported_output_storage_formats
+                    ),
                 }
                 models.append(model_info)
-        
+
         return models
-        
+
     except Exception as e:
         print(f"Error listing models: {e}")
         return []
 
 
-def get_anthropic_model_names(
-) -> List[str]:
+def get_anthropic_model_names() -> List[str]:
     """
     Get a simple list of Anthropic model names available in Vertex AI.
-    
+
     Args:
         project_id (str): Your Google Cloud project ID
         location (str): The region/location (default: us-central1)
-        
+
     Returns:
         List[str]: List of Anthropic model display names
     """
@@ -410,28 +477,27 @@ def get_anthropic_model_names(
     return [model["display_name"] for model in models]
 
 
-def print_anthropic_models(
-) -> None:
+def print_anthropic_models() -> None:
     """
     Print available Anthropic models in a formatted way.
-    
+
     Args:
         project_id (str): Your Google Cloud project ID
         location (str): The region/location (default: us-central1)
     """
     models = list_anthropic_models()
-    
+
     if not models:
         print("No Anthropic models found or error occurred.")
         return
-    
+
     print(f"Available Anthropic Models:")
     print("=" * 50)
-    
+
     for i, model in enumerate(models, 1):
         print(f"{i}. {model['display_name']}")
         print(f"   Name: {model['name']}")
-        if model['description']:
+        if model["description"]:
             print(f"   Description: {model['description']}")
         print(f"   Created: {model['create_time']}")
         print("-" * 30)

@@ -9,7 +9,11 @@ from src.utils import (
     extract_json_from_llm_response,
 )
 from src.generate import add_translations
-from src.gcs_storage import upload_to_gcs, get_story_translated_dialogue_path, get_story_dialogue_path
+from src.gcs_storage import (
+    upload_to_gcs,
+    get_story_translated_dialogue_path,
+    get_story_dialogue_path,
+)
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -98,24 +102,166 @@ def generate_story(vocab_dict: Dict[str, List[str]]) -> Dict:
     """
 
     prompt = get_story_prompt(verbs=vocab_dict["verbs"], vocab=vocab_dict["vocab"])
-    llm_response = anthropic_generate(prompt, max_tokens=4000)
-    story_data = extract_json_from_llm_response(llm_response)
+
+    # Define the tool for structured story output
+    story_tool = {
+        "name": "story_json",
+        "description": "Output a story in the required JSON format with a story_name and dialogue parts.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "story_name": {
+                    "type": "string",
+                    "description": "Engaging 3-word title for the story.",
+                },
+                "setup": {
+                    "type": "object",
+                    "properties": {
+                        "dialogue": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "speaker": {
+                                        "type": "string",
+                                        "enum": ["Alex", "Sam"],
+                                    },
+                                    "text": {"type": "string"},
+                                },
+                                "required": ["speaker", "text"],
+                            },
+                        }
+                    },
+                    "required": ["dialogue"],
+                },
+                "resolution": {
+                    "type": "object",
+                    "properties": {
+                        "dialogue": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "speaker": {
+                                        "type": "string",
+                                        "enum": ["Alex", "Sam"],
+                                    },
+                                    "text": {"type": "string"},
+                                },
+                                "required": ["speaker", "text"],
+                            },
+                        }
+                    },
+                    "required": ["dialogue"],
+                },
+            },
+            "required": ["story_name", "setup", "resolution"],
+        },
+    }
+
+    # If there are more than 30 verbs, add an "introduction" and "development" part
+    verb_count = len(vocab_dict["verbs"])
+    if verb_count >= 30:
+        story_tool["input_schema"]["properties"]["introduction"] = {
+            "type": "object",
+            "properties": {
+                "dialogue": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "speaker": {"type": "string", "enum": ["Alex", "Sam"]},
+                            "text": {"type": "string"},
+                        },
+                        "required": ["speaker", "text"],
+                    },
+                }
+            },
+            "required": ["dialogue"],
+        }
+        story_tool["input_schema"]["properties"]["development"] = {
+            "type": "object",
+            "properties": {
+                "dialogue": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "speaker": {"type": "string", "enum": ["Alex", "Sam"]},
+                            "text": {"type": "string"},
+                        },
+                        "required": ["speaker", "text"],
+                    },
+                }
+            },
+            "required": ["dialogue"],
+        }
+        story_tool["input_schema"]["required"] = [
+            "story_name",
+            "introduction",
+            "development",
+            "resolution",
+        ]
+    elif verb_count < 10:
+        # Only one part: 'story'
+        story_tool["input_schema"]["properties"] = {
+            "story_name": {
+                "type": "string",
+                "description": "Engaging 3-word title for the story.",
+            },
+            "story": {
+                "type": "object",
+                "properties": {
+                    "dialogue": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "speaker": {"type": "string", "enum": ["Alex", "Sam"]},
+                                "text": {"type": "string"},
+                            },
+                            "required": ["speaker", "text"],
+                        },
+                    }
+                },
+                "required": ["dialogue"],
+            },
+        }
+        story_tool["input_schema"]["required"] = ["story_name", "story"]
+
+    # Call anthropic_generate with tool-use
+    llm_response = anthropic_generate(prompt, max_tokens=4000, tools=[story_tool])
+
+    # If the model returns a string, try to parse as JSON
+    try:
+        story_data = json.loads(llm_response)
+    except Exception:
+        story_data = extract_json_from_llm_response(llm_response)
 
     if not story_data:
-        print("No valid JSON found in the response")
-        return None
+        print("No valid JSON found in the response. Raw LLM response:")
+        print(llm_response)
+        raise ValueError(
+            "generate_story: LLM did not return valid JSON. See above for raw response."
+        )
 
     story_name = story_data.get("story_name")
     if not story_name:
-        print("Missing story_name in response")
-        return None
+        print("Missing story_name in response. Raw LLM response:")
+        print(llm_response)
+        raise ValueError(
+            "generate_story: Missing story_name in LLM response. See above for raw response."
+        )
 
     # Extract dialogue parts, excluding story_name
     story_dialogue = {k: v for k, v in story_data.items() if k != "story_name"}
 
     if not story_dialogue:
-        print("No valid dialogue found in the response")
-        return None
+        print("No valid dialogue found in the response. Raw LLM response:")
+        print(llm_response)
+        raise ValueError(
+            "generate_story: No valid dialogue found in LLM response. See above for raw response."
+        )
 
     # Verify the structure and speakers in each part
     valid_speakers = {"Sam", "Alex"}
@@ -123,20 +269,29 @@ def generate_story(vocab_dict: Dict[str, List[str]]) -> Dict:
     for part, content in story_dialogue.items():
         # Check basic structure
         if not isinstance(content, dict) or "dialogue" not in content:
-            print(f"Invalid dialogue structure in part: {part}")
-            return None
+            print(f"Invalid dialogue structure in part: {part}. Raw LLM response:")
+            print(llm_response)
+            raise ValueError(
+                f"generate_story: Invalid dialogue structure in part: {part}. See above for raw response."
+            )
 
         # Check each dialogue entry has valid speakers
         for utterance in content["dialogue"]:
             if not isinstance(utterance, dict) or "speaker" not in utterance:
-                print(f"Missing speaker in dialogue: {utterance}")
-                return None
+                print(f"Missing speaker in dialogue: {utterance}. Raw LLM response:")
+                print(llm_response)
+                raise ValueError(
+                    f"generate_story: Missing speaker in dialogue: {utterance}. See above for raw response."
+                )
 
             if utterance["speaker"] not in valid_speakers:
                 print(
-                    f"Invalid speaker '{utterance['speaker']}' in dialogue. Must be 'Sam' or 'Alex'"
+                    f"Invalid speaker '{utterance['speaker']}' in dialogue. Must be 'Sam' or 'Alex'. Raw LLM response:"
                 )
-                return None
+                print(llm_response)
+                raise ValueError(
+                    f"generate_story: Invalid speaker '{utterance['speaker']}' in dialogue. See above for raw response."
+                )
 
     # Return the validated data with story_name included
     print(f"generated story: {story_name}")

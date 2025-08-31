@@ -188,8 +188,13 @@ def text_to_speech(
     else:
         voice_model = voice_models[2]
 
-    # Route to appropriate provider
-    if voice_model.provider == VoiceProvider.GOOGLE:
+    # Detect Google Chirp3 HD voice (no SSML, uses markup and pause tags)
+    # For Chirp3 HD voices, use the markup field (requires google-cloud-texttospeech >= 2.27.0)
+    if voice_model.provider == VoiceProvider.GOOGLE and "Chirp" in voice_model.voice_id:
+        return text_to_speech_google(
+            text, voice_model, speaking_rate, is_ssml=False, use_markup=True
+        )
+    elif voice_model.provider == VoiceProvider.GOOGLE:
         return text_to_speech_google(text, voice_model, speaking_rate, is_ssml)
     elif voice_model.provider == VoiceProvider.AZURE:
         return text_to_speech_azure(text, voice_model, speaking_rate, is_ssml)
@@ -204,6 +209,7 @@ def text_to_speech_google(
     voice_model: VoiceInfo,
     speaking_rate: float = 1.0,
     is_ssml: bool = False,
+    use_markup: bool = False,
 ) -> AudioSegment:
     """
     Convert text to speech using Google Cloud TTS.
@@ -219,11 +225,15 @@ def text_to_speech_google(
     """
     client = texttospeech.TextToSpeechClient()
 
-    # Create appropriate input type based on whether text is SSML
-    if is_ssml:
+    # For Chirp3 HD voices, use markup field if requested (requires google-cloud-texttospeech >= 2.27.0)
+    # For all others, use text or ssml as before
+    if use_markup:
+        synthesis_input = texttospeech.SynthesisInput(markup=text)
+    elif is_ssml:
         synthesis_input = texttospeech.SynthesisInput(ssml=text)
     else:
         synthesis_input = texttospeech.SynthesisInput(text=text)
+    # NOTE: Ensure you have run: pip install --upgrade google-cloud-texttospeech
 
     voice = texttospeech.VoiceSelectionParams(
         language_code=voice_model.language_code, name=voice_model.voice_id
@@ -466,20 +476,14 @@ def slow_text_to_speech(
     if voice_model.provider == VoiceProvider.ELEVENLABS:
         # For ElevenLabs, convert milliseconds to seconds and use their break format
         break_sec = word_break_ms / 1000.0
-
         # Check if break duration exceeds ElevenLabs' limit (3 seconds)
         if break_sec >= 3.0:
             raise ValueError(
                 f"Break duration of {break_sec:.2f}s exceeds ElevenLabs' limit of 3 seconds. "
                 f"Please use a word_break_ms value less than 3000."
             )
-
         formatted_break = f' <break time="{break_sec:.2f}s" /> '
-
-        # Join the tokens with ElevenLabs break format
         text_with_breaks = formatted_break.join(tokens)
-
-        # Generate speech with the breaks embedded in the text
         return text_to_speech(
             text=text_with_breaks,
             config_language=config_language,
@@ -488,11 +492,23 @@ def slow_text_to_speech(
             is_ssml=False,  # ElevenLabs handles the break tags natively
             voice_setting=voice_setting,
         )
+    elif (
+        voice_model.provider == VoiceProvider.GOOGLE and "Chirp" in voice_model.voice_id
+    ):
+        # For Google Chirp3 HD voices, use [pause] tags in markup
+        pause_tag = " [pause] "
+        text_with_breaks = pause_tag.join(tokens)
+        return text_to_speech(
+            text=text_with_breaks,
+            config_language=config_language,
+            gender=gender,
+            speaking_rate=speaking_rate,
+            is_ssml=False,
+            voice_setting=voice_setting,
+        )
     else:
-        # For Google and Azure, use standard SSML
+        # For Google (non-Chirp) and Azure, use standard SSML
         word_break_time = str(word_break_ms) + "ms"
-
-        # Create SSML with breaks between words
         ssml_parts = ["<speak>"]
         for i, token in enumerate(tokens):
             ssml_parts.append(token)
@@ -500,8 +516,6 @@ def slow_text_to_speech(
                 ssml_parts.append(f'<break time="{word_break_time}"/>')
         ssml_parts.append("</speak>")
         ssml_text = " ".join(ssml_parts)
-
-        # Use the main text_to_speech function with SSML
         return text_to_speech(
             text=ssml_text,
             config_language=config_language,

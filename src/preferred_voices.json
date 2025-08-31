@@ -78,12 +78,12 @@
         },
         "stories": {
             "female": {
-                "provider": "elevenlabs",
-                "voice_id": "aSLKtNoVBZlxQEMsnGL2"
+                "provider": "google",
+                "voice_id": "sv-SE-Chirp3-HD-Laomedeia"
             },
             "male": {
-                "provider": "elevenlabs",
-                "voice_id": "7UMEOkIJdI4hjmR2SWNq"
+                "provider": "google",
+                "voice_id": "sv-SE-Chirp3-HD-Sadaltager"
             }
         }
     },

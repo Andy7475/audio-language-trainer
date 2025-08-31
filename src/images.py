@@ -13,7 +13,12 @@ from src.config_loader import config
 from src.utils import anthropic_generate, ok_to_query_api, load_json
 from src.convert import clean_filename
 from pathlib import Path
-from src.gcs_storage import get_phrase_image_path, upload_to_gcs, check_blob_exists, get_image_path
+from src.gcs_storage import (
+    get_phrase_image_path,
+    upload_to_gcs,
+    check_blob_exists,
+    get_image_path,
+)
 
 load_dotenv()  # so we can use environment variables for various global settings
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
@@ -443,10 +448,10 @@ def generate_image(
     if style is None:
         style = config.IMAGE_STYLE
     prompt = add_image_style(prompt, style)
-    
+
     print(f"🎨 Starting image generation process for prompt: {prompt}")
     print(f"📋 Will try providers in order: {model_order}")
-    
+
     for model in model_order:
         try:
             print_attempt(model)
@@ -458,7 +463,10 @@ def generate_image(
                     print_success(prompt, model)
                     return image
                 else:
-                    print_failure(model, "API returned None - possible content filtering, quota limits, or service unavailable")
+                    print_failure(
+                        model,
+                        "API returned None - possible content filtering, quota limits, or service unavailable",
+                    )
 
             elif model == "stability":
                 image = generate_image_stability(prompt)
@@ -466,7 +474,10 @@ def generate_image(
                     print_success(prompt, model)
                     return image
                 else:
-                    print_failure(model, "API returned None - possible content filtering, API limits, or service error")
+                    print_failure(
+                        model,
+                        "API returned None - possible content filtering, API limits, or service error",
+                    )
 
             elif model == "deepai":
                 image = generate_image_deepai(prompt)
@@ -474,7 +485,10 @@ def generate_image(
                     print_success(prompt, model)
                     return image
                 else:
-                    print_failure(model, "API returned None - unexpected response format or service error")
+                    print_failure(
+                        model,
+                        "API returned None - unexpected response format or service error",
+                    )
 
         except Exception as e:
             print_failure(model, f"Exception occurred: {str(e)}")
@@ -514,6 +528,18 @@ def generate_and_save_story_images(
     image_paths = {}
 
     for story_part, content in tqdm(story_dict.items(), desc="Generating story images"):
+        # Get the GCS file path for this image
+        gcs_image_path = get_image_path(story_name, story_part, collection)
+        # Check if image already exists in GCS
+        if check_blob_exists(config.GCS_PRIVATE_BUCKET, gcs_image_path):
+            print(
+                f"Image already exists for {story_part}, skipping generation and upload."
+            )
+            image_paths[story_part] = (
+                f"gs://{config.GCS_PRIVATE_BUCKET}/{gcs_image_path}"
+            )
+            continue
+
         # Generate prompt
         prompt = create_image_generation_prompt_for_story_part(content, anthropic_model)
 
@@ -528,18 +554,17 @@ def generate_and_save_story_images(
             # Resize the image
             image = resize_image(image)  # 500 x 500
 
-            # Get the GCS file path for this image
-            gcs_image_path = get_image_path(story_name, story_part, collection)
-
             # Upload the image to GCS
             gcs_uri = upload_to_gcs(
                 obj=image,
                 bucket_name=config.GCS_PRIVATE_BUCKET,
                 file_name=gcs_image_path,
-                content_type="image/png"
+                content_type="image/png",
             )
             image_paths[story_part] = gcs_uri
-            print(f"Successfully generated and uploaded image for {story_part} to {gcs_uri}")
+            print(
+                f"Successfully generated and uploaded image for {story_part} to {gcs_uri}"
+            )
 
         except Exception as e:
             print(f"Error processing {story_part}: {str(e)}")
@@ -615,7 +640,9 @@ def generate_images_from_phrases(
             ok_to_query_api()
             image = generate_image(prompt, style=style)
             if image is None:
-                print(f"Failed to generate image for phrase '{phrase}' with all providers")
+                print(
+                    f"Failed to generate image for phrase '{phrase}' with all providers"
+                )
                 continue
 
             # Resize image to standard size
@@ -626,7 +653,7 @@ def generate_images_from_phrases(
                 obj=image,
                 bucket_name=bucket_name,
                 file_name=image_path,
-                content_type="image/png"
+                content_type="image/png",
             )
 
             # Store results in dictionary
@@ -642,7 +669,9 @@ def generate_images_from_phrases(
             print(f"Error processing phrase '{phrase}': {str(e)}")
             continue
 
-    print(f"\n🎯 Successfully generated {len(results)} images out of {len(phrases)} phrases")
+    print(
+        f"\n🎯 Successfully generated {len(results)} images out of {len(phrases)} phrases"
+    )
     return results
 
 
