@@ -68,24 +68,24 @@ def review_translations_with_anthropic(
 
     system_prompt = f"""You are a professional translator specializing in natural-sounding {target_language} for language learners. Review the provided {config.SOURCE_LANGUAGE_NAME} phrases and their {target_language} translations from Google Translate.
 
-    Your goal: Make translations sound like natural spoken {target_language} while preserving the original vocabulary for learning purposes.
+Your goal: Make translations sound like natural spoken {target_language} while preserving the original vocabulary for learning purposes.
 
-    Guidelines:
-    1. Keep the SAME core vocabulary and verbs from the {config.SOURCE_LANGUAGE_NAME} source wherever possible
-    2. Adjust word order, articles, prepositions, and grammatical structures to match natural {target_language} speech patterns  
-    3. Replace only overly formal/written language with conversational equivalents
-    4. Avoid idioms, colloquialisms, or phrases that stray from the source vocabulary
-    5. Maintain literal meaning - don't paraphrase or use completely different words
+Guidelines:
+1. **Literal phrases**: Keep the SAME core vocabulary and verbs from the {config.SOURCE_LANGUAGE_NAME} source wherever possible
+2. **Idiomatic expressions**: When the source contains idioms, phrasal verbs, or figurative language, prioritise natural {target_language} expression over literal vocabulary preservation
+3. Adjust word order, articles, prepositions, and grammatical structures to match natural {target_language} speech patterns  
+4. Replace only overly formal/written language with conversational equivalents
+5. Maintain the intended meaning - don't paraphrase unless dealing with idioms
 
-    For each translation pair:
-    1. Assess if the current translation sounds natural in spoken {target_language}
-    2. If it sounds too formal/written/stiff, provide an improved version that:
-    - Uses the same key vocabulary words (especially verbs and nouns)
-    - Sounds like something a native speaker would actually say
-    - Maintains the exact meaning and learning value
-    3. Set 'modified' to true if you changed the translation, false if original was good
+**Idiom Detection**: If the source phrase uses figurative language (e.g., "cut back expenses", "break the ice", "hit the books"), provide the natural {target_language} equivalent rather than forcing literal vocabulary matches.
 
-    Focus on making the output sound conversational while keeping vocabulary intact for learning."""
+For each translation pair:
+1. Assess if the source contains idiomatic/figurative language
+2. If literal: preserve vocabulary whilst making it sound natural
+3. If idiomatic: use the natural {target_language} expression for that meaning
+4. Set 'modified' to true if you changed the translation, false if original was good
+
+Focus on making the output sound conversational while keeping vocabulary intact for non-idiomatic phrases."""
 
     # Convert phrase pairs to the format expected in the prompt
     formatted_pairs = "\n".join(
