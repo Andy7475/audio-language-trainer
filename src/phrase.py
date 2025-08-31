@@ -200,46 +200,49 @@ def generate_scenario_phrases(
     # Base prompt template
     prompt = """Generate practical phrases for: '{scenario}' (write in UK english). These are for language learners{localisation_phrase_2}.
 
-    Approach this by:
-    1. Break down {scenario} into a common sequence of situations
-    2. For each situation, consider:
-    - What someone might need to ask for
-    - How they might respond to questions
-    - Common problems they might face
-    - Typical interactions with locals
+Approach this by:
+1. Break down {scenario} into a common sequence of situations
+2. For each situation, consider:
+- What someone might need to ask for
+- How they might respond to questions
+- Common problems they might face
+- Typical interactions with locals
 
-    For each situation, create 3-4 phrases that:
-    - Are 4-7 words in length
-    - Use common speaking patterns as a basis (e.g. "Could I have...", "Where is...", "Are there any...")
-    - But never leave phrases incomplete (e.g. insert an example location 'when is the next train to <city>?' rather than just the stem 'when is the next train to...?')
-    - Would be naturally used in conversation
-    - Focus on clear, practical communication
-    - Use shorter phrases where possible
+For each situation, create 3-4 phrases that:
+- Are 4-7 words in length
+- Use common speaking patterns as a basis (e.g. "Could I have...", "Where is...", "Are there any...")
+- But never leave phrases incomplete (e.g. insert an example location 'when is the next train to <city>?' rather than just the stem 'when is the next train to...?')
+- Would be naturally used in conversation
+- Focus on clear, practical communication
+- Use shorter phrases where possible
+- **Use direct, literal language - avoid idioms, phrasal verbs, and figurative expressions**
+- **Choose straightforward vocabulary over colourful expressions (e.g. "reduce expenses" not "cut back expenses")**
 
-    Consider:
-    - The logical sequence of events
-    - Both asking and responding
-    - Common issues or special requests
-    {localisation_phrase}
-    - Local customs and expectations
+Consider:
+- The logical sequence of events
+- Both asking and responding
+- Common issues or special requests
+{localisation_phrase}
+- Local customs and expectations
 
-    Return {num_phrases} phrases in this JSON format:
-    Example input scenario: 'visiting tourist attractions'
-    Example JSON output:
-    {{
-        "phrases": [
-            "Which way to the museum, please?",
-            "What time does the museum close?",
-            "How much does a ticket cost?",
-            "etc...",
-        ]
-    }}
+Return {num_phrases} phrases in this JSON format:
+Example input scenario: 'visiting tourist attractions'
+Example JSON output:
+{{
+    "phrases": [
+        "Which way to the museum, please?",
+        "What time does the museum close?",
+        "How much does a ticket cost?",
+        "etc...",
+    ]
+}}
 
-    Important:
-    - Each phrase should be complete and standalone
-    - Include a mix of questions and statements
-    - Focus on everyday language people actually use
-    - Consider both formal and informal situations where appropriate"""
+Important:
+- Each phrase should be complete and standalone
+- Include a mix of questions and statements
+- Focus on everyday language people actually use
+- Consider both formal and informal situations where appropriate
+- **Prioritise vocabulary that translates directly across languages**"""
 
     # Format the prompt with the given parameters
     formatted_prompt = prompt.format(
@@ -507,9 +510,11 @@ def generate_phrases_with_llm(
         {localise_prompt_segment}
     
     5. Make phrases active rather than passive, something you would commonly say rather than read.
-    6. Ensure each phrase is gramatically correct (so you may extend the length if required to meet this condition)
-    7. Try to use all the words provided to create the {num_phrases} phrases.
-    8. Make the phrases memorable by creating interesting or slightly humorous scenarios.
+    6. **Use direct, literal language - avoid idioms, phrasal verbs, and figurative expressions**
+    7. **Choose straightforward meanings for verbs (e.g. if "break" is in the list, use it literally like "break the glass" rather than idiomatically like "break the news")**
+    8. Ensure each phrase is grammatically correct (so you may extend the length if required to meet this condition)
+    9. Try to use all the words provided to create the {num_phrases} phrases.
+    10. Make the phrases memorable by creating interesting or slightly humorous scenarios whilst keeping language direct and literal.
 
     Please return your response in the following JSON format:
     {{
@@ -544,15 +549,17 @@ def generate_minimal_phrases_with_llm(
     3. Each phrase must contain {verbs_per_phrase} from the verb list, and be {length_phrase}.
     3a. Ensure each phrase is gramatically correct (so you may extend the length if required to meet this condition)
     4. You may use additional common words (articles, prepositions, pronouns, basic verbs) that a beginner language learner would know to complete phrases.
-    5. Prioritize exhausting the provided word list over creating a large number of phrases.
-    6. Vary the verb tenses (present, past, future) across the phrases. Stick mainly to first and second person.
-    7. Vary the type of phrase:
+    5. Prioritise exhausting the provided word list over creating a large number of phrases.
+    6. **Use direct, literal language - avoid idioms, phrasal verbs, and figurative expressions**
+    7. **Use words in their most straightforward meanings (e.g. "break" should mean physically breaking something, not "break news" or "break habits")**
+    8. Vary the verb tenses (present, past, future) across the phrases. Stick mainly to first and second person.
+    9. Vary the type of phrase:
         - Imperative ("Don't be late...")
         - Simple statements ("The traffic was terrible...")
         - First-person expressions ("I enjoy...")
         - Question ("Shall we...?", "Do you ...?", "Did they...?")
-    8. Make phrases active rather than passive, something you would commonly say rather than read.
-    9. Make the phrases memorable by creating interesting or slightly humorous scenarios when possible.
+    10. Make phrases active rather than passive, something you would commonly say rather than read.
+    11. Make the phrases memorable by creating interesting or slightly humorous scenarios when possible whilst keeping language direct and literal.
 
     Please return your response in the following JSON format:
     {{
