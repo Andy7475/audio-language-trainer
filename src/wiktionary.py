@@ -159,7 +159,6 @@ def generate_wiktionary_links(
     for word in words:
         # Use the new global cleaning function instead of just rstrip
         clean_word = clean_word_for_lookup(word)
-        print(f"cleaned '{word}' to '{clean_word}'")
         if not clean_word:
             links.append(word)
             continue
@@ -175,7 +174,6 @@ def generate_wiktionary_links(
             lookup_word = clean_word.lower()
             encoded_word = urllib.parse.quote(lookup_word)
             url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-            print(f"Looking up {url}")
             response = requests.get(url, headers=user_agent)
             found_section = False
 
@@ -201,7 +199,6 @@ def generate_wiktionary_links(
                     url_cap = f"https://en.wiktionary.org/wiki/{encoded_word_cap}"
 
                     response_cap = requests.get(url_cap, headers=user_agent)
-                    print(f"Status code for {url_cap}: {response_cap.status_code}")
                     if response_cap.status_code == 200:
 
                         soup_cap = BeautifulSoup(response_cap.content, "html.parser")
@@ -257,7 +254,6 @@ def add_wiktionary_links(
             )
 
             phrase_translations[phrase_key]["wiktionary_links"] = links
-            print(f"modified {phrase_key}")
 
     return phrase_translations, word_link_cache
 
@@ -303,7 +299,6 @@ def generate_wiktionary_links_non_english(
             native_url = (
                 f"https://{native_language_code}.wiktionary.org/wiki/{encoded_word}"
             )
-            print(f"native url is: {native_url}")
 
             try:
                 response = requests.get(native_url, headers=user_agent)

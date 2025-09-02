@@ -4,10 +4,12 @@ from flask import jsonify, request
 import requests
 from flask_cors import CORS
 
-# gcloud run deploy create-realtime-chat-session `
-#   --source=. `
-#   --region=europe-west2 `
-#   --allow-unauthenticated
+# gcloud functions deploy create-realtime-chat-session `
+#   --runtime python312 `
+#   --trigger-http `
+#   --allow-unauthenticated `
+#   --region europe-west2 `
+#   --entry-point create_session
 # ensure you are in the right directory with main.py and requirements.txt
 
 
