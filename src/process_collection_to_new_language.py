@@ -362,33 +362,37 @@ def generate_fast_audio(collection: str, overwrite: bool = False):
 
 
 def create_challenges(collection: str):
-    """Step 10: Create challenge pages."""
-    print("\n🔄 Step 10: Creating challenge pages...")
+    """Step 10: Create challenge pages (multi-language aware)."""
 
-    all_stories = get_stories_from_collection(collection=collection)
+    def _create_challenges_for_language(collection: str, language: str = None):
+        language_info = f" for {language}" if language else ""
+        print(f"\n🔄 Step 10: Creating challenge pages{language_info}...")
+        with language_context(language):
+            all_stories = get_stories_from_collection(collection=collection)
+            for story_name in tqdm(all_stories, desc="Creating challenges"):
+                try:
+                    challenge_file_path = get_story_challenges_path(
+                        story_name, collection=collection
+                    )
+                    if not check_blob_exists(
+                        config.GCS_PRIVATE_BUCKET, challenge_file_path
+                    ):
+                        print(f"  ⚠️  No challenges found for {story_name}, skipping")
+                        continue
+                    scenario_dicts = read_from_gcs(
+                        bucket_name=config.GCS_PRIVATE_BUCKET,
+                        file_path=challenge_file_path,
+                    )
+                    challenges = get_html_challenge_inputs(scenario_dicts)
+                    chat_webpage_file = create_html_challenges(
+                        challenges, story_name=story_name, collection=collection
+                    )
+                    print(f"  ✅ Created challenges for {story_name}")
+                except Exception as e:
+                    print(f"  ❌ Failed to create challenges for {story_name}: {e}")
+            print("✅ Challenge pages created" + language_info)
 
-    for story_name in tqdm(all_stories, desc="Creating challenges"):
-        try:
-            challenge_file_path = get_story_challenges_path(
-                story_name, collection=collection
-            )
-
-            if not check_blob_exists(config.GCS_PRIVATE_BUCKET, challenge_file_path):
-                print(f"  ⚠️  No challenges found for {story_name}, skipping")
-                continue
-
-            scenario_dicts = read_from_gcs(
-                bucket_name=config.GCS_PRIVATE_BUCKET, file_path=challenge_file_path
-            )
-            challenges = get_html_challenge_inputs(scenario_dicts)
-            chat_webpage_file = create_html_challenges(
-                challenges, story_name=story_name, collection=collection
-            )
-            print(f"  ✅ Created challenges for {story_name}")
-        except Exception as e:
-            print(f"  ❌ Failed to create challenges for {story_name}: {e}")
-
-    print("✅ Challenge pages created")
+    return _create_challenges_for_language
 
 
 def create_story_pages(collection: str):
@@ -805,7 +809,12 @@ Examples:
             "fast-audio",
             lambda: generate_fast_audio(args.collection, args.overwrite_audio),
         ),
-        ("challenges", lambda: create_challenges(args.collection)),
+        (
+            "challenges",
+            lambda: execute_multi_language_step(
+                create_challenges(args.collection), args.collection, args.languages
+            ),
+        ),
         ("stories", lambda: create_story_pages(args.collection)),
         ("albums", lambda: create_albums(args.collection)),
         ("index", lambda: update_index_pages()),
