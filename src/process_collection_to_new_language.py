@@ -78,10 +78,10 @@ def setup_authentication():
 def normalize_language_name(language_name):
     """
     Normalize language name to title case for config consistency.
-    
+
     Args:
         language_name: Language name in any case (e.g., 'french', 'FRENCH', 'French')
-    
+
     Returns:
         Title case language name (e.g., 'French')
     """
@@ -95,10 +95,10 @@ def language_context(language_name):
         # No language switch needed
         yield
         return
-    
+
     # Store original language
     original_language = config.TARGET_LANGUAGE_NAME
-    
+
     try:
         # Switch to new language (normalize to title case)
         normalized_language = normalize_language_name(language_name)
@@ -442,7 +442,7 @@ def update_index_pages():
     print("\n🔄 Step 13: Updating index pages...")
 
     languages = ["French", "Spanish", "German", "Swedish", "Italian"]
-    collections = ["LM1000", "WarmUp150"]
+    collections = ["LM1000", "WarmUp150", "LM2000"]
 
     upload_styles_to_gcs()
     result = update_all_index_pages_hierarchical(
@@ -569,7 +569,7 @@ def merge_csv_files(languages: list = None):
 
     # Define the output directory where CSV files are generated
     output_dir = "../outputs/shopify"
-    
+
     # If specific languages are provided, look for their CSV files
     if languages:
         csv_files = []
@@ -580,12 +580,14 @@ def merge_csv_files(languages: list = None):
             lang_files = glob.glob(lang_pattern)
             csv_files.extend(lang_files)
             print(f"  Looking for CSV files matching pattern: *{lang_lower}*.csv")
-        
+
         if not csv_files:
             # Fallback to all CSV files
             csv_pattern = os.path.join(output_dir, "*.csv")
             csv_files = glob.glob(csv_pattern)
-            print(f"  No language-specific files found, using all CSV files in {output_dir}")
+            print(
+                f"  No language-specific files found, using all CSV files in {output_dir}"
+            )
     else:
         csv_pattern = os.path.join(output_dir, "*.csv")
         csv_files = glob.glob(csv_pattern)
@@ -619,7 +621,9 @@ def merge_csv_files(languages: list = None):
         # Create output filename with current date
         current_date = datetime.now().strftime("%Y%m%d")
         # Use lowercase for filename consistency
-        lang_suffix = f"_{'_'.join([lang.lower() for lang in languages])}" if languages else ""
+        lang_suffix = (
+            f"_{'_'.join([lang.lower() for lang in languages])}" if languages else ""
+        )
         output_filename = f"{current_date}{lang_suffix}_shopify.csv"
         output_path = os.path.join(output_dir, output_filename)
 
@@ -807,8 +811,18 @@ Examples:
         ("index", lambda: update_index_pages()),
         ("anki", lambda: create_anki_decks(args.collection)),
         ("zip", lambda: create_zip_files(args.collection)),
-        ("images", lambda: execute_multi_language_step(generate_images, args.collection, args.languages)),
-        ("csv", lambda: execute_multi_language_step(generate_csv, args.collection, args.languages)),
+        (
+            "images",
+            lambda: execute_multi_language_step(
+                generate_images, args.collection, args.languages
+            ),
+        ),
+        (
+            "csv",
+            lambda: execute_multi_language_step(
+                generate_csv, args.collection, args.languages
+            ),
+        ),
         ("merge-csv", lambda: merge_csv_files(args.languages)),
     ]
 

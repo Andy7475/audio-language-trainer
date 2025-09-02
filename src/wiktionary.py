@@ -9,20 +9,38 @@ from src.config_loader import config
 from tqdm import tqdm
 
 
+def purge_word_link_cache() -> dict:
+    """
+    Load the word_link_cache from GCS, remove all keys whose value is not a hyperlink, and return the cleaned dictionary.
+    """
+    from src.gcs_storage import get_wiktionary_cache_path, read_from_gcs
+
+    bucket = config.GCS_PRIVATE_BUCKET
+    cache_path = get_wiktionary_cache_path()
+    word_link_cache = read_from_gcs(bucket, cache_path)
+    # Only keep items where the value is a hyperlink (starts with <a href)
+    cleaned_cache = {
+        k: v
+        for k, v in word_link_cache.items()
+        if isinstance(v, str) and v.strip().startswith("<a href")
+    }
+    return cleaned_cache
+
+
 def clean_word_for_lookup(word: str) -> str:
     """
     Clean a word for Wiktionary lookup by removing leading and trailing punctuation.
-    
+
     This function provides a global solution for handling punctuation in multiple languages,
-    including Spanish inverted punctuation marks (¿, ¡), French quotation marks (« »), 
+    including Spanish inverted punctuation marks (¿, ¡), French quotation marks (« »),
     smart quotes, and other Unicode punctuation.
-    
+
     Args:
         word: The word to clean
-        
+
     Returns:
         Cleaned word with leading and trailing punctuation removed
-        
+
     Examples:
         >>> clean_word_for_lookup("¿Cómo")
         "Cómo"
@@ -35,52 +53,65 @@ def clean_word_for_lookup(word: str) -> str:
     """
     if not word:
         return word
-        
+
     # Define comprehensive punctuation set
     # Standard ASCII punctuation
     ascii_punct = set(string.punctuation)
-    
+
     # Add Unicode punctuation commonly used in various languages
     unicode_punct = {
         # Spanish inverted punctuation
-        '¿', '¡',  
+        "¿",
+        "¡",
         # French/European quotation marks
-        '«', '»', '‹', '›',
+        "«",
+        "»",
+        "‹",
+        "›",
         # Smart quotes (using Unicode escape sequences)
-        '\u201c', '\u201d', '\u2018', '\u2019',  # " " ' '
+        "\u201c",
+        "\u201d",
+        "\u2018",
+        "\u2019",  # " " ' '
         # Ellipsis
-        '\u2026',  # …
+        "\u2026",  # …
         # Dashes
-        '\u2013', '\u2014',  # – —
+        "\u2013",
+        "\u2014",  # – —
         # Additional quotation marks
-        '\u201e', '\u201c', '\u201a', '\u2018',  # „ " ‚ '
+        "\u201e",
+        "\u201c",
+        "\u201a",
+        "\u2018",  # „ " ‚ '
         # Mathematical and other symbols that might appear
-        '\u00b0', '\u2032', '\u2033',  # ° ′ ″
+        "\u00b0",
+        "\u2032",
+        "\u2033",  # ° ′ ″
     }
-    
+
     # Get all Unicode punctuation categories for comprehensive coverage
     # This catches punctuation we might not have explicitly listed
-    unicode_categories = {'Pc', 'Pd', 'Pe', 'Pf', 'Pi', 'Po', 'Ps'}
-    
+    unicode_categories = {"Pc", "Pd", "Pe", "Pf", "Pi", "Po", "Ps"}
+
     def is_punctuation(char):
         """Check if a character is punctuation using multiple methods"""
         return (
-            char in ascii_punct or 
-            char in unicode_punct or 
-            unicodedata.category(char) in unicode_categories
+            char in ascii_punct
+            or char in unicode_punct
+            or unicodedata.category(char) in unicode_categories
         )
-    
+
     # Strip punctuation from both ends
     cleaned = word
-    
+
     # Remove leading punctuation
     while cleaned and is_punctuation(cleaned[0]):
         cleaned = cleaned[1:]
-        
-    # Remove trailing punctuation  
+
+    # Remove trailing punctuation
     while cleaned and is_punctuation(cleaned[-1]):
         cleaned = cleaned[:-1]
-        
+
     return cleaned
 
 
@@ -122,9 +153,13 @@ def generate_wiktionary_links(
     words = tokenize_text(text=phrase, language_code=language_code)
     links: List[str] = []
 
+    user_agent = {
+        "User-Agent": "Mozilla/5.0 (compatible; WiktionaryBot/1.0; +https://github.com/Andy7475/audio-language-trainer)"
+    }
     for word in words:
         # Use the new global cleaning function instead of just rstrip
         clean_word = clean_word_for_lookup(word)
+        print(f"cleaned '{word}' to '{clean_word}'")
         if not clean_word:
             links.append(word)
             continue
@@ -140,8 +175,8 @@ def generate_wiktionary_links(
             lookup_word = clean_word.lower()
             encoded_word = urllib.parse.quote(lookup_word)
             url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-
-            response = requests.get(url)
+            print(f"Looking up {url}")
+            response = requests.get(url, headers=user_agent)
             found_section = False
 
             if response.status_code == 200:
@@ -152,6 +187,9 @@ def generate_wiktionary_links(
                     # Cache with the original case
                     word_link_cache[clean_word] = link.replace(word, clean_word)
                     found_section = True
+            else:
+                print(f"Failed to retrieve {url}")
+                print(f"Response text: {response.content}")
 
             # If lowercase didn't work, try capitalized (for languages like German)
             if not found_section:
@@ -162,8 +200,10 @@ def generate_wiktionary_links(
                     encoded_word_cap = urllib.parse.quote(lookup_word_cap)
                     url_cap = f"https://en.wiktionary.org/wiki/{encoded_word_cap}"
 
-                    response_cap = requests.get(url_cap)
+                    response_cap = requests.get(url_cap, headers=user_agent)
+                    print(f"Status code for {url_cap}: {response_cap.status_code}")
                     if response_cap.status_code == 200:
+
                         soup_cap = BeautifulSoup(response_cap.content, "html.parser")
                         if section_name := find_language_section(
                             soup_cap, language_name
@@ -249,6 +289,9 @@ def generate_wiktionary_links_non_english(
         # Fallback to "English" if translation fails
         english_in_target = "English"
 
+    user_agent = {
+        "User-Agent": "Mozilla/5.0 (compatible; WiktionaryBot/1.0; +https://github.com/Andy7475/audio-language-trainer)"
+    }
     for word in words:
         clean_word = "".join(char for char in word if char.isalnum())
         if clean_word:
@@ -263,7 +306,7 @@ def generate_wiktionary_links_non_english(
             print(f"native url is: {native_url}")
 
             try:
-                response = requests.get(native_url)
+                response = requests.get(native_url, headers=user_agent)
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.content, "html.parser")
                     # Look for the English section using h2 tag

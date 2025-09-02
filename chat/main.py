@@ -4,6 +4,12 @@ from flask import jsonify, request
 import requests
 from flask_cors import CORS
 
+# gcloud run deploy create-realtime-chat-session `
+#   --source=. `
+#   --region=europe-west2 `
+#   --allow-unauthenticated
+# ensure you are in the right directory with main.py and requirements.txt
+
 
 @functions_framework.http
 def create_session(request):
@@ -26,7 +32,7 @@ def create_session(request):
             return (jsonify({"error": "Missing API key"}), 400, headers)
 
         api_key = request_json["api_key"]
-        model = request_json.get("model", "gpt-4o-realtime-preview-2025-06-03")
+        model = request_json.get("model", "gpt-realtime")
         voice = request_json.get("voice", "verse")
         instructions = request_json.get(
             "instructions",
