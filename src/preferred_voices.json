@@ -87,6 +87,28 @@
             }
         }
     },
+    "cmn-CN": {
+        "phrases": {
+            "female": {
+                "provider": "google",
+                "voice_id": "cmn-CN-Wavenet-A"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "cmn-CN-Wavenet-B"
+            }
+        },
+        "stories": {
+            "female": {
+                "provider": "google",
+                "voice_id": "cmn-CN-Chirp3-HD-Achernar"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "cmn-CN-Chirp3-HD-Algenib"
+            }
+        }
+    },
     "en-GB": {
         "phrases": {
             "female": {
