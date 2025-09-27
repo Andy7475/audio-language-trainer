@@ -850,6 +850,7 @@ Examples:
                 args.collection, args.overwrite_audio, story_limit=args.story_limit
             ),
         ),
+        ("anki", lambda: create_anki_decks(args.collection)),
         (
             "challenges",
             lambda: execute_multi_language_step(
@@ -867,7 +868,6 @@ Examples:
             lambda: create_albums(args.collection, story_limit=args.story_limit),
         ),
         ("index", lambda: update_index_pages()),
-        ("anki", lambda: create_anki_decks(args.collection)),
         ("zip", lambda: create_zip_files(args.collection)),
         (
             "images",
