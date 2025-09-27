@@ -847,6 +847,7 @@ def create_anki_deck_from_gcs(
     output_dir: Optional[str] = "../outputs/gcs",
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
+    story_limit: Optional[int] = None,
 ) -> None:
     """
     Create an Anki deck from translated phrase data stored in GCS.
@@ -874,7 +875,7 @@ def create_anki_deck_from_gcs(
 
     # If no specific stories requested, get all stories from collection
     if not story_names:
-        story_names = list(collection_data.keys())
+        story_names = list(collection_data.keys())[:story_limit]
 
     # Process each story
     for current_story_name in story_names:

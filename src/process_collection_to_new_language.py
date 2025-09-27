@@ -126,11 +126,11 @@ def print_config_info():
         print(f"Warning: Could not load voice configuration: {e}")
 
 
-def translate_phrases_step(collection: str):
+def translate_phrases_step(collection: str, story_limit: int = None):
     """Step 1: Translate all phrases in the collection."""
     print("\n🔄 Step 1: Translating phrases...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
     story_collection = read_from_gcs(
         bucket_name=config.GCS_PRIVATE_BUCKET,
         file_path=get_story_collection_path(collection=collection),
@@ -234,11 +234,11 @@ def generate_phrase_audio(collection: str):
     return result
 
 
-def translate_stories(collection: str):
+def translate_stories(collection: str, story_limit: int = None):
     """Step 5: Translate story dialogues."""
     print("\n🔄 Step 5: Translating story dialogues...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
 
     for story_name in tqdm(all_stories, desc="Translating stories"):
         story_file_path = get_story_dialogue_path(story_name, collection=collection)
@@ -257,11 +257,11 @@ def translate_stories(collection: str):
     print("✅ All story dialogues translated")
 
 
-def refine_story_translations(collection: str):
+def refine_story_translations(collection: str, story_limit: int = None):
     """Step 6: Refine story dialogue translations."""
     print("\n🔄 Step 6: Refining story dialogue translations...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
 
     for story_name in tqdm(all_stories, desc="Refining story translations"):
         translated_file_path = get_story_translated_dialogue_path(
@@ -286,11 +286,11 @@ def refine_story_translations(collection: str):
     print("✅ All story dialogue translations refined")
 
 
-def add_wiktionary_links_to_stories(collection: str):
+def add_wiktionary_links_to_stories(collection: str, story_limit: int = None):
     """Step 7: Add Wiktionary links to story dialogues."""
     print("\n🔄 Step 7: Adding Wiktionary links to story dialogues...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
 
     for story_name in tqdm(all_stories, desc="Adding Wiktionary links to stories"):
         translated_file_path = get_story_translated_dialogue_path(
@@ -317,11 +317,13 @@ def add_wiktionary_links_to_stories(collection: str):
     print("✅ Wiktionary links added to all stories")
 
 
-def generate_story_audio(collection: str, overwrite: bool = False):
+def generate_story_audio(
+    collection: str, overwrite: bool = False, story_limit: int = None
+):
     """Step 8: Generate audio for story dialogues."""
     print(f"\n🔄 Step 8: Generating story dialogue audio (overwrite={overwrite})...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
 
     for story_name in tqdm(all_stories, desc="Generating story audio"):
         translated_file_path = get_story_translated_dialogue_path(
@@ -343,11 +345,13 @@ def generate_story_audio(collection: str, overwrite: bool = False):
     print("✅ All story dialogue audio generated")
 
 
-def generate_fast_audio(collection: str, overwrite: bool = False):
+def generate_fast_audio(
+    collection: str, overwrite: bool = False, story_limit: int = None
+):
     """Step 9: Generate fast audio for stories."""
     print(f"\n🔄 Step 9: Generating fast audio (overwrite={overwrite})...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
 
     for story_name in tqdm(all_stories, desc="Generating fast audio"):
         try:
@@ -361,14 +365,16 @@ def generate_fast_audio(collection: str, overwrite: bool = False):
     print("✅ Fast audio generation completed")
 
 
-def create_challenges(collection: str):
+def create_challenges(collection: str, story_limit: int = None):
     """Step 10: Create challenge pages (multi-language aware)."""
 
     def _create_challenges_for_language(collection: str, language: str = None):
         language_info = f" for {language}" if language else ""
         print(f"\n🔄 Step 10: Creating challenge pages{language_info}...")
         with language_context(language):
-            all_stories = get_stories_from_collection(collection=collection)
+            all_stories = get_stories_from_collection(
+                collection=collection, limit=story_limit
+            )
             for story_name in tqdm(all_stories, desc="Creating challenges"):
                 try:
                     challenge_file_path = get_story_challenges_path(
@@ -395,11 +401,11 @@ def create_challenges(collection: str):
     return _create_challenges_for_language
 
 
-def create_story_pages(collection: str):
+def create_story_pages(collection: str, story_limit: int = None):
     """Step 11: Create story HTML pages."""
     print("\n🔄 Step 11: Creating story pages...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
 
     for story_name in tqdm(all_stories, desc="Creating story pages"):
         try:
@@ -418,11 +424,11 @@ def create_story_pages(collection: str):
     print("✅ Story pages created")
 
 
-def create_albums(collection: str):
+def create_albums(collection: str, story_limit: int = None):
     """Step 12: Create album files."""
     print("\n🔄 Step 12: Creating album files...")
 
-    all_stories = get_stories_from_collection(collection=collection)
+    all_stories = get_stories_from_collection(collection=collection, limit=story_limit)
 
     for story_name in tqdm(all_stories, desc="Creating albums"):
         try:
@@ -445,7 +451,15 @@ def update_index_pages():
     """Step 13: Update index pages."""
     print("\n🔄 Step 13: Updating index pages...")
 
-    languages = ["French", "Spanish", "German", "Swedish", "Italian"]
+    languages = [
+        "French",
+        "Spanish",
+        "German",
+        "Swedish",
+        "Italian",
+        "Mandarin Chinese",
+        "Russian",
+    ]
     collections = ["LM1000", "WarmUp150", "LM2000"]
 
     upload_styles_to_gcs()
@@ -457,12 +471,14 @@ def update_index_pages():
     return result
 
 
-def create_anki_decks(collection: str):
+def create_anki_decks(collection: str, story_limit: int = None):
     """Step 14: Create Anki decks from GCS data."""
     print("\n🔄 Step 14: Creating Anki decks...")
 
     try:
-        create_anki_deck_from_gcs(collection=collection, output_dir="../outputs/gcs")
+        create_anki_deck_from_gcs(
+            collection=collection, output_dir="../outputs/gcs", story_limit=story_limit
+        )
         print("✅ Anki decks created successfully")
     except Exception as e:
         print(f"❌ Failed to create Anki decks: {e}")
@@ -715,9 +731,15 @@ Examples:
         help="Languages for index page generation and CSV/image processing (default: current target language)",
     )
     parser.add_argument(
+        "--story-limit",
+        type=int,
+        default=None,
+        help="Limit the number of stories processed (default: all)",
+    )
+    parser.add_argument(
         "--collections",
         nargs="+",
-        default=["LM1000", "WarmUp150"],
+        default=["LM1000", "WarmUp150", "LM2000"],
         help="Collections for index page generation",
     )
     parser.add_argument(
@@ -788,35 +810,62 @@ Examples:
 
     # Define the processing steps
     steps = [
-        ("phrases", lambda: translate_phrases_step(args.collection)),
+        (
+            "phrases",
+            lambda: translate_phrases_step(
+                args.collection, story_limit=args.story_limit
+            ),
+        ),
         ("refine-phrases", lambda: refine_phrase_translations(args.collection)),
         (
             "wiktionary-phrases",
             lambda: add_wiktionary_links_to_phrases(args.collection),
         ),
         ("phrase-audio", lambda: generate_phrase_audio(args.collection)),
-        ("story-translate", lambda: translate_stories(args.collection)),
-        ("refine-stories", lambda: refine_story_translations(args.collection)),
+        (
+            "story-translate",
+            lambda: translate_stories(args.collection, story_limit=args.story_limit),
+        ),
+        (
+            "refine-stories",
+            lambda: refine_story_translations(
+                args.collection, story_limit=args.story_limit
+            ),
+        ),
         (
             "wiktionary-stories",
-            lambda: add_wiktionary_links_to_stories(args.collection),
+            lambda: add_wiktionary_links_to_stories(
+                args.collection, story_limit=args.story_limit
+            ),
         ),
         (
             "story-audio",
-            lambda: generate_story_audio(args.collection, args.overwrite_audio),
+            lambda: generate_story_audio(
+                args.collection, args.overwrite_audio, story_limit=args.story_limit
+            ),
         ),
         (
             "fast-audio",
-            lambda: generate_fast_audio(args.collection, args.overwrite_audio),
+            lambda: generate_fast_audio(
+                args.collection, args.overwrite_audio, story_limit=args.story_limit
+            ),
         ),
         (
             "challenges",
             lambda: execute_multi_language_step(
-                create_challenges(args.collection), args.collection, args.languages
+                create_challenges(args.collection, story_limit=args.story_limit),
+                args.collection,
+                args.languages,
             ),
         ),
-        ("stories", lambda: create_story_pages(args.collection)),
-        ("albums", lambda: create_albums(args.collection)),
+        (
+            "stories",
+            lambda: create_story_pages(args.collection, story_limit=args.story_limit),
+        ),
+        (
+            "albums",
+            lambda: create_albums(args.collection, story_limit=args.story_limit),
+        ),
         ("index", lambda: update_index_pages()),
         ("anki", lambda: create_anki_decks(args.collection)),
         ("zip", lambda: create_zip_files(args.collection)),

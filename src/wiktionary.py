@@ -187,7 +187,7 @@ def generate_wiktionary_links(
                     found_section = True
             else:
                 print(f"Failed to retrieve {url}")
-                print(f"Response text: {response.content}")
+                # print(f"Response text: {response.content}")
 
             # If lowercase didn't work, try capitalized (for languages like German)
             if not found_section:

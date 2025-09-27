@@ -21,6 +21,28 @@
             }
         }
     },
+        "ru-RU": {
+        "phrases": {
+            "female": {
+                "provider": "google",
+                "voice_id": "ru-RU-Wavenet-A"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "ru-RU-Wavenet-B"
+            }
+        },
+        "stories": {
+            "female": {
+                "provider": "google",
+                "voice_id": "ru-RU-Chirp3-HD-Aoede"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "ru-RU-Chirp3-HD-Charon"
+            }
+        }
+    },
     "it-IT": {
         "phrases": {
             "female": {

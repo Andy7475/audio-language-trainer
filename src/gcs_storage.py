@@ -848,7 +848,9 @@ def get_tutorial_path(language: Optional[str] = None) -> str:
 
 
 def get_stories_from_collection(
-    bucket_name: str = config.GCS_PRIVATE_BUCKET, collection: str = "LM1000"
+    bucket_name: str = config.GCS_PRIVATE_BUCKET,
+    collection: str = "LM1000",
+    limit: int = None,
 ) -> List[str]:
     """
     Get list of story names from a collection file, preserving their order.
@@ -856,6 +858,7 @@ def get_stories_from_collection(
     Args:
         bucket_name: GCS bucket name
         collection: Collection name
+            limit: Maximum number of stories to return (default: None, returns all)
 
     Returns:
         List[str]: List of story names in order
@@ -863,8 +866,10 @@ def get_stories_from_collection(
     collection_path = get_story_collection_path(collection)
     try:
         collection_data = read_from_gcs(bucket_name, collection_path, "json")
-        # Assuming the collection file has story names as keys
-        return list(collection_data.keys())
+        story_names = list(collection_data.keys())
+        if limit is not None:
+            story_names = story_names[:limit]
+        return story_names
     except Exception as e:
         print(f"Error loading collection {collection}: {str(e)}")
         return []
