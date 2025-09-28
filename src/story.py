@@ -405,12 +405,16 @@ def prepare_story_data_from_gcs(
     for story_part, dialogue in tqdm(
         story_dialogue.items(), desc=f"Preparing {story_name} in {language_name}"
     ):
-        # Initialize the section data structure
-        fast_audio_segment = read_from_gcs(
-            config.GCS_PRIVATE_BUCKET,
-            get_fast_audio_path(story_name, story_part, collection),
-            "audio",
-        )
+        try:
+            # Initialize the section data structure
+            fast_audio_segment = read_from_gcs(
+                config.GCS_PRIVATE_BUCKET,
+                get_fast_audio_path(story_name, story_part, collection),
+                "audio",
+            )
+        except (FileNotFoundError, ValueError) as e:
+            print(f"Warning: Fast audio not found for {story_part}: {str(e)}")
+            fast_audio_segment = AudioSegment.silent(duration=1000)  # 1 second silence
 
         prepared_data[story_part] = {
             "dialogue": dialogue.get("dialogue", []),
