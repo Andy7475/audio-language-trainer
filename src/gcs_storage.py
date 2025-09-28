@@ -587,6 +587,17 @@ def get_fast_audio_path(
     return f"collections/{collection}/{language}/stories/{story_name}/audio/{story_part}/fast.mp3"
 
 
+def get_subtitles_path(title: str, episode: int, language: Optional[str] = None) -> str:
+    """Where to store subtitles in GCS. Paired data for language"""
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+    else:
+        language = language.lower()
+    title_sanitized = sanitize_path_component(title.lower())
+    episode_sanitized = str(episode).zfill(2)
+    return f"subtitles/{language}/{title_sanitized}_{episode_sanitized}.json"
+
+
 def get_image_path(story_name: str, story_part: str, collection: str = "LM1000") -> str:
     """Get the GCS path for a story part image."""
     return (
