@@ -235,3 +235,20 @@ def convert_PIL_image_to_base64(pil_image, format="PNG") -> str:
     buffer.seek(0)
     image_bytes = buffer.read()
     return convert_bytes_to_base64(image_bytes)
+
+
+def get_language_code(language_name: str) -> str:
+    """
+    Get the ISO 639-1 language code for a given language name using langcodes.
+    Returns an empty string if not found.
+
+    Example:
+        get_language_code("Swedish") -> "sv"
+        get_language_code("French") -> "fr"
+    """
+    try:
+        from langcodes import Language
+        lang = Language.find(language_name)
+        return lang.language
+    except Exception:
+        return None

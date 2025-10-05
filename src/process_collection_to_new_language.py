@@ -60,7 +60,7 @@ from src.translation import (
     translate_phrases,
 )
 from src.wiktionary import add_wiktionary_links
-
+from src.convert import get_language_code
 
 def setup_authentication():
     """Setup Google Cloud authentication."""
@@ -369,8 +369,7 @@ def create_challenges(collection: str, story_limit: int = None):
     """Step 10: Create challenge pages (multi-language aware)."""
 
     def _create_challenges_for_language(collection: str, language: str = None):
-        language_info = f" for {language}" if language else ""
-        print(f"\n🔄 Step 10: Creating challenge pages{language_info}...")
+        print(f"\n🔄 Step 10: Creating challenge pages in {language}...")
         with language_context(language):
             all_stories = get_stories_from_collection(
                 collection=collection, limit=story_limit
@@ -390,13 +389,18 @@ def create_challenges(collection: str, story_limit: int = None):
                         file_path=challenge_file_path,
                     )
                     challenges = get_html_challenge_inputs(scenario_dicts)
+                    if language:
+                        language_code = get_language_code(language)
+                    else:
+                        language_code = None
+                    print(f"  Using language code: {language_code} for {language}")
                     chat_webpage_file = create_html_challenges(
-                        challenges, story_name=story_name, collection=collection
+                        challenges, story_name=story_name, collection=collection, language_name=language, language_code=language_code
                     )
                     print(f"  ✅ Created challenges for {story_name}")
                 except Exception as e:
                     print(f"  ❌ Failed to create challenges for {story_name}: {e}")
-            print("✅ Challenge pages created" + language_info)
+            print("✅ Challenge pages created")
 
     return _create_challenges_for_language
 

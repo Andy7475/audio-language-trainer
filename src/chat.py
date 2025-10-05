@@ -244,6 +244,8 @@ def create_html_challenges(
     component_path: str = "ChallengeViewer.js",
     template_path: str = "challenge_template.html",
     collection: str = "LM1000",
+    language_name: str = None,
+    language_code: str = None,
 ) -> str:
     """
     Create a standalone HTML file for language challenges using string.Template.
@@ -268,11 +270,20 @@ def create_html_challenges(
     template = Template(load_template(template_path))
     title = get_story_title(story_name)
 
+    # Use provided language name/code or fall back to config
+    if language_name is None:
+        language_name = config.TARGET_LANGUAGE_NAME
+    
+    if language_code is None:
+        language_code = config.TARGET_LANGUAGE_CODE
+
+    print(f"Using language code: {language_code} for language: {language_name}")
     # Create the HTML content
     html_content = template.substitute(
         title=title,
         challenge_data=json.dumps(challenges),
-        language=config.TARGET_LANGUAGE_NAME,
+        language=language_name,
+        language_code=language_code,
         react_component=react_component,
         collection_name=get_collection_title(collection),
         collection_raw=collection,
