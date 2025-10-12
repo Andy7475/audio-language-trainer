@@ -10,8 +10,9 @@ if module_path not in sys.path:
     sys.path.append(module_path)
 
 from src.config_loader import config
-from src.gcs_storage import upload_to_gcs, get_subtitles_path
-
+from src.gcs_storage import upload_to_gcs, get_subtitles_path, get_story_translated_dialogue_path
+from src.convert import clean_filename
+from src.story import prepare_dialogue_with_wiktionary
 
 def subriptime_to_seconds(srt_time) -> float:
     """Convert SubRipTime to float seconds for easier calculations"""
@@ -316,17 +317,44 @@ def load_vocabulary_pairs(filepath: str) -> List[Dict]:
         return json.load(f)
 
 
-def upload_vocabulary_to_gcs(
-    vocabulary_pairs: List[Dict], title: str, episode: int, bucket_name: str
+def get_story_dialgogue_from_vocabulary_pairs(vocabulary_pairs: List[Dict]) -> List[str]:
+    """Extract dialogue lines from vocabulary pairs and format them
+    in the same way as our story data structure"""
+
+    dialogue_dict = {"introduction" : {"dialogue": [], "translated_dialogue": []}}
+
+    for pair in vocabulary_pairs:
+
+        english_text = pair["english"]
+        translated_text = pair[config.TARGET_LANGUAGE_NAME.lower()]
+
+        english_utterance = {"speaker": "Sam", "text": english_text}
+        translated_utterance = {"speaker": "Sam", "text": translated_text}
+        dialogue_dict["introduction"]["dialogue"].append(english_utterance)
+        dialogue_dict["introduction"]["translated_dialogue"].append(translated_utterance)
+    return dialogue_dict
+
+def get_subtitle_story_name(title: str, episode: int) -> str:
+    """Generate a clean story name from title and episode number"""
+    clean_title = clean_filename(title)
+    clean_episode = str(episode).zfill(2)
+    return f"story_{clean_title}_ep{clean_episode}"
+
+def upload_subtitle_dialogue_to_gcs(
+    vocabulary_pairs: List[Dict], title: str, episode: int, 
 ) -> str:
     """Upload vocabulary pairs to GCS using the subtitle path structure"""
-    cleaned_pairs = [clean_vocabulary_pair(pair) for pair in vocabulary_pairs]
-    gcs_path = get_subtitles_path(title, episode)
 
+    story_name = get_subtitle_story_name(title, episode)
+
+    equivalent_story_path = get_story_translated_dialogue_path(story_name=story_name, collection="Subtitles")
+
+    dialogue_dict = get_story_dialgogue_from_vocabulary_pairs(vocabulary_pairs)
+    dialogue_dict = prepare_dialogue_with_wiktionary(dialogue_dict)
     return upload_to_gcs(
-        obj=cleaned_pairs,
-        bucket_name=bucket_name,
-        file_name=gcs_path,
+        obj=dialogue_dict,
+        bucket_name=config.GCS_PRIVATE_BUCKET,
+        file_name=equivalent_story_path,
         content_type="application/json",
     )
 
@@ -358,6 +386,12 @@ if __name__ == "__main__":
         )
 
         print(f"Successfully uploaded to: {gcs_uri}")
+
+        print("Also uploading dialogue format to equivalent story path...")
+        gcs_dialogue_uri = upload_subtitle_dialogue_to_gcs(
+            vocabulary_pairs, title=TITLE, episode=EPISODE
+        )
+        print(f"Successfully uploaded dialogue to: {gcs_dialogue_uri}")
 
     except Exception as e:
         print(f"Error: {e}")

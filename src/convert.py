@@ -63,8 +63,10 @@ def get_story_title(story_name: str) -> str:
     return " ".join(word.title() for word in words)
 
 
-def convert_audio_to_base64(audio_segment: AudioSegment) -> str:
-    """Convert an AudioSegment to a base64 encoded string."""
+def convert_audio_to_base64(audio_segment: Optional[AudioSegment]) -> Optional[str]:
+    """Convert an AudioSegment to a base64 encoded string, or return None if no audio segment is provided."""
+    if audio_segment is None:
+        return None
     buffer = io.BytesIO()
     audio_segment.export(buffer, format="mp3")
     buffer.seek(0)

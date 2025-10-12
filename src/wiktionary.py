@@ -182,6 +182,7 @@ def generate_wiktionary_links(
                 if section_name := find_language_section(soup, language_name):
                     link = f'<a href="{url}#{section_name}" target="_blank" rel="noopener">{word}</a>'
                     links.append(link)
+                    print(f"Appending {word} | {link}")
                     # Cache with the original case
                     word_link_cache[clean_word] = link.replace(word, clean_word)
                     found_section = True
