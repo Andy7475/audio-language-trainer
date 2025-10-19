@@ -9,6 +9,7 @@ genanki
 google-auth
 google-cloud-aiplatform
 google-cloud-core
+google-cloud-firestore
 google-cloud-language
 google-cloud-texttospeech
 google-cloud-translate
