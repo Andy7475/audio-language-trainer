@@ -179,14 +179,15 @@ def text_to_speech(
         AudioSegment containing the generated speech
     """
     # Get voice models for the specified setting
-    voice_models = config.get_voice_models(enum_type=voice_setting)
 
+    voice_models = config.get_voice_models(enum_type=voice_setting)
+    # voice_models: (source_female, source_male, target_female, target_male)
     if config_language == "source":
-        voice_model = voice_models[0]
-    elif (config_language == "target") & (gender == "FEMALE"):
-        voice_model = voice_models[1]
+        voice_model = voice_models[0]  # source_female as default
+    elif (config_language == "target") and (gender == "FEMALE"):
+        voice_model = voice_models[2]  # target_female
     else:
-        voice_model = voice_models[2]
+        voice_model = voice_models[3]  # target_male
 
     # Detect Google Chirp3 HD voice (no SSML, uses markup and pause tags)
     # For Chirp3 HD voices, use the markup field (requires google-cloud-texttospeech >= 2.27.0)
@@ -463,14 +464,18 @@ def slow_text_to_speech(
     tokens = tokenize_text(cleaned_text, language_code)
 
     # Get the voice model to determine the provider
-    voice_models = config.get_voice_models(enum_type=voice_setting)
 
+    voice_models = config.get_voice_models(enum_type=voice_setting)
+    # voice_models: (source_female, source_male, target_female, target_male)
     if config_language == "source":
-        voice_model = voice_models[0]
-    elif (config_language == "target") & (gender == "FEMALE"):
-        voice_model = voice_models[1]
+        if gender == "FEMALE":
+            voice_model = voice_models[0]  # source_female
+        else:
+            voice_model = voice_models[1]  # source_male
+    elif (config_language == "target") and (gender == "FEMALE"):
+        voice_model = voice_models[2]  # target_female
     else:
-        voice_model = voice_models[2]
+        voice_model = voice_models[3]  # target_male
 
     # Handle different providers
     if voice_model.provider == VoiceProvider.ELEVENLABS:

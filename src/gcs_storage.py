@@ -558,11 +558,12 @@ def get_translated_phrases_path(
     return f"collections/{collection}/{language}/translations.json"
 
 
-def get_wiktionary_cache_path() -> str:
+def get_wiktionary_cache_path(language_name:str | None) -> str:
     """Get the GCS path for the Wiktionary link cache. The cache is a JSON dictionary of words and their links.
     The key is the lowercase word, and the value is a link (str)."""
-
-    WORD_LINK_CACHE = f"resources/{config.TARGET_LANGUAGE_NAME.lower()}/{config.TARGET_LANGUAGE_NAME.lower()}_wiktionary_cache.json"
+    if language_name is None:
+        language_name = config.TARGET_LANGUAGE_NAME
+    WORD_LINK_CACHE = f"resources/{language_name.lower()}/{language_name.lower()}_wiktionary_cache.json"
     return WORD_LINK_CACHE
 
 
