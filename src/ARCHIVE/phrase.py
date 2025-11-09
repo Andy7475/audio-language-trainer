@@ -1,15 +1,13 @@
-import asyncio
+
 import random
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor
+
 from typing import Any, Dict, List, Literal, Optional, Set, Tuple
 
 import spacy
 from tqdm import tqdm
 
-from src.config_loader import config
-from src.convert import clean_filename
-from src.dialogue_generation import anthropic_generate, extract_json_from_llm_response
+
 from src.gcs_storage import (
     get_phrase_audio_path,
     get_phrase_image_path,
@@ -18,11 +16,7 @@ from src.gcs_storage import (
     read_from_gcs,
 )
 from src.nlp import (
-    extract_spacy_lowercase_words,
-    extract_substring_matches,
-    extract_vocab_and_pos,
-    get_verb_and_vocab_lists,
-    remove_matching_words,
+    get_verbs_and_vocab_from_phrase
 )
 
 

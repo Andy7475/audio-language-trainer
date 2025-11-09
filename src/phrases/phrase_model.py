@@ -1,11 +1,17 @@
-from datetime import datetime
-from typing import List, Optional, Literal
+from __future__ import annotations
 
-from pydantic import BaseModel, Field, field_validator
+from datetime import datetime, timezone
+from typing import List, Optional, Literal, Annotated
+
+from pydantic import BaseModel, Field, PlainSerializer, BeforeValidator
 
 from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
 from google.cloud.firestore import Client as FirestoreClient
+from src.nlp import extract_lemmas_and_pos, get_tokens_from_lemmas_and_pos, get_verbs_from_lemmas_and_pos, get_vocab_from_lemmas_and_pos
+from src.models import BCP47Language
+
+LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip() )]
 
 class Phrase(BaseModel):
     """Pydantic model representing a phrase in Firestore.
@@ -14,28 +20,43 @@ class Phrase(BaseModel):
     Each phrase contains English text with linguistic analysis including tokens, lemmas,
     verbs, and vocabulary.
     """
-
+    phrase_hash: str = Field(..., description="Unique hash identifier for the phrase")
     english: str = Field(..., description="Original English phrase with original capitalisation")
-    english_lower: str = Field(..., description="Lowercase version for consistent lookups")
+    english_lower: LowercaseStr = Field(..., description="Lowercase version for consistent lookups")
     tokens: List[str] = Field(..., description="Tokenised words from the phrase")
-    lemmas: List[str] = Field(..., description="Lemmatised forms of all tokens")
     verbs: List[str] = Field(default_factory=list, description="Lemmatised verb forms only")
     vocab: List[str] = Field(default_factory=list, description="Lemmatised non-verb words")
-    created: datetime = Field(default_factory=datetime.utcnow, description="Creation timestamp")
-    modified: Optional[datetime] = Field(None, description="Last modification timestamp")
     source: Optional[Literal["manual", "tatoeba", "generated"]] = Field(
-        None, description="Source of the phrase"
+        default=None, description="Source of the phrase"
     )
+    translations: List[Translation] = Field(default_factory=list, description="List of translations for this phrase")
 
-    @field_validator("english_lower", mode="before")
     @classmethod
-    def ensure_lowercase(cls, v: str, info) -> str:
-        """Ensure english_lower is actually lowercase."""
-        if v and not v.islower():
-            # If english_lower is not lowercase, create it from english field
-            english = info.data.get("english", "")
-            return english.lower()
-        return v
+    def create_phrase(cls, english_phrase:str, source:str="generated")->Phrase:
+        """Factory method to create a Phrase with NLP processing."""
+
+        phrase_hash = generate_phrase_hash(english_phrase)
+        lemmas_and_pos = extract_lemmas_and_pos([english_phrase], language_code="en")
+        tokens=get_tokens_from_lemmas_and_pos(lemmas_and_pos)
+
+        #we make an english 'translation' for audio / text lookup consistency
+        english_translation = Translation(phrase_hash=phrase_hash,
+                                          language= BCP47Language.get("en-GB"),
+                                         text= english_phrase,
+                                         text_lower= english_phrase.lower(),
+                                         tokens=tokens,
+                                         audio=[]
+                                         )
+        return cls(
+            phrase_hash=phrase_hash,
+            english=english_phrase,
+            english_lower=english_phrase,
+            tokens=tokens,
+            verbs=get_verbs_from_lemmas_and_pos(lemmas_and_pos),
+            vocab=get_vocab_from_lemmas_and_pos(lemmas_and_pos),
+            source=source,
+            translations=[english_translation]
+        )
 
     def get_phrase_hash(self) -> str:
         """Generate a unique hash for this phrase based on English text.
@@ -66,8 +87,6 @@ class Phrase(BaseModel):
         """
         try:
             phrase_hash = self.get_phrase_hash()
-
-            self.modified = datetime.utcnow()
 
             doc_ref = firestore_client.collection("phrases").document(phrase_hash)
             doc_ref.set(self.model_dump(mode="json"))
@@ -104,4 +123,26 @@ def get_phrase(phrase_hash: str, database_name: str = "firephrases") -> Optional
     except Exception as e:
         raise RuntimeError(f"Failed to get phrase {phrase_hash}: {e}")
 
+
+
+
+
+class PhraseAudio(BaseModel):
+    """Pydantic model representing audio associated with a phrase."""
+    setting: Literal["flashcard", "story"] = Field(..., description="Context where audio is used")
+    speed: Literal["normal", "slow", "fast"] = Field(..., description="Speed of the audio")
+    url: str = Field(..., description="URL to the audio file ignoring bucket name")
+    voice_model_id: str = Field(..., description="Identifier of the voice model used")
+    voice_provider: Literal["google", "aws", "azure"] = Field(..., description="Cloud provider for TTS")
+    duration_seconds: float | None = Field(default=None, description="Duration of the audio in seconds")
+
+class Translation(BaseModel):
+    """Pydantic model representing a translation of a phrase in Firestore."""
+    model_config = {"arbitrary_types_allowed": True} # allow us to use Language
+    phrase_hash: str = Field(..., description="Hash of the associated English root phrase")
+    language: BCP47Language = Field(..., description="BCP-47 language tag for the translation")
+    text :str = Field(..., description="Translated text of the phrase")
+    text_lower: LowercaseStr = Field(..., description="Lowercase version for consistent lookups")
+    tokens: List[str] = Field(..., description="Tokenised words from the translated phrase")
+    audio: List[PhraseAudio]
 
