@@ -707,7 +707,8 @@ def build_phrase_dict_from_gcs(
     collection: str = "LM1000",
     bucket_name: Optional[str] = None,
     phrase_keys: Optional[List[str]] = None,
-    language: Optional[str] = None,
+    text_language: Optional[str] = None,
+    audio_language: Optional[str] = None,
 ) -> Dict[str, Dict[str, Any]]:
     """
     Build a dictionary containing translated phrase data from GCS.
@@ -736,13 +737,16 @@ def build_phrase_dict_from_gcs(
     if bucket_name is None:
         bucket_name = config.GCS_PRIVATE_BUCKET
 
-    if language is None:
-        language = config.TARGET_LANGUAGE_NAME
+    if text_language is None:
+        text_language = config.TARGET_LANGUAGE_NAME
+    if audio_language is None:
+        audio_language = config.TARGET_LANGUAGE_NAME
 
     try:
-        language_lower = language.lower()
+        text_language_lower = text_language.lower()
+        audio_language_lower = audio_language.lower()
         # Get the translated phrases data - use custom path with specific language
-        phrases_path = f"collections/{collection}/{language_lower}/translations.json"
+        phrases_path = f"collections/{collection}/{text_language_lower}/translations.json"
         phrases_data = read_from_gcs(bucket_name, phrases_path, "json")
 
         if not phrases_data:
@@ -761,11 +765,11 @@ def build_phrase_dict_from_gcs(
         for phrase_key, phrase_info in tqdm(
             phrases_data.items(), desc="Building phrase dictionary"
         ):
-            # Get multimedia data for this phrase
+            # Get multimedia data for this phrase (use audio_language)
             multimedia_data = get_phrase_multimedia(
                 phrase_key=phrase_key,
                 bucket_name=bucket_name,
-                language=language_lower,
+                language=audio_language_lower,
             )
 
             if not multimedia_data:
@@ -774,7 +778,7 @@ def build_phrase_dict_from_gcs(
             # Create entry for this phrase
             phrase_dict[phrase_key] = {
                 "english_text": phrase_info["english"],
-                "target_text": phrase_info[language_lower],
+                "target_text": phrase_info[text_language_lower],
                 "audio_normal": multimedia_data["normal_audio"],
                 "audio_slow": multimedia_data["slow_audio"],
                 "image": multimedia_data["image"],

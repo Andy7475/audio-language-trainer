@@ -216,92 +216,6 @@ def get_anki_path() -> str:
     return path
 
 
-def validate_anki_tag(tag: str) -> bool:
-    """
-    Validate if a tag is acceptable for Anki.
-
-    Args:
-        tag: String to validate as an Anki tag
-
-    Returns:
-        bool: True if tag is valid, False otherwise
-    """
-    if not tag or " " in tag:
-        return False
-    return True
-
-
-def append_tag_to_note(existing_tags: str, new_tag: str) -> str:
-    """
-    Append a new tag to existing space-separated tags if not already present.
-
-    Args:
-        existing_tags: Space-separated string of existing tags
-        new_tag: Tag to append
-
-    Returns:
-        str: Updated space-separated tags string
-    """
-    tags = set(existing_tags.split()) if existing_tags else set()
-    tags.add(new_tag)
-    return " ".join(sorted(tags))
-
-
-def add_tag_to_matching_notes(
-    phrases: List[str], tag: str, deck_name: str, collection_path: Optional[str] = None
-) -> Tuple[int, List[str]]:
-    """
-    Add tag to notes where EnglishText matches any of the provided phrases.
-    Uses ANKI_COLLECTION_PATH from environment if collection_path not provided.
-
-    Args:
-        phrases: List of English phrases to match against
-        tag: Tag to add to matching notes
-        deck_name: Name of the deck to process
-        collection_path: Optional override for collection path
-
-    Returns:
-        tuple[int, list[str]]: (Number of notes updated, List of errors if any)
-    """
-    if collection_path is None:
-        collection_path = get_anki_path()
-
-    if not validate_anki_tag(tag):
-        raise ValueError("Invalid tag - must not contain spaces")
-
-    errors = []
-    updates = 0
-
-    try:
-        with AnkiCollectionReader(collection_path) as reader:
-            notes = reader.get_notes_for_deck(deck_name)
-
-            for note in notes:
-                english_text = note["fields"].get("EnglishText", "").strip()
-
-                if english_text in phrases:
-                    try:
-                        current_tags = " ".join(note["tags"]) if note["tags"] else ""
-                        updated_tags = append_tag_to_note(current_tags, tag)
-
-                        anki_note = reader.col.get_note(note["id"])
-                        anki_note.tags = updated_tags.split()
-                        # Replace flush() with update_note()
-                        reader.col.update_note(anki_note)
-
-                        updates += 1
-
-                    except Exception as e:
-                        errors.append(f"Error updating note {note['id']}: {str(e)}")
-
-            reader.col.save()
-
-    except Exception as e:
-        errors.append(f"Error accessing collection: {str(e)}")
-
-    return updates, errors
-
-
 class AnkiCollectionReader:
     def __init__(self, collection_path: str = None):
         self.collection_path = os.getenv("ANKI_COLLECTION_PATH", collection_path)
@@ -916,6 +830,7 @@ def export_phrases_to_anki(
     deck_name: Optional[str] = None,
     collection: str = "LM1000",
     story_position: Optional[int] = None,
+    learning_english: bool = False,
 ) -> None:
     """
     Export phrase data to an Anki deck.
@@ -1071,6 +986,197 @@ def export_phrases_to_anki(
                     language.lower(),
                 ],
                 guid=string_to_large_int(phrase_data["target_text"] + "image"),
+            )
+            notes.append(note)
+
+        except Exception as e:
+            print(f"Error processing phrase {phrase_key}: {str(e)}")
+            continue
+
+    # Add notes to deck
+    for note in tqdm(notes, desc="adding notes to deck"):
+        deck.add_note(note)
+
+    # Create and save the package
+    package = genanki.Package(deck)
+    package.media_files = [os.path.join(local_output_dir, file) for file in media_files]
+
+    # Save package to the same location we'll upload from
+    output_filename = os.path.join(output_dir, flashcard_path)
+    package.write_to_file(output_filename)
+    print(f"Anki deck exported to {output_filename}")
+
+    # Read the file content for upload
+    with open(output_filename, "rb") as f:
+        file_content = f.read()
+
+        # Upload to GCS
+        gcs_uri = upload_to_gcs(
+            obj=file_content,
+            bucket_name=config.GCS_PRIVATE_BUCKET,
+            file_name=flashcard_path,
+            content_type="application/octet-stream",
+            save_local=True,
+        )
+        print(f"Flashcard file uploaded to GCS: {gcs_uri}")
+
+    # Clean up temporary files
+    for media_file in tqdm(media_files, desc="deleting temp files"):
+        file_path = os.path.join(local_output_dir, media_file)
+        try:
+            os.remove(file_path)
+        except OSError as e:
+            print(f"Error deleting file {file_path}: {e}")
+
+    print("Cleanup of temporary files completed.")
+
+def export_phrases_to_anki_learning_english(
+    phrase_dict: Dict[str, Dict[str, Any]],
+    output_dir: str = "../outputs/gcs",
+    language: Optional[str] = None,
+    deck_name: str = "Learning English",
+    collection: str = "LM1000",
+) -> None:
+    """
+    Export phrase data to an Anki deck.
+
+    Args:
+        phrase_dict: Dictionary of phrase data in format:
+            {
+                "phrase_key": {
+                    "english_text": str,
+                    "target_text": str,
+                    "audio_normal": AudioSegment or None,
+                    "audio_slow": AudioSegment or None,
+                    "image": Image or None,
+                    "wiktionary_links": str or None
+                },
+                ...
+            }
+        output_dir: Directory to save the Anki deck
+        deck_name: Name of the Anki deck (if left out one will be generated based off language, collection and story_name)
+        language: Target language name (e.g. 'french', defaults to current config language)
+        story_name: Optional name of the story (e.g. 'story_community_park')
+        collection: Collection name (default: "LM1000")
+        story_position: Optional position of story in sequence (e.g. 1 becomes "01")
+    """
+    # Evaluate language at runtime to pick up config changes
+    if language is None:
+        language = config.TARGET_LANGUAGE_NAME.lower()
+
+    output_dir = os.path.join(output_dir, config.GCS_PRIVATE_BUCKET)
+    os.makedirs(output_dir, exist_ok=True)
+    language_cap = language.title()
+    # Format deck name with proper hierarchy
+
+    formatted_deck_name = f"{language_cap}::{collection}::{deck_name}"
+
+    # Create Anki model
+    flashcard_path = get_flashcard_path(
+        story_name=None,
+        collection=collection,
+        language=language,
+    )
+    flashcard_path += f"{deck_name.replace(' ', '_')}.apkg"
+    flashcard_dir = Path(flashcard_path).parent
+    local_output_dir = os.path.join(output_dir, flashcard_dir)  # for temp media files
+    os.makedirs(
+        local_output_dir, exist_ok=True
+    )  # ensure directory exists before writing files
+
+    language_practice_model = genanki.Model(
+        1607392313,  # Model ID
+        "FirePhrase",
+        fields=[
+            {"name": "SortOrder"},
+            {"name": "TargetText"},
+            {"name": "TargetAudio"},
+            {"name": "TargetAudioSlow"},
+            {"name": "EnglishText"},
+            {"name": "WiktionaryLinks"},
+            {"name": "Picture"},
+            {"name": "TargetLanguageName"},
+        ],
+        templates=[
+            {
+                "name": "Listening Card",
+                "qfmt": load_template("listening_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
+            },
+            {
+                "name": "Reading Card",
+                "qfmt": load_template("reading_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
+            },
+            {
+                "name": "Speaking Card",
+                "qfmt": load_template("speaking_card_front_template.html"),
+                "afmt": load_template("card_back_template.html"),
+            },
+        ],
+        css=load_template("card_styles.css"),
+    )
+
+    media_files = []
+    notes = []
+
+    # Set up deck
+    deck_id = string_to_large_int(formatted_deck_name + "TurboPhrase")
+    deck = genanki.Deck(deck_id, formatted_deck_name)
+
+    # Process each phrase in the original order
+    for index, phrase_key in enumerate(phrase_dict):
+
+        phrase_data = phrase_dict[phrase_key]
+        try:
+            # Handle image
+            image_filename = None
+            if phrase_data["image"] is not None:
+                try:
+                    image_filename = f"{uuid.uuid4()}.png"
+                    output_path = os.path.join(local_output_dir, image_filename)
+                    # Resize and save the PIL Image directly
+                    resized_img = phrase_data["image"].resize((400, 400))
+                    resized_img.save(output_path, "PNG", optimize=True)
+                    media_files.append(image_filename)
+                except Exception as e:
+                    print(f"Error processing image for {phrase_key}: {str(e)}")
+                    image_filename = None
+
+            # Handle audio
+            target_audio_normal = f"{uuid.uuid4()}.mp3"
+            target_audio_slow = f"{uuid.uuid4()}.mp3"
+
+            if phrase_data["audio_normal"] is not None:
+                phrase_data["audio_normal"].export(
+                    os.path.join(local_output_dir, target_audio_normal), format="mp3"
+                )
+                media_files.append(target_audio_normal)
+
+            if phrase_data["audio_slow"] is not None:
+                phrase_data["audio_slow"].export(
+                    os.path.join(local_output_dir, target_audio_slow), format="mp3"
+                )
+                media_files.append(target_audio_slow)
+
+            # Create note
+            note = genanki.Note(
+                model=language_practice_model,
+                fields=[
+                    get_sort_field(index, phrase_data["english_text"]),
+                    phrase_data["english_text"],
+                    (
+                        f"[sound:{target_audio_normal}]"
+                        if phrase_data["audio_normal"]
+                        else ""
+                    ),
+                    f"[sound:{target_audio_slow}]" if phrase_data["audio_slow"] else "",
+                    phrase_data["target_text"],
+                    phrase_data["wiktionary_links"] or "",
+                    f'<img src="{image_filename}">' if image_filename else "",
+                    language.lower(),
+                ],
+                guid=string_to_large_int(phrase_data["english_text"] + phrase_data["target_text"] + "image"),
             )
             notes.append(note)
 

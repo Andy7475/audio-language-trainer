@@ -200,18 +200,22 @@ class ConfigLoader:
             raise RuntimeError(f"Failed to load configuration: {e}")
 
     def get_voice_models(self, enum_type: str = "phrases"):
-        """Get voice models for specified enum type.
-        
+        """
+        Get voice models for specified enum type.
+
         Args:
             enum_type: "phrases" or "stories"
-            
+
         Returns:
-            Tuple of (source_voice, target_voice_female, target_voice_male)
-            
+            Tuple of (source_voice_female, source_voice_male, target_voice_female, target_voice_male)
+
         Raises:
             KeyError: If voice configuration not found
         """
-        source_voice = self.voice_manager.get_voice(
+        source_voice_female = self.voice_manager.get_voice(
+            self.config.SOURCE_LANGUAGE_CODE, "female", enum_type
+        )
+        source_voice_male = self.voice_manager.get_voice(
             self.config.SOURCE_LANGUAGE_CODE, "male", enum_type
         )
         target_voice_female = self.voice_manager.get_voice(
@@ -221,7 +225,7 @@ class ConfigLoader:
             self.config.TARGET_LANGUAGE_CODE, "male", enum_type
         )
 
-        return (source_voice, target_voice_female, target_voice_male)
+        return (source_voice_female, source_voice_male, target_voice_female, target_voice_male)
 
     def _check_reload(self):
         """Check if config file has been modified"""

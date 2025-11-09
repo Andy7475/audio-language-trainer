@@ -14,7 +14,7 @@ const StoryViewer = ({ storyData, title, targetLanguage, collectionName, collect
   const [playbackMode, setPlaybackMode] = React.useState(null);
   const [showCopyNotification, setShowCopyNotification] = React.useState(false);
   const [showEnglish, setShowEnglish] = React.useState(true);
-
+  const [headerCollapsed, setHeaderCollapsed] = React.useState(false);
   // for play all dialgoue
   const [isPlayingAll, setIsPlayingAll] = React.useState(false);
   const normalAudioQueue = React.useRef([]);
@@ -33,6 +33,22 @@ const StoryViewer = ({ storyData, title, targetLanguage, collectionName, collect
       window.hideLoadingMessage();
     }
   }, []);
+
+  // Add scroll listener for auto-collapse
+React.useEffect(() => {
+  let lastScrollY = window.scrollY;
+  
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > 150 && currentScrollY > lastScrollY) {
+      setHeaderCollapsed(true);
+    }
+    lastScrollY = currentScrollY;
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);
 
   const stopPlayback = () => {
     if (audioRef.current) {

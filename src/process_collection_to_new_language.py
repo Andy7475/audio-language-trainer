@@ -115,12 +115,10 @@ def print_config_info():
     print(f"Target Language: {config.TARGET_LANGUAGE_NAME}")
 
     try:
-        english_voice, female_voice, male_voice = config.get_voice_models()
-        english_voice_story, female_voice_story, male_voice_story = (
-            config.get_voice_models("stories")
-        )
+        source_female, source_male, target_female, target_male = config.get_voice_models()
+        source_female_story, source_male_story, target_female_story, target_male_story = config.get_voice_models("stories")
         print(
-            f"Voices - Female: {female_voice.voice_id}, Female Story: {female_voice_story.voice_id}, Male Story: {male_voice_story.voice_id}"
+            f"Voices - Target Female: {target_female.voice_id}, Target Female Story: {target_female_story.voice_id}, Target Male Story: {target_male_story.voice_id}"
         )
     except Exception as e:
         print(f"Warning: Could not load voice configuration: {e}")

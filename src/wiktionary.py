@@ -182,6 +182,7 @@ def generate_wiktionary_links(
                 if section_name := find_language_section(soup, language_name):
                     link = f'<a href="{url}#{section_name}" target="_blank" rel="noopener">{word}</a>'
                     links.append(link)
+                    print(f"Appending {word} | {link}")
                     # Cache with the original case
                     word_link_cache[clean_word] = link.replace(word, clean_word)
                     found_section = True
@@ -229,7 +230,10 @@ def generate_wiktionary_links(
 
 
 def add_wiktionary_links(
-    phrase_translations: dict, word_link_cache: dict = {}, overwrite: bool = False
+    phrase_translations: dict,
+    word_link_cache: dict = {},
+    overwrite: bool = False,
+    language: str = "target",
 ) -> Tuple[dict, dict]:
     """
     Add wiktionary links to the phrase translations dictionary, using a cache to avoid
@@ -239,99 +243,37 @@ def add_wiktionary_links(
         phrase_translations: Dictionary of phrase translations
         overwrite: Whether to overwrite existing wiktionary_links
         word_link_cache: Dictionary to cache word links - obtained from GCS
+        language: 'target' or 'source' (default: 'target')
         collections/LM1000/translations/{config.TARGET_LANGUAGE_NAME.lower()}_wiktionary_cache.json"
     """
 
-    for phrase_key in tqdm(phrase_translations, desc="Adding wiktionary links"):
+    if language == "target":
+        language_name = config.TARGET_LANGUAGE_NAME
+        language_code = config.TARGET_LANGUAGE_CODE
+        lang_key = config.TARGET_LANGUAGE_NAME.lower()
+    elif language == "source":
+        language_name = config.SOURCE_LANGUAGE_NAME
+        language_code = config.SOURCE_LANGUAGE_CODE
+        lang_key = config.SOURCE_LANGUAGE_NAME.lower()
+    else:
+        raise ValueError("language must be 'target' or 'source'")
+
+    for phrase_key in tqdm(phrase_translations, desc=f"Adding wiktionary links [{language}]"):
         if "wiktionary_links" not in phrase_translations[phrase_key] or overwrite:
-            phrase = phrase_translations[phrase_key][
-                config.TARGET_LANGUAGE_NAME.lower()
-            ]
+            phrase = phrase_translations[phrase_key][lang_key]
 
             # Generate links and update cache
             links, word_link_cache = generate_wiktionary_links(
-                phrase, word_link_cache=word_link_cache, return_cache=True
+                phrase,
+                language_name=language_name,
+                language_code=language_code,
+                word_link_cache=word_link_cache,
+                return_cache=True,
             )
 
             phrase_translations[phrase_key]["wiktionary_links"] = links
 
     return phrase_translations, word_link_cache
-
-
-def generate_wiktionary_links_non_english(
-    phrase: str, native_language_code: str = "uk"
-) -> str:
-    """
-    Generate Wiktionary links for native speakers of other languages learning English.
-    Similar format to the original generate_wiktionary_links function.
-
-    Args:
-        phrase: The English phrase to generate links for
-        native_language_code: The two-letter language code (e.g., 'uk' for Ukrainian)
-
-    Returns:
-        HTML string with Wiktionary links in the native language
-    """
-    words = phrase.split()
-    links: List[str] = []
-
-    # Get translation of "English" in target language
-    try:
-        english_in_target = translate_from_english("English", native_language_code)
-        if isinstance(english_in_target, list):
-            english_in_target = english_in_target[0]
-        english_in_target = english_in_target.capitalize()
-    except Exception:
-        # Fallback to "English" if translation fails
-        english_in_target = "English"
-
-    user_agent = {
-        "User-Agent": "Mozilla/5.0 (compatible; WiktionaryBot/1.0; +https://github.com/Andy7475/audio-language-trainer)"
-    }
-    for word in words:
-        clean_word = "".join(char for char in word if char.isalnum())
-        if clean_word:
-            # Lowercase the word for URL and search, but keep original for display
-            lowercase_word = clean_word.lower()
-            # URL encode the lowercase word to handle non-ASCII characters
-            encoded_word = urllib.parse.quote(lowercase_word)
-            # First try native language Wiktionary
-            native_url = (
-                f"https://{native_language_code}.wiktionary.org/wiki/{encoded_word}"
-            )
-
-            try:
-                response = requests.get(native_url, headers=user_agent)
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.content, "html.parser")
-                    # Look for the English section using h2 tag
-                    language_section = None
-                    for heading_level in range(1, 7):
-                        if soup.find(f"h{heading_level}", {"id": english_in_target}):
-                            language_section = True
-                            break
-
-                    if language_section:
-                        # If found, create a link with the anchor to the specific language section
-                        link = f'<a href="{native_url}#{english_in_target}">{word}</a>'
-                        links.append(link)
-                    else:
-                        # If not found in native Wiktionary, try English Wiktionary
-                        english_url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-                        link = f'<a href="{english_url}#English">{word}</a>'
-                        links.append(link)
-                else:
-                    # If native Wiktionary fails, use English Wiktionary
-                    english_url = f"https://en.wiktionary.org/wiki/{encoded_word}"
-                    link = f'<a href="{english_url}#English">{word}</a>'
-                    links.append(link)
-            except requests.RequestException:
-                # If request fails, add without link
-                links.append(word)
-        else:
-            links.append(word)
-
-    return " ".join(links)
 
 
 def get_wiktionary_language_name(language_name: str) -> str:
