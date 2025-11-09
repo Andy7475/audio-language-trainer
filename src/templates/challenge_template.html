@@ -43,6 +43,7 @@
         // Embed the challenge data
         const challengeData = $challenge_data;
         const targetLanguage = "$language";
+        const languageCode = "$language_code";
         
         $react_component
         
@@ -51,6 +52,7 @@
         root.render(React.createElement(ChallengeViewer, { 
             challengeData: challengeData,
             targetLanguage: targetLanguage,
+            languageCode: languageCode,
             title: "$title",
             collectionName: "$collection_name",
             collectionRaw: "$collection_raw"
