@@ -50,9 +50,14 @@ body {
     background-color: var(--primary-color);
     color: var(--header-text);
     padding: 1rem;
-    position: sticky;
-    top: 0;
+    position: relative;
     z-index: 10;
+}
+
+@media (max-width: 639px) {
+    .app-header {
+        padding: 0.75rem 0.5rem;
+    }
 }
 
 .header-content {
@@ -173,6 +178,12 @@ body {
     padding: 1rem;
 }
 
+@media (max-width: 639px) {
+    .main-content {
+        padding: 0.5rem;
+    }
+}
+
 /* Info panel styles */
 .info-panel {
     margin-bottom: 1rem;
@@ -180,6 +191,14 @@ body {
     border-left: 4px solid var(--info-border);
     padding: 1rem;
     border-radius: 0.5rem;
+}
+
+@media (max-width: 639px) {
+    .info-panel {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+    }
 }
 
 .info-panel-header {
@@ -335,6 +354,14 @@ body {
     border-radius: 0.5rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 639px) {
+    .content-card {
+        margin-bottom: 0.75rem;
+        border-radius: 0.375rem;
+    }
 }
 
 .content-card-header {
@@ -346,6 +373,12 @@ body {
 
 .content-card-header:hover {
     background-color: var(--border-color);
+}
+
+@media (max-width: 639px) {
+    .content-card-header {
+        padding: 0.75rem;
+    }
 }
 
 .content-card-title {
@@ -369,6 +402,12 @@ body {
     padding: 1rem;
 }
 
+@media (max-width: 639px) {
+    .content-card-body {
+        padding: 0.75rem;
+    }
+}
+
 /* Variant/Section styles */
 .variant-container {
     margin-bottom: 1rem;
@@ -379,6 +418,13 @@ body {
 
 .variant-container:last-child {
     margin-bottom: 0;
+}
+
+@media (max-width: 639px) {
+    .variant-container {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
 }
 
 .variant-title {
@@ -431,6 +477,14 @@ body {
     cursor: pointer;
     white-space: nowrap;
     text-align: center;
+}
+
+@media (max-width: 639px) {
+    .button {
+        padding: 10px 16px;
+        font-size: 0.875rem;
+        min-height: 44px;
+    }
 }
 
 .button:hover {

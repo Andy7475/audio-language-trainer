@@ -265,8 +265,9 @@ def create_html_challenges(
     Returns:
         The GCS URI of the uploaded HTML file
     """
-    # Load the React component
+    # Load the React component and API handlers
     react_component = load_template(component_path)
+    api_handlers = load_template("ChallengeAPIHandlers.js")
     template = Template(load_template(template_path))
     title = get_story_title(story_name)
 
@@ -278,13 +279,13 @@ def create_html_challenges(
         language_code = config.TARGET_LANGUAGE_CODE
 
     print(f"Using language code: {language_code} for language: {language_name}")
-    # Create the HTML content
+    # Create the HTML content with both JS modules
     html_content = template.substitute(
         title=title,
         challenge_data=json.dumps(challenges),
         language=language_name,
         language_code=language_code,
-        react_component=react_component,
+        react_component=f"{api_handlers}\n\n{react_component}",
         collection_name=get_collection_title(collection),
         collection_raw=collection,
     )
