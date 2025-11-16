@@ -1,13 +1,11 @@
 import json
-import os
-import re
 from typing import Any, Dict, List, Optional, Tuple, Union, Literal
-from dotenv import load_dotenv
-from anthropic import Anthropic
 from google.cloud import language_v1
-from google.cloud import translate_v2 as translate
 
 from src.config_loader import config
+from src.connections.gcloud_auth import get_translate_client
+from src.llm_tools.review_translations import review_batch_translations
+from src.llm_tools.review_story_translations import review_story_dialogue
 
 
 def review_translations_with_anthropic(
@@ -32,122 +30,23 @@ def review_translations_with_anthropic(
 
     if model is None:
         model = config.ANTHROPIC_MODEL_NAME
-    # Set up the Anthropic client
-    load_dotenv()
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
 
-    client = Anthropic(api_key=api_key)
-
-    # Define the translation review tool
-    tools = [
-        {
-            "name": "review_translations",
-            "description": f"Review and improve translations from {config.SOURCE_LANGUAGE_NAME} to {target_language}",
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "translations": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "english": {"type": "string"},
-                                "translation": {"type": "string"},
-                                "modified": {"type": "boolean"},
-                            },
-                            "required": ["english", "translation", "modified"],
-                        },
-                    }
-                },
-                "required": ["translations"],
-            },
-        }
-    ]
-
-    system_prompt = f"""You are a professional translator specializing in natural-sounding {target_language} for language learners. Review the provided {config.SOURCE_LANGUAGE_NAME} phrases and their {target_language} translations from Google Translate.
-
-Your goal: Make translations sound like natural spoken {target_language} while preserving the original vocabulary for learning purposes.
-
-Guidelines:
-1. **Literal phrases**: Keep the SAME core vocabulary and verbs from the {config.SOURCE_LANGUAGE_NAME} source wherever possible
-2. **Idiomatic expressions**: When the source contains idioms, phrasal verbs, or figurative language, prioritise natural {target_language} expression over literal vocabulary preservation
-3. Adjust word order, articles, prepositions, and grammatical structures to match natural {target_language} speech patterns  
-4. Replace only overly formal/written language with conversational equivalents
-5. Maintain the intended meaning - don't paraphrase unless dealing with idioms
-
-**Idiom Detection**: If the source phrase uses figurative language (e.g., "cut back expenses", "break the ice", "hit the books"), provide the natural {target_language} equivalent rather than forcing literal vocabulary matches.
-
-For each translation pair:
-1. Assess if the source contains idiomatic/figurative language
-2. If literal: preserve vocabulary whilst making it sound natural
-3. If idiomatic: use the natural {target_language} expression for that meaning
-4. Set 'modified' to true if you changed the translation, false if original was good
-
-Focus on making the output sound conversational while keeping vocabulary intact for non-idiomatic phrases."""
-
-    # Convert phrase pairs to the format expected in the prompt
-    formatted_pairs = "\n".join(
-        [
-            f"English: {pair['english']}\n{target_language}: {pair['translation']}\n"
-            for pair in phrase_pairs
-        ]
+    # Use the new llm_tools module
+    return review_batch_translations(
+        phrase_pairs=phrase_pairs,
+        target_language_name=target_language,
+        source_language_name=config.SOURCE_LANGUAGE_NAME,
+        model=model
     )
-
-    user_prompt = f"""Review these translation pairs and return your assessment using the review_translations tool:
-<phrases>{formatted_pairs}</phrases>
-
-For each translation, determine if it needs improvement and provide a more natural-sounding translation if needed."""
-
-    # Make the API call
-    try:
-        response = client.messages.create(
-            model=model,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-            max_tokens=4000,
-            temperature=0.2,
-            tools=tools,
-            tool_choice={
-                "type": "tool",
-                "name": "review_translations",
-            },  # Explicitly require tool use
-        )
-
-        # Extract the tool use from the response
-        for content in response.content:
-            if content.type == "tool_use":
-                if content.name == "review_translations":
-                    return content.input["translations"]
-
-        # If we didn't get a tool response, try to parse from text
-        print("Warning: No tool response found, attempting to parse JSON from text")
-        for content in response.content:
-            if content.type == "text":
-                # Try to extract JSON from text response
-                text = content.text
-                json_match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
-                if json_match:
-                    try:
-                        return json.loads(json_match.group(0))
-                    except json.JSONDecodeError:
-                        pass
-
-        print("Could not extract valid translation data from response")
-        return []
-
-    except Exception as e:
-        print(f"API call error: {e}")
-        return []
 
 
 def batch_translate(texts, batch_size=128):
     """Translate texts in batches."""
+    translate_client = get_translate_client()
     translated_texts = []
     for i in range(0, len(texts), batch_size):
         batch = texts[i : i + batch_size]
-        result = translate.Client().translate(
+        result = translate_client.translate(
             batch,
             target_language=config.TARGET_LANGUAGE_ALPHA2,
             source_language="en",
@@ -164,7 +63,8 @@ def translate_from_english(
     if target_language is None:
         target_language = config.TARGET_LANGUAGE_ALPHA2
 
-    result = translate.Client().translate(
+    translate_client = get_translate_client()
+    result = translate_client.translate(
         text, target_language=target_language, source_language="en"
     )
 
@@ -337,55 +237,6 @@ def review_story_dialogue_translations(
         target_language = config.TARGET_LANGUAGE_NAME.lower()
     if model is None:
         model = config.ANTHROPIC_MODEL_NAME
-    # Set up the Anthropic client
-    load_dotenv()
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
-
-    client = Anthropic(api_key=api_key)
-
-    # Define the translation review tool
-    tools = [
-        {
-            "name": "review_story_translations",
-            "description": f"Review and improve translations from {config.SOURCE_LANGUAGE_NAME} to {target_language} for a story's dialogue",
-            "input_schema": {
-                "type": "object",
-                "properties": {
-                    "translations": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "speaker": {"type": "string", "enum": ["Sam", "Alex"]},
-                                "text": {"type": "string"},
-                                "translation": {"type": "string"},
-                                "modified": {"type": "boolean"},
-                            },
-                            "required": ["speaker", "text", "translation", "modified"],
-                        },
-                    }
-                },
-                "required": ["translations"],
-            },
-        }
-    ]
-
-    # Construct the prompt
-    system_prompt = f"""You are a professional translator specializing in natural-sounding {target_language}.
-Review the provided story dialogue and its {target_language} translations.
-Improve translations to sound more natural for everyday spoken {target_language}.
-You are supporting a language learner, so keep to the {config.SOURCE_LANGUAGE_NAME} vocabulary as much as possible, but use a natural word choice or phrase that a native speaker would use.
-
-For each dialogue exchange:
-1. Assess if the current translation sounds natural in {target_language}
-2. If it doesn't sound natural for speech, provide an improved translation
-3. Set 'modified' to true if you changed the translation, false if original was good
-
-Only change translations that need improvement to sound more natural in speech - maintain the exact meaning.
-Consider the context of the entire story when reviewing translations.
-Note: Speakers must be either 'Sam' or 'Alex'."""
 
     # Flatten the dialogue for processing
     flattened_dialogue = []
@@ -416,90 +267,60 @@ Note: Speakers must be either 'Sam' or 'Alex'."""
         print("No dialogue found to review")
         return story_dialogue
 
-    user_prompt = f"""Review this story's dialogue translations and return your assessment using the review_story_translations tool:
-<story>{json.dumps(flattened_dialogue, indent=2)}</story>
-
-For each dialogue exchange, determine if it needs improvement and provide a more natural-sounding translation if needed.
-Remember: Speakers must be either 'Sam' or 'Alex'."""
-
-    # Make the API call
+    # Use the new llm_tools module
     try:
-        response = client.messages.create(
-            model=model,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_prompt}],
-            max_tokens=4000,
-            temperature=0.2,
-            tools=tools,
-            tool_choice={
-                "type": "tool",
-                "name": "review_story_translations",
-            },
+        reviewed_translations = review_story_dialogue(
+            flattened_dialogue=flattened_dialogue,
+            target_language_name=target_language,
+            source_language_name=config.SOURCE_LANGUAGE_NAME,
+            model=model
         )
 
-        # Extract the tool use from the response
-        for content in response.content:
-            if content.type == "tool_use":
-                if content.name == "review_story_translations":
-                    reviewed_translations = content.input["translations"]
+        # Reconstruct the story structure
+        result = {}
+        current_index = 0
 
-                    # Validate speakers in response
-                    for item in reviewed_translations:
-                        if item["speaker"] not in ["Sam", "Alex"]:
-                            raise ValueError(
-                                f"Invalid speaker in response: {item['speaker']}. Must be either 'Sam' or 'Alex'"
+        for part_name, length in part_lengths.items():
+            if part_name in story_dialogue:
+                # Get the slice of reviewed translations for this part
+                part_reviewed = reviewed_translations[
+                    current_index : current_index + length
+                ]
+
+                # Create new part data
+                result[part_name] = {
+                    "dialogue": story_dialogue[part_name]["dialogue"],
+                    "translated_dialogue": [
+                        {
+                            "speaker": item["speaker"],
+                            "text": item["translation"],
+                        }
+                        for item in part_reviewed
+                    ],
+                }
+
+                # Print modified translations if verbose is True
+                if verbose:
+                    for i, (old, reviewed) in enumerate(
+                        zip(
+                            story_dialogue[part_name]["translated_dialogue"],
+                            part_reviewed,
+                        )
+                    ):
+                        if (
+                            reviewed["modified"]
+                            and old["text"] != reviewed["translation"]
+                        ):
+                            print(
+                                f"English: {story_dialogue[part_name]['dialogue'][i]['text']}"
                             )
+                            print(f"Old: {old['text']}")
+                            print(f"New: {reviewed['translation']}")
+                            print()
 
-                    # Reconstruct the story structure
-                    result = {}  # Don't copy, build fresh
-                    current_index = 0
+            current_index += length
 
-                    for part_name, length in part_lengths.items():
-                        if part_name in story_dialogue:
-                            # Get the slice of reviewed translations for this part
-                            part_reviewed = reviewed_translations[
-                                current_index : current_index + length
-                            ]
-
-                            # Create new part data
-                            result[part_name] = {
-                                "dialogue": story_dialogue[part_name]["dialogue"],
-                                "translated_dialogue": [
-                                    {
-                                        "speaker": item["speaker"],
-                                        "text": item["translation"],
-                                    }
-                                    for item in part_reviewed
-                                ],
-                            }
-
-                            # Print modified translations if verbose is True
-                            if verbose:
-                                for i, (old, reviewed) in enumerate(
-                                    zip(
-                                        story_dialogue[part_name][
-                                            "translated_dialogue"
-                                        ],
-                                        part_reviewed,
-                                    )
-                                ):
-                                    if (
-                                        reviewed["modified"]
-                                        and old["text"] != reviewed["translation"]
-                                    ):
-                                        print(
-                                            f"English: {story_dialogue[part_name]['dialogue'][i]['text']}"
-                                        )
-                                        print(f"Old: {old['text']}")
-                                        print(f"New: {reviewed['translation']}")
-                                        print()
-
-                        current_index += length
-
-                    return result
-
-        print("Could not extract valid translation data from response")
-        return story_dialogue
+        return result
 
     except Exception as e:
         print(f"API call error: {e}")

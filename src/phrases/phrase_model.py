@@ -5,11 +5,13 @@ from typing import List, Optional, Literal, Annotated
 
 from pydantic import BaseModel, Field, PlainSerializer, BeforeValidator
 
-from src.connections.gcloud_auth import get_firestore_client
+from src.connections.gcloud_auth import get_firestore_client, get_translate_client
 from src.phrases.utils import generate_phrase_hash
 from google.cloud.firestore import Client as FirestoreClient
 from src.nlp import extract_lemmas_and_pos, get_tokens_from_lemmas_and_pos, get_verbs_from_lemmas_and_pos, get_vocab_from_lemmas_and_pos
 from src.models import BCP47Language
+from src.translation import tokenize_text
+from src.llm_tools.review_translation import refine_translation
 
 LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip() )]
 
@@ -71,6 +73,164 @@ class Phrase(BaseModel):
         """
         return generate_phrase_hash(self.english)
 
+    def _has_translation(self, language: BCP47Language) -> bool:
+        """Check if a translation exists for the given language.
+
+        Args:
+            language: BCP47 language tag to check for
+
+        Returns:
+            bool: True if translation exists, False otherwise
+        """
+        target_tag = language.to_tag() if hasattr(language, 'to_tag') else str(language)
+        return any(t.language.to_tag() == target_tag for t in self.translations)
+
+    def _get_translation(self, language: BCP47Language) -> Optional[Translation]:
+        """Get the translation for a specific language if it exists.
+
+        Args:
+            language: BCP47 language tag to retrieve
+
+        Returns:
+            Optional[Translation]: The translation if found, None otherwise
+        """
+        target_tag = language.to_tag() if hasattr(language, 'to_tag') else str(language)
+        return next(
+            (t for t in self.translations if t.language.to_tag() == target_tag),
+            None
+        )
+
+    def _translate_with_google_translate(self, target_language: BCP47Language) -> str:
+        """Translate the English phrase using Google Translate API.
+
+        Args:
+            target_language: BCP47 language tag for the target language
+
+        Returns:
+            str: The translated text
+
+        Raises:
+            RuntimeError: If translation fails
+        """
+        try:
+            translate_client = get_translate_client()
+
+            # Extract language code (e.g., "fr" from "fr-FR")
+            # Google Translate API uses 2-letter codes
+            target_code = target_language.language
+
+            result = translate_client.translate(
+                self.english,
+                target_language=target_code,
+                source_language="en"
+            )
+
+            return result["translatedText"]
+        except Exception as e:
+            raise RuntimeError(f"Failed to translate phrase with Google Translate: {e}")
+
+    def _refine_translation(
+        self,
+        initial_translation: str,
+        target_language: BCP47Language,
+        model: Optional[str] = None
+    ) -> str:
+        """Refine a translation using Anthropic's Claude API.
+
+        Args:
+            initial_translation: The initial Google Translate translation
+            target_language: BCP47 language tag for the target language
+            model: Anthropic model to use (default: claude-sonnet-4-20250514)
+
+        Returns:
+            str: The refined translation text
+
+        Raises:
+            RuntimeError: If refinement fails
+        """
+        if model is None:
+            model = "claude-sonnet-4-20250514"
+
+        # Get target language name (e.g., "French" from "fr-FR")
+        target_language_name = target_language.display_name()
+
+        # Use the new llm_tools module
+        return refine_translation(
+            english_phrase=self.english,
+            initial_translation=initial_translation,
+            target_language_name=target_language_name,
+            model=model
+        )
+
+    def translate(
+        self,
+        target_language: BCP47Language,
+        refine: bool = True,
+        model: Optional[str] = None
+    ) -> Translation:
+        """Translate the phrase to a target language.
+
+        This method will:
+        1. Check if translation already exists and return it if found
+        2. Translate using Google Translate API
+        3. Optionally refine the translation using Anthropic's Claude
+        4. Tokenize the translated text
+        5. Create and return a Translation object
+        6. Add the translation to the phrase's translations list
+
+        Args:
+            target_language: BCP47 language tag for the target language
+            refine: Whether to refine the translation with Claude (default: True)
+            model: Anthropic model to use for refinement (defaults to config.ANTHROPIC_MODEL_NAME)
+
+        Returns:
+            Translation: The translation object
+
+        Raises:
+            RuntimeError: If translation fails
+
+        Example:
+            >>> phrase = Phrase.create_phrase("Hello, how are you?")
+            >>> fr_translation = phrase.translate(BCP47Language.get("fr-FR"))
+            >>> print(fr_translation.text)
+            'Bonjour, comment allez-vous ?'
+        """
+        # Check if translation already exists
+        existing_translation = self._get_translation(target_language)
+        if existing_translation is not None:
+            print(f"Translation for {target_language.to_tag()} already exists")
+            return existing_translation
+
+        # Step 1: Translate with Google Translate
+        translated_text = self._translate_with_google_translate(target_language)
+
+        # Step 2: Refine with Claude if requested
+        if refine:
+            translated_text = self._refine_translation(
+                initial_translation=translated_text,
+                target_language=target_language,
+                model=model
+            )
+
+        # Step 3: Tokenize the translated text
+        # Extract language code for tokenization (e.g., "fr" from "fr-FR")
+        language_code = target_language.language
+        tokens = tokenize_text(translated_text, language_code=language_code)
+
+        # Step 4: Create the Translation object
+        translation = Translation(
+            phrase_hash=self.phrase_hash,
+            language=target_language,
+            text=translated_text,
+            text_lower=translated_text.lower(),
+            tokens=tokens,
+            audio=[]
+        )
+
+        # Step 5: Add the translation to the phrase's translations list
+        self.translations.append(translation)
+
+        return translation
 
     def upload_phrase(self, firestore_client: FirestoreClient, database_name: str = "firephrases") -> str:
         """Upload a phrase to Firestore.

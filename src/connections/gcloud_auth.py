@@ -6,11 +6,13 @@ from typing import Tuple, Optional
 from google.auth.credentials import Credentials
 from google.cloud.firestore import Client as FirestoreClient
 from google.cloud import language_v1
+from google.cloud import translate_v2 as translate
 
 
 # Singleton clients
 _firestore_client: Optional[FirestoreClient] = None
 _nlp_client: Optional[language_v1.LanguageServiceClient] = None
+_translate_client: Optional[translate.Client] = None
 
 
 def setup_authentication() -> Tuple[Credentials, str]:
@@ -97,8 +99,36 @@ def get_nlp_client() -> language_v1.LanguageServiceClient:
         raise RuntimeError(f"Failed to create Natural Language API client: {e}")
 
 
+def get_translate_client() -> translate.Client:
+    """Get a Google Translate API client instance (singleton).
+
+    Returns:
+        translate.Client: Google Translate API client instance
+
+    Raises:
+        RuntimeError: If unable to create Translate client
+        SystemExit: If authentication fails
+    """
+    global _translate_client
+
+    if _translate_client is not None:
+        return _translate_client
+
+    try:
+        # Setup authentication (will use default credentials)
+        setup_authentication()
+
+        # Create Translate client
+        _translate_client = translate.Client()
+        print("✅ Google Translate API client initialized")
+        return _translate_client
+    except Exception as e:
+        raise RuntimeError(f"Failed to create Google Translate API client: {e}")
+
+
 def reset_clients() -> None:
     """Reset all cached client instances (useful for testing)."""
-    global _firestore_client, _nlp_client
+    global _firestore_client, _nlp_client, _translate_client
     _firestore_client = None
     _nlp_client = None
+    _translate_client = None

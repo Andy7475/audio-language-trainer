@@ -1,0 +1,6 @@
+Review this translation and return your assessment using the review_translation tool:
+
+English: $english_phrase
+$target_language_name: $initial_translation
+
+Determine if it needs improvement and provide a more natural-sounding translation if needed.

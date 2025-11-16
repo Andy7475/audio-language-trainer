@@ -1,0 +1,5 @@
+Review this story's dialogue translations and return your assessment using the review_story_translations tool:
+<story>$story_json</story>
+
+For each dialogue exchange, determine if it needs improvement and provide a more natural-sounding translation if needed.
+Remember: Speakers must be either 'Sam' or 'Alex'.

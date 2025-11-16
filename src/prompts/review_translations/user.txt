@@ -1,0 +1,4 @@
+Review these translation pairs and return your assessment using the review_translations tool:
+<phrases>$formatted_pairs</phrases>
+
+For each translation, determine if it needs improvement and provide a more natural-sounding translation if needed.
