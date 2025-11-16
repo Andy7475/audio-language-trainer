@@ -1,6 +1,6 @@
 {
     "fr-FR": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "google",
                 "voice_id": "fr-FR-Neural2-G"
@@ -10,7 +10,7 @@
                 "voice_id": "fr-FR-Neural2-G"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "fr-FR-Chirp3-HD-Zephyr"
@@ -22,7 +22,7 @@
         }
     },
         "ru-RU": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "google",
                 "voice_id": "ru-RU-Wavenet-A"
@@ -32,7 +32,7 @@
                 "voice_id": "ru-RU-Wavenet-B"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "ru-RU-Chirp3-HD-Aoede"
@@ -44,7 +44,7 @@
         }
     },
     "it-IT": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "google",
                 "voice_id": "it-IT-Neural2-E"
@@ -54,7 +54,7 @@
                 "voice_id": "it-IT-Neural2-F"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "it-IT-Chirp-HD-F"
@@ -66,7 +66,7 @@
         }
     },
     "nb-NO": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "azure",
                 "voice_id": "nb-NO-IselinNeural"
@@ -76,7 +76,7 @@
                 "voice_id": "nb-NO-FinnNeural"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "elevenlabs",
                 "voice_id": "uNsWM1StCcpydKYOjKyu"
@@ -88,7 +88,7 @@
         }
     },
     "sv-SE": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "azure",
                 "voice_id": "sv-SE-SofieNeural"
@@ -98,7 +98,7 @@
                 "voice_id": "sv-SE-MattiasNeural"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "sv-SE-Chirp3-HD-Laomedeia"
@@ -110,7 +110,7 @@
         }
     },
     "cmn-CN": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "google",
                 "voice_id": "cmn-CN-Wavenet-A"
@@ -120,7 +120,7 @@
                 "voice_id": "cmn-CN-Wavenet-B"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "cmn-CN-Chirp3-HD-Achernar"
@@ -132,7 +132,7 @@
         }
     },
     "en-GB": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "google",
                 "voice_id": "en-GB-Neural2-C"
@@ -142,7 +142,7 @@
                 "voice_id": "en-GB-Neural2-B"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "en-GB-Chirp3-HD-Achernar"
@@ -154,7 +154,7 @@
         }
     },
     "es-ES": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "google",
                 "voice_id": "es-ES-Neural2-E"
@@ -164,7 +164,7 @@
                 "voice_id": "es-ES-Neural2-G"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "es-ES-Chirp-HD-F"
@@ -176,7 +176,7 @@
         }
     },
     "de-DE": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "google",
                 "voice_id": "de-DE-Neural2-G"
@@ -186,7 +186,7 @@
                 "voice_id": "de-DE-Neural2-H"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "google",
                 "voice_id": "de-DE-Chirp-HD-F"
@@ -198,7 +198,7 @@
         }
     },
     "cy-GB": {
-        "phrases": {
+        "flashcards": {
             "female": {
                 "provider": "azure",
                 "voice_id": "cy-GB-NiaNeural"
@@ -208,7 +208,7 @@
                 "voice_id": "cy-GB-AledNeural"
             }
         },
-        "stories": {
+        "story": {
             "female": {
                 "provider": "azure",
                 "voice_id": "cy-GB-NiaNeural"
