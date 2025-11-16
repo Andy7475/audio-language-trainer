@@ -1,26 +1,28 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import List, Optional, Literal, Annotated
+from typing import List, Optional, Literal, Annotated, Dict
 
-from pydantic import BaseModel, Field, PlainSerializer, BeforeValidator
+from pydantic import BaseModel, Field, BeforeValidator
 
-from src.connections.gcloud_auth import get_firestore_client, get_translate_client
+from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
 from google.cloud.firestore import Client as FirestoreClient
-from src.nlp import extract_lemmas_and_pos, get_tokens_from_lemmas_and_pos, get_verbs_from_lemmas_and_pos, get_vocab_from_lemmas_and_pos
+from src.nlp import extract_lemmas_and_pos, get_tokens_from_lemmas_and_pos, get_verbs_from_lemmas_and_pos, get_vocab_from_lemmas_and_pos, get_text_tokens
 from src.models import BCP47Language
-from src.translation import tokenize_text
-from src.llm_tools.review_translation import refine_translation
+from src.translation import translate_with_google_translate, refine_translation_with_anthropic
 
 LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip() )]
+
+# Type aliases for audio structure
+AudioSpeeds = Literal["slow", "normal", "fast"]
+AudioSettings = Literal["flashcard", "story"]
 
 class Phrase(BaseModel):
     """Pydantic model representing a phrase in Firestore.
 
     This model corresponds to the phrases collection schema defined in firestore.md.
     Each phrase contains English text with linguistic analysis including tokens, lemmas,
-    verbs, and vocabulary.
+    verbs, and vocabulary. Translations are stored in a subcollection and fetched separately.
     """
     phrase_hash: str = Field(..., description="Unique hash identifier for the phrase")
     english: str = Field(..., description="Original English phrase with original capitalisation")
@@ -31,24 +33,23 @@ class Phrase(BaseModel):
     source: Optional[Literal["manual", "tatoeba", "generated"]] = Field(
         default=None, description="Source of the phrase"
     )
-    translations: List[Translation] = Field(default_factory=list, description="List of translations for this phrase")
+    translations: List[Translation] = Field(default_factory=list, description="List of translations for this phrase (loaded separately from subcollection)")
 
     @classmethod
-    def create_phrase(cls, english_phrase:str, source:str="generated")->Phrase:
-        """Factory method to create a Phrase with NLP processing."""
+    def create_phrase(cls, english_phrase: str, source: str = "generated") -> Phrase:
+        """Factory method to create a Phrase with NLP processing.
 
+        Args:
+            english_phrase: The English phrase text
+            source: Source of the phrase ("manual", "tatoeba", or "generated")
+
+        Returns:
+            Phrase: A new Phrase object with NLP analysis
+        """
         phrase_hash = generate_phrase_hash(english_phrase)
         lemmas_and_pos = extract_lemmas_and_pos([english_phrase], language_code="en")
-        tokens=get_tokens_from_lemmas_and_pos(lemmas_and_pos)
+        tokens = get_tokens_from_lemmas_and_pos(lemmas_and_pos)
 
-        #we make an english 'translation' for audio / text lookup consistency
-        english_translation = Translation(phrase_hash=phrase_hash,
-                                          language= BCP47Language.get("en-GB"),
-                                         text= english_phrase,
-                                         text_lower= english_phrase.lower(),
-                                         tokens=tokens,
-                                         audio=[]
-                                         )
         return cls(
             phrase_hash=phrase_hash,
             english=english_phrase,
@@ -57,7 +58,7 @@ class Phrase(BaseModel):
             verbs=get_verbs_from_lemmas_and_pos(lemmas_and_pos),
             vocab=get_vocab_from_lemmas_and_pos(lemmas_and_pos),
             source=source,
-            translations=[english_translation]
+            translations=[]  # Translations are loaded separately from subcollection
         )
 
     def get_phrase_hash(self) -> str:
@@ -82,7 +83,7 @@ class Phrase(BaseModel):
         Returns:
             bool: True if translation exists, False otherwise
         """
-        target_tag = language.to_tag() if hasattr(language, 'to_tag') else str(language)
+        target_tag = language.to_tag()
         return any(t.language.to_tag() == target_tag for t in self.translations)
 
     def _get_translation(self, language: BCP47Language) -> Optional[Translation]:
@@ -94,72 +95,10 @@ class Phrase(BaseModel):
         Returns:
             Optional[Translation]: The translation if found, None otherwise
         """
-        target_tag = language.to_tag() if hasattr(language, 'to_tag') else str(language)
+        target_tag = language.to_tag()
         return next(
             (t for t in self.translations if t.language.to_tag() == target_tag),
             None
-        )
-
-    def _translate_with_google_translate(self, target_language: BCP47Language) -> str:
-        """Translate the English phrase using Google Translate API.
-
-        Args:
-            target_language: BCP47 language tag for the target language
-
-        Returns:
-            str: The translated text
-
-        Raises:
-            RuntimeError: If translation fails
-        """
-        try:
-            translate_client = get_translate_client()
-
-            # Extract language code (e.g., "fr" from "fr-FR")
-            # Google Translate API uses 2-letter codes
-            target_code = target_language.language
-
-            result = translate_client.translate(
-                self.english,
-                target_language=target_code,
-                source_language="en"
-            )
-
-            return result["translatedText"]
-        except Exception as e:
-            raise RuntimeError(f"Failed to translate phrase with Google Translate: {e}")
-
-    def _refine_translation(
-        self,
-        initial_translation: str,
-        target_language: BCP47Language,
-        model: Optional[str] = None
-    ) -> str:
-        """Refine a translation using Anthropic's Claude API.
-
-        Args:
-            initial_translation: The initial Google Translate translation
-            target_language: BCP47 language tag for the target language
-            model: Anthropic model to use (default: claude-sonnet-4-20250514)
-
-        Returns:
-            str: The refined translation text
-
-        Raises:
-            RuntimeError: If refinement fails
-        """
-        if model is None:
-            model = "claude-sonnet-4-20250514"
-
-        # Get target language name (e.g., "French" from "fr-FR")
-        target_language_name = target_language.display_name()
-
-        # Use the new llm_tools module
-        return refine_translation(
-            english_phrase=self.english,
-            initial_translation=initial_translation,
-            target_language_name=target_language_name,
-            model=model
         )
 
     def translate(
@@ -181,7 +120,7 @@ class Phrase(BaseModel):
         Args:
             target_language: BCP47 language tag for the target language
             refine: Whether to refine the translation with Claude (default: True)
-            model: Anthropic model to use for refinement (defaults to config.ANTHROPIC_MODEL_NAME)
+            model: Anthropic model to use for refinement (defaults to claude-sonnet-4-20250514)
 
         Returns:
             Translation: The translation object
@@ -202,20 +141,26 @@ class Phrase(BaseModel):
             return existing_translation
 
         # Step 1: Translate with Google Translate
-        translated_text = self._translate_with_google_translate(target_language)
+        translated_text = translate_with_google_translate(
+            text=self.english,
+            target_language=target_language,
+            source_language="en"
+        )
 
         # Step 2: Refine with Claude if requested
         if refine:
-            translated_text = self._refine_translation(
+            translated_text = refine_translation_with_anthropic(
+                source_phrase=self.english,
                 initial_translation=translated_text,
                 target_language=target_language,
+                source_language=None,
                 model=model
             )
 
         # Step 3: Tokenize the translated text
         # Extract language code for tokenization (e.g., "fr" from "fr-FR")
         language_code = target_language.language
-        tokens = tokenize_text(translated_text, language_code=language_code)
+        tokens = get_text_tokens(translated_text, language_code=language_code)
 
         # Step 4: Create the Translation object
         translation = Translation(
@@ -224,7 +169,7 @@ class Phrase(BaseModel):
             text=translated_text,
             text_lower=translated_text.lower(),
             tokens=tokens,
-            audio=[]
+            audio=None  # Audio is added separately when TTS is generated
         )
 
         # Step 5: Add the translation to the phrase's translations list
@@ -233,10 +178,13 @@ class Phrase(BaseModel):
         return translation
 
     def upload_phrase(self, firestore_client: FirestoreClient, database_name: str = "firephrases") -> str:
-        """Upload a phrase to Firestore.
+        """Upload a phrase and its translations to Firestore.
+
+        Uploads the phrase document to `phrases/{phrase_hash}` and each translation to
+        `phrases/{phrase_hash}/translations/{language_code}` subcollection.
 
         Args:
-            phrase: The Phrase object to upload
+            firestore_client: Firestore client instance
             database_name: Name of the Firestore database (default: "firephrases")
 
         Returns:
@@ -248,8 +196,17 @@ class Phrase(BaseModel):
         try:
             phrase_hash = self.get_phrase_hash()
 
+            # Upload phrase document (without translations)
+            phrase_data = self.model_dump(mode="json", exclude={"translations"})
             doc_ref = firestore_client.collection("phrases").document(phrase_hash)
-            doc_ref.set(self.model_dump(mode="json"))
+            doc_ref.set(phrase_data)
+
+            # Upload each translation to subcollection
+            for translation in self.translations:
+                language_tag = translation.language.to_tag()
+                translation_data = translation.model_dump(mode="json")
+                translations_ref = doc_ref.collection("translations").document(language_tag)
+                translations_ref.set(translation_data)
 
             return phrase_hash
 
@@ -259,14 +216,17 @@ class Phrase(BaseModel):
 
 
 def get_phrase(phrase_hash: str, database_name: str = "firephrases") -> Optional[Phrase]:
-    """Fetch a phrase from Firestore by its hash.
+    """Fetch a phrase from Firestore by its hash, including all translations.
+
+    Fetches the phrase document from `phrases/{phrase_hash}` and all translations from
+    the `phrases/{phrase_hash}/translations` subcollection.
 
     Args:
         phrase_hash: The phrase hash (document ID)
         database_name: Name of the Firestore database (default: "firephrases")
 
     Returns:
-        Phrase: The phrase object if found, None otherwise
+        Optional[Phrase]: The phrase object with translations if found, None otherwise
 
     Raises:
         RuntimeError: If Firestore query fails
@@ -276,33 +236,85 @@ def get_phrase(phrase_hash: str, database_name: str = "firephrases") -> Optional
         doc_ref = client.collection("phrases").document(phrase_hash)
         doc = doc_ref.get()
 
-        if doc.exists:
-            return Phrase.model_validate(doc.to_dict())
-        return None
+        if not doc.exists:
+            return None
+
+        # Get phrase data
+        phrase_data = doc.to_dict()
+
+        # Fetch all translations from subcollection
+        translations_docs = doc_ref.collection("translations").stream()
+        translations = []
+        for trans_doc in translations_docs:
+            trans_data = trans_doc.to_dict()
+            translations.append(Translation.model_validate(trans_data))
+
+        # Add translations to phrase data
+        phrase_data["translations"] = translations
+
+        return Phrase.model_validate(phrase_data)
 
     except Exception as e:
         raise RuntimeError(f"Failed to get phrase {phrase_hash}: {e}")
 
 
+def get_phrase_by_english(english_phrase: str, database_name: str = "firephrases") -> Optional[Phrase]:
+    """Fetch a phrase from Firestore using its English text.
+
+    Convenience wrapper that generates the phrase hash from English text and fetches
+    the corresponding phrase document with all translations.
+
+    Args:
+        english_phrase: The English phrase text (e.g., "She runs to the store daily")
+        database_name: Name of the Firestore database (default: "firephrases")
+
+    Returns:
+        Optional[Phrase]: The phrase object with translations if found, None otherwise
+
+    Raises:
+        RuntimeError: If Firestore query fails
+    """
+    phrase_hash = generate_phrase_hash(english_phrase)
+    return get_phrase(phrase_hash, database_name=database_name)
+
 
 
 
 class PhraseAudio(BaseModel):
-    """Pydantic model representing audio associated with a phrase."""
-    setting: Literal["flashcard", "story"] = Field(..., description="Context where audio is used")
-    speed: Literal["normal", "slow", "fast"] = Field(..., description="Speed of the audio")
-    url: str = Field(..., description="URL to the audio file ignoring bucket name")
+    """Pydantic model representing audio metadata for a specific setting/speed combination.
+
+    This represents a single audio file with its metadata (URL, voice, duration, etc).
+    """
+    url: str = Field(..., description="GCS URL to the audio file")
     voice_model_id: str = Field(..., description="Identifier of the voice model used")
     voice_provider: Literal["google", "aws", "azure"] = Field(..., description="Cloud provider for TTS")
-    duration_seconds: float | None = Field(default=None, description="Duration of the audio in seconds")
+    duration_seconds: Optional[float] = Field(default=None, description="Duration of the audio in seconds")
+
 
 class Translation(BaseModel):
-    """Pydantic model representing a translation of a phrase in Firestore."""
+    """Pydantic model representing a translation of a phrase in Firestore.
+
+    Audio is stored in a nested structure:
+    {
+      "flashcard": {
+        "slow": PhraseAudio(...),
+        "normal": PhraseAudio(...),
+        "fast": PhraseAudio(...)
+      },
+      "story": {
+        "slow": PhraseAudio(...),
+        "normal": PhraseAudio(...),
+        "fast": PhraseAudio(...)
+      }
+    }
+    """
     model_config = {"arbitrary_types_allowed": True} # allow us to use Language
     phrase_hash: str = Field(..., description="Hash of the associated English root phrase")
     language: BCP47Language = Field(..., description="BCP-47 language tag for the translation")
-    text :str = Field(..., description="Translated text of the phrase")
+    text: str = Field(..., description="Translated text of the phrase")
     text_lower: LowercaseStr = Field(..., description="Lowercase version for consistent lookups")
     tokens: List[str] = Field(..., description="Tokenised words from the translated phrase")
-    audio: List[PhraseAudio]
+    audio: Optional[Dict[AudioSettings, Dict[AudioSpeeds, PhraseAudio]]] = Field(
+        default=None, description="Nested audio structure by setting (flashcard/story) and speed (slow/normal/fast)"
+    )
 

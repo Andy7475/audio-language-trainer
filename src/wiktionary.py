@@ -1,4 +1,5 @@
-from src.translation import tokenize_text, translate_from_english
+from src.translation import translate_from_english
+from src.nlp import get_text_tokens
 import requests
 from bs4 import BeautifulSoup
 import urllib.parse
@@ -150,7 +151,7 @@ def generate_wiktionary_links(
         # Make a copy to avoid modifying the original
         word_link_cache = word_link_cache.copy()
 
-    words = tokenize_text(text=phrase, language_code=language_code)
+    words = get_text_tokens(text=phrase, language_code=language_code)
     links: List[str] = []
 
     user_agent = {

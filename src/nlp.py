@@ -91,3 +91,33 @@ def get_tokens_from_lemmas_and_pos(
     """Extract tokens from a set of (word, pos) tuples."""
     tokens = [word for word, pos in lemmas_and_pos if pos not in ["PUNCT"]]
     return tokens
+
+
+def get_text_tokens(
+    text: str,
+    language_code: str = "en"
+) -> List[str]:
+    """
+    Tokenize text using language-appropriate methods.
+
+    For space-separated languages: Simply split on spaces
+    For other languages: Use Google Cloud Natural Language API
+
+    Args:
+        text: Text to tokenize
+        language_code: BCP-47 language code (default: 'en')
+
+    Returns:
+        List of tokens suitable for TTS breaks and Wiktionary lookups
+    """
+    if not text:
+        return []
+
+    try:
+        response = analyze_text_syntax(text, language_code)
+        tokens = [token.text.content for token in response.tokens]
+        return tokens if tokens else text.split()
+    except Exception as e:
+        print(f"API Tokenization failed: {str(e)}")
+        # Fallback: split on spaces if present, otherwise return whole text as one token
+        return text.split() if " " in text else [text]

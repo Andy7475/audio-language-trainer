@@ -20,3 +20,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Source code in `src/` directory with corresponding tests in `tests/`
 - Language-related data in `data/` directory
 - Jupyter notebooks in `notebooks/` directory for experimentation
+- Ignore config_loader and anything associated with it like the config import, we will parameters directly
+- for any client connections put these in connections/ following the pattern in gcloud_auth.py
+
+## LLM Tools and Prompts
+- Tool implementations: Located in `llm_tools/<tool_name>/` directory
+- Prompt files: Located in `prompts/<tool_name>/` with structure:
+  - `system.txt`: System prompt for the LLM
+  - `user.txt`: User prompt template for the LLM
+- Variable replacement: Use Python's `string.Template` class for variable substitution in prompts (e.g., `$variable_name` or `${variable_name}`)
