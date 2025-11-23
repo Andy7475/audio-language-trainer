@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Literal, Annotated, Dict
+from typing import List, Optional, Literal, Annotated
 
 from pydantic import BaseModel, Field, BeforeValidator
 from pydub import AudioSegment
@@ -21,6 +21,8 @@ from src.storage import (
     file_path_from_gcs_uri,
     PRIVATE_BUCKET,
 )
+from src.audio.voices import get_voice_model
+from src.audio.generation import generate_translation_audio, generate_fast_audio
 
 LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip() )]
 
@@ -55,13 +57,13 @@ class Phrase(BaseModel):
             source: Source of the phrase ("manual", "tatoeba", or "generated")
 
         Returns:
-            Phrase: A new Phrase object with NLP analysis
+            Phrase: A new Phrase object with NLP analysis and default en-GB translation
         """
         phrase_hash = generate_phrase_hash(english_phrase)
         lemmas_and_pos = extract_lemmas_and_pos([english_phrase], language_code="en")
         tokens = get_tokens_from_lemmas_and_pos(lemmas_and_pos)
 
-        return cls(
+        phrase = cls(
             phrase_hash=phrase_hash,
             english=english_phrase,
             english_lower=english_phrase,
@@ -71,6 +73,11 @@ class Phrase(BaseModel):
             source=source,
             translations=[]  # Translations are loaded separately from subcollection
         )
+
+        # Add default en-GB translation
+        phrase.translations.append(phrase._get_english_translation())
+
+        return phrase
 
     def get_phrase_hash(self) -> str:
         """Generate a unique hash for this phrase based on English text.
@@ -110,6 +117,26 @@ class Phrase(BaseModel):
         return next(
             (t for t in self.translations if t.language.to_tag() == target_tag),
             None
+        )
+
+    def _get_english_translation(self) -> Translation:
+        """Create an English (en-GB) translation from the Phrase.
+
+        This creates a Translation object for the default English phrase, copying
+        linguistic data (tokens, text) from the Phrase model. No audio or image
+        is included at this stage.
+
+        Returns:
+            Translation: An English translation with en-GB language tag
+        """
+        return Translation(
+            phrase_hash=self.phrase_hash,
+            language=BCP47Language.get("en-GB"),
+            text=self.english,
+            text_lower=self.english_lower,
+            tokens=self.tokens,
+            audio=None,
+            image_file_path=None,
         )
 
     def translate(
@@ -227,6 +254,19 @@ class Phrase(BaseModel):
         except Exception as e:
             raise RuntimeError(f"Failed to upload phrase: {e}")
 
+    def upload_all_audio(self, bucket_name: str = PRIVATE_BUCKET) -> None:
+        """Upload all audio from all translations to GCS.
+
+        Iterates through all translations and calls upload_all_audio() on each.
+
+        Args:
+            bucket_name: GCS bucket name for uploading audio. Defaults to PRIVATE_BUCKET.
+
+        Raises:
+            ValueError: If any audio upload fails
+        """
+        for translation in self.translations:
+            translation.upload_all_audio(bucket_name)
 
 
 def get_phrase(phrase_hash: str, database_name: str = "firephrases") -> Optional[Phrase]:
@@ -303,7 +343,10 @@ class PhraseAudio(BaseModel):
     Note: Stores only the file_path (relative path) in Firestore to save space and allow
     flexible bucket management. The full GCS URI can be reconstructed using gcs_uri_from_file_path()
     with the PRIVATE_BUCKET constant.
+
+    Binary audio_segment data is excluded from Firestore serialization and loaded on demand.
     """
+    model_config = {"arbitrary_types_allowed": True}  # allow us to use AudioSegment type
     file_path: str = Field(..., description="GCS file path (e.g., 'phrases/fr-FR/audio/flashcard/slow/hello_a3f8d2.mp3')")
     language_tag: str = Field(..., description="BCP-47 language tag (e.g., 'fr-FR', 'ja-JP')")
     context: Literal["flashcard", "story"] = Field(..., description="Context/setting for the audio (flashcard or story)")
@@ -311,6 +354,8 @@ class PhraseAudio(BaseModel):
     voice_model_id: str = Field(..., description="Identifier of the voice model used")
     voice_provider: Literal["google", "aws", "azure"] = Field(..., description="Cloud provider for TTS")
     duration_seconds: Optional[float] = Field(default=None, description="Duration of the audio in seconds")
+    # Binary data excluded from Firestore serialization
+    audio_segment: Optional[AudioSegment] = Field(default=None, exclude=True, description="Audio data (excluded from Firestore)")
 
     def get_gcs_uri(self, bucket_name: str = PRIVATE_BUCKET) -> str:
         """Get the full GCS URI for this audio file.
@@ -323,27 +368,66 @@ class PhraseAudio(BaseModel):
         """
         return gcs_uri_from_file_path(self.file_path, bucket_name)
 
+    def upload_to_gcs(self, bucket_name: str = PRIVATE_BUCKET) -> None:
+        """Upload this audio file to GCS.
+
+        Uploads the audio_segment to the GCS path specified by file_path.
+
+        Args:
+            bucket_name: GCS bucket name (default: PRIVATE_BUCKET)
+
+        Raises:
+            ValueError: If audio_segment is not set or upload fails
+        """
+        if self.audio_segment is None:
+            raise ValueError("audio_segment is not set, cannot upload")
+
+        try:
+            upload_file_to_gcs(
+                obj=self.audio_segment,
+                bucket_name=bucket_name,
+                file_path=self.file_path,
+                save_local=True,
+            )
+        except Exception as e:
+            raise ValueError(f"Failed to upload audio to {self.file_path}: {e}")
+
+    def download_from_gcs(self, bucket_name: str = PRIVATE_BUCKET) -> AudioSegment:
+        """Download this audio file from GCS.
+
+        Downloads the audio from GCS using the stored file_path and stores it in audio_segment.
+
+        Args:
+            bucket_name: GCS bucket name (default: PRIVATE_BUCKET)
+
+        Returns:
+            AudioSegment: The downloaded audio
+
+        Raises:
+            ValueError: If download fails
+        """
+        try:
+            audio_segment = download_from_gcs(
+                bucket_name=bucket_name,
+                file_path=self.file_path,
+                expected_type="audio",
+                use_local=True,
+            )
+            self.audio_segment = audio_segment
+            return audio_segment
+        except Exception as e:
+            raise ValueError(f"Failed to download audio from {self.file_path}: {e}")
+
 
 class Translation(BaseModel):
     """Pydantic model representing a translation of a phrase in Firestore.
 
-    Audio is stored in a nested structure:
-    {
-      "flashcard": {
-        "slow": PhraseAudio(...),
-        "normal": PhraseAudio(...),
-        "fast": PhraseAudio(...)
-      },
-      "story": {
-        "slow": PhraseAudio(...),
-        "normal": PhraseAudio(...),
-        "fast": PhraseAudio(...)
-      }
-    }
+    Audio is stored as a list of PhraseAudio objects, each containing metadata about
+    a specific audio file (context, speed, voice, file path, etc.). This flat structure
+    is simpler and more flexible than nested dicts.
 
-    Binary data (audio_segment, image) are excluded from Firestore serialization.
-    These are attached to the model for convenient handling during processing,
-    then uploaded separately to GCS.
+    Binary data (image) are excluded from Firestore serialization.
+    Audio segments are attached to PhraseAudio objects and loaded on demand.
     """
     model_config = {"arbitrary_types_allowed": True} # allow us to use Language and binary types
     phrase_hash: str = Field(..., description="Hash of the associated English root phrase")
@@ -351,90 +435,23 @@ class Translation(BaseModel):
     text: str = Field(..., description="Translated text of the phrase")
     text_lower: LowercaseStr = Field(..., description="Lowercase version for consistent lookups")
     tokens: List[str] = Field(..., description="Tokenised words from the translated phrase")
-    audio: Optional[Dict[AudioSettings, Dict[AudioSpeeds, PhraseAudio]]] = Field(
-        default=None, description="Nested audio structure by setting (flashcard/story) and speed (slow/normal/fast)"
+    audio: List[PhraseAudio] = Field(
+        default_factory=list, description="List of audio files for this translation, each with metadata (context, speed, etc.)"
     )
     image_file_path: Optional[str] = Field(
         default=None,
         description="GCS file path for the phrase image (e.g., 'phrases/en-GB/images/hello_a3f8d2.png')"
     )
     # Binary data excluded from Firestore serialization
-    audio_segment: Optional[AudioSegment] = Field(default=None, exclude=True, description="Audio data (excluded from Firestore)")
     image: Optional[Image.Image] = Field(default=None, exclude=True, description="Image data (excluded from Firestore)")
 
-    def upload_audio(
-        self,
-        audio_segment: AudioSegment,
-        bucket_name: str,
-        context: Literal["flashcard", "story"],
-        speed: Literal["slow", "normal", "fast"],
-        voice_provider: str,
-        voice_model_id: str,
-    ) -> PhraseAudio:
-        """Upload audio for this translation to GCS and return PhraseAudio metadata.
-
-        Args:
-            audio_segment: The AudioSegment object to upload
-            bucket_name: GCS bucket name (typically PRIVATE_BUCKET)
-            context: Audio context ('flashcard' or 'story')
-            speed: Speaking speed ('slow', 'normal', or 'fast')
-            voice_provider: Cloud provider for TTS (e.g., 'google', 'azure')
-            voice_model_id: Identifier of the voice model used
-
-        Returns:
-            PhraseAudio: Metadata object with file_path and audio properties
-
-        Raises:
-            ValueError: If audio upload fails
-        """
-        try:
-            # Generate GCS path
-            file_path = get_phrase_audio_path(
-                phrase_hash=self.phrase_hash,
-                language=self.language,
-                context=context,
-                speed=speed,
-            )
-
-            # Upload audio to GCS
-            upload_file_to_gcs(
-                obj=audio_segment,
-                bucket_name=bucket_name,
-                file_path=file_path,
-                save_local=True,
-            )
-
-            # Calculate duration in seconds
-            duration_seconds = len(audio_segment) / 1000.0
-
-            # Create and return PhraseAudio metadata
-            # Store only the file_path (relative path) in Firestore, not the full GCS URI
-            phrase_audio = PhraseAudio(
-                file_path=file_path,
-                language_tag=self.language.to_tag(),
-                context=context,
-                speed=speed,
-                voice_provider=voice_provider,
-                voice_model_id=voice_model_id,
-                duration_seconds=duration_seconds,
-            )
-
-            # Initialize audio structure if needed and store metadata
-            if self.audio is None:
-                self.audio = {}
-            if context not in self.audio:
-                self.audio[context] = {}
-            self.audio[context][speed] = phrase_audio
-
-            return phrase_audio
-
-        except Exception as e:
-            raise ValueError(f"Failed to upload audio for translation ({self.language.to_tag()}): {e}")
 
     def load_audio_from_file_path(
         self, file_path: str, bucket_name: str = PRIVATE_BUCKET
     ) -> AudioSegment:
         """Load audio from a file path or local cache.
+
+        Finds the matching PhraseAudio in self.audio and calls download_from_gcs() on it.
 
         Args:
             file_path: GCS file path (e.g., 'phrases/fr-FR/audio/flashcard/slow/hello_a3f8d2.mp3')
@@ -444,54 +461,18 @@ class Translation(BaseModel):
             AudioSegment: The loaded audio
 
         Raises:
-            ValueError: If audio loading fails
+            ValueError: If audio loading fails or file_path not found in self.audio
         """
-        try:
-            # Download from GCS (will use local cache if available)
-            audio_segment = download_from_gcs(
-                bucket_name=bucket_name,
-                file_path=file_path,
-                expected_type="audio",
-                use_local=True,
-            )
+        # Find the matching PhraseAudio object
+        phrase_audio = next(
+            (a for a in self.audio if a.file_path == file_path),
+            None
+        )
+        if phrase_audio is None:
+            raise ValueError(f"No audio found with file_path: {file_path}")
 
-            self.audio_segment = audio_segment
-            return audio_segment
-
-        except Exception as e:
-            raise ValueError(f"Failed to load audio from {file_path}: {e}")
-
-    def load_audio_from_url(self, gcs_uri: str) -> AudioSegment:
-        """Load audio from a GCS URI or local cache.
-
-        Backwards compatibility method. If you have a file_path, use load_audio_from_file_path instead.
-
-        Args:
-            gcs_uri: Full GCS URI (e.g., 'gs://bucket-name/phrases/fr-FR/audio/flashcard/slow/hello_a3f8d2.mp3')
-
-        Returns:
-            AudioSegment: The loaded audio
-
-        Raises:
-            ValueError: If audio loading fails
-        """
-        try:
-            # Extract file_path from GCS URI
-            file_path = file_path_from_gcs_uri(gcs_uri)
-
-            # Extract bucket name from URI
-            if not gcs_uri.startswith("gs://"):
-                raise ValueError(f"Invalid GCS URI: {gcs_uri}")
-            parts = gcs_uri[5:].split("/", 1)
-            if len(parts) != 2:
-                raise ValueError(f"Invalid GCS URI format: {gcs_uri}")
-            bucket_name = parts[0]
-
-            # Use the file_path method
-            return self.load_audio_from_file_path(file_path, bucket_name)
-
-        except Exception as e:
-            raise ValueError(f"Failed to load audio from {gcs_uri}: {e}")
+        # Download using PhraseAudio's method
+        return phrase_audio.download_from_gcs(bucket_name)
 
     def upload_image(
         self,
@@ -564,35 +545,107 @@ class Translation(BaseModel):
         except Exception as e:
             raise ValueError(f"Failed to load image from {file_path}: {e}")
 
-    def load_image_from_url(self, gcs_uri: str) -> Image.Image:
-        """Load image from a GCS URI or local cache.
 
-        Backwards compatibility method. If you have a file_path, use load_image_from_file_path instead.
+    def generate_audio(
+        self,
+        context: Literal["flashcard", "story"],
+        gender: Literal["MALE", "FEMALE"] = "FEMALE",
+        bucket_name: str = PRIVATE_BUCKET,
+    ) -> None:
+        """Generate audio for this translation at appropriate speeds based on context.
+
+        For flashcard context: generates both slow and normal speed audio.
+        For story context: generates normal and fast speed audio.
+
+        The appropriate voice model is loaded based on the translation's language and the audio context.
+        Generated audio segments are automatically uploaded to GCS and their metadata is stored in self.audio.
 
         Args:
-            gcs_uri: Full GCS URI (e.g., 'gs://bucket-name/phrases/en-GB/images/hello_a3f8d2.png')
-
-        Returns:
-            Image.Image: The loaded PIL Image
+            context: Audio context - either "flashcard" or "story". Determines which speeds are generated.
+            gender: Voice gender - either "MALE" or "FEMALE". Defaults to "FEMALE".
+            bucket_name: GCS bucket name for uploading audio. Defaults to PRIVATE_BUCKET.
 
         Raises:
-            ValueError: If image loading fails
+            ValueError: If language is not supported or audio generation fails
+            RuntimeError: If audio upload fails
+
+        Example:
+            >>> phrase = Phrase.create_phrase("She runs to the store daily")
+            >>> fr_translation = phrase.translate(BCP47Language.get("fr-FR"))
+            >>> fr_translation.generate_audio(context="flashcard")
+            >>> # Now fr_translation.audio contains slow and normal speed audio
+            >>> fr_translation.generate_audio(context="story")
+            >>> # Now fr_translation.audio also contains normal and fast speed audio for story context
         """
-        try:
-            # Extract file_path from GCS URI
-            file_path = file_path_from_gcs_uri(gcs_uri)
+        # Get the voice model for this language and context
+        # Note: voice model expects "flashcards" (plural) for flashcard context
+        voice_model = get_voice_model(
+            language_code=self.language.to_tag(),
+            gender=gender,
+            audio_type="flashcards" if context == "flashcard" else "story",
+        )
 
-            # Extract bucket name from URI
-            if not gcs_uri.startswith("gs://"):
-                raise ValueError(f"Invalid GCS URI: {gcs_uri}")
-            parts = gcs_uri[5:].split("/", 1)
-            if len(parts) != 2:
-                raise ValueError(f"Invalid GCS URI format: {gcs_uri}")
-            bucket_name = parts[0]
+        # Determine which speeds to generate based on context
+        if context == "flashcard":
+            speeds_to_generate = ["slow", "normal"]
+        else:  # story
+            speeds_to_generate = ["normal", "fast"]
 
-            # Use the file_path method
-            return self.load_image_from_file_path(file_path, bucket_name)
+        # Generate audio for each speed
+        normal_audio = None
+        for speed in speeds_to_generate:
+            if speed == "fast":
+                # Fast audio is generated from normal audio
+                if normal_audio is None:
+                    raise RuntimeError("Normal audio must be generated before fast audio")
+                audio_segment = generate_fast_audio(normal_audio)
+            else:
+                # Generate normal or slow audio using TTS
+                audio_segment = generate_translation_audio(
+                    translated_text=self.text,
+                    voice_model=voice_model,
+                    speed=speed,
+                )
+                if speed == "normal":
+                    normal_audio = audio_segment
 
-        except Exception as e:
-            raise ValueError(f"Failed to load image from {gcs_uri}: {e}")
+            # Upload the audio and store metadata
+            self.upload_audio(
+                audio_segment=audio_segment,
+                bucket_name=bucket_name,
+                context=context,
+                speed=speed,
+                voice_provider=voice_model.provider.value,
+                voice_model_id=voice_model.voice_id,
+            )
+
+    def upload_all_audio(self, bucket_name: str = PRIVATE_BUCKET) -> None:
+        """Upload all audio files in this translation to GCS.
+
+        Iterates through all PhraseAudio objects and uploads each to GCS.
+        Only uploads audio that has audio_segment set.
+
+        Args:
+            bucket_name: GCS bucket name for uploading audio. Defaults to PRIVATE_BUCKET.
+
+        Raises:
+            ValueError: If any audio upload fails
+        """
+        for phrase_audio in self.audio:
+            if phrase_audio.audio_segment is not None:
+                phrase_audio.upload_to_gcs(bucket_name)
+
+    def download_from_gcs(self, bucket_name: str = PRIVATE_BUCKET) -> None:
+        """Download all audio files for this translation from GCS.
+
+        Iterates through all PhraseAudio objects and downloads each from GCS.
+
+        Args:
+            bucket_name: GCS bucket name for downloading audio. Defaults to PRIVATE_BUCKET.
+
+        Raises:
+            ValueError: If any audio download fails
+        """
+        for phrase_audio in self.audio:
+            phrase_audio.download_from_gcs(bucket_name)
 

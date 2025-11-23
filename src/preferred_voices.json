@@ -1,6 +1,6 @@
 {
     "fr-FR": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "google",
                 "voice_id": "fr-FR-Neural2-F"
@@ -22,7 +22,7 @@
         }
     },
         "ru-RU": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "google",
                 "voice_id": "ru-RU-Wavenet-A"
@@ -44,7 +44,7 @@
         }
     },
     "it-IT": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "google",
                 "voice_id": "it-IT-Neural2-E"
@@ -66,7 +66,7 @@
         }
     },
     "nb-NO": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "azure",
                 "voice_id": "nb-NO-IselinNeural"
@@ -88,7 +88,7 @@
         }
     },
     "sv-SE": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "azure",
                 "voice_id": "sv-SE-SofieNeural"
@@ -110,7 +110,7 @@
         }
     },
     "cmn-CN": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "google",
                 "voice_id": "cmn-CN-Wavenet-A"
@@ -132,7 +132,7 @@
         }
     },
     "en-GB": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "google",
                 "voice_id": "en-GB-Neural2-C"
@@ -154,7 +154,7 @@
         }
     },
     "es-ES": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "google",
                 "voice_id": "es-ES-Neural2-E"
@@ -176,7 +176,7 @@
         }
     },
     "de-DE": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "google",
                 "voice_id": "de-DE-Neural2-G"
@@ -198,7 +198,7 @@
         }
     },
     "cy-GB": {
-        "flashcards": {
+        "flashcard": {
             "female": {
                 "provider": "azure",
                 "voice_id": "cy-GB-NiaNeural"

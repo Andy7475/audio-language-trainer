@@ -44,7 +44,7 @@ def load_voices_from_json(voices_file: Optional[Path] = None) -> Dict[str, Dict[
 def get_voice_model(
     language_code: str,
     gender: Literal["MALE", "FEMALE"],
-    audio_type: Literal["flashcards", "story"] = "flashcards",
+    audio_type: Literal["flashcard", "story"] = "flashcard",
     voices_config: Optional[Dict] = None,
 ) -> VoiceInfo:
     """
@@ -53,7 +53,7 @@ def get_voice_model(
     Args:
         language_code: BCP47 language code (e.g., "fr-FR", "en-GB")
         gender: Voice gender ("MALE" or "FEMALE")
-        audio_type: Type of audio being generated ("flashcards" or "story")
+        audio_type: Type of audio being generated ("flashcard" or "story")
         voices_config: Pre-loaded voices configuration. If None, loads from file.
 
     Returns:
@@ -91,7 +91,7 @@ def get_voice_model(
 
 def get_voice_models(
     language_code: str,
-    audio_type: Literal["flashcards", "story"] = "flashcards",
+    audio_type: Literal["flashcard", "story"] = "flashcard",
     voices_config: Optional[Dict] = None,
 ) -> tuple[VoiceInfo, VoiceInfo]:
     """
@@ -99,7 +99,7 @@ def get_voice_models(
 
     Args:
         language_code: BCP47 language code (e.g., "fr-FR", "en-GB")
-        audio_type: Type of audio being generated ("flashcards" or "story")
+        audio_type: Type of audio being generated ("flashcard" or "story")
         voices_config: Pre-loaded voices configuration. If None, loads from file.
 
     Returns:

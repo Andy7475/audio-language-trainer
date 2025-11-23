@@ -37,5 +37,5 @@ class VoiceProvider(str, Enum):
 class AudioType(str, Enum):
     """Types of audio content being generated."""
 
-    FLASHCARD = "flashcards"
+    FLASHCARD = "flashcard"
     STORY = "story"
