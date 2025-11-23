@@ -1,20 +1,21 @@
 """Voice configuration management and loading from preferred_voices.json."""
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Literal, Optional
+
+from pydantic import BaseModel, Field
 
 from src.audio.constants import VoiceProvider
 
 
-@dataclass
-class VoiceInfo:
+class VoiceInfo(BaseModel):
     """Information about a specific voice for text-to-speech."""
 
-    provider: VoiceProvider
-    voice_id: str
-    language_code: str
+    model_config = {"use_enum_values": True}  # Serialize enums as their string values
+    provider: VoiceProvider = Field(..., description="TTS provider (google, azure, elevenlabs)")
+    voice_id: str = Field(..., description="Identifier of the voice model")
+    language_code: str = Field(..., description="BCP-47 language code (e.g., 'fr-FR', 'en-GB')")
 
 
 def load_voices_from_json(voices_file: Optional[Path] = None) -> Dict[str, Dict[str, Dict[str, Dict[str, Dict]]]]:

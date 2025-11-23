@@ -44,7 +44,7 @@ class TestVoiceLoading:
 
     def test_get_voice_model_valid(self):
         """Test getting a valid voice model."""
-        voice = get_voice_model("fr-FR", "FEMALE", "flashcards")
+        voice = get_voice_model("fr-FR", "FEMALE", "flashcard")
         assert isinstance(voice, VoiceInfo)
         assert voice.language_code == "fr-FR"
         assert voice.provider in [VoiceProvider.GOOGLE, VoiceProvider.AZURE, VoiceProvider.ELEVENLABS]
@@ -53,12 +53,12 @@ class TestVoiceLoading:
     def test_get_voice_model_invalid_language(self):
         """Test error for invalid language."""
         with pytest.raises(ValueError, match="Unsupported language"):
-            get_voice_model("xx-XX", "FEMALE", "flashcards")
+            get_voice_model("xx-XX", "FEMALE", "flashcard")
 
     def test_get_voice_model_invalid_gender(self):
         """Test error for invalid gender."""
         with pytest.raises(ValueError, match="Gender"):
-            get_voice_model("fr-FR", "NONEXISTENT", "flashcards")
+            get_voice_model("fr-FR", "NONEXISTENT", "flashcard")
 
     def test_get_voice_model_invalid_audio_type(self):
         """Test error for invalid audio type."""
@@ -67,7 +67,7 @@ class TestVoiceLoading:
 
     def test_get_voice_models_pair(self):
         """Test getting both male and female voices."""
-        female, male = get_voice_models("fr-FR", "flashcards")
+        female, male = get_voice_models("fr-FR", "flashcard")
         assert isinstance(female, VoiceInfo)
         assert isinstance(male, VoiceInfo)
         assert female.language_code == "fr-FR"
@@ -76,7 +76,7 @@ class TestVoiceLoading:
     def test_get_voice_model_with_preloaded_config(self):
         """Test getting voice with preloaded configuration."""
         voices = load_voices_from_json()
-        voice = get_voice_model("fr-FR", "FEMALE", "flashcards", voices_config=voices)
+        voice = get_voice_model("fr-FR", "FEMALE", "flashcard", voices_config=voices)
         assert isinstance(voice, VoiceInfo)
 
 
@@ -199,7 +199,7 @@ class TestIntegration:
         assert len(voices) > 0
 
         for language_code in ["fr-FR", "en-GB", "de-DE"]:
-            voice = get_voice_model(language_code, "FEMALE", "flashcards", voices_config=voices)
+            voice = get_voice_model(language_code, "FEMALE", "flashcard", voices_config=voices)
             assert voice.language_code == language_code
             assert isinstance(voice.provider, VoiceProvider)
 
