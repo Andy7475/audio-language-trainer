@@ -23,9 +23,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Ignore config_loader and anything associated with it like the config import, we will parameters directly
 - for any client connections put these in connections/ following the pattern in gcloud_auth.py
 
+## Language Tags and Storage
+- **Use BCP-47 language tags throughout** (e.g., `fr-FR`, `ja-JP`, `en-GB`, `uk-UA`)
+- Use the `BCP47Language` Annotated type from `src.models` for type-safe language handling
+- **Default English:** `en-GB` for consistency in storage paths and as the default for phrase images
+- **Language in storage paths:** All GCS paths include the language tag (e.g., `phrases/fr-FR/audio/flashcard/slow/phrase_hash.mp3`)
+- **GCS bucket access:** Use `src.storage` module for bucket constants (`PRIVATE_BUCKET`, `PUBLIC_BUCKET`) instead of config_loader
+- **Path generators:** Use path generator functions from `src.storage` (e.g., `get_phrase_audio_path()`, `get_phrase_image_path()`)
+- Maintain tag structure in all storage locations for consistency and to support future language-specific variations
+
 ## LLM Tools and Prompts
 - Tool implementations: Located in `llm_tools/<tool_name>/` directory
 - Prompt files: Located in `prompts/<tool_name>/` with structure:
   - `system.txt`: System prompt for the LLM
   - `user.txt`: User prompt template for the LLM
 - Variable replacement: Use Python's `string.Template` class for variable substitution in prompts (e.g., `$variable_name` or `${variable_name}`)
+- when adding clients make sure we obtain those from @src/connections/ - there is a pattern in gcloud_auth

@@ -8,6 +8,7 @@ from google.cloud.firestore import Client as FirestoreClient
 from google.cloud import language_v1
 from google.cloud import texttospeech
 from google.cloud import translate_v2 as translate
+from google.cloud import storage
 
 
 # Singleton clients
@@ -15,6 +16,7 @@ _firestore_client: Optional[FirestoreClient] = None
 _nlp_client: Optional[language_v1.LanguageServiceClient] = None
 _translate_client: Optional[translate.Client] = None
 _texttospeech_client: Optional[texttospeech.TextToSpeechClient] = None
+_storage_client: Optional[storage.Client] = None
 
 
 def setup_authentication() -> Tuple[Credentials, str]:
@@ -155,10 +157,38 @@ def get_texttospeech_client() -> texttospeech.TextToSpeechClient:
         raise RuntimeError(f"Failed to create Text-to-Speech API client: {e}")
 
 
+def get_storage_client() -> storage.Client:
+    """Get a Google Cloud Storage client instance (singleton).
+
+    Returns:
+        storage.Client: Google Cloud Storage client instance
+
+    Raises:
+        RuntimeError: If unable to create Storage client
+        SystemExit: If authentication fails
+    """
+    global _storage_client
+
+    if _storage_client is not None:
+        return _storage_client
+
+    try:
+        # Setup authentication (will use default credentials)
+        setup_authentication()
+
+        # Create Storage client
+        _storage_client = storage.Client()
+        print("✅ Google Cloud Storage client initialized")
+        return _storage_client
+    except Exception as e:
+        raise RuntimeError(f"Failed to create Storage client: {e}")
+
+
 def reset_clients() -> None:
     """Reset all cached client instances (useful for testing)."""
-    global _firestore_client, _nlp_client, _translate_client, _texttospeech_client
+    global _firestore_client, _nlp_client, _translate_client, _texttospeech_client, _storage_client
     _firestore_client = None
     _nlp_client = None
     _translate_client = None
     _texttospeech_client = None
+    _storage_client = None
