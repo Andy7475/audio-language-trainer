@@ -11,6 +11,7 @@ from pydub import AudioSegment
 from src.audio.constants import VoiceProvider, SPEAKING_RATE_NORMAL, DEFAULT_WORD_BREAK_MS
 from src.audio.text_processing import clean_tts_text, tokenize_text
 from src.audio.voices import VoiceInfo
+from src.connections.gcloud_auth import get_texttospeech_client
 
 
 def text_to_speech(
@@ -35,11 +36,8 @@ def text_to_speech(
         ValueError: If provider is unsupported or voice is invalid
     """
     # Detect Google Chirp3 HD voice (no SSML, uses markup and pause tags)
-    if voice_model.provider == VoiceProvider.GOOGLE and "Chirp" in voice_model.voice_id:
-        return _text_to_speech_google(
-            text, voice_model, speaking_rate, is_ssml=False, use_markup=True
-        )
-    elif voice_model.provider == VoiceProvider.GOOGLE:
+
+    if voice_model.provider == VoiceProvider.GOOGLE:
         return _text_to_speech_google(text, voice_model, speaking_rate, is_ssml)
     elif voice_model.provider == VoiceProvider.AZURE:
         return _text_to_speech_azure(text, voice_model, speaking_rate, is_ssml)
@@ -92,8 +90,7 @@ def _text_to_speech_google(
     text: str,
     voice_model: VoiceInfo,
     speaking_rate: float = SPEAKING_RATE_NORMAL,
-    is_ssml: bool = False,
-    use_markup: bool = False,
+    is_ssml: bool = False
 ) -> AudioSegment:
     """
     Convert text to speech using Google Cloud TTS.
@@ -108,11 +105,9 @@ def _text_to_speech_google(
     Returns:
         AudioSegment containing the generated speech
     """
-    client = texttospeech.TextToSpeechClient()
+    client = get_texttospeech_client()
 
-    if use_markup:
-        synthesis_input = texttospeech.SynthesisInput(markup=text)
-    elif is_ssml:
+    if is_ssml:
         synthesis_input = texttospeech.SynthesisInput(ssml=text)
     else:
         synthesis_input = texttospeech.SynthesisInput(text=text)

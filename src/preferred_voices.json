@@ -3,7 +3,7 @@
         "flashcards": {
             "female": {
                 "provider": "google",
-                "voice_id": "fr-FR-Neural2-G"
+                "voice_id": "fr-FR-Neural2-F"
             },
             "male": {
                 "provider": "google",

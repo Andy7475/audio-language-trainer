@@ -6,6 +6,7 @@ from typing import Tuple, Optional
 from google.auth.credentials import Credentials
 from google.cloud.firestore import Client as FirestoreClient
 from google.cloud import language_v1
+from google.cloud import texttospeech
 from google.cloud import translate_v2 as translate
 
 
@@ -13,6 +14,7 @@ from google.cloud import translate_v2 as translate
 _firestore_client: Optional[FirestoreClient] = None
 _nlp_client: Optional[language_v1.LanguageServiceClient] = None
 _translate_client: Optional[translate.Client] = None
+_texttospeech_client: Optional[texttospeech.TextToSpeechClient] = None
 
 
 def setup_authentication() -> Tuple[Credentials, str]:
@@ -126,9 +128,37 @@ def get_translate_client() -> translate.Client:
         raise RuntimeError(f"Failed to create Google Translate API client: {e}")
 
 
+def get_texttospeech_client() -> texttospeech.TextToSpeechClient:
+    """Get a Google Text-to-Speech API client instance (singleton).
+
+    Returns:
+        texttospeech.TextToSpeechClient: Google Text-to-Speech API client instance
+
+    Raises:
+        RuntimeError: If unable to create Text-to-Speech client
+        SystemExit: If authentication fails
+    """
+    global _texttospeech_client
+
+    if _texttospeech_client is not None:
+        return _texttospeech_client
+
+    try:
+        # Setup authentication (will use default credentials)
+        setup_authentication()
+
+        # Create Text-to-Speech client
+        _texttospeech_client = texttospeech.TextToSpeechClient()
+        print("✅ Google Text-to-Speech API client initialized")
+        return _texttospeech_client
+    except Exception as e:
+        raise RuntimeError(f"Failed to create Text-to-Speech API client: {e}")
+
+
 def reset_clients() -> None:
     """Reset all cached client instances (useful for testing)."""
-    global _firestore_client, _nlp_client, _translate_client
+    global _firestore_client, _nlp_client, _translate_client, _texttospeech_client
     _firestore_client = None
     _nlp_client = None
     _translate_client = None
+    _texttospeech_client = None
