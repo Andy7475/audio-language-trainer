@@ -6,7 +6,8 @@ from typing import Any, Dict, List
 from src.llm_tools.base import (
     load_prompt_template,
     get_anthropic_client,
-    extract_tool_response
+    extract_tool_response,
+    DEFAULT_MODEL,
 )
 
 
@@ -40,7 +41,7 @@ def review_story_dialogue(
     flattened_dialogue: List[Dict[str, Any]],
     target_language_name: str = "target language",
     source_language_name: str = "English",
-    model: str = "claude-sonnet-4-20250514",
+    model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
     temperature: float = 0.2
 ) -> List[Dict[str, Any]]:

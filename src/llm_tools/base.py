@@ -4,8 +4,12 @@ import os
 from string import Template
 from typing import Dict, Optional
 
-from anthropic import Anthropic
-from dotenv import load_dotenv
+from src.connections.anthropic_auth import get_anthropic_client as _get_anthropic_client
+
+
+# Default model for all LLM tools
+# Using 'claude-sonnet-4' which is Anthropic's recommended Sonnet model
+DEFAULT_MODEL = "claude-3-7-sonnet-latest"
 
 
 def load_prompt_template(tool_name: str, prompt_type: str = "system") -> Template:
@@ -38,7 +42,7 @@ def load_prompt_template(tool_name: str, prompt_type: str = "system") -> Templat
         return Template(f.read())
 
 
-def get_anthropic_client() -> Anthropic:
+def get_anthropic_client():
     """Get an Anthropic API client.
 
     Returns:
@@ -47,12 +51,7 @@ def get_anthropic_client() -> Anthropic:
     Raises:
         ValueError: If ANTHROPIC_API_KEY is not found in environment
     """
-    load_dotenv()
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
-
-    return Anthropic(api_key=api_key)
+    return _get_anthropic_client()
 
 
 def extract_tool_response(response, tool_name: str) -> Optional[Dict]:

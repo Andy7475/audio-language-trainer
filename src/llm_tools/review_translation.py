@@ -5,7 +5,8 @@ from typing import Optional
 from src.llm_tools.base import (
     load_prompt_template,
     get_anthropic_client,
-    extract_tool_response
+    extract_tool_response,
+    DEFAULT_MODEL,
 )
 
 
@@ -28,7 +29,7 @@ def refine_translation(
     english_phrase: str,
     initial_translation: str,
     target_language_name: str,
-    model: str = "claude-sonnet-4-20250514",
+    model: str = DEFAULT_MODEL,
     max_tokens: int = 1000,
     temperature: float = 0.2
 ) -> str:

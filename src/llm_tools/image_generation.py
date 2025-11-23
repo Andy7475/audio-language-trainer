@@ -5,12 +5,13 @@ from typing import Optional
 from src.llm_tools.base import (
     load_prompt_template,
     get_anthropic_client,
+    DEFAULT_MODEL,
 )
 
 
 def generate_phrase_image_prompt(
     phrase: str,
-    model: str = "claude-sonnet-4-20250514",
+    model: str = DEFAULT_MODEL,
     max_tokens: int = 500,
     temperature: float = 0.7
 ) -> str:
