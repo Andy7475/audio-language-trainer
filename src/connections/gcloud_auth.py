@@ -16,6 +16,7 @@ _firestore_client: Optional[FirestoreClient] = None
 _nlp_client: Optional[language_v1.LanguageServiceClient] = None
 _translate_client: Optional[translate.Client] = None
 _texttospeech_client: Optional[texttospeech.TextToSpeechClient] = None
+_texttospeech_long_client: Optional[texttospeech.TextToSpeechLongAudioSynthesizeClient] = None
 _storage_client: Optional[storage.Client] = None
 
 
@@ -184,11 +185,39 @@ def get_storage_client() -> storage.Client:
         raise RuntimeError(f"Failed to create Storage client: {e}")
 
 
+def get_texttospeech_long_client() -> texttospeech.TextToSpeechLongAudioSynthesizeClient:
+    """Get a Google Text-to-Speech Long Audio API client instance (singleton).
+
+    Returns:
+        texttospeech.TextToSpeechLongAudioSynthesizeClient: Long-form TTS client instance
+
+    Raises:
+        RuntimeError: If unable to create Long Audio TTS client
+        SystemExit: If authentication fails
+    """
+    global _texttospeech_long_client
+
+    if _texttospeech_long_client is not None:
+        return _texttospeech_long_client
+
+    try:
+        # Setup authentication (will use default credentials)
+        setup_authentication()
+
+        # Create Long Audio TTS client
+        _texttospeech_long_client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
+        print("✅ Google Text-to-Speech Long Audio API client initialized")
+        return _texttospeech_long_client
+    except Exception as e:
+        raise RuntimeError(f"Failed to create Text-to-Speech Long Audio API client: {e}")
+
+
 def reset_clients() -> None:
     """Reset all cached client instances (useful for testing)."""
-    global _firestore_client, _nlp_client, _translate_client, _texttospeech_client, _storage_client
+    global _firestore_client, _nlp_client, _translate_client, _texttospeech_client, _texttospeech_long_client, _storage_client
     _firestore_client = None
     _nlp_client = None
     _translate_client = None
     _texttospeech_client = None
+    _texttospeech_long_client = None
     _storage_client = None
