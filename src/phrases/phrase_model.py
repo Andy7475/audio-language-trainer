@@ -140,27 +140,17 @@ class Phrase(FirePhraseDataModel):
         ..., description="Lowercase version for consistent lookups"
     )
     tokens: List[str] = Field(..., description="Tokenised words from the phrase")
-    verbs: List[str] = Field(
-        default_factory=list, description="Lemmatised verb forms only"
-    )
-    vocab: List[str] = Field(
-        default_factory=list, description="Lemmatised non-verb words"
-    )
-    source: Optional[Literal["manual", "tatoeba", "generated"]] = Field(
-        default=None, description="Source of the phrase"
-    )
-    translations: List[Translation] = Field(
-        default_factory=list,
-        description="List of translations for this phrase (loaded separately from subcollection)",
-    )
+    verbs: List[str] = Field(default_factory=list, description="Lemmatised verb forms only")
+    vocab: List[str] = Field(default_factory=list, description="Lemmatised non-verb words")
+    translations: List[Translation] = Field(default_factory=list, description="List of translations for this phrase")
+    collections: List[str] = Field(default_factory=list, description="Collections this phrase belongs to")
 
     @classmethod
-    def create_phrase(cls, english_phrase: str, source: str = "generated") -> Phrase:
+    def create(cls, english_phrase: str) -> Phrase:
         """Factory method to create a Phrase with NLP processing.
 
         Args:
             english_phrase: The English phrase text
-            source: Source of the phrase ("manual", "tatoeba", or "generated")
 
         Returns:
             Phrase: A new Phrase object with NLP analysis and default en-GB translation
@@ -273,7 +263,7 @@ class Phrase(FirePhraseDataModel):
             RuntimeError: If translation fails
 
         Example:
-            >>> phrase = Phrase.create_phrase("Hello, how are you?")
+            >>> phrase = Phrase.create("Hello, how are you?")
             >>> fr_translation = phrase.translate(BCP47Language.get("fr-FR"))
             >>> print(fr_translation.text)
             'Bonjour, comment allez-vous ?'
@@ -425,15 +415,7 @@ class PhraseAudio(FirePhraseDataModel):
     )
 
     @classmethod
-    def create_phrase_audio(
-        cls,
-        phrase_hash: str,
-        text: str,
-        language: BCP47Language,
-        context: Literal["flashcard", "story"],
-        speed: Literal["slow", "normal"] = "normal",
-        gender: str = "FEMALE",
-    ) -> PhraseAudio:
+    def create(cls, phrase_hash: str, text: str, language: BCP47Language, context: Literal["flashcard", "story"], speed: Literal["slow", "normal"], gender:str = "FEMALE") -> PhraseAudio:
         """Factory method to create a PhraseAudio object with generated file_path.
 
         Args:
@@ -712,7 +694,7 @@ class Translation(FirePhraseDataModel):
                     f"Audio already exists for {self.language.to_tag()} {context} {speed}, skipping generation"
                 )
                 continue
-            phrase_audio = PhraseAudio.create_phrase_audio(
+            phrase_audio = PhraseAudio.create(
                 phrase_hash=self.phrase_hash,
                 text=self.text,
                 language=self.language,
