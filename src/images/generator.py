@@ -2,8 +2,7 @@
 
 import copy
 import os
-from pathlib import Path
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional
 
 from PIL import Image
 from tqdm import tqdm
@@ -55,7 +54,7 @@ def generate_image(
         print(f"Warning: Could not apply style '{style}': {e}")
         # Continue with unstyled prompt
 
-    print(f"🎨 Starting image generation process")
+    print("🎨 Starting image generation process")
     print(f"   Prompt: {prompt}")
     print(f"   Will try providers in order: {model_order}")
 
@@ -94,7 +93,7 @@ def generate_image(
             print(f"❌ {model} failed with exception: {e}")
             continue
 
-    print(f"🚫 All image generation attempts failed")
+    print("🚫 All image generation attempts failed")
     return None
 
 
@@ -160,7 +159,9 @@ def generate_images_from_phrases(
         try:
             image = generate_image(prompt, style=style, project_id=project_id)
             if image is None:
-                print(f"Failed to generate image for phrase '{phrase}' with all providers")
+                print(
+                    f"Failed to generate image for phrase '{phrase}' with all providers"
+                )
                 continue
 
             # Resize image to standard size
@@ -186,7 +187,9 @@ def generate_images_from_phrases(
             print(f"Error processing phrase '{phrase}': {e}")
             continue
 
-    print(f"\n🎯 Successfully generated {len(results)} images out of {len(phrases)} phrases")
+    print(
+        f"\n🎯 Successfully generated {len(results)} images out of {len(phrases)} phrases"
+    )
     return results
 
 
@@ -254,7 +257,9 @@ def generate_and_save_story_images(
                 content_type="image/png",
             )
             image_paths[story_part] = gcs_uri
-            print(f"Successfully generated and uploaded image for {story_part} to {gcs_uri}")
+            print(
+                f"Successfully generated and uploaded image for {story_part} to {gcs_uri}"
+            )
 
         except Exception as e:
             print(f"Error processing {story_part}: {e}")
@@ -263,10 +268,7 @@ def generate_and_save_story_images(
     return image_paths
 
 
-def add_image_paths(
-    story_dict: Dict[str, any],
-    image_dir: str
-) -> Dict[str, any]:
+def add_image_paths(story_dict: Dict[str, any], image_dir: str) -> Dict[str, any]:
     """Add image paths to story dictionary based on English phrases.
 
     Args:

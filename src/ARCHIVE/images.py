@@ -2,7 +2,7 @@ import copy
 import io
 import os
 from io import BytesIO
-from typing import Any, Dict, List, Literal, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 import requests
 import vertexai
 from dotenv import load_dotenv
@@ -387,7 +387,6 @@ def generate_image_imagen(
         )
 
         if len(images.images) > 0:
-
             return Image.open(io.BytesIO(images.images[0]._image_bytes))
         else:
             print(f"No image generated using {model} with prompt: {prompt}")

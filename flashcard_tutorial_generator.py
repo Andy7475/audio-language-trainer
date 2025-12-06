@@ -6,7 +6,6 @@ Creates a single-file HTML tutorial for explaining how to use FirePhrase flashca
 This tutorial uses a card-based navigation system and includes live examples of the flashcards.
 """
 
-import os
 from typing import Dict, Any, List, Optional
 
 # Import the necessary functions from your modules
@@ -384,7 +383,7 @@ def generate_flashcard_tutorial(
         # Generate public URL
         public_url = gcs_uri.replace("gs://", "https://storage.googleapis.com/")
 
-        print(f"✅ Flashcard tutorial generated and uploaded to GCS")
+        print("✅ Flashcard tutorial generated and uploaded to GCS")
         print(f"🌐 GCS URI: {gcs_uri}")
         print(f"🔗 Public URL: {public_url}")
 
@@ -443,12 +442,12 @@ def generate_flashcard_tutorials_batch(
     successful = sum(1 for result in results.values() if result)
     failed = len(results) - successful
 
-    print(f"\n🎯 Batch Generation Complete!")
+    print("\n🎯 Batch Generation Complete!")
     print(f"✅ Successful: {successful}")
     print(f"❌ Failed: {failed}")
 
     if successful > 0:
-        print(f"\n🌐 Generated tutorials:")
+        print("\n🌐 Generated tutorials:")
         for lang, result in results.items():
             if result:
                 public_url = result.replace("gs://", "https://storage.googleapis.com/")

@@ -5,11 +5,19 @@ from typing import List, Literal, Tuple
 from google.cloud import texttospeech
 from pydub import AudioSegment
 
-from src.audio.constants import SPEAKING_RATE_NORMAL, SPEAKING_RATE_SLOW, DEFAULT_WORD_BREAK_MS, AUDIO_SPEED_FAST
+from src.audio.constants import (
+    SPEAKING_RATE_NORMAL,
+    SPEAKING_RATE_SLOW,
+    DEFAULT_WORD_BREAK_MS,
+    AUDIO_SPEED_FAST,
+)
 from src.audio.processing import join_audio_segments, speed_up_audio
 from src.audio.providers import text_to_speech, slow_text_to_speech
 from src.audio.voices import VoiceInfo, get_voice_model
-from src.connections.gcloud_auth import get_texttospeech_long_client, setup_authentication
+from src.connections.gcloud_auth import (
+    get_texttospeech_long_client,
+    setup_authentication,
+)
 from src.storage import gcs_uri_from_file_path, PUBLIC_BUCKET
 
 
@@ -58,7 +66,9 @@ def generate_translation_audio(
         )
 
 
-def generate_fast_audio(audio_segment: AudioSegment, speed_factor: float = AUDIO_SPEED_FAST) -> AudioSegment:
+def generate_fast_audio(
+    audio_segment: AudioSegment, speed_factor: float = AUDIO_SPEED_FAST
+) -> AudioSegment:
     """
     Generate fast audio from a normal audio segment using local audio processing.
 

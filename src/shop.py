@@ -2,8 +2,6 @@ import csv
 import math
 import os
 import random
-from pathlib import Path
-from string import Template
 from typing import Dict, List, Optional, Tuple
 
 from PIL import Image

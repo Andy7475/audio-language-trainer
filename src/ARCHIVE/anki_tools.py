@@ -1,34 +1,27 @@
-import json
 import os
 import time
 import uuid
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple
 
 import genanki
 import pandas as pd
 from anki.collection import Collection
 from dotenv import load_dotenv
-from PIL import Image
-from pydub import AudioSegment
 from tqdm import tqdm
 from pathlib import Path
 from src.config_loader import config
-from src.convert import clean_filename, get_deck_name, string_to_large_int
+from src.convert import get_deck_name, string_to_large_int
 from src.gcs_storage import (
     get_story_collection_path,
     read_from_gcs,
     upload_to_gcs,
     get_flashcard_path,
 )
-from src.generate import add_audio, add_translations
-from src.images import add_image_paths
 from src.phrase import build_phrase_dict_from_gcs, get_phrase_keys
 from src.utils import (
-    create_test_story_dict,
     load_template,
     get_story_position,
 )
-from src.wiktionary import generate_wiktionary_links
 
 
 def import_anki_packages(
@@ -1030,6 +1023,7 @@ def export_phrases_to_anki(
 
     print("Cleanup of temporary files completed.")
 
+
 def export_phrases_to_anki_learning_english(
     phrase_dict: Dict[str, Dict[str, Any]],
     output_dir: str = "../outputs/gcs",
@@ -1126,7 +1120,6 @@ def export_phrases_to_anki_learning_english(
 
     # Process each phrase in the original order
     for index, phrase_key in enumerate(phrase_dict):
-
         phrase_data = phrase_dict[phrase_key]
         try:
             # Handle image
@@ -1176,7 +1169,9 @@ def export_phrases_to_anki_learning_english(
                     f'<img src="{image_filename}">' if image_filename else "",
                     language.lower(),
                 ],
-                guid=string_to_large_int(phrase_data["english_text"] + phrase_data["target_text"] + "image"),
+                guid=string_to_large_int(
+                    phrase_data["english_text"] + phrase_data["target_text"] + "image"
+                ),
             )
             notes.append(note)
 

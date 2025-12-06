@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple
 
 from src.llm_tools.verb_phrase_generation import generate_verb_phrases
 from src.llm_tools.vocab_phrase_generation import generate_vocab_phrases
+from src.nlp import get_vocab_from_phrases
 
 
 def generate_phrases_from_vocab_dict(
@@ -53,7 +54,7 @@ def generate_phrases_from_vocab_dict(
         "verbs_processed": 0,
         "vocab_processed": 0,
         "words_used": [],
-        "errors": []
+        "errors": [],
     }
 
     verb_list = vocab_dict["verbs"]
@@ -67,11 +68,13 @@ def generate_phrases_from_vocab_dict(
     tracking_info["words_used"].extend(verb_tracking["additional_words"])
     tracking_info["errors"].extend(verb_tracking["errors"])
 
-    # Generate phrases from vocabulary items
-    print(f"\nStarting vocab phrase generation. {len(vocab_list)} vocab words to process.")
+    vocab_present_in_verb_phrases = get_vocab_from_phrases(all_phrases)
+    vocab_list = _remove_words_from_list(vocab_list, vocab_present_in_verb_phrases)
+    print(
+        f"\nStarting vocab phrase generation. {len(vocab_list)} vocab words to process."
+    )
     vocab_phrases, vocab_tracking = _generate_vocab_phrases_batch(
-        vocab_list,
-        max_iterations=max_iterations
+        vocab_list, max_iterations=max_iterations
     )
     all_phrases.extend(vocab_phrases)
     tracking_info["vocab_phrases"] = len(vocab_phrases)
@@ -125,8 +128,23 @@ def _generate_verb_phrases_batch(
     return phrases, {
         "verbs_processed": processed_count,
         "additional_words": all_additional_words,
-        "errors": errors
+        "errors": errors,
     }
+
+
+def _remove_words_from_list(
+    word_list: List[str], words_to_remove: List[str]
+) -> List[str]:
+    """Remove specified words from a list.
+
+    Args:
+        word_list: Original list of words
+        words_to_remove: List of words to remove from the original list
+
+    Returns:
+        New list with specified words removed
+    """
+    return [word for word in word_list if word not in words_to_remove]
 
 
 def _generate_vocab_phrases_batch(
@@ -137,8 +155,9 @@ def _generate_vocab_phrases_batch(
     """Process vocabulary items and generate phrases for each in batches.
 
     Groups vocabulary words into batches of N (default 10) and processes each batch
-    in a single API call for efficiency. Optionally iterates multiple times through
-    the vocabulary list.
+    in a single API call for efficiency. Words that appear as "additional words" in
+    generated phrases are removed from the remaining vocabulary to avoid redundant
+    processing. Optionally iterates multiple times through the vocabulary list.
 
     Args:
         vocab_list: List of vocabulary words
@@ -152,76 +171,75 @@ def _generate_vocab_phrases_batch(
     all_additional_words = []
     errors = []
     processed_count = 0
-    vocab_index = 0
-    vocab_len = len(vocab_list)
+
+    # Track remaining words to process (will be reduced as words are used in phrases)
+    remaining_words = vocab_list.copy()
+    initial_count = len(vocab_list)
 
     for iteration in range(1, max_iterations + 1):
-        if vocab_index >= vocab_len:
+        if not remaining_words:
             print(f"  Iteration {iteration}: All vocabulary processed.")
             break
 
         print(f"  Iteration {iteration}/{max_iterations}")
 
-        # Process words in batches of batch_size
-        while vocab_index < vocab_len:
-            batch_start = vocab_index
-            batch_end = min(vocab_index + batch_size, vocab_len)
-            batch_words = vocab_list[batch_start:batch_end]
+        # Always take from the front of remaining_words
+        batch_num = 0
+        while remaining_words:
+            # Get current batch from the front
+            batch_words = remaining_words[:batch_size]
 
-            # Get context: next 25 words from current batch position
-            context_start = batch_end
-            context_end = min(context_start + 25, vocab_len)
-            context_words = vocab_list[context_start:context_end]
+            # Get context: next 25 words after this batch
+            context_words = remaining_words[batch_size : batch_size + 25]
+
+            # Calculate display info
+            batch_num += 1
+            processed_so_far = initial_count - len(remaining_words)
+            batch_start_display = processed_so_far + 1
+            batch_end_display = processed_so_far + len(batch_words)
 
             try:
-                print(f"    [{batch_start+1}-{batch_end}/{vocab_len}] Generating phrases for {len(batch_words)} words")
-                result = generate_vocab_phrases(batch_words, context_words=context_words)
+                print(
+                    f"    [{batch_start_display}-{batch_end_display}/{initial_count}] Generating phrases for {len(batch_words)} words"
+                )
+                result = generate_vocab_phrases(
+                    batch_words, context_words=context_words
+                )
 
                 # Extract phrases from results
                 for result_data in result.get("results", []):
                     phrases.append(result_data["phrase"])
 
-                # Track additional words
-                all_additional_words.extend(result.get("all_additional_words", []))
+                # Track additional words from this batch
+                batch_additional_words = result.get("all_additional_words", [])
+                all_additional_words.extend(batch_additional_words)
                 processed_count += len(batch_words)
 
+                # Remove the processed batch words from remaining list
+                remaining_words = remaining_words[len(batch_words) :]
+
+                # Also remove words that were used in phrases from remaining list
+                # This prevents processing words that have already appeared in generated phrases
+                remaining_words = _remove_words_from_list(
+                    remaining_words, batch_additional_words
+                )
+
             except Exception as e:
-                error_msg = f"Error generating phrases for batch {batch_start+1}-{batch_end}: {str(e)}"
+                error_msg = f"Error generating phrases for batch {batch_start_display}-{batch_end_display}: {str(e)}"
                 print(f"    ERROR: {error_msg}")
                 errors.append(error_msg)
+                # Move past this batch even on error
+                remaining_words = remaining_words[len(batch_words) :]
 
-            vocab_index = batch_end
-
-        # Reset index for next iteration if we haven't reached the end
-        if iteration < max_iterations and vocab_index >= vocab_len:
-            vocab_index = 0
+        # After completing iteration, prepare for next iteration if needed
+        # remaining_words already has used words removed, so we'll process what's left
+        if remaining_words:
+            print(
+                f"  Completed iteration {iteration}. {len(remaining_words)} words remaining for next iteration."
+            )
 
     return phrases, {
         "vocab_processed": processed_count,
         "additional_words": all_additional_words,
-        "errors": errors
+        "errors": errors,
     }
-
-
-def get_additional_words_for_tracking(phrases: List[str]) -> List[str]:
-    """Extract words from a list of phrases for vocabulary tracking.
-
-    This is a utility function that can be used to manually extract words
-    from phrases if needed. Words are extracted by splitting on spaces and
-    converting to lowercase.
-
-    Args:
-        phrases: List of phrase strings
-
-    Returns:
-        List of unique words extracted from phrases
-    """
-    words = set()
-    for phrase in phrases:
-        # Split phrase and extract words, removing common articles and prepositions
-        phrase_words = phrase.lower().split()
-        for word in phrase_words:
-            # Skip common articles and prepositions that don't add vocabulary value
-            if word.strip(".,?!\"'") not in {"a", "an", "the", "of", "in", "on", "at", "to", "from", "with", "by"}:
-                words.add(word.strip(".,?!\"'"))
-    return sorted(list(words))

@@ -16,7 +16,9 @@ _firestore_client: Optional[FirestoreClient] = None
 _nlp_client: Optional[language_v1.LanguageServiceClient] = None
 _translate_client: Optional[translate.Client] = None
 _texttospeech_client: Optional[texttospeech.TextToSpeechClient] = None
-_texttospeech_long_client: Optional[texttospeech.TextToSpeechLongAudioSynthesizeClient] = None
+_texttospeech_long_client: Optional[
+    texttospeech.TextToSpeechLongAudioSynthesizeClient
+] = None
 _storage_client: Optional[storage.Client] = None
 
 
@@ -57,20 +59,18 @@ def get_firestore_client(database_name: str = "firephrases") -> FirestoreClient:
         SystemExit: If authentication fails
     """
     global _firestore_client
-    
+
     # Return existing client if already initialized with same database
     if _firestore_client is not None:
         return _firestore_client
-    
+
     try:
         # Setup authentication
         credentials, project_id = setup_authentication()
 
         # Create Firestore client with authenticated credentials
         _firestore_client = FirestoreClient(
-            project=project_id,
-            credentials=credentials,
-            database=database_name
+            project=project_id, credentials=credentials, database=database_name
         )
         return _firestore_client
     except Exception as e:
@@ -79,23 +79,23 @@ def get_firestore_client(database_name: str = "firephrases") -> FirestoreClient:
 
 def get_nlp_client() -> language_v1.LanguageServiceClient:
     """Get a Natural Language API client instance (singleton).
-    
+
     Returns:
         LanguageServiceClient: Natural Language API client instance
-        
+
     Raises:
         RuntimeError: If unable to create NLP client
         SystemExit: If authentication fails
     """
     global _nlp_client
-    
+
     if _nlp_client is not None:
         return _nlp_client
-    
+
     try:
         # Setup authentication (will use default credentials)
         setup_authentication()
-        
+
         # Create Natural Language client
         _nlp_client = language_v1.LanguageServiceClient()
         print("✅ Natural Language API client initialized")
@@ -185,7 +185,9 @@ def get_storage_client() -> storage.Client:
         raise RuntimeError(f"Failed to create Storage client: {e}")
 
 
-def get_texttospeech_long_client() -> texttospeech.TextToSpeechLongAudioSynthesizeClient:
+def get_texttospeech_long_client() -> (
+    texttospeech.TextToSpeechLongAudioSynthesizeClient
+):
     """Get a Google Text-to-Speech Long Audio API client instance (singleton).
 
     Returns:
@@ -209,12 +211,20 @@ def get_texttospeech_long_client() -> texttospeech.TextToSpeechLongAudioSynthesi
         print("✅ Google Text-to-Speech Long Audio API client initialized")
         return _texttospeech_long_client
     except Exception as e:
-        raise RuntimeError(f"Failed to create Text-to-Speech Long Audio API client: {e}")
+        raise RuntimeError(
+            f"Failed to create Text-to-Speech Long Audio API client: {e}"
+        )
 
 
 def reset_clients() -> None:
     """Reset all cached client instances (useful for testing)."""
-    global _firestore_client, _nlp_client, _translate_client, _texttospeech_client, _texttospeech_long_client, _storage_client
+    global \
+        _firestore_client, \
+        _nlp_client, \
+        _translate_client, \
+        _texttospeech_client, \
+        _texttospeech_long_client, \
+        _storage_client
     _firestore_client = None
     _nlp_client = None
     _translate_client = None

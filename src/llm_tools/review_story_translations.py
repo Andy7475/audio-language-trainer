@@ -43,7 +43,7 @@ def review_story_dialogue(
     source_language_name: str = "English",
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
-    temperature: float = 0.2
+    temperature: float = 0.2,
 ) -> List[Dict[str, Any]]:
     """Review and improve story dialogue translations using Claude API.
 
@@ -77,7 +77,7 @@ def review_story_dialogue(
         # Substitute variables
         system_prompt = system_template.substitute(
             target_language_name=target_language_name,
-            source_language_name=source_language_name
+            source_language_name=source_language_name,
         )
         user_prompt = user_template.substitute(
             story_json=json.dumps(flattened_dialogue, indent=2)

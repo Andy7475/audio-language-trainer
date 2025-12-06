@@ -1,8 +1,4 @@
-import base64
 import json
-import os
-import zipfile
-from collections import defaultdict
 from pathlib import Path
 from string import Template
 from typing import Dict, List, Optional
@@ -58,7 +54,7 @@ def upload_styles_to_gcs():
         content_type="text/css",
     )
 
-    print(f"✅ Styles uploaded successfully!")
+    print("✅ Styles uploaded successfully!")
     print(f"🌐 Public URL: {public_url}")
 
     return public_url
@@ -110,7 +106,6 @@ def create_and_upload_html_story(
     )
 
     try:
-
         blob_path = get_public_story_path(story_name, collection)
 
         public_url = upload_to_gcs(
@@ -584,7 +579,7 @@ def generate_hierarchical_index_system(
     if bucket_name is None:
         bucket_name = config.GCS_PUBLIC_BUCKET
 
-    print(f"🏗️  Starting hierarchical index generation...")
+    print("🏗️  Starting hierarchical index generation...")
     print(f"   Languages to process: {languages}")
     print(f"   Collections to check: {collections}")
     print(f"   Target bucket: {bucket_name}")
@@ -592,7 +587,7 @@ def generate_hierarchical_index_system(
     results = {"main_index": None, "language_indexes": {}, "collection_indexes": {}}
 
     # 1. Generate main index (language selector) - only for existing languages
-    print(f"\n📄 Generating main language index...")
+    print("\n📄 Generating main language index...")
     results["main_index"] = generate_main_language_index(
         languages=languages,
         bucket_name=bucket_name,
@@ -631,7 +626,7 @@ def generate_hierarchical_index_system(
         else:
             print(f"   ⚠️  No existing collections found for {language}")
 
-    print(f"\n✅ Hierarchical index generation complete!")
+    print("\n✅ Hierarchical index generation complete!")
     return results
 
 

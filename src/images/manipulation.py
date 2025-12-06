@@ -2,12 +2,13 @@
 
 import os
 import time
-from pathlib import Path
 
 from PIL import Image
 
 
-def resize_image(image: Image.Image, height: int = 500, width: int = 500) -> Image.Image:
+def resize_image(
+    image: Image.Image, height: int = 500, width: int = 500
+) -> Image.Image:
     """Resize a PIL Image to specified dimensions if needed.
 
     Args:
@@ -24,10 +25,7 @@ def resize_image(image: Image.Image, height: int = 500, width: int = 500) -> Ima
 
 
 def create_png_of_html(
-    path_to_html: str,
-    output_path: str = None,
-    width: int = 375,
-    height: int = 1100
+    path_to_html: str, output_path: str = None, width: int = 375, height: int = 1100
 ) -> str:
     """Render an HTML file at smartphone screen size and save it as PNG using Selenium.
 

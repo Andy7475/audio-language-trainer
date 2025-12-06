@@ -10,7 +10,6 @@ from src.gcs_storage import (
     get_m4a_file_path,
     get_story_collection_path,
     read_from_gcs,
-    upload_to_gcs,
 )
 from src.utils import get_story_position
 

@@ -6,7 +6,6 @@ import pickle
 import re
 import time
 from collections import defaultdict
-from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 import vertexai
@@ -491,7 +490,7 @@ def print_anthropic_models() -> None:
         print("No Anthropic models found or error occurred.")
         return
 
-    print(f"Available Anthropic Models:")
+    print("Available Anthropic Models:")
     print("=" * 50)
 
     for i, model in enumerate(models, 1):
@@ -617,7 +616,7 @@ def change_phrase(
     # Get the phrase keys for both old and new phrases
     old_phrase_key = clean_filename(old_phrase)
     new_phrase_key = clean_filename(new_phrase)
-    print(f"Generated phrase keys:")
+    print("Generated phrase keys:")
     print(f"  Old: {old_phrase_key}")
     print(f"  New: {new_phrase_key}\n")
 

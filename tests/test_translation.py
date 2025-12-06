@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from typing import Dict, List, Tuple
+from typing import List
 import copy
 from src.config_loader import config
 from src.translation import (
@@ -11,7 +11,6 @@ from src.nlp import get_text_tokens
 
 
 import pytest
-from typing import List
 
 
 @pytest.mark.parametrize(

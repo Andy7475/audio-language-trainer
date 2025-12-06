@@ -2,7 +2,6 @@ import base64
 import html
 import io
 import os
-import re
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
@@ -12,10 +11,8 @@ import librosa
 import numpy as np
 import requests
 import soundfile as sf
-from elevenlabs import ElevenLabs
 from google.cloud import texttospeech
 from mutagen.mp4 import MP4, MP4Cover
-from PIL import Image
 from pydub import AudioSegment
 from tqdm import tqdm
 from src.convert import clean_filename
@@ -947,12 +944,12 @@ def upload_phrases_audio_to_gcs(
                 if "audio_urls" not in result_dict[phrase_key]:
                     result_dict[phrase_key]["audio_urls"] = {}
 
-                result_dict[phrase_key]["audio_urls"][
-                    "normal"
-                ] = f"gs://{bucket_name}/{normal_path}"
-                result_dict[phrase_key]["audio_urls"][
-                    "slow"
-                ] = f"gs://{bucket_name}/{slow_path}"
+                result_dict[phrase_key]["audio_urls"]["normal"] = (
+                    f"gs://{bucket_name}/{normal_path}"
+                )
+                result_dict[phrase_key]["audio_urls"]["slow"] = (
+                    f"gs://{bucket_name}/{slow_path}"
+                )
                 continue
 
         try:
@@ -1019,7 +1016,6 @@ def generate_and_upload_audio_for_utterance(
         GCS URI of the uploaded audio file
     """
     if bucket_name is None:
-
         bucket_name = config.GCS_PRIVATE_BUCKET
 
     language_name = config.TARGET_LANGUAGE_NAME.lower()

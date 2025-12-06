@@ -25,11 +25,11 @@ TOOL_SCHEMA = {
                         "phrase": {"type": "string"},
                         "additional_words": {
                             "type": "array",
-                            "items": {"type": "string"}
-                        }
+                            "items": {"type": "string"},
+                        },
                     },
-                    "required": ["phrase", "additional_words"]
-                }
+                    "required": ["phrase", "additional_words"],
+                },
             },
             "meaning_variations": {
                 "type": "array",
@@ -40,15 +40,15 @@ TOOL_SCHEMA = {
                         "meaning": {"type": "string"},
                         "additional_words": {
                             "type": "array",
-                            "items": {"type": "string"}
-                        }
+                            "items": {"type": "string"},
+                        },
                     },
-                    "required": ["phrase", "meaning", "additional_words"]
-                }
-            }
+                    "required": ["phrase", "meaning", "additional_words"],
+                },
+            },
         },
-        "required": ["base_phrases", "meaning_variations"]
-    }
+        "required": ["base_phrases", "meaning_variations"],
+    },
 }
 
 
@@ -56,7 +56,7 @@ def generate_verb_phrases(
     verb: str,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 1500,
-    temperature: float = 0.7
+    temperature: float = 0.2,
 ) -> dict[str, Any]:
     """Generate phrases featuring a specific verb in different tenses and meanings.
 
@@ -135,7 +135,9 @@ def generate_verb_phrases(
             "verb": verb,
             "base_phrases": tool_input.get("base_phrases", []),
             "meaning_variations": tool_input.get("meaning_variations", []),
-            "all_additional_words": list(set(all_additional_words))  # Remove duplicates
+            "all_additional_words": list(
+                set(all_additional_words)
+            ),  # Remove duplicates
         }
 
     except Exception as e:

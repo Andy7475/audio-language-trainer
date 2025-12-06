@@ -56,7 +56,7 @@ class ImagenProvider(ImageProvider):
         prompt: str,
         aspect_ratio: str = "1:1",
         safety_filter_level: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Optional[Image.Image]:
         """Generate an image using Vertex AI Imagen.
 

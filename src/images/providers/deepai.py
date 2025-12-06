@@ -26,7 +26,7 @@ class DeepAIProvider(ImageProvider):
         height: Union[str, int] = "512",
         model: Literal["standard", "hd"] = "hd",
         negative_prompt: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Optional[Image.Image]:
         """Generate an image using DeepAI's text2img API.
 

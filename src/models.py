@@ -1,8 +1,8 @@
-from typing import List, Optional, Literal, Annotated, Union
+from typing import Annotated, Union
 
 import langcodes
 from langcodes import Language
-from pydantic import BaseModel, Field, PlainSerializer, BeforeValidator
+from pydantic import PlainSerializer, BeforeValidator
 
 
 def _validate_language_tag(tag: str) -> Language:
@@ -19,7 +19,7 @@ def _validate_language_tag(tag: str) -> Language:
 BCP47Language = Annotated[
     Language,
     BeforeValidator(_validate_language_tag),
-    PlainSerializer(lambda x: x.to_tag(), return_type=str, when_used="always")
+    PlainSerializer(lambda x: x.to_tag(), return_type=str, when_used="always"),
 ]
 
 

@@ -28,8 +28,7 @@ import logging
 
 # Setup logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -78,9 +77,11 @@ AUDIO_SPECS = [
 # DATA CLASSES
 # ============================================================================
 
+
 @dataclass
 class MigrationFile:
     """Record of a single file to migrate."""
+
     phrase: str
     language: str
     file_type: str  # "image", "audio"
@@ -98,6 +99,7 @@ class MigrationFile:
 @dataclass
 class MigrationStats:
     """Statistics about migration."""
+
     total_files: int = 0
     files_found: int = 0
     files_migrated: int = 0
@@ -113,6 +115,7 @@ class MigrationStats:
 # ============================================================================
 # HASH FUNCTIONS
 # ============================================================================
+
 
 def old_hash(phrase: str) -> str:
     """
@@ -133,13 +136,13 @@ def old_hash(phrase: str) -> str:
     """
     s = phrase.lower()
     # Keep alphanumeric, spaces, and hyphens only
-    s = ''.join(c if c.isalnum() or c in ' -' else '' for c in s)
+    s = "".join(c if c.isalnum() or c in " -" else "" for c in s)
     # Replace spaces with underscores
-    s = s.replace(' ', '_')
+    s = s.replace(" ", "_")
     # Remove double underscores
-    s = re.sub(r'_+', '_', s)
+    s = re.sub(r"_+", "_", s)
     # Strip leading/trailing underscores
-    return s.strip('_')
+    return s.strip("_")
 
 
 def new_hash(phrase: str) -> str:
@@ -163,8 +166,8 @@ def new_hash(phrase: str) -> str:
     # Create URL-safe slug from lowercase version
     normalized = phrase.lower().strip()
     # Keep only alphanumeric and convert spaces to underscores
-    slug = ''.join(c if c.isalnum() or c == ' ' else '' for c in normalized)
-    slug = slug.replace(' ', '_')[:50]
+    slug = "".join(c if c.isalnum() or c == " " else "" for c in normalized)
+    slug = slug.replace(" ", "_")[:50]
 
     return f"{slug}_{hash_suffix}"
 
@@ -172,6 +175,7 @@ def new_hash(phrase: str) -> str:
 # ============================================================================
 # PATH GENERATORS
 # ============================================================================
+
 
 def old_audio_path(collection: str, language: str, speed: str, phrase_hash: str) -> str:
     """Generate old-style audio path.
@@ -199,7 +203,9 @@ def common_image_path(phrase_hash: str) -> str:
     return f"phrases/common/images/{phrase_hash}.png"
 
 
-def new_audio_path(language_tag: str, context: str, speed: str, phrase_hash: str) -> str:
+def new_audio_path(
+    language_tag: str, context: str, speed: str, phrase_hash: str
+) -> str:
     """Generate new-style audio path."""
     return f"phrases/{language_tag}/audio/{context}/{speed}/{phrase_hash}.mp3"
 
@@ -212,6 +218,7 @@ def new_image_path(phrase_hash: str) -> str:
 # ============================================================================
 # GCS OPERATIONS
 # ============================================================================
+
 
 class GCSOperations:
     """Handle Google Cloud Storage operations."""
@@ -272,6 +279,7 @@ class GCSOperations:
 # MIGRATION LOGIC
 # ============================================================================
 
+
 def load_phrases(collection: str) -> Dict[str, dict]:
     """
     Load phrases from GCS JSON file.
@@ -304,10 +312,14 @@ def load_phrases(collection: str) -> Dict[str, dict]:
         if isinstance(data, list):
             # Convert list to dict with index as key
             phrases = {str(i): phrase for i, phrase in enumerate(data)}
-            logger.info(f"Loaded {len(phrases)} phrases (list format) from {phrases_path}")
+            logger.info(
+                f"Loaded {len(phrases)} phrases (list format) from {phrases_path}"
+            )
         elif isinstance(data, dict):
             phrases = data
-            logger.info(f"Loaded {len(phrases)} phrases (dict format) from {phrases_path}")
+            logger.info(
+                f"Loaded {len(phrases)} phrases (dict format) from {phrases_path}"
+            )
         else:
             logger.error(f"Unexpected format for phrases: {type(data)}")
             return {}
@@ -404,8 +416,12 @@ def generate_migration_manifest(
         # Search in all language folders
         for old_language, language_tag in LANGUAGE_MAPPING.items():
             for context, speed in AUDIO_SPECS:
-                old_audio_path_value = old_audio_path(collection, old_language, speed, old_hash_value)
-                new_audio_path_value = new_audio_path(language_tag, context, speed, new_hash_value)
+                old_audio_path_value = old_audio_path(
+                    collection, old_language, speed, old_hash_value
+                )
+                new_audio_path_value = new_audio_path(
+                    language_tag, context, speed, new_hash_value
+                )
 
                 migration_file = MigrationFile(
                     phrase=phrase_text,
@@ -433,8 +449,7 @@ def generate_migration_manifest(
 
 
 def execute_migration(
-    migration_files: List[MigrationFile],
-    execute: bool = False
+    migration_files: List[MigrationFile], execute: bool = False
 ) -> MigrationStats:
     """
     Execute migration of files.
@@ -454,7 +469,9 @@ def execute_migration(
 
     for i, mig_file in enumerate(migration_files, 1):
         if not mig_file.exists_in_old:
-            logger.debug(f"[{i}/{len(migration_files)}] Skipping (not found): {mig_file.old_path}")
+            logger.debug(
+                f"[{i}/{len(migration_files)}] Skipping (not found): {mig_file.old_path}"
+            )
             continue
 
         logger.info(
@@ -497,10 +514,11 @@ def execute_migration(
 # REPORTING
 # ============================================================================
 
+
 def generate_report(
     migration_files: List[MigrationFile],
     stats: MigrationStats,
-    output_file: Optional[str] = None
+    output_file: Optional[str] = None,
 ) -> str:
     """
     Generate detailed migration report.
@@ -546,7 +564,11 @@ DETAILS
         report += f"  New hash: {files[0].new_hash}\n"
         for mf in files:
             status = "✓" if mf.migrated else "✗" if mf.error else "-"
-            file_type_str = f"{mf.file_type}({mf.context}/{mf.speed})" if mf.context else mf.file_type
+            file_type_str = (
+                f"{mf.file_type}({mf.context}/{mf.speed})"
+                if mf.context
+                else mf.file_type
+            )
             report += f"  {status} {file_type_str}: {mf.old_path}\n"
             if mf.error:
                 report += f"     Error: {mf.error}\n"
@@ -561,7 +583,7 @@ DETAILS
     if output_file:
         try:
             Path(output_file).parent.mkdir(parents=True, exist_ok=True)
-            with open(output_file, 'w') as f:
+            with open(output_file, "w") as f:
                 f.write(report)
             logger.info(f"Report saved to: {output_file}")
         except Exception as e:
@@ -574,35 +596,32 @@ DETAILS
 # MAIN
 # ============================================================================
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Migrate phrase assets from old to new storage structure"
     )
     parser.add_argument(
-        "--collection",
-        default=COLLECTION,
-        help="Collection name (default: WarmUp150)"
+        "--collection", default=COLLECTION, help="Collection name (default: WarmUp150)"
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Dry-run mode (check files but don't move)"
+        help="Dry-run mode (check files but don't move)",
     )
     parser.add_argument(
-        "--execute",
-        action="store_true",
-        help="Execute migration (actually move files)"
+        "--execute", action="store_true", help="Execute migration (actually move files)"
     )
     parser.add_argument(
         "--limit",
         type=int,
         default=None,
-        help="Limit migration to N phrases (for testing)"
+        help="Limit migration to N phrases (for testing)",
     )
     parser.add_argument(
         "--report",
         default="migration_report.txt",
-        help="Output file for migration report"
+        help="Output file for migration report",
     )
 
     args = parser.parse_args()
@@ -623,7 +642,7 @@ def main():
 
     # Limit for testing
     if args.limit:
-        phrases = dict(list(phrases.items())[:args.limit])
+        phrases = dict(list(phrases.items())[: args.limit])
         logger.info(f"Limited to {args.limit} phrases for testing")
 
     # Generate manifest

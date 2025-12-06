@@ -1,7 +1,6 @@
 import json
-from pathlib import Path
 from string import Template
-from typing import Dict, List, Tuple
+from typing import Dict, List
 from src.convert import get_story_title, get_collection_title
 from src.anki_tools import load_template
 from src.config_loader import config
@@ -274,7 +273,7 @@ def create_html_challenges(
     # Use provided language name/code or fall back to config
     if language_name is None:
         language_name = config.TARGET_LANGUAGE_NAME
-    
+
     if language_code is None:
         language_code = config.TARGET_LANGUAGE_CODE
 

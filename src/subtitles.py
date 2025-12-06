@@ -10,9 +10,14 @@ if module_path not in sys.path:
     sys.path.append(module_path)
 
 from src.config_loader import config
-from src.gcs_storage import upload_to_gcs, get_subtitles_path, get_story_translated_dialogue_path
+from src.gcs_storage import (
+    upload_to_gcs,
+    get_subtitles_path,
+    get_story_translated_dialogue_path,
+)
 from src.convert import clean_filename
 from src.story import prepare_dialogue_with_wiktionary
+
 
 def subriptime_to_seconds(srt_time) -> float:
     """Convert SubRipTime to float seconds for easier calculations"""
@@ -266,7 +271,7 @@ def preview_results(results: List[Dict], count: int = 10, show_unmatched: bool =
     matched = [r for r in results if r["english"] is not None]
     unmatched = [r for r in results if r["english"] is None]
 
-    print(f"\n=== MATCHING SUMMARY ===")
+    print("\n=== MATCHING SUMMARY ===")
     print(f"Total Swedish entries: {len(results)}")
     print(f"Matched: {len(matched)}")
     print(
@@ -317,22 +322,26 @@ def load_vocabulary_pairs(filepath: str) -> List[Dict]:
         return json.load(f)
 
 
-def get_story_dialgogue_from_vocabulary_pairs(vocabulary_pairs: List[Dict]) -> List[str]:
+def get_story_dialgogue_from_vocabulary_pairs(
+    vocabulary_pairs: List[Dict],
+) -> List[str]:
     """Extract dialogue lines from vocabulary pairs and format them
     in the same way as our story data structure"""
 
-    dialogue_dict = {"introduction" : {"dialogue": [], "translated_dialogue": []}}
+    dialogue_dict = {"introduction": {"dialogue": [], "translated_dialogue": []}}
 
     for pair in vocabulary_pairs:
-
         english_text = pair["english"]
         translated_text = pair[config.TARGET_LANGUAGE_NAME.lower()]
 
         english_utterance = {"speaker": "Sam", "text": english_text}
         translated_utterance = {"speaker": "Sam", "text": translated_text}
         dialogue_dict["introduction"]["dialogue"].append(english_utterance)
-        dialogue_dict["introduction"]["translated_dialogue"].append(translated_utterance)
+        dialogue_dict["introduction"]["translated_dialogue"].append(
+            translated_utterance
+        )
     return dialogue_dict
+
 
 def get_subtitle_story_name(title: str, episode: int) -> str:
     """Generate a clean story name from title and episode number"""
@@ -340,14 +349,19 @@ def get_subtitle_story_name(title: str, episode: int) -> str:
     clean_episode = str(episode).zfill(2)
     return f"story_{clean_title}_ep{clean_episode}"
 
+
 def upload_subtitle_dialogue_to_gcs(
-    vocabulary_pairs: List[Dict], title: str, episode: int, 
+    vocabulary_pairs: List[Dict],
+    title: str,
+    episode: int,
 ) -> str:
     """Upload vocabulary pairs to GCS using the subtitle path structure"""
 
     story_name = get_subtitle_story_name(title, episode)
 
-    equivalent_story_path = get_story_translated_dialogue_path(story_name=story_name, collection="Subtitles")
+    equivalent_story_path = get_story_translated_dialogue_path(
+        story_name=story_name, collection="Subtitles"
+    )
 
     dialogue_dict = get_story_dialgogue_from_vocabulary_pairs(vocabulary_pairs)
     dialogue_dict = prepare_dialogue_with_wiktionary(dialogue_dict)

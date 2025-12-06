@@ -1,8 +1,11 @@
 """Test script to verify Firestore connectivity and phrase model functionality."""
 
-from datetime import datetime
-
-from src.phrases.phrase_model import Phrase, get_phrase, upload_phrase, get_firestore_client
+from src.phrases.phrase_model import (
+    Phrase,
+    get_phrase,
+    upload_phrase,
+    get_firestore_client,
+)
 
 
 def test_firestore_connection():
@@ -28,7 +31,7 @@ def test_phrase_model():
             lemmas=["she", "run", "to", "the", "store", "daily"],
             verbs=["run"],
             vocab=["she", "to", "the", "store", "daily"],
-            source="manual"
+            source="manual",
         )
 
         phrase_hash = phrase.get_phrase_hash()

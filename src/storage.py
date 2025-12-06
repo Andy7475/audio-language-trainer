@@ -33,6 +33,7 @@ DEFAULT_ENGLISH_LANGUAGE = langcodes.get("en-GB")
 # URL/PATH CONVERSION HELPERS
 # ============================================================================
 
+
 def gcs_uri_from_file_path(file_path: str, bucket_name: str) -> str:
     """Convert file path to GCS URI.
 
@@ -75,6 +76,7 @@ def file_path_from_gcs_uri(gcs_uri: str) -> str:
 # ============================================================================
 # PATH GENERATORS (Language-aware using BCP47Language)
 # ============================================================================
+
 
 def get_phrase_audio_path(
     phrase_hash: str,
@@ -130,6 +132,7 @@ def get_phrase_image_path(
 # ============================================================================
 # UNIFIED UPLOAD/DOWNLOAD FUNCTIONS
 # ============================================================================
+
 
 def upload_file_to_gcs(
     obj: Any,

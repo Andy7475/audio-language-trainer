@@ -1,4 +1,3 @@
-from src.translation import translate_from_english
 from src.nlp import get_text_tokens
 import requests
 from bs4 import BeautifulSoup
@@ -202,7 +201,6 @@ def generate_wiktionary_links(
 
                     response_cap = requests.get(url_cap, headers=user_agent)
                     if response_cap.status_code == 200:
-
                         soup_cap = BeautifulSoup(response_cap.content, "html.parser")
                         if section_name := find_language_section(
                             soup_cap, language_name
@@ -259,7 +257,9 @@ def add_wiktionary_links(
     else:
         raise ValueError("language must be 'target' or 'source'")
 
-    for phrase_key in tqdm(phrase_translations, desc=f"Adding wiktionary links [{language}]"):
+    for phrase_key in tqdm(
+        phrase_translations, desc=f"Adding wiktionary links [{language}]"
+    ):
         if "wiktionary_links" not in phrase_translations[phrase_key] or overwrite:
             phrase = phrase_translations[phrase_key][lang_key]
 

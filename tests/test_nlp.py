@@ -68,7 +68,6 @@ import pytest
     ],
 )
 def test_remove_matching_words(phrases, original_set, expected):
-
     result = remove_matching_words(phrases, original_set)
     assert result == expected
 

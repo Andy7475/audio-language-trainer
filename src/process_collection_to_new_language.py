@@ -62,6 +62,7 @@ from src.translation import (
 from src.wiktionary import add_wiktionary_links
 from src.convert import get_language_code
 
+
 def setup_authentication():
     """Setup Google Cloud authentication."""
     try:
@@ -115,8 +116,15 @@ def print_config_info():
     print(f"Target Language: {config.TARGET_LANGUAGE_NAME}")
 
     try:
-        source_female, source_male, target_female, target_male = config.get_voice_models()
-        source_female_story, source_male_story, target_female_story, target_male_story = config.get_voice_models("stories")
+        source_female, source_male, target_female, target_male = (
+            config.get_voice_models()
+        )
+        (
+            source_female_story,
+            source_male_story,
+            target_female_story,
+            target_male_story,
+        ) = config.get_voice_models("stories")
         print(
             f"Voices - Target Female: {target_female.voice_id}, Target Female Story: {target_female_story.voice_id}, Target Male Story: {target_male_story.voice_id}"
         )
@@ -393,7 +401,11 @@ def create_challenges(collection: str, story_limit: int = None):
                         language_code = None
                     print(f"  Using language code: {language_code} for {language}")
                     chat_webpage_file = create_html_challenges(
-                        challenges, story_name=story_name, collection=collection, language_name=language, language_code=language_code
+                        challenges,
+                        story_name=story_name,
+                        collection=collection,
+                        language_name=language,
+                        language_code=language_code,
                     )
                     print(f"  ✅ Created challenges for {story_name}")
                 except Exception as e:

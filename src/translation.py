@@ -7,12 +7,11 @@ from src.llm_tools.review_translation import refine_translation
 from src.models import BCP47Language, get_language_code
 
 
-
 def translate_with_google_translate(
     text: Union[str, List[str]],
     target_language: Union[str, BCP47Language],
     source_language: Union[str, BCP47Language] = "en",
-    batch_size: int = 128
+    batch_size: int = 128,
 ) -> Union[str, List[str]]:
     """
     Translate text using Google Translate API.
@@ -68,7 +67,7 @@ def refine_translation_with_anthropic(
     initial_translation: str,
     target_language: Union[str, BCP47Language],
     source_language: Union[str, BCP47Language] = None,
-    model: Optional[str] = None
+    model: Optional[str] = None,
 ) -> str:
     """
     Refine a translation using Anthropic's Claude API.
@@ -107,6 +106,5 @@ def refine_translation_with_anthropic(
         english_phrase=source_phrase,
         initial_translation=initial_translation,
         target_language_name=target_language_name,
-        model=model
+        model=model,
     )
-

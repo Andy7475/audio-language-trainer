@@ -21,8 +21,6 @@ from src.storage import (
     download_from_gcs,
     PRIVATE_BUCKET,
     PUBLIC_BUCKET,
-    get_phrase_audio_path,
-    get_phrase_image_path,
 )
 
 # Expose new bucket constants for backwards compatibility
@@ -75,7 +73,7 @@ def upload_to_gcs(
     warnings.warn(
         "upload_to_gcs() is deprecated. Use upload_file_to_gcs() from src.storage instead.",
         DeprecationWarning,
-        stacklevel=2
+        stacklevel=2,
     )
 
     # Construct full blob path from base_prefix and file_name (old API)
@@ -118,7 +116,7 @@ def read_from_gcs(
     warnings.warn(
         "read_from_gcs() is deprecated. Use download_from_gcs() from src.storage instead.",
         DeprecationWarning,
-        stacklevel=2
+        stacklevel=2,
     )
 
     # Call new API
@@ -143,4 +141,5 @@ def check_blob_exists(bucket_name: str, blob_path: str) -> bool:
         bool: True if the blob exists, False otherwise
     """
     from src.storage import check_blob_exists as _check_blob_exists
+
     return _check_blob_exists(bucket_name, blob_path)

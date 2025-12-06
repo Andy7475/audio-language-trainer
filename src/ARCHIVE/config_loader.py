@@ -4,11 +4,9 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from types import SimpleNamespace
-from typing import Dict, Optional
+from typing import Dict
 
-import azure.cognitiveservices.speech as speechsdk
 from langcodes import Language, LanguageTagError
-from google.cloud import texttospeech
 
 
 class VoiceProvider(Enum):
@@ -30,15 +28,19 @@ class VoiceManager:
 
     def __init__(self):
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
-        self.preferred_voices_file = os.path.join(self.script_dir, "preferred_voices.json")
+        self.preferred_voices_file = os.path.join(
+            self.script_dir, "preferred_voices.json"
+        )
         self.preferred_voices = self._load_preferred_voices()
         self.elevenlabs_client = None
 
     def _load_preferred_voices(self) -> Dict:
         """Load preferred voices configuration."""
         if not os.path.exists(self.preferred_voices_file):
-            raise FileNotFoundError(f"Preferred voices file not found at {self.preferred_voices_file}")
-        
+            raise FileNotFoundError(
+                f"Preferred voices file not found at {self.preferred_voices_file}"
+            )
+
         with open(self.preferred_voices_file, "r") as f:
             return json.load(f)
 
@@ -47,33 +49,40 @@ class VoiceManager:
         if self.elevenlabs_client is None:
             api_key = os.getenv("ELEVENLABS_API_KEY")
             if not api_key:
-                raise ValueError("ELEVENLABS_API_KEY not found in environment variables")
-            
+                raise ValueError(
+                    "ELEVENLABS_API_KEY not found in environment variables"
+                )
+
             try:
                 from elevenlabs import ElevenLabs
+
                 self.elevenlabs_client = ElevenLabs(api_key=api_key)
             except Exception as e:
                 raise RuntimeError(f"Failed to initialize ElevenLabs client: {e}")
 
     def get_voice(self, language_code: str, gender: str, enum_type: str) -> VoiceInfo:
         """Get voice configuration for specified language, gender and enum type.
-        
+
         Args:
             language_code: Language code (e.g. "fr-FR")
             gender: "male" or "female"
             enum_type: "phrases" or "stories"
-            
+
         Returns:
             VoiceInfo object with voice configuration
-            
+
         Raises:
             KeyError: If voice configuration not found
             ValueError: If provider is invalid
         """
         try:
-            voice_config = self.preferred_voices[language_code][enum_type][gender.lower()]
+            voice_config = self.preferred_voices[language_code][enum_type][
+                gender.lower()
+            ]
         except KeyError:
-            raise KeyError(f"No voice configuration found for {language_code} {enum_type} {gender}. Preferred voices: {self.preferred_voices}")
+            raise KeyError(
+                f"No voice configuration found for {language_code} {enum_type} {gender}. Preferred voices: {self.preferred_voices}"
+            )
 
         provider = voice_config["provider"]
         voice_id = voice_config["voice_id"]
@@ -87,7 +96,7 @@ class VoiceManager:
             name=voice_id,  # Using voice_id as name for simplicity
             provider=provider_enum,
             voice_id=voice_id,
-            language_code=language_code
+            language_code=language_code,
         )
 
 
@@ -112,16 +121,18 @@ class ConfigLoader:
         """Get the number of seconds since the last API call"""
         return time.time() - self.time_api_last_called
 
-    def _validate_language_code(self, language_code: str, field_name: str) -> tuple[str, str, str, str]:
+    def _validate_language_code(
+        self, language_code: str, field_name: str
+    ) -> tuple[str, str, str, str]:
         """Validates language code with better error handling and returns language details.
-        
+
         Args:
             language_code: Language code to validate (e.g. "fr-FR")
             field_name: Name of the field being validated (for error messages)
-            
+
         Returns:
             Tuple of (language_code, alpha2_code, language_name, country_name)
-            
+
         Raises:
             ValueError: If language code is empty or invalid
             LanguageTagError: If language code format is incorrect
@@ -133,15 +144,17 @@ class ConfigLoader:
             language_object = Language.get(language_code)
             if not language_object.is_valid():
                 raise ValueError(f"{field_name} is not parsing as a valid language.")
-                
+
             # Extract components
             language_code = str(language_object)
             alpha2_code = language_object.language
             language_name = language_object.language_name()
-            country_name = language_object.territory_name() if language_object.territory else ""
-            
+            country_name = (
+                language_object.territory_name() if language_object.territory else ""
+            )
+
             return language_code, alpha2_code, language_name, country_name
-            
+
         except LanguageTagError:
             raise LanguageTagError(
                 f"{field_name} must be in format 'language-COUNTRY' (e.g., 'fr-FR')"
@@ -194,7 +207,9 @@ class ConfigLoader:
             )
 
             # Refresh preferred voices in voice manager
-            self.voice_manager.preferred_voices = self.voice_manager._load_preferred_voices()
+            self.voice_manager.preferred_voices = (
+                self.voice_manager._load_preferred_voices()
+            )
 
         except Exception as e:
             raise RuntimeError(f"Failed to load configuration: {e}")
@@ -225,7 +240,12 @@ class ConfigLoader:
             self.config.TARGET_LANGUAGE_CODE, "male", enum_type
         )
 
-        return (source_voice_female, source_voice_male, target_voice_female, target_voice_male)
+        return (
+            source_voice_female,
+            source_voice_male,
+            target_voice_female,
+            target_voice_male,
+        )
 
     def _check_reload(self):
         """Check if config file has been modified"""

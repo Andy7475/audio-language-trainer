@@ -1,9 +1,7 @@
 """Tests for the refactored audio module."""
 
-import json
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 import pytest
 from pydub import AudioSegment
@@ -47,7 +45,11 @@ class TestVoiceLoading:
         voice = get_voice_model("fr-FR", "FEMALE", "flashcard")
         assert isinstance(voice, VoiceInfo)
         assert voice.language_code == "fr-FR"
-        assert voice.provider in [VoiceProvider.GOOGLE, VoiceProvider.AZURE, VoiceProvider.ELEVENLABS]
+        assert voice.provider in [
+            VoiceProvider.GOOGLE,
+            VoiceProvider.AZURE,
+            VoiceProvider.ELEVENLABS,
+        ]
         assert isinstance(voice.voice_id, str)
 
     def test_get_voice_model_invalid_language(self):
@@ -152,6 +154,7 @@ class TestAudioProcessing:
             original_dir = Path.cwd()
             try:
                 import os
+
                 os.chdir(tmpdir)
                 filename = export_audio(audio)
                 assert filename.endswith(".mp3")
@@ -199,7 +202,9 @@ class TestIntegration:
         assert len(voices) > 0
 
         for language_code in ["fr-FR", "en-GB", "de-DE"]:
-            voice = get_voice_model(language_code, "FEMALE", "flashcard", voices_config=voices)
+            voice = get_voice_model(
+                language_code, "FEMALE", "flashcard", voices_config=voices
+            )
             assert voice.language_code == language_code
             assert isinstance(voice.provider, VoiceProvider)
 

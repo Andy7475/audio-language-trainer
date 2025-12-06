@@ -8,7 +8,11 @@ import requests
 from google.cloud import texttospeech
 from pydub import AudioSegment
 
-from src.audio.constants import VoiceProvider, SPEAKING_RATE_NORMAL, DEFAULT_WORD_BREAK_MS
+from src.audio.constants import (
+    VoiceProvider,
+    SPEAKING_RATE_NORMAL,
+    DEFAULT_WORD_BREAK_MS,
+)
 from src.audio.text_processing import clean_tts_text, tokenize_text
 from src.audio.voices import VoiceInfo
 from src.connections.gcloud_auth import get_texttospeech_client
@@ -78,19 +82,25 @@ def slow_text_to_speech(
     tokens = tokenize_text(cleaned_text, voice_model.language_code)
 
     if voice_model.provider == VoiceProvider.ELEVENLABS:
-        return _slow_text_to_speech_elevenlabs(tokens, voice_model, speaking_rate, word_break_ms)
-    elif voice_model.provider == VoiceProvider.GOOGLE and "Chirp" in voice_model.voice_id:
+        return _slow_text_to_speech_elevenlabs(
+            tokens, voice_model, speaking_rate, word_break_ms
+        )
+    elif (
+        voice_model.provider == VoiceProvider.GOOGLE and "Chirp" in voice_model.voice_id
+    ):
         return _slow_text_to_speech_google_chirp(tokens, voice_model, speaking_rate)
     else:
         # For Google (non-Chirp) and Azure, use standard SSML
-        return _slow_text_to_speech_ssml(tokens, voice_model, speaking_rate, word_break_ms)
+        return _slow_text_to_speech_ssml(
+            tokens, voice_model, speaking_rate, word_break_ms
+        )
 
 
 def _text_to_speech_google(
     text: str,
     voice_model: VoiceInfo,
     speaking_rate: float = SPEAKING_RATE_NORMAL,
-    is_ssml: bool = False
+    is_ssml: bool = False,
 ) -> AudioSegment:
     """
     Convert text to speech using Google Cloud TTS.

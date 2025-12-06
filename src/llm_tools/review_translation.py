@@ -1,7 +1,5 @@
 """LLM tool for reviewing and refining a single translation."""
 
-from typing import Optional
-
 from src.llm_tools.base import (
     load_prompt_template,
     get_anthropic_client,
@@ -31,7 +29,7 @@ def refine_translation(
     target_language_name: str,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 1000,
-    temperature: float = 0.2
+    temperature: float = 0.2,
 ) -> str:
     """Refine a translation using Claude API.
 
@@ -61,7 +59,7 @@ def refine_translation(
         user_prompt = user_template.substitute(
             english_phrase=english_phrase,
             target_language_name=target_language_name,
-            initial_translation=initial_translation
+            initial_translation=initial_translation,
         )
 
         # Get Anthropic client and make API call

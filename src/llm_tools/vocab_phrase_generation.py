@@ -26,16 +26,16 @@ TOOL_SCHEMA = {
                         "phrase": {"type": "string"},
                         "additional_words": {
                             "type": "array",
-                            "items": {"type": "string"}
-                        }
+                            "items": {"type": "string"},
+                        },
                     },
-                    "required": ["target_word", "phrase", "additional_words"]
+                    "required": ["target_word", "phrase", "additional_words"],
                 },
-                "description": "List of phrase results, one per target word"
+                "description": "List of phrase results, one per target word",
             }
         },
-        "required": ["results"]
-    }
+        "required": ["results"],
+    },
 }
 
 
@@ -44,7 +44,7 @@ def generate_vocab_phrases(
     context_words: list[str] | None = None,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 2000,
-    temperature: float = 0.7
+    temperature: float = 0.2,
 ) -> dict[str, Any]:
     """Generate descriptive phrases for multiple vocabulary words (no verbs).
 
@@ -92,8 +92,7 @@ def generate_vocab_phrases(
         # Substitute variables
         system_prompt = system_template.substitute()
         user_prompt = user_template.substitute(
-            target_words=target_words_str,
-            context_words=context_str
+            target_words=target_words_str, context_words=context_str
         )
 
         # Get Anthropic client and make API call
@@ -123,7 +122,9 @@ def generate_vocab_phrases(
 
         return {
             "results": tool_input.get("results", []),
-            "all_additional_words": list(set(all_additional_words))  # Remove duplicates
+            "all_additional_words": list(
+                set(all_additional_words)
+            ),  # Remove duplicates
         }
 
     except Exception as e:

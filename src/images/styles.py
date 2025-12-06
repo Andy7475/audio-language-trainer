@@ -53,7 +53,9 @@ def get_style_description(style: str, styles: Optional[Dict[str, str]] = None) -
     return style
 
 
-def add_image_style(prompt: str, style: str, styles: Optional[Dict[str, str]] = None) -> str:
+def add_image_style(
+    prompt: str, style: str, styles: Optional[Dict[str, str]] = None
+) -> str:
     """Add an art style to an image generation prompt.
 
     Args:

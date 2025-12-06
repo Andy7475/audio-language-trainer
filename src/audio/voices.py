@@ -13,12 +13,18 @@ class VoiceInfo(BaseModel):
     """Information about a specific voice for text-to-speech."""
 
     model_config = {"use_enum_values": True}  # Serialize enums as their string values
-    provider: VoiceProvider = Field(..., description="TTS provider (google, azure, elevenlabs)")
+    provider: VoiceProvider = Field(
+        ..., description="TTS provider (google, azure, elevenlabs)"
+    )
     voice_id: str = Field(..., description="Identifier of the voice model")
-    language_code: str = Field(..., description="BCP-47 language code (e.g., 'fr-FR', 'en-GB')")
+    language_code: str = Field(
+        ..., description="BCP-47 language code (e.g., 'fr-FR', 'en-GB')"
+    )
 
 
-def load_voices_from_json(voices_file: Optional[Path] = None) -> Dict[str, Dict[str, Dict[str, Dict[str, Dict]]]]:
+def load_voices_from_json(
+    voices_file: Optional[Path] = None,
+) -> Dict[str, Dict[str, Dict[str, Dict[str, Dict]]]]:
     """
     Load voice configurations from preferred_voices.json.
 
@@ -72,13 +78,17 @@ def get_voice_model(
 
     lang_config = voices_config[language_code]
     if audio_type not in lang_config:
-        raise ValueError(f"Audio type '{audio_type}' not configured for {language_code}")
+        raise ValueError(
+            f"Audio type '{audio_type}' not configured for {language_code}"
+        )
 
     type_config = lang_config[audio_type]
     gender_lower = gender.lower()
 
     if gender_lower not in type_config:
-        raise ValueError(f"Gender '{gender}' not available for {language_code} {audio_type}")
+        raise ValueError(
+            f"Gender '{gender}' not available for {language_code} {audio_type}"
+        )
 
     voice_config = type_config[gender_lower]
     provider = VoiceProvider(voice_config["provider"])

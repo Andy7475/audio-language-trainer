@@ -15,7 +15,6 @@ from src.audio.constants import (
     DE_REVERB_TIME,
     DEFAULT_AUDIO_FORMAT,
     DEFAULT_GAP_MS,
-    DEFAULT_FRAME_RATE,
 )
 
 

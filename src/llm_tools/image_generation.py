@@ -1,7 +1,5 @@
 """LLM tool for generating image prompts from language learning phrases."""
 
-from typing import Optional
-
 from src.llm_tools.base import (
     load_prompt_template,
     get_anthropic_client,
@@ -13,7 +11,7 @@ def generate_phrase_image_prompt(
     phrase: str,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 500,
-    temperature: float = 0.7
+    temperature: float = 0.7,
 ) -> str:
     """Generate an image prompt for a language learning phrase.
 
@@ -52,7 +50,7 @@ def generate_phrase_image_prompt(
         if response.content and len(response.content) > 0:
             image_prompt = response.content[0].text.strip()
             # Clean up any surrounding quotes or periods
-            image_prompt = image_prompt.strip('"\'.')
+            image_prompt = image_prompt.strip("\"'.")
             return image_prompt
 
         raise RuntimeError("No response content from Anthropic API")

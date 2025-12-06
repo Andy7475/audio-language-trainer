@@ -38,7 +38,7 @@ def tokenize_text(text: str, language_code: str) -> List[str]:
 
     # Split on whitespace and punctuation, keeping track of significant tokens
     # Use regex to split on whitespace while preserving structure
-    tokens = re.split(r'\s+', text)
+    tokens = re.split(r"\s+", text)
 
     # Filter out empty tokens
     tokens = [token.strip() for token in tokens if token.strip()]

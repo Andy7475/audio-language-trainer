@@ -70,92 +70,91 @@ def test_spanish_punctuation_current_issue():
     """Test Spanish inverted punctuation marks - demonstrates current issue"""
     # Test phrase with Spanish inverted punctuation
     spanish_phrase = "¿Cómo estás? ¡Muy bien!"
-    
+
     result = generate_wiktionary_links(spanish_phrase, "Spanish", "es")
     print(f"\nSpanish phrase with inverted punctuation: {result}")
-    
+
     # These assertions will currently FAIL due to the punctuation issue
     # The words with leading inverted punctuation won't get proper links
     # After implementing the fix, these should pass
-    
+
     # Check that basic words are processed (even if not linked due to current bug)
     assert "¿Cómo" in result or "Cómo" in result
     assert "¡Muy" in result or "Muy" in result
-    
+
     # Log what we expect vs what we get for debugging
     if "¿Cómo" in result:
         print("  ❌ Issue confirmed: '¿Cómo' still contains leading punctuation")
     if "¡Muy" in result:
         print("  ❌ Issue confirmed: '¡Muy' still contains leading punctuation")
-    
+
     time.sleep(1)
 
 
 def test_multilingual_punctuation_edge_cases():
     """Test various punctuation scenarios across languages"""
-    
+
     test_cases = [
         # Spanish inverted punctuation
         ("¿Dónde está?", "Spanish", "es"),
         ("¡Hola amigo!", "Spanish", "es"),
-        
         # French contractions and quotes
         ("Qu'est-ce que c'est?", "French", "fr"),
         ("«Bonjour» dit-il.", "French", "fr"),
-        
         # German contractions
         ("Wie geht's dir?", "German", "de"),
-        
         # Mixed punctuation
         ("¿Hablas «français»?", "Spanish", "es"),
     ]
-    
+
     for phrase, lang_name, lang_code in test_cases:
         result = generate_wiktionary_links(phrase, lang_name, lang_code)
         print(f"\n{lang_name} punctuation test: '{phrase}' → {result}")
-        
+
         # Basic sanity check - result should contain the phrase content
         assert len(result) > 0
-        
+
         time.sleep(0.5)
 
 
-@pytest.mark.parametrize("word,expected_clean", [
-    # Spanish inverted punctuation
-    ("¿Cómo", "Cómo"),
-    ("¡Hola", "Hola"),
-    ("estás?", "estás"),
-    ("bien!", "bien"),
-    
-    # Multiple punctuation
-    ("¿¿palabra??", "palabra"),
-    ("¡¡word!!", "word"),
-    
-    # French contractions and quotes
-    ("Qu'est-ce", "Qu'est-ce"),  # Should keep internal apostrophe
-    ("«word»", "word"),
-    ("'bonjour'", "bonjour"),
-    
-    # Mixed scenarios
-    ("¿«hello»?", "hello"),
-    ("¡'word'!", "word"),
-    
-    # Should not change
-    ("hello", "hello"),
-    ("café", "café"),
-    ("naïve", "naïve"),
-])
+@pytest.mark.parametrize(
+    "word,expected_clean",
+    [
+        # Spanish inverted punctuation
+        ("¿Cómo", "Cómo"),
+        ("¡Hola", "Hola"),
+        ("estás?", "estás"),
+        ("bien!", "bien"),
+        # Multiple punctuation
+        ("¿¿palabra??", "palabra"),
+        ("¡¡word!!", "word"),
+        # French contractions and quotes
+        ("Qu'est-ce", "Qu'est-ce"),  # Should keep internal apostrophe
+        ("«word»", "word"),
+        ("'bonjour'", "bonjour"),
+        # Mixed scenarios
+        ("¿«hello»?", "hello"),
+        ("¡'word'!", "word"),
+        # Should not change
+        ("hello", "hello"),
+        ("café", "café"),
+        ("naïve", "naïve"),
+    ],
+)
 def test_word_cleaning_expectations(word, expected_clean):
     """Test what word cleaning should produce after implementing the fix.
-    
+
     Note: This test documents the expected behavior but will fail with current implementation.
     It serves as a specification for the fix we need to implement.
     """
     # Import the function we'll create
     try:
         from src.wiktionary import clean_word_for_lookup
+
         cleaned = clean_word_for_lookup(word)
-        assert cleaned == expected_clean, f"'{word}' should clean to '{expected_clean}', got '{cleaned}'"
+        assert (
+            cleaned == expected_clean
+        ), f"'{word}' should clean to '{expected_clean}', got '{cleaned}'"
     except ImportError:
         # Function doesn't exist yet - this is expected before implementing the fix
         pytest.skip("clean_word_for_lookup function not implemented yet")

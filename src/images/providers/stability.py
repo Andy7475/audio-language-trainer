@@ -52,7 +52,7 @@ class StabilityProvider(ImageProvider):
                 "tile-texture",
             ]
         ] = None,
-        **kwargs
+        **kwargs,
     ) -> Optional[Image.Image]:
         """Generate an image using Stability AI API.
 
@@ -92,7 +92,9 @@ class StabilityProvider(ImageProvider):
 
             # Check if request was successful
             if response.status_code != 200:
-                print(f"Stability API error: {response.status_code} - {response.content}")
+                print(
+                    f"Stability API error: {response.status_code} - {response.content}"
+                )
                 return None
 
             # Check for content filtering

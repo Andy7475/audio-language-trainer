@@ -10,11 +10,7 @@ class ImageProvider(ABC):
     """Abstract base class for image generation providers."""
 
     @abstractmethod
-    def generate(
-        self,
-        prompt: str,
-        **kwargs
-    ) -> Optional[Image.Image]:
+    def generate(self, prompt: str, **kwargs) -> Optional[Image.Image]:
         """Generate an image from a text prompt.
 
         Args:
