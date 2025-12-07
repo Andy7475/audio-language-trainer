@@ -7,12 +7,11 @@ from google.cloud import storage
 from pydub import AudioSegment
 from tqdm import tqdm
 
-from src.audio_generation import create_m4a_with_timed_lyrics
-from src.config_loader import config  # Keep for backward compatibility with existing functions
+from src.config_loader import (
+    config,
+)  # Keep for backward compatibility with existing functions
 from src.convert import (
     convert_audio_to_base64,
-    convert_base64_list_to_audio_segments,
-    convert_base64_to_audio,
     convert_PIL_image_to_base64,
     get_story_title,
     get_collection_title,
@@ -31,16 +30,12 @@ from src.gcs_storage import (
     sanitize_path_component,
 )
 from src.llm_tools.story_generation import generate_story
-from src.models import BCP47Language, get_language_code
 from src.storage import (
     PRIVATE_BUCKET,
-    PUBLIC_BUCKET,
     get_story_dialogue_path,
-    get_story_translated_dialogue_path as get_new_story_translated_dialogue_path,
     upload_file_to_gcs,
-    download_from_gcs,
 )
-from src.utils import load_template, get_story_position
+from src.utils import load_template
 from src.wiktionary import generate_wiktionary_links
 
 

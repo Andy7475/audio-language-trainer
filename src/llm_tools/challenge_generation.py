@@ -1,6 +1,6 @@
 """Challenge generation LLM tool for creating language learning roleplay scenarios."""
 
-from typing import Any, Dict, List
+from typing import Dict
 
 from src.llm_tools.base import (
     DEFAULT_MODEL,
@@ -172,9 +172,7 @@ def generate_challenges(
         # Validate response structure
         scenarios = tool_input.get("scenarios", [])
         if len(scenarios) != 5:
-            raise ValueError(
-                f"Expected exactly 5 scenarios, got {len(scenarios)}"
-            )
+            raise ValueError(f"Expected exactly 5 scenarios, got {len(scenarios)}")
 
         # Validate each scenario has 3 complications
         for i, scenario in enumerate(scenarios):

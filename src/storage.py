@@ -134,10 +134,7 @@ def get_phrase_image_path(
 # ============================================================================
 
 
-def get_story_dialogue_path(
-    story_name: str,
-    collection: str = "LM1000"
-) -> str:
+def get_story_dialogue_path(story_name: str, collection: str = "LM1000") -> str:
     """Get GCS path for story dialogue JSON (English, untranslated).
 
     Args:
@@ -155,9 +152,7 @@ def get_story_dialogue_path(
 
 
 def get_story_translated_dialogue_path(
-    story_name: str,
-    language: Union[str, BCP47Language],
-    collection: str = "LM1000"
+    story_name: str, language: Union[str, BCP47Language], collection: str = "LM1000"
 ) -> str:
     """Get GCS path for translated story dialogue JSON.
 
@@ -195,9 +190,7 @@ def get_story_collection_path(collection: str = "LM1000") -> str:
 
 
 def get_story_challenges_path(
-    story_name: str,
-    language: Union[str, BCP47Language],
-    collection: str = "LM1000"
+    story_name: str, language: Union[str, BCP47Language], collection: str = "LM1000"
 ) -> str:
     """Get GCS path for story challenges JSON (scenario data).
 
@@ -223,9 +216,7 @@ def get_story_challenges_path(
 
 
 def get_story_translated_challenges_path(
-    story_name: str,
-    language: Union[str, BCP47Language],
-    collection: str = "LM1000"
+    story_name: str, language: Union[str, BCP47Language], collection: str = "LM1000"
 ) -> str:
     """Get GCS path for story challenges HTML page (PUBLIC_BUCKET).
 
@@ -250,15 +241,17 @@ def get_story_translated_challenges_path(
     collection_lower = collection.lower()
 
     # Remove 'story_' prefix for folder name
-    story_folder = story_name.replace("story_", "") if story_name.startswith("story_") else story_name
+    story_folder = (
+        story_name.replace("story_", "")
+        if story_name.startswith("story_")
+        else story_name
+    )
 
     return f"{lang_tag_lower}/{collection_lower}/{story_folder}/challenges.html"
 
 
 def get_story_public_path(
-    story_name: str,
-    language: Union[str, BCP47Language],
-    collection: str = "LM1000"
+    story_name: str, language: Union[str, BCP47Language], collection: str = "LM1000"
 ) -> str:
     """Get GCS path for public story HTML.
 
@@ -283,15 +276,17 @@ def get_story_public_path(
     collection_lower = collection.lower()
 
     # Remove 'story_' prefix for folder name
-    story_folder = story_name.replace("story_", "") if story_name.startswith("story_") else story_name
+    story_folder = (
+        story_name.replace("story_", "")
+        if story_name.startswith("story_")
+        else story_name
+    )
 
     return f"{lang_tag_lower}/{collection_lower}/{story_folder}/{story_name}.html"
 
 
 def get_story_image_path(
-    story_name: str,
-    story_part: str,
-    collection: str = "LM1000"
+    story_name: str, story_part: str, collection: str = "LM1000"
 ) -> str:
     """Get GCS path for story part image.
 

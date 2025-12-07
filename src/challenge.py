@@ -13,7 +13,6 @@ from src.storage import (
     get_story_challenges_path,
     get_story_translated_challenges_path,
     upload_file_to_gcs,
-    download_from_gcs,
 )
 from src.utils import load_template
 
@@ -192,9 +191,7 @@ def create_html_challenges(
     )
 
     # Get upload path
-    output_path = get_story_translated_challenges_path(
-        story_name, language, collection
-    )
+    output_path = get_story_translated_challenges_path(story_name, language, collection)
 
     # Upload to GCS
     gcs_uri = upload_file_to_gcs(
