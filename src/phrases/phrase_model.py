@@ -165,9 +165,7 @@ class Phrase(FirePhraseDataModel):
             english_lower=english_phrase,
             tokens=tokens,
             verbs=get_verbs_from_lemmas_and_pos(lemmas_and_pos),
-            vocab=get_vocab_from_lemmas_and_pos(lemmas_and_pos),
-            source=source,
-        )
+            vocab=get_vocab_from_lemmas_and_pos(lemmas_and_pos)        )
 
         # Add default en-GB translation
         phrase.translations.append(phrase._get_english_translation())
@@ -210,7 +208,7 @@ class Phrase(FirePhraseDataModel):
         """
 
         if not self._has_translation(language):
-            return None
+            raise ValueError(f"No translation found for language {language.to_tag()}")
 
         for _translation in self.translations:
             if _translation.language == language:
@@ -271,10 +269,10 @@ class Phrase(FirePhraseDataModel):
         # Check if translation already exists
         if isinstance(target_language, str):
             target_language = BCP47Language.get(target_language)
-        existing_translation = self._get_translation(target_language)
-        if existing_translation and not overwrite:
+
+        if self._has_translation(target_language) and not overwrite:
             print(f"Translation for {target_language.to_tag()} already exists")
-            return existing_translation
+            return self._get_translation(target_language)
 
         # Step 1: Translate with Google Translate
         translated_text = translate_with_google_translate(
@@ -339,6 +337,35 @@ class Phrase(FirePhraseDataModel):
         self._upload_translations(language=language)
 
         return doc_ref
+
+    def download(self, language: BCP47Language | None = None, unique_image_for_language: bool = False) -> None:
+        """Download multimedia files for all translations from GCS.
+
+        This method downloads audio and image files for all translations (or a specific language).
+        By default, all translations share the same image (en-GB), unless unique_image_for_language is True.
+
+        Args:
+            language: If specified, only download multimedia for this language.
+                     If None (default), downloads for all translations.
+            unique_image_for_language: If True, downloads language-specific images.
+                                      If False (default), all translations use en-GB image.
+
+        Example:
+            >>> phrase = get_phrase("hello_a3f8d2")
+            >>> # Download all multimedia for all translations
+            >>> phrase.download()
+            >>> # Download only French translation multimedia
+            >>> phrase.download(language=BCP47Language.get("fr-FR"))
+            >>> # Download with unique images per language
+            >>> phrase.download(unique_image_for_language=True)
+        """
+        download_all_languages = True
+        if language is not None:
+            download_all_languages = False
+
+        for translation in self.translations:
+            if download_all_languages or (translation.language == language):
+                translation.download(unique_image_for_language=unique_image_for_language)
 
     def _upload_to_firestore(
         self, firestore_client: FirestoreClient
@@ -464,6 +491,13 @@ class PhraseAudio(FirePhraseDataModel):
         except Exception as e:
             raise ValueError(f"Failed to upload audio to {self.file_path}: {e}")
 
+    def download(self) -> None:
+        """Download audio file from GCS.
+
+        Public method to download the audio segment from GCS and populate the audio_segment field.
+        """
+        self._download_from_gcs()
+
     def _download_from_gcs(self) -> AudioSegment:
         """Download this audio file from GCS.
 
@@ -543,16 +577,27 @@ class Translation(FirePhraseDataModel):
         """Ensure audio is always a list, even if None is provided."""
         return value or []
 
+    def download(self, unique_image_for_language: bool = False) -> None:
+        """Download all multimedia files from GCS.
+
+        Public method to download all audio files and the image for this translation.
+
+        Args:
+            unique_image_for_language: If True, downloads language-specific image.
+                                      If False (default), downloads en-GB image.
+        """
+        self._download_from_gcs(unique_image_for_language=unique_image_for_language)
+
     def _download_from_gcs(
-        self, bucket_name: str = PRIVATE_BUCKET, unique_image_for_language: bool = False
+        self, unique_image_for_language: bool = False
     ) -> None:
         """Downloads multimedia files from GCS"""
 
         for phrase_audio in self.audio:
-            self.audio.append(phrase_audio._download_from_gcs(bucket_name))
+            phrase_audio._download_from_gcs()
 
         self.image = self._download_image_from_gcs(
-            bucket_name=bucket_name, unique_image_for_language=unique_image_for_language
+            unique_image_for_language=unique_image_for_language
         )
 
     def upload(self) -> DocumentReference:
@@ -625,11 +670,11 @@ class Translation(FirePhraseDataModel):
                 f"Failed to upload image for translation ({self.language.to_tag()}): {e}"
             )
 
-    def _download_image_from_gcs(self, unique_to_language: bool = False) -> Image.Image:
+    def _download_image_from_gcs(self, unique_image_for_language: bool = False) -> Image.Image:
         """Downloads image file from GCS"""
 
         # Common image for all languages is stored under en-GB
-        if not unique_to_language:
+        if not unique_image_for_language:
             language = BCP47Language.get("en-GB")
         else:
             language = self.language
