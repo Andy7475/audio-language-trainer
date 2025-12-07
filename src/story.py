@@ -1,14 +1,14 @@
 import json
 from pathlib import Path
 from string import Template
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from google.cloud import storage
 from pydub import AudioSegment
 from tqdm import tqdm
 
 from src.audio_generation import create_m4a_with_timed_lyrics
-from src.config_loader import config
+from src.config_loader import config  # Keep for backward compatibility with existing functions
 from src.convert import (
     convert_audio_to_base64,
     convert_base64_list_to_audio_segments,
@@ -20,7 +20,6 @@ from src.convert import (
 from src.gcs_storage import (
     check_blob_exists,
     get_image_path,
-    get_m4a_file_path,
     get_fast_audio_path,
     get_public_story_path,
     get_story_translated_dialogue_path,
@@ -30,6 +29,16 @@ from src.gcs_storage import (
     upload_to_gcs,
     get_story_collection_path,
     sanitize_path_component,
+)
+from src.llm_tools.story_generation import generate_story
+from src.models import BCP47Language, get_language_code
+from src.storage import (
+    PRIVATE_BUCKET,
+    PUBLIC_BUCKET,
+    get_story_dialogue_path,
+    get_story_translated_dialogue_path as get_new_story_translated_dialogue_path,
+    upload_file_to_gcs,
+    download_from_gcs,
 )
 from src.utils import load_template, get_story_position
 from src.wiktionary import generate_wiktionary_links
@@ -156,120 +165,6 @@ def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
         {links_html}
     </div>
     """
-
-
-def create_album_files(
-    story_data_dict: dict, story_name: str, collection: str = "LM1000"
-):
-    """Creates and saves M4A files for the story, with album artwork.
-    Optionally uploads files to Google Cloud Storage.
-    """
-    REPEATS_OF_FAST_DIALOGUE = 10
-    PAUSE_TEXT = "---------"
-    GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
-
-    gcs_bucket_name = config.GCS_PRIVATE_BUCKET
-    # Get story position from collection
-    story_position = get_story_position(story_name, collection)
-
-    ALBUM_NAME = (
-        f"{story_position:02d} - "
-        + get_story_title(story_name)
-        + f" ({config.TARGET_LANGUAGE_NAME})"
-    )
-    TOTAL_TRACKS = len(story_data_dict) * 2  # 1 track normal, 1 track fast
-
-    m4a_file_paths = []
-
-    story_data_first_key = list(story_data_dict.keys())[0]
-    cover_image_base64 = story_data_dict[story_data_first_key]["image_data"]
-
-    # Create the story tracks for each story section
-    for track_number, (story_part, data) in enumerate(
-        tqdm(story_data_dict.items(), desc="creating album"), start=1
-    ):
-        audio_list = []
-        captions_list = []
-
-        # Get dialogue texts and audio
-        dialogue_list = [utterance["text"] for utterance in data["translated_dialogue"]]
-        dialogue_audio_list = convert_base64_list_to_audio_segments(
-            data["audio_data"]["dialogue"]
-        )
-
-        # Initial dialogue at normal speed
-        audio_list.append(GAP_BETWEEN_PHRASES)
-        captions_list.append(f"{story_part} - Initial Dialogue")
-
-        audio_list.extend(dialogue_audio_list)
-        captions_list.extend(dialogue_list)
-
-        # Create M4A file
-        m4a_filename = get_m4a_file_path(
-            story_name,
-            story_part,
-            fast=False,
-            story_position=story_position,
-            collection=collection,
-        )
-
-        m4a_path = create_m4a_with_timed_lyrics(
-            audio_segments=audio_list,
-            phrases=captions_list,
-            m4a_filename=m4a_filename,
-            album_name=ALBUM_NAME,
-            track_title=story_part,
-            track_number=track_number,
-            total_tracks=TOTAL_TRACKS,
-            cover_image_base64=cover_image_base64,
-            bucket_name=gcs_bucket_name,
-        )
-        m4a_file_paths.append(m4a_path)
-        print(f"Saved M4A file track number {track_number}")
-
-    # Now generate fast versions
-    for track_number, (story_part, data) in enumerate(
-        tqdm(story_data_dict.items(), desc="creating fast tracks for album"),
-        start=len(story_data_dict) + 1,
-    ):
-        audio_list = []
-        captions_list = []
-
-        # Fast dialogue section
-        captions_list.append(f"{story_part} - Fast Dialogue Practice")
-        fast_dialogue_audio = convert_base64_to_audio(
-            data["audio_data"]["fast_dialogue"]
-        )
-        # Add fast dialogue (there are 10 repeats in the audio)
-        for i in range(REPEATS_OF_FAST_DIALOGUE):
-            audio_list.append(fast_dialogue_audio)
-            captions_list.append(f"Fast Dialogue - Repetition {i+1}")
-            audio_list.append(GAP_BETWEEN_PHRASES)
-            captions_list.append(PAUSE_TEXT)
-
-        # Create M4A file
-        m4a_filename_fast = get_m4a_file_path(
-            story_name=story_name,
-            story_part=story_part,
-            fast=True,
-            story_position=story_position,
-            collection=collection,
-        )
-        m4a_path = create_m4a_with_timed_lyrics(
-            audio_segments=audio_list,
-            phrases=captions_list,
-            m4a_filename=m4a_filename_fast,
-            album_name=ALBUM_NAME,
-            track_title=story_part + " (fast)",
-            track_number=track_number,
-            total_tracks=TOTAL_TRACKS,
-            cover_image_base64=cover_image_base64,
-            bucket_name=gcs_bucket_name,
-        )
-        m4a_file_paths.append(m4a_path)
-        print(f"Saved M4A file track number {track_number}")
-
-    return m4a_file_paths
 
 
 def prepare_dialogue_with_wiktionary(story_data_dict: dict, language_name: str = None):
@@ -1079,3 +974,64 @@ def get_existing_languages(
             existing_languages.append(language)
 
     return existing_languages
+
+
+# ============================================================================
+# NEW STORY GENERATION FUNCTIONS (using llm_tools pattern)
+# ============================================================================
+
+
+def generate_and_upload_story(
+    verbs: List[str],
+    vocab: List[str],
+    collection: str = "LM1000",
+    bucket_name: str = PRIVATE_BUCKET,
+) -> Tuple[str, Dict, str]:
+    """Generate English story and upload to GCS using modern llm_tools pattern.
+
+    Stories are ALWAYS generated in English. Translation happens separately
+    using existing translation functions.
+
+    This is the recommended way to generate new stories. It uses:
+    - src.llm_tools.story_generation for LLM calls
+    - src.storage for path generation and uploads
+    - Dynamic story structure based on verb count
+
+    Args:
+        verbs: List of verbs to incorporate in the story
+        vocab: List of other vocabulary words to use
+        collection: Collection name (default: "LM1000")
+        bucket_name: GCS bucket for upload (default: PRIVATE_BUCKET)
+
+    Returns:
+        Tuple of (story_name, story_dialogue, gcs_uri)
+        - story_name: 3-word story title
+        - story_dialogue: Dictionary with story parts and dialogue
+        - gcs_uri: GCS URI where dialogue JSON was uploaded
+
+    Example:
+        >>> story_name, dialogue, uri = generate_and_upload_story(
+        ...     verbs=["go", "see", "want"],
+        ...     vocab=["coffee", "table", "friend"],
+        ...     collection="LM1000"
+        ... )
+        >>> print(f"Created story: {story_name}")
+        >>> print(f"Saved to: {uri}")
+    """
+    # Generate story using LLM tool (always in English)
+    print(f"Generating story from {len(verbs)} verbs and {len(vocab)} vocab words...")
+    story_name, story_dialogue = generate_story(verbs, vocab)
+
+    print(f"Generated story: {story_name}")
+
+    # Upload dialogue to GCS
+    dialogue_path = get_story_dialogue_path(story_name, collection)
+    gcs_uri = upload_file_to_gcs(
+        obj=story_dialogue,
+        bucket_name=bucket_name,
+        file_path=dialogue_path,
+    )
+
+    print(f"Uploaded story dialogue to: {gcs_uri}")
+
+    return story_name, story_dialogue, gcs_uri

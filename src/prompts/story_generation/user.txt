@@ -1,0 +1,21 @@
+Create an English dialogue story for language learning with the following requirements:
+
+Vocabulary to incorporate:
+- Verbs ($verb_count total): $verbs
+- Other words ($vocab_count total): $vocab
+
+Story Structure:
+$structure_description
+
+Requirements:
+1. Create a story_name that is exactly 3 words and describes the main theme/setting
+2. Structure the story in $part_count part(s) as specified
+3. Each part should be approximately $target_length when spoken
+4. Naturally incorporate vocabulary from the provided lists
+5. Don't force usage of all words - prioritize natural dialogue
+6. Keep exchanges realistic (10-15 words per utterance)
+7. Alternate between Alex and Sam speakers
+8. Add only essential connecting words if needed
+9. Generate ALL dialogue in English
+
+Use the generate_story tool to return your response with the structured dialogue data.
