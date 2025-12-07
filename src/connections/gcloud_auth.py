@@ -11,6 +11,10 @@ from google.cloud import translate_v2 as translate
 from google.cloud import storage
 
 
+# Cached authentication
+_credentials: Optional[Credentials] = None
+_project_id: Optional[str] = None
+
 # Singleton clients
 _firestore_client: Optional[FirestoreClient] = None
 _nlp_client: Optional[language_v1.LanguageServiceClient] = None
@@ -25,16 +29,30 @@ _storage_client: Optional[storage.Client] = None
 def setup_authentication() -> Tuple[Credentials, str]:
     """Setup Google Cloud authentication.
 
+    Returns cached credentials if already authenticated, otherwise performs
+    authentication and caches the result.
+
     Returns:
         Tuple[Credentials, str]: Tuple of (credentials, project_id)
 
     Raises:
         SystemExit: If authentication fails
     """
+    global _credentials, _project_id
+
+    # Return cached authentication if available
+    if _credentials is not None and _project_id is not None:
+        return _credentials, _project_id
+
     try:
         from google.auth import default
 
         credentials, project = default()
+
+        # Cache the authentication result
+        _credentials = credentials
+        _project_id = project
+
         print(f"✅ Authenticated with Google Cloud project: {project}")
         return credentials, project
     except Exception as e:
@@ -217,14 +235,18 @@ def get_texttospeech_long_client() -> (
 
 
 def reset_clients() -> None:
-    """Reset all cached client instances (useful for testing)."""
+    """Reset all cached client instances and authentication (useful for testing)."""
     global \
+        _credentials, \
+        _project_id, \
         _firestore_client, \
         _nlp_client, \
         _translate_client, \
         _texttospeech_client, \
         _texttospeech_long_client, \
         _storage_client
+    _credentials = None
+    _project_id = None
     _firestore_client = None
     _nlp_client = None
     _translate_client = None

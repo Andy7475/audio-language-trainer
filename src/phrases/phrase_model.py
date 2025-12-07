@@ -70,11 +70,13 @@ def get_phrase(
 
     # Fetch all translations from subcollection
     translations_docs = doc_ref.collection("translations").stream()
-    translations = []
+    translations = {}
     for translated_doc in translations_docs:
         translation_data = translated_doc.to_dict()
         translation_data.update(core_phrase_references)
-        translations.append(Translation.model_validate(translation_data))
+        translation = Translation.model_validate(translation_data)
+        # Use language tag as the key
+        translations[translation.language.to_tag()] = translation
 
     # Add translations to phrase data
     phrase_data["translations"] = translations
@@ -124,6 +126,24 @@ class FirePhraseDataModel(BaseModel):
         ..., description="Hash of the associated English root phrase"
     )
 
+    def _get_firestore_document_reference(self) -> DocumentReference:
+        """Get or create a Firestore document reference for this phrase.
+
+        Returns the existing reference if available, otherwise creates one
+        from the phrase_hash and caches it.
+
+        Returns:
+            DocumentReference: Firestore document reference
+        """
+        if self.firestore_document_ref is not None:
+            return self.firestore_document_ref
+
+        # Create a new reference and cache it
+        client = get_firestore_client(self.firestore_database)
+        doc_ref = client.collection("phrases").document(self.phrase_hash)
+        self.firestore_document_ref = doc_ref
+        return doc_ref
+
 
 class Phrase(FirePhraseDataModel):
     """Pydantic model representing a phrase in Firestore.
@@ -142,7 +162,7 @@ class Phrase(FirePhraseDataModel):
     tokens: List[str] = Field(..., description="Tokenised words from the phrase")
     verbs: List[str] = Field(default_factory=list, description="Lemmatised verb forms only")
     vocab: List[str] = Field(default_factory=list, description="Lemmatised non-verb words")
-    translations: List[Translation] = Field(default_factory=list, description="List of translations for this phrase")
+    translations: dict[str, Translation] = Field(default_factory=dict, description="Dictionary of translations keyed by language tag (e.g., 'fr-FR')")
     collections: List[str] = Field(default_factory=list, description="Collections this phrase belongs to")
 
     @classmethod
@@ -168,7 +188,8 @@ class Phrase(FirePhraseDataModel):
             vocab=get_vocab_from_lemmas_and_pos(lemmas_and_pos)        )
 
         # Add default en-GB translation
-        phrase.translations.append(phrase._get_english_translation())
+        en_translation = phrase._get_english_translation()
+        phrase.translations[en_translation.language.to_tag()] = en_translation
 
         return phrase
 
@@ -194,8 +215,7 @@ class Phrase(FirePhraseDataModel):
         Returns:
             bool: True if translation exists, False otherwise
         """
-        target_tag = language.to_tag()
-        return any(t.language.to_tag() == target_tag for t in self.translations)
+        return language.to_tag() in self.translations
 
     def _get_translation(self, language: BCP47Language) -> Optional[Translation]:
         """Get the translation for a specific language if it exists.
@@ -206,13 +226,10 @@ class Phrase(FirePhraseDataModel):
         Returns:
             Optional[Translation]: The translation if found, None otherwise
         """
-
         if not self._has_translation(language):
             raise ValueError(f"No translation found for language {language.to_tag()}")
 
-        for _translation in self.translations:
-            if _translation.language == language:
-                return _translation
+        return self.translations[language.to_tag()]
 
     def _get_english_translation(self) -> Translation:
         """Create an English (en-GB) translation from the Phrase.
@@ -247,7 +264,7 @@ class Phrase(FirePhraseDataModel):
         3. Optionally refine the translation using Anthropic's Claude
         4. Tokenize the translated text
         5. Create and return a Translation object
-        6. Add the translation to the phrase's translations list
+        6. Add the translation to the phrase's translations dict
 
         Args:
             target_language: BCP47 language tag for the target language
@@ -297,19 +314,19 @@ class Phrase(FirePhraseDataModel):
         # Step 4: Create the Translation object
         translation = Translation(
             phrase_hash=self.phrase_hash,
-            firestore_document_ref = self.firestore_document_ref,
+            firestore_document_ref=self._get_firestore_document_reference(),
             language=target_language,
             text=translated_text,
             text_lower=translated_text.lower(),
             tokens=tokens,
         )
 
-        # Step 5: Add the translation to the phrase's translations list
-        self.translations.append(translation)
+        # Step 5: Add the translation to the phrase's translations dict
+        self.translations[translation.language.to_tag()] = translation
 
         return translation
 
-    def upload(self, language: BCP47Language | None = None) -> DocumentReference:
+    def upload(self, language: BCP47Language | None = None, overwrite:bool = False) -> DocumentReference:
         """Upload the phrase and its translations to Firestore and GCS. If language specified, then just upload that language.
 
         This method will:
@@ -334,21 +351,20 @@ class Phrase(FirePhraseDataModel):
         self.firestore_document_ref = doc_ref
 
         # Step 3 & 4: Upload audio and images to GCS
-        self._upload_translations(language=language)
+        self._upload_translations(language=language, overwrite=overwrite)
 
         return doc_ref
 
-    def download(self, language: BCP47Language | None = None, unique_image_for_language: bool = False) -> None:
+    def download(self, language: BCP47Language | None = None) -> None:
         """Download multimedia files for all translations from GCS.
 
         This method downloads audio and image files for all translations (or a specific language).
-        By default, all translations share the same image (en-GB), unless unique_image_for_language is True.
+        By default, all translations share the same image (en-GB)
 
         Args:
             language: If specified, only download multimedia for this language.
                      If None (default), downloads for all translations.
-            unique_image_for_language: If True, downloads language-specific images.
-                                      If False (default), all translations use en-GB image.
+
 
         Example:
             >>> phrase = get_phrase("hello_a3f8d2")
@@ -356,16 +372,53 @@ class Phrase(FirePhraseDataModel):
             >>> phrase.download()
             >>> # Download only French translation multimedia
             >>> phrase.download(language=BCP47Language.get("fr-FR"))
-            >>> # Download with unique images per language
-            >>> phrase.download(unique_image_for_language=True)
+
         """
         download_all_languages = True
         if language is not None:
             download_all_languages = False
 
-        for translation in self.translations:
+        for translation in self.translations.values():
             if download_all_languages or (translation.language == language):
-                translation.download(unique_image_for_language=unique_image_for_language)
+                translation.download()
+
+    def generate_audio(
+        self,
+        context: Literal["flashcard", "story"],
+        language: BCP47Language | None = None,
+        gender: Literal["MALE", "FEMALE"] = "FEMALE",
+        overwrite: bool = False,
+    ) -> None:
+        """Generate audio for all translations (or a specific language).
+
+        This method generates audio files for translations using text-to-speech.
+        Audio is generated for the specified context and gender.
+
+        Args:
+            context: Audio context ("flashcard" or "story"). Flashcard generates both
+                    normal and slow speeds, while story only generates normal speed.
+            language: If specified, only generate audio for this language.
+                     If None (default), generates audio for all translations.
+            gender: Voice gender for TTS ("MALE" or "FEMALE", default: "FEMALE")
+            overwrite: If True, regenerate audio even if it already exists (default: False)
+
+        Example:
+            >>> phrase = Phrase.create("Hello, how are you?")
+            >>> phrase.translate("fr-FR")
+            >>> # Generate flashcard audio for all translations
+            >>> phrase.generate_audio(context="flashcard")
+            >>> # Generate story audio only for French
+            >>> phrase.generate_audio(context="story", language=BCP47Language.get("fr-FR"))
+        """
+        generate_all_languages = True
+        if language is not None:
+            generate_all_languages = False
+
+        for translation in self.translations.values():
+            if generate_all_languages or (translation.language == language):
+                translation.generate_audio(
+                    context=context, gender=gender, overwrite=overwrite
+                )
 
     def _upload_to_firestore(
         self, firestore_client: FirestoreClient
@@ -383,19 +436,19 @@ class Phrase(FirePhraseDataModel):
         return doc_ref
 
     def _upload_translations(
-        self, language: BCP47Language | None = None
+        self, language: BCP47Language | None = None, overwrite: bool = False
     ) -> list[DocumentReference]:
         """Upload each translation to firestore and GCS"""
 
-        upload_all_languages = True
-        if language is not None:
-            upload_all_languages = False
-
         all_references = []
-        for translation in self.translations:
-            if upload_all_languages or (translation.language == language):
-                translation_doc_ref = translation.upload()
-                all_references.append(translation_doc_ref)
+        if language:
+            translation = self.translations.get(language.to_tag())
+            if not translation:
+                raise ValueError(f"No translation found for language {language.to_tag()}")
+            all_references.append(translation.upload(overwrite=overwrite))
+        else:
+            for language_code, translation in self.translations.items():
+                all_references.append(translation.upload(overwrite=overwrite))
 
         return all_references
 
@@ -565,6 +618,10 @@ class Translation(FirePhraseDataModel):
         default_factory=list,
         description="List of audio files for this translation, each with metadata (context, speed, etc.)",
     )
+    image_file_path: Optional[str] = Field(
+        default=None,
+        description="GCS file path for the image associated with this translation (if any)",
+    )
     # Binary data excluded from Firestore serialization
     image: Optional[Image.Image] = Field(
         default=None, exclude=True, description="Image data (excluded from Firestore)"
@@ -577,7 +634,7 @@ class Translation(FirePhraseDataModel):
         """Ensure audio is always a list, even if None is provided."""
         return value or []
 
-    def download(self, unique_image_for_language: bool = False) -> None:
+    def download(self) -> None:
         """Download all multimedia files from GCS.
 
         Public method to download all audio files and the image for this translation.
@@ -586,21 +643,19 @@ class Translation(FirePhraseDataModel):
             unique_image_for_language: If True, downloads language-specific image.
                                       If False (default), downloads en-GB image.
         """
-        self._download_from_gcs(unique_image_for_language=unique_image_for_language)
+        self._download_from_gcs()
 
     def _download_from_gcs(
-        self, unique_image_for_language: bool = False
+        self
     ) -> None:
         """Downloads multimedia files from GCS"""
 
         for phrase_audio in self.audio:
             phrase_audio._download_from_gcs()
 
-        self.image = self._download_image_from_gcs(
-            unique_image_for_language=unique_image_for_language
-        )
+        self.image = self._download_image_from_gcs()
 
-    def upload(self) -> DocumentReference:
+    def upload(self, overwrite:bool = False) -> DocumentReference:
         """Uploads the translation to Firestore and files to GCS"""
 
         doc_ref = self._upload_to_firestore()
@@ -611,21 +666,34 @@ class Translation(FirePhraseDataModel):
         """Uploads the translation text and URLs to firestore"""
 
         translation_data = self.model_dump(mode="json")
-        translation_doc_ref = self.firestore_document_ref.collection(
+        translation_doc_ref = self._get_firestore_document_reference().collection(
             "translations"
         ).document(self.language.to_tag())
         translation_doc_ref.set(translation_data)
         return translation_doc_ref
 
-    def _upload_to_gcs(self, unique_image_for_language: bool = False) -> None:
+    def _upload_to_gcs(self, overwrite: bool = False) -> None:
         """Upload multimedia files to GCS"""
 
         if self.audio:
             for phrase_audio in self.audio:
                 phrase_audio._upload_to_gcs()
         if self.image:
-            self._upload_image_to_gcs(unique_image_for_language=unique_image_for_language)
+            self._upload_image_to_gcs()
 
+    def _set_image_file_path(self, default:bool = True) -> str:
+        """Set the GCS file path for the phrase image in the specified language.
+        Defaults to english image"""
+        if default:
+            language = BCP47Language.get("en-GB")
+        else:
+            language = self.language
+
+        self.image_file_path = get_phrase_image_path(
+            phrase_hash=self.phrase_hash,
+            language=language,
+        )
+        
     def _upload_image_to_gcs(self, unique_image_for_language: bool = False) -> str:
         """Upload image for this translation to GCS and return file_path.
 
@@ -639,7 +707,7 @@ class Translation(FirePhraseDataModel):
             ValueError: If image is not set or upload fails
         """
         if self.image is None:
-            raise ValueError(
+            print(
                 f"No image attached to translation ({self.language.to_tag()})"
             )
 
@@ -670,32 +738,19 @@ class Translation(FirePhraseDataModel):
                 f"Failed to upload image for translation ({self.language.to_tag()}): {e}"
             )
 
-    def _download_image_from_gcs(self, unique_image_for_language: bool = False) -> Image.Image:
+    def _download_image_from_gcs(self) -> Image.Image:
         """Downloads image file from GCS"""
 
-        # Common image for all languages is stored under en-GB
-        if not unique_image_for_language:
-            language = BCP47Language.get("en-GB")
-        else:
-            language = self.language
-        image_file_path = get_phrase_image_path(
-            phrase_hash=self.phrase_hash, language=language
+        # Download from GCS (will use local cache if available)
+        image = download_from_gcs(
+            bucket_name=self.bucket_name,
+            file_path=self.image_file_path,
+            expected_type="image",
+            use_local=True,
         )
 
-        try:
-            # Download from GCS (will use local cache if available)
-            image = download_from_gcs(
-                bucket_name=self.bucket_name,
-                file_path=image_file_path,
-                expected_type="image",
-                use_local=True,
-            )
-
-            self.image = image
-            return image
-
-        except Exception as e:
-            raise ValueError(f"Failed to load image from {image_file_path}: {e}")
+        self.image = image
+        return image
 
     def _check_audio_exists(
         self,
