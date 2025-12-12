@@ -96,6 +96,7 @@ def get_old_cache_paths() -> Dict[str, str]:
     Returns:
         Dictionary mapping language codes to GCS file paths
     """
+    # audio-language-trainer-private-content/resources/french/french_wiktionary_cache.json
     # Common languages - add more as needed
     languages = {
         "en": "collections/LM1000/translations/english_wiktionary_cache.json",
