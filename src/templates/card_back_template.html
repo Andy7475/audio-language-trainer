@@ -2,76 +2,31 @@
     <hr id="answer">
     <div class="picture-container">{{Picture}}</div>
     
-    <!-- Hidden prompt template -->
+<!-- Hidden prompt template -->
     <div class="prompt-template" style="display: none;">
-        {{TargetLanguageName}} Language Learning Insights.
+        You are helping someone learn {{TargetLanguageName}}. They speak {{SourceLanguageName}}.
 
-        For the given English phrase: "{{EnglishText}}" and its translation: "{{TargetText}}", create some language learning insights. Present your response in this structured format:
+        {{SourceLanguageName}}: "{{SourceText}}"
+        {{TargetLanguageName}}: "{{TargetText}}"
 
-        # Breakdown and Alternative Translations
-        - insights from a literal translation
-        - where / when / why would this translation be used over others
-        - different translations for different contexts 
-        - different formalities (e.g. tu / vous if French etc)
-        - plural / singlaur alternatives (e.g. du, ni in Swedish)
+        Provide a brief learning insight about the {{TargetLanguageName}} phrase. Write your ENTIRE explanation in {{SourceLanguageName}}.
 
-        # Vocabulary Building
-        - Expand compound words or word-part origins so I learn more vocab (Bonjour = bon + jour etc.)
-        - Common prefixes/suffixes patterns demonstrated
-        - Related words sharing same roots/stems
-        - Etymology and connections to other languages
-        - Common collocations
-        - Synonyms and antonyms
-        - Situational variations
-        - Register variations (formal/informal/slang)
-        - Idiomatic expressions using similar patterns
+        If the user replies, continue the conversation in {{SourceLanguageName}} only.
 
-        # Practice Points
-        Concrete examples showing how to use this learning in other contexts:
-        - Similar phrases using the same pattern
-        - Common variations
-        - When and how to use this in real conversations
+        Include 2-3 of these points (whichever are most relevant):
+        - Literal meaning vs actual usage
+        - Key grammar pattern worth noticing
+        - Word breakdown if it helps vocabulary (compound words, prefixes, etc.)
+        - One practical example of using it differently
 
-        # Memory Hooks
-        - Mnemonics if helpful
-        - Connections to English or other languages
-        - Visual associations
-        - Memorable cultural connections
+        Keep your response to 3-4 short paragraphs maximum. Focus on what's most useful for understanding and remembering this specific phrase.
 
-        # Grammar Patterns
-        These will be very language dependent (so some not relevant or you might need to insert your own).
-        Identify key structural patterns that learners can apply elsewhere:
-        - Word order rules demonstrated
-        - Conjugation/declension patterns
-        - Case/gender/number agreement if relevant
-        - Special constructions worth noting
-        - Similar phrases using the same pattern
-        - Common mistakes to avoid
-
-        # Cultural Corner (make this a commentary rather than bullets)
-        - Formal vs informal usage
-        - Cultural context and connotations
-        - Regional variations
-        - Social situations where this phrase is commonly used
-        - Any cultural faux pas to avoid
-        - Historical/cultural background if relevant
-
-        Remember to:
-        - Use clear, learner-friendly language
-        - Provide plenty of examples
-        - always provide an english translation for any {{TargetLanguageName}} text
-        - Use bullet points and clear formatting for readability, but add explanations so it's easy to understand
-        - Link concepts together to show language patterns
-        - Flag particularly useful or important points with 💡
-        - Mark common pitfalls or important warnings with ⚠️
-        - Use tables for comparing variations where appropriate
-
-        Note: Not every section needs to be equally detailed - expand on the most relevant aspects for this particular phrase, but maintain the consistent structure for familiarity.
+        Important: Write in {{SourceLanguageName}}, only showing {{TargetLanguageName}} words when giving examples.
     </div>
 
     <!-- Main card content -->
     <div class="target-text" onclick="copyToClipboard(this)">{{TargetText}}</div>
-    <div class="english-text">{{EnglishText}}</div>
+    <div class="source-text">{{SourceText}}</div>
 
     <!-- Audio controls -->
     <div class="audio-controls">

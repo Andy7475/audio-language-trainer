@@ -266,36 +266,85 @@ Collection of Anki deck definitions referencing phrases.
 
 ---
 
-### 4. `wiktionary_cache`
+### 4. `wiktionary`
 
-Cache of Wiktionary lookups to avoid repeated API calls.
+Cache of Wiktionary lookups to avoid repeated API calls. Uses a flat collection structure with composite document IDs.
 
-**Document ID:** `{language}_{word}` (e.g., `fr_magasin`, `zh-CN_吃`)
+**Structure:**
+```
+wiktionary/                           # Top-level collection
+├── en_hello                          # English "hello"
+├── fr_bonjour                        # French "bonjour"
+├── fr_hello                          # French "hello" (same token, different language)
+├── de_haus                           # German "Haus"
+└── ja_世界                           # Japanese "世界"
+```
+
+**Document ID:** `{language_code}_{lowercase_token}` (e.g., `fr_bonjour`, `en_hello`, `ja_世界`)
+- **Note:** Uses language code only, not territory (e.g., `fr` not `fr-FR`)
+- Wiktionary doesn't distinguish between regional variants (fr-FR and fr-CA both use 'fr')
 
 **Fields:**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `word` | string | Yes | The word being cached |
-| `language` | string | Yes | BCP-47 language code |
-| `valid` | boolean | Yes | Whether Wiktionary entry exists |
-| `wiktionary_urls` | map\<string, string\> | Yes | URLs for different Wiktionary language editions (source language) |
-| `checked` | timestamp | Yes | When cache was last verified |
+| `token` | string | Yes | The lowercase token being cached |
+| `language_code` | string | Yes | ISO 639-1 language code (e.g., 'en', 'fr', 'ja') |
+| `exists` | boolean | Yes | Whether a valid Wiktionary entry exists |
+| `url` | string | No | Full Wiktionary URL (null if doesn't exist) |
+| `section_anchor` | string | No | HTML anchor to language section (e.g., "#French") |
+| `last_checked` | timestamp | Yes | UTC timestamp of last verification |
+| `lookup_variant` | string | No | Which variant found entry: 'lowercase', 'capitalized', or 'original' |
 
-**Example:**
+**Example - Same token in multiple languages:**
+
+`wiktionary/fr_pain`:
 ```json
 {
-  "word": "magasin",
-  "language": "fr",
-  "valid": true,
-  "wiktionary_urls": {
-    "en": "https://en.wiktionary.org/wiki/magasin#French",
-    "fr": "https://fr.wiktionary.org/wiki/magasin",
-    "sv": "https://sv.wiktionary.org/wiki/magasin#French"
-  },
-  "checked": "2025-01-15T15:30:00Z",
+  "token": "pain",
+  "language_code": "fr",
+  "exists": true,
+  "url": "https://en.wiktionary.org/wiki/pain",
+  "section_anchor": "#French",
+  "last_checked": "2025-01-15T15:30:00.000Z",
+  "lookup_variant": "lowercase"
 }
 ```
+
+`wiktionary/en_pain`:
+```json
+{
+  "token": "pain",
+  "language_code": "en",
+  "exists": true,
+  "url": "https://en.wiktionary.org/wiki/pain",
+  "section_anchor": "#English",
+  "last_checked": "2025-01-15T15:30:00.000Z",
+  "lookup_variant": "lowercase"
+}
+```
+
+**Example - No entry found:**
+
+`wiktionary/fr_xyzabc123`:
+```json
+{
+  "token": "xyzabc123",
+  "language_code": "fr",
+  "exists": false,
+  "url": null,
+  "section_anchor": null,
+  "last_checked": "2025-01-15T15:35:00.000Z",
+  "lookup_variant": null
+}
+```
+
+**Design Rationale:**
+1. **Flat structure** - Simpler queries, no subcollections needed
+2. **Composite document ID** - Unique per language/token combination
+3. **Language code only** - Wiktionary doesn't distinguish territories (fr-FR and fr-CA use same entries)
+4. **Lowercase tokens** - Consistent lookup keys, original casing preserved in HTML generation
+5. **Explicit exists flag** - Allows caching of "not found" results to avoid repeated web lookups
 
 ---
 

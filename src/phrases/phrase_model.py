@@ -77,7 +77,6 @@ def get_phrase(
     translations = {}
     for translated_doc in translations_docs:
         translation_data = translated_doc.to_dict()
-        translation_data.update(core_phrase_references)
         translation = Translation.model_validate(translation_data)
         # Use language tag as the key
         translations[translation.language.to_tag()] = translation
@@ -899,6 +898,65 @@ class Translation(FirePhraseDataModel):
             return result
 
         return {}
+
+    def get_wiktionary_links(
+        self,
+        force_refresh: bool = False,
+        max_age_days: int = 90,
+        separator: str = " ",
+    ) -> str:
+        """Generate HTML links to Wiktionary for each token in this translation.
+
+        Uses Firestore caching to avoid repeated web lookups. Returns links in the
+        same order as the tokens, preserving the word order from the original text.
+
+        Args:
+            force_refresh: Force fresh lookups even if cached (default: False)
+            max_age_days: Refresh cache if older than this many days (default: 90)
+            separator: String to join links (default: single space)
+
+        Returns:
+            str: HTML string with wiktionary links, tokens in original order
+
+        Example:
+            >>> translation = phrase.translations["fr-FR"]
+            >>> html = translation.get_wiktionary_links()
+            >>> print(html)
+            '<a href="...">Bonjour</a> <a href="...">le</a> monde'
+
+        Note:
+            - Uses language code only (not territory), e.g., 'fr' not 'fr-FR'
+            - Returns plain text for tokens without Wiktionary entries
+            - Preserves original token order and casing
+        """
+        from src.wiktionary import batch_get_or_fetch_wiktionary_entries
+
+        # Extract language code (e.g., 'fr' from 'fr-FR')
+        language_code = self.language.language
+
+        # Get or fetch entries for all tokens (batch operation)
+        entries = batch_get_or_fetch_wiktionary_entries(
+            tokens=self.tokens,
+            language_code=language_code,
+            force_refresh=force_refresh,
+            max_age_days=max_age_days,
+            database_name=self.firestore_database,
+        )
+
+        # Generate HTML links preserving token order
+        links = []
+        for token in self.tokens:
+            token_lower = token.lower()
+            entry = entries.get(token_lower)
+
+            if entry and entry.exists:
+                # Use entry to generate link with original token casing
+                links.append(entry.get_html_link(token))
+            else:
+                # No entry found, return plain text
+                links.append(token)
+
+        return separator.join(links)
 
     def download(self, local:bool = True) -> None:
         """Download all multimedia files from GCS.
