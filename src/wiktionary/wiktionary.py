@@ -19,9 +19,6 @@ class WiktionaryCache(BaseModel):
         ...,
         description="URLs for different Wiktionary language editions (source language)",
     )
-    checked: str = Field(
-        ..., description="When cache was last verified (ISO timestamp)"
-    )
 
     def get_cache_id(self) -> str:
         """Generate the document ID for this cache entry.

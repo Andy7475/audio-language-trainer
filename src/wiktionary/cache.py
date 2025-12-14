@@ -165,29 +165,6 @@ def batch_save_wiktionary_entries(
         batch.commit()
 
 
-def is_cache_stale(
-    entry: WiktionaryEntry,
-    max_age_days: int = 90,
-) -> bool:
-    """Check if a cache entry is stale and needs refreshing.
-
-    Args:
-        entry: WiktionaryEntry to check
-        max_age_days: Maximum age in days before considering stale (default: 90)
-
-    Returns:
-        bool: True if entry is stale and should be refreshed
-
-    Example:
-        >>> entry = get_wiktionary_entry("hello", "en")
-        >>> if entry and is_cache_stale(entry, max_age_days=30):
-        ...     # Refresh the entry
-        ...     pass
-    """
-    cutoff = datetime.utcnow() - timedelta(days=max_age_days)
-    return entry.last_checked < cutoff
-
-
 def get_or_fetch_wiktionary_entry(
     token: str,
     language_code: str,
@@ -219,7 +196,7 @@ def get_or_fetch_wiktionary_entry(
     # Check cache first (unless force refresh)
     if not force_refresh:
         cached = get_wiktionary_entry(token, language_code, database_name)
-        if cached and not is_cache_stale(cached, max_age_days):
+        if cached:
             return cached
 
     # Fetch from web
@@ -266,7 +243,7 @@ def batch_get_or_fetch_wiktionary_entries(
     if not force_refresh:
         cached = batch_get_wiktionary_entries(tokens, language_code, database_name)
         for token, entry in cached.items():
-            if entry and not is_cache_stale(entry, max_age_days):
+            if entry:
                 results[token] = entry
 
     # Identify tokens that need fetching

@@ -902,7 +902,6 @@ class Translation(FirePhraseDataModel):
     def get_wiktionary_links(
         self,
         force_refresh: bool = False,
-        max_age_days: int = 90,
         separator: str = " ",
     ) -> str:
         """Generate HTML links to Wiktionary for each token in this translation.
@@ -939,7 +938,6 @@ class Translation(FirePhraseDataModel):
             tokens=self.tokens,
             language_code=language_code,
             force_refresh=force_refresh,
-            max_age_days=max_age_days,
             database_name=self.firestore_database,
         )
 

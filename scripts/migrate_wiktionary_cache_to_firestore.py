@@ -81,7 +81,6 @@ def convert_old_cache_to_entries(
             exists=(url is not None),
             url=url,
             section_anchor=section_anchor,
-            last_checked=datetime.utcnow(),  # Mark as checked during migration
             lookup_variant=None,  # Unknown from old format
         )
 
@@ -99,15 +98,12 @@ def get_old_cache_paths() -> Dict[str, str]:
     # audio-language-trainer-private-content/resources/french/french_wiktionary_cache.json
     # Common languages - add more as needed
     languages = {
-        "en": "collections/LM1000/translations/english_wiktionary_cache.json",
-        "fr": "collections/LM1000/translations/french_wiktionary_cache.json",
-        "es": "collections/LM1000/translations/spanish_wiktionary_cache.json",
-        "de": "collections/LM1000/translations/german_wiktionary_cache.json",
-        "it": "collections/LM1000/translations/italian_wiktionary_cache.json",
-        "pt": "collections/LM1000/translations/portuguese_wiktionary_cache.json",
-        "ja": "collections/LM1000/translations/japanese_wiktionary_cache.json",
-        "ko": "collections/LM1000/translations/korean_wiktionary_cache.json",
-        "zh": "collections/LM1000/translations/mandarin_chinese_wiktionary_cache.json",
+        "en": "resources/english/english_wiktionary_cache.json",
+        "fr": "resources/french/french_wiktionary_cache.json",
+        "es": "resources/spanish/spanish_wiktionary_cache.json",
+        "de": "resources/german/german_wiktionary_cache.json",
+        "it": "resources/italian/italian_wiktionary_cache.json",
+        "sv": "resources/swedish/swedish_wiktionary_cache.json",
     }
 
     return languages
