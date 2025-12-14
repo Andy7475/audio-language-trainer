@@ -502,14 +502,16 @@ class Phrase(FirePhraseDataModel):
             )
         translation = self.translations[language_tag]
 
-        # Check if image already exists
-        if translation.image is not None and not overwrite:
-            print(f"Image already exists for {language_tag}, skipping generation")
-            return
-
-        # Update image file path for bespoke images
+       # Update image file path for bespoke images - it will have a default one created during translation
         if language_tag != "en-GB":
             translation._set_image_file_path(default=False)
+
+        if check_blob_exists(self.bucket_name, translation.image_file_path) and not overwrite:
+            print(f"Image already exists at {translation.image_file_path}, skipping generation")
+            self.download(language=target_language, local=False)
+            return
+
+ 
 
         prompt = generate_phrase_image_prompt(self.english)
 
