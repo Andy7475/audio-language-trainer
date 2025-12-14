@@ -11,7 +11,7 @@ def generate_phrase_image_prompt(
     phrase: str,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 500,
-    temperature: float = 0.7,
+    temperature: float = 0.4,
 ) -> str:
     """Generate an image prompt for a language learning phrase.
 

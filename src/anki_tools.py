@@ -47,7 +47,7 @@ from src.utils import load_template
 # ANKI MODEL DEFINITION
 # ============================================================================
 
-def get_anki_model(model_id: int = 1607392313, model_name: str = "FirePhrase") -> genanki.Model:
+def get_anki_model(model_id: int = 1607392319, model_name: str = "FirePhrase2") -> genanki.Model:
     """Get the Anki model (note type) for language learning flashcards.
 
     This model supports three card types:
@@ -93,7 +93,7 @@ def get_anki_model(model_id: int = 1607392313, model_name: str = "FirePhrase") -
                 "afmt": load_template("card_back_template.html"),
             },
         ],
-        css=load_template("card_styles.css", parent_path="../src/templates/styles"),
+        css=load_template("card_styles.css", parent_path="../src/templates/"),
     )
 
 
@@ -139,9 +139,7 @@ def create_anki_note_from_phrase(
     target_language: Union[str, BCP47Language],
     index: int,
     model: genanki.Model,
-    temp_dir: str,
-    wiktionary_links: Optional[str] = None,
-    auto_generate_wiktionary: bool = True,
+    temp_dir: str
 ) -> tuple[genanki.Note, list[str]]:
     """Create an Anki note from a single Phrase object.
 
@@ -197,23 +195,16 @@ def create_anki_note_from_phrase(
     target_translation = phrase.translations[target_tag]
 
     # Generate wiktionary links if not provided and auto-generation enabled
-    if wiktionary_links is None and auto_generate_wiktionary:
-        try:
-            wiktionary_links = target_translation.get_wiktionary_links()
-        except Exception as e:
-            print(f"Warning: Failed to generate wiktionary links for {phrase.phrase_hash}: {e}")
-            wiktionary_links = ""
+    wiktionary_links = target_translation.get_wiktionary_links()
 
     # Download target language multimedia if not already loaded
-    if target_translation.audio.get("flashcard", {}).get("normal") is None:
-        phrase.download(language=target_lang, local=True)
+    phrase.download(language=target_lang, local=True)
 
     media_files = []
 
     # Handle image (download if needed)
     image_html = ""
-    if target_translation.image is None and target_translation.image_file_path:
-        phrase.get_image(language=target_lang, local=True)
+    phrase.get_image(language=target_lang, local=True)
 
     if target_translation.image is not None:
         image_filename = f"{uuid.uuid4()}.png"
@@ -229,30 +220,22 @@ def create_anki_note_from_phrase(
     audio_slow_html = ""
 
     # Normal speed audio
-    if "flashcard" in target_translation.audio and "normal" in target_translation.audio["flashcard"]:
-        phrase_audio_normal = target_translation.audio["flashcard"]["normal"]
-        if phrase_audio_normal.audio_segment is None:
-            phrase_audio_normal.download(local=True)
+    phrase_audio_normal = target_translation.audio["flashcard"]["normal"]
 
-        if phrase_audio_normal.audio_segment is not None:
-            audio_normal_filename = f"{uuid.uuid4()}.mp3"
-            audio_normal_path = os.path.join(temp_dir, audio_normal_filename)
-            phrase_audio_normal.audio_segment.export(audio_normal_path, format="mp3")
-            media_files.append(audio_normal_path)
-            audio_normal_html = f"[sound:{audio_normal_filename}]"
+    audio_normal_filename = f"{uuid.uuid4()}.mp3"
+    audio_normal_path = os.path.join(temp_dir, audio_normal_filename)
+    phrase_audio_normal.audio_segment.export(audio_normal_path, format="mp3")
+    media_files.append(audio_normal_path)
+    audio_normal_html = f"[sound:{audio_normal_filename}]"
 
     # Slow speed audio
-    if "flashcard" in target_translation.audio and "slow" in target_translation.audio["flashcard"]:
-        phrase_audio_slow = target_translation.audio["flashcard"]["slow"]
-        if phrase_audio_slow.audio_segment is None:
-            phrase_audio_slow.download(local=True)
+    phrase_audio_slow = target_translation.audio["flashcard"]["slow"]
 
-        if phrase_audio_slow.audio_segment is not None:
-            audio_slow_filename = f"{uuid.uuid4()}.mp3"
-            audio_slow_path = os.path.join(temp_dir, audio_slow_filename)
-            phrase_audio_slow.audio_segment.export(audio_slow_path, format="mp3")
-            media_files.append(audio_slow_path)
-            audio_slow_html = f"[sound:{audio_slow_filename}]"
+    audio_slow_filename = f"{uuid.uuid4()}.mp3"
+    audio_slow_path = os.path.join(temp_dir, audio_slow_filename)
+    phrase_audio_slow.audio_segment.export(audio_slow_path, format="mp3")
+    media_files.append(audio_slow_path)
+    audio_slow_html = f"[sound:{audio_slow_filename}]"
 
     # Create the note
     note = genanki.Note(
@@ -265,8 +248,8 @@ def create_anki_note_from_phrase(
             audio_slow_html,  # TargetAudioSlow
             wiktionary_links or "",  # WiktionaryLinks
             image_html,  # Picture
-            source_lang.language.upper(),  # SourceLanguageName (e.g., "EN")
-            target_lang.language.upper(),  # TargetLanguageName (e.g., "FR")
+            source_lang.display_name(),
+            target_lang.display_name(),
         ],
         guid=_string_to_large_int(f"{phrase.phrase_hash}_{source_tag}_{target_tag}"),
     )
@@ -284,7 +267,6 @@ def create_anki_deck(
     target_language: Union[str, BCP47Language],
     deck_name: Optional[str] = None,
     model: Optional[genanki.Model] = None,
-    wiktionary_links_func: Optional[callable] = None,
 ) -> genanki.Package:
     """Create an Anki deck package from a list of Phrase objects.
 
@@ -300,8 +282,6 @@ def create_anki_deck(
         target_language: BCP47 language tag for target (e.g., "fr-FR", "es-ES")
         deck_name: Name for the Anki deck (if None, auto-generates from languages)
         model: Custom genanki.Model to use (if None, uses default FirePhrase model)
-        wiktionary_links_func: Optional function that takes a Phrase and returns
-                               HTML string with wiktionary links
 
     Returns:
         genanki.Package: Package ready to be saved to .apkg file
@@ -341,7 +321,7 @@ def create_anki_deck(
         model = get_anki_model()
 
     # Create deck
-    deck_id = _string_to_large_int(deck_name + "FirePhrase")
+    deck_id = _string_to_large_int(deck_name + "FirePhrase2")
     deck = genanki.Deck(deck_id, deck_name)
 
     # Use temporary directory for media files
@@ -358,9 +338,6 @@ def create_anki_deck(
         for index, phrase in enumerate(tqdm(phrases, desc="Creating notes")):
             try:
                 # Get wiktionary links if function provided
-                wiktionary_links = None
-                if wiktionary_links_func is not None:
-                    wiktionary_links = wiktionary_links_func(phrase)
 
                 # Create note
                 note, media_files = create_anki_note_from_phrase(
@@ -370,7 +347,6 @@ def create_anki_deck(
                     index=index,
                     model=model,
                     temp_dir=temp_dir,
-                    wiktionary_links=wiktionary_links,
                 )
 
                 notes.append(note)

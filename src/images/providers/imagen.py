@@ -7,7 +7,7 @@ from typing import Literal, Optional
 import vertexai
 from PIL import Image
 from vertexai.preview.vision_models import ImageGenerationModel
-
+from src.connections.gcloud_auth import setup_authentication, _project_id, _credentials
 from src.images.providers.base import ImageProvider
 
 
@@ -23,8 +23,7 @@ class ImagenProvider(ImageProvider):
             "imagen-3.0-generate-002",
             "imagen-3.0-generate-001",
             "imagen-3.0-fast-generate-001",
-        ] = "imagen-3.0-generate-002",
-        project_id: Optional[str] = None,
+        ] = "imagen-4.0-generate-001",
         region: Optional[str] = None,
     ):
         """Initialize Imagen provider.
@@ -38,11 +37,12 @@ class ImagenProvider(ImageProvider):
             ValueError: If project_id cannot be determined
         """
         self.model = model
-
+        if _project_id is None:
+            credentials, project_id = setup_authentication()
+        else:
+            project_id = _project_id
         # Get project ID from parameter, environment, or raise error
         self.project_id = project_id
-        if not self.project_id:
-            self.project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
         if not self.project_id:
             raise ValueError(
                 "project_id must be provided or GOOGLE_CLOUD_PROJECT environment variable must be set"

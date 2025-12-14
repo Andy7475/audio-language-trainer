@@ -11,7 +11,6 @@ from src.images.styles import add_image_style, load_image_styles
 def generate_image(
     prompt: str,
     style: str = "default",
-    project_id: Optional[str] = None,
     model_order: List[Literal["imagen", "stability", "deepai"]] = None,
 ) -> Optional[Image.Image]:
     """Generate an image using multiple providers in specified order.
@@ -19,7 +18,6 @@ def generate_image(
     Args:
         prompt: The image generation prompt
         style: Art style to apply (defaults to "picture book illustration")
-        project_id: GCP project ID for Imagen provider
         model_order: List of models to try in order (default: ["imagen", "stability", "deepai"])
 
     Returns:
@@ -45,7 +43,7 @@ def generate_image(
             print(f"🔄 Attempting image generation with {model}...")
 
             if model == "imagen":
-                provider = ImagenProvider(project_id=project_id)
+                provider = ImagenProvider()
                 image = provider.generate(prompt)
                 if image:
                     print(f"✅ Successfully generated image with {model}")
