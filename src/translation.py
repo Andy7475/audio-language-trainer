@@ -4,7 +4,7 @@ import langcodes
 
 from src.connections.gcloud_auth import get_translate_client
 from src.llm_tools.review_translation import refine_translation
-from src.models import BCP47Language, get_language_code
+from src.models import BCP47Language, get_language
 
 
 def translate_with_google_translate(
@@ -34,10 +34,12 @@ def translate_with_google_translate(
     try:
         translate_client = get_translate_client()
 
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
         # Extract language codes
         # Google Translate API uses 2-letter codes
-        target_code = get_language_code(target_language)
-        source_code = get_language_code(source_language)
+        target_code = target_language.language
+        source_code = source_language.language
 
         # Normalize input to list and track if input was a single string
         is_single_string = isinstance(text, str)

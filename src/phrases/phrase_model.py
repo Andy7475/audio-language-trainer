@@ -1010,9 +1010,15 @@ class Translation(FirePhraseDataModel):
         if self.audio:
             for context_dict in self.audio.values():
                 for phrase_audio in context_dict.values():
-                    phrase_audio._upload_to_gcs()
+                    if check_blob_exists(self.bucket_name, phrase_audio.file_path) and not overwrite:
+                        print(f"Audio already exists at {phrase_audio.file_path}, skipping upload")
+                    else:
+                        phrase_audio._upload_to_gcs()
         if self.image:
-            self._upload_image_to_gcs()
+            if check_blob_exists(self.bucket_name, self.image_file_path) and not overwrite:
+                print(f"Image already exists at {self.image_file_path}, skipping upload")
+            else:
+                self._upload_image_to_gcs()
 
     def _set_image_file_path(self, default: bool = True) -> str:
         """Set the GCS file path for the phrase image in the specified language.

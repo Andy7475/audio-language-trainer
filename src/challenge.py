@@ -6,7 +6,7 @@ from string import Template
 
 from src.convert import get_story_title, get_collection_title
 from src.llm_tools.challenge_generation import generate_challenges
-from src.models import BCP47Language, get_language_code
+from src.models import BCP47Language
 from src.storage import (
     PRIVATE_BUCKET,
     PUBLIC_BUCKET,
@@ -174,7 +174,6 @@ def create_html_challenges(
 
     # Get display values from language
     language_name = language.display_name()
-    language_code = get_language_code(language)  # 2-letter code (e.g., "fr")
 
     # Get story title
     title = get_story_title(story_name)
@@ -184,7 +183,7 @@ def create_html_challenges(
         title=title,
         challenge_data=json.dumps(challenges),
         language=language_name,
-        language_code=language_code,
+        language_code=language.language,
         react_component=f"{api_handlers}\n\n{react_component}",
         collection_name=get_collection_title(collection),
         collection_raw=collection,

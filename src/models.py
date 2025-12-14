@@ -47,29 +47,3 @@ def get_language(language: Union[str, BCP47Language]) -> BCP47Language:
     return language
 
 
-def get_language_code(language: Union[str, BCP47Language]) -> str:
-    """
-    Extract the language code from a language parameter.
-
-    Handles both language code strings and BCP47Language objects,
-    returning the 2-letter language code suitable for API calls.
-
-    Args:
-        language: Either a 2-letter language code string or a BCP47Language object
-
-    Returns:
-        str: The 2-letter language code (e.g., "en", "fr", "ja")
-
-    Examples:
-        >>> get_language_code("en")
-        "en"
-        >>> get_language_code(BCP47Language.get("fr-FR"))
-        "fr"
-    """
-    if isinstance(language, BCP47Language):
-        return language.language
-    elif isinstance(language, str):
-        bcp47 = BCP47Language.get(language)
-        return bcp47.language
-    else:
-        raise ValueError(f"Invalid language parameter type {type(language)}. Should be str or BCP47Language.")
