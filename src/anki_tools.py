@@ -266,9 +266,10 @@ def create_anki_deck(
     phrases: List[Phrase],
     source_language: Union[str, BCP47Language],
     target_language: Union[str, BCP47Language],
+    output_path: str,
     deck_name: Optional[str] = None,
     model: Optional[genanki.Model] = None,
-) -> (genanki.Package, TemporaryDirectory):
+) -> genanki.Package:
     """Create an Anki deck package from a list of Phrase objects.
 
     This is the main function for creating Anki decks. It handles:
@@ -308,6 +309,10 @@ def create_anki_deck(
     if not phrases:
         raise ValueError("phrases list cannot be empty")
 
+    # Ensure .apkg extension
+    if not output_path.lower().endswith(".apkg"):
+        output_path += ".apkg"
+
     # Normalize languages
     source_lang = get_language(source_language)
     target_lang = get_language(target_language)
@@ -326,7 +331,7 @@ def create_anki_deck(
     deck_id = _string_to_large_int(deck_name + "FirePhrase2")
     deck = genanki.Deck(deck_id, deck_name)
 
-    with TemporaryDirectory(delete=False) as temp_dir:
+    with TemporaryDirectory() as temp_dir:
         all_media_files = []
         notes = []
 
@@ -367,94 +372,9 @@ def create_anki_deck(
 
         print(f"✅ Created deck with {len(notes)} notes")
 
-        # Note: The package holds references to media files in temp_dir
-        # Save must be called before temp_dir is destroyed
-        # This is handled by save_anki_deck function
-        return package, temp_dir
+        # Create parent directories
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
-
-# ============================================================================
-# DECK SAVING
-# ============================================================================
-
-def save_anki_deck(
-    package: genanki.Package,
-    output_path: str,
-    create_dirs: bool = True,
-) -> str:
-    """Save an Anki deck package to a .apkg file.
-
-    Args:
-        package: genanki.Package to save
-        output_path: Path where .apkg file should be saved
-        create_dirs: Whether to create parent directories if they don't exist
-
-    Returns:
-        str: Absolute path to the saved .apkg file
-
-    Example:
-        >>> package = create_anki_deck(phrases, "en-GB", "fr-FR")
-        >>> save_anki_deck(package, "outputs/french_deck.apkg")
-        'c:/Users/.../outputs/french_deck.apkg'
-    """
-    # Ensure .apkg extension
-    if not output_path.lower().endswith(".apkg"):
-        output_path += ".apkg"
-
-    # Create parent directories if needed
-    if create_dirs:
-        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-
-    # Save the package
-    package.write_to_file(output_path)
-
-    abs_path = os.path.abspath(output_path)
-    print(f"✅ Saved Anki deck to: {abs_path}")
-
-    return abs_path
-
-
-# ============================================================================
-# CONVENIENCE FUNCTIONS
-# ============================================================================
-
-def create_and_save_anki_deck(
-    phrases: List[Phrase],
-    source_language: Union[str, BCP47Language],
-    target_language: Union[str, BCP47Language],
-    output_path: str,
-    deck_name: Optional[str] = None,
-    model: Optional[genanki.Model] = None,
-) -> str:
-    """Create and save an Anki deck in one step.
-
-    Convenience function that combines create_anki_deck and save_anki_deck.
-
-    Args:
-        phrases: List of Phrase objects to include
-        source_language: BCP47 language tag for source
-        target_language: BCP47 language tag for target
-        output_path: Path where .apkg file should be saved
-        deck_name: Optional name for the deck
-        model: Optional custom model
-
-    Returns:
-        str: Absolute path to the saved .apkg file
-
-    Example:
-        >>> phrases = [get_phrase_by_english("Hello")]
-        >>> create_and_save_anki_deck(
-        ...     phrases, "en-GB", "fr-FR", "outputs/french.apkg"
-        ... )
-    """
-    package, temp_dir = create_anki_deck(
-        phrases=phrases,
-        source_language=source_language,
-        target_language=target_language,
-        deck_name=deck_name,
-        model=model,
-    )
-
-    save_path = save_anki_deck(package, output_path)
-    shutil.rmtree(temp_dir)
-    return save_path
+        package.write_to_file(output_path)
+        print(f"Saved Anki Deck to {output_path}")
+        return package

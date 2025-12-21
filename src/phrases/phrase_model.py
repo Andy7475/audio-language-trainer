@@ -825,7 +825,7 @@ class PhraseAudio(FirePhraseDataModel):
             raise ValueError(f"Failed to download audio from {self.file_path}: {e}")
 
     def generate_audio(self) -> None:
-        """Generates audio for this PhraseAudio using TTS."""
+        """Generates audio for this PhraseAudio using TTS. Uploads it to GCS"""
 
         # Generate normal or slow audio using TTS
         self.audio_segment = generate_translation_audio(
@@ -835,7 +835,7 @@ class PhraseAudio(FirePhraseDataModel):
         )
 
         self.duration_seconds = self.audio_segment.duration_seconds
-
+        self._upload_to_gcs()
 
 class Translation(FirePhraseDataModel):
     """Pydantic model representing a translation of a phrase in Firestore.

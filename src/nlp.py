@@ -38,9 +38,9 @@ def analyze_text_syntax(
 
 def extract_lemmas_and_pos(
     phrases: List[str], language_code: str = "en"
-) -> Set[Tuple[str, str]]:
+) -> List[Tuple[str, str]]:
     """
-    Extract unique (lemma, POS) tuples from phrases using Google NLP API.
+    Extract (lemma, POS) tuples from phrases using Google NLP API.
 
     Args:
         phrases: List of phrases to analyze
@@ -49,7 +49,7 @@ def extract_lemmas_and_pos(
     Returns:
         Set of (lemma, pos) tuples
     """
-    vocab_set = set()
+    vocab_set = []
 
     for phrase in phrases:
         response = analyze_text_syntax(phrase, language_code)
@@ -60,7 +60,7 @@ def extract_lemmas_and_pos(
 
             lemma = token.lemma.lower()
 
-            vocab_set.add((lemma, pos_tag))
+            vocab_set.append((lemma, pos_tag))
 
     return vocab_set
 
@@ -81,24 +81,24 @@ def get_vocab_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
     return vocab
 
 
-def get_verbs_from_lemmas_and_pos(lemmas_and_pos: Set[Tuple[str, str]]) -> list[str]:
+def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract verbs from a set of (word, pos) tuples."""
     verbs = [word for word, pos in lemmas_and_pos if pos in ["VERB", "AUX"]]
-    return verbs
+    return list(set(verbs))
 
 
-def get_vocab_from_lemmas_and_pos(lemmas_and_pos: Set[Tuple[str, str]]) -> list[str]:
+def get_vocab_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract vocab (non-verbs) from a set of (word, pos) tuples."""
     vocab = [
         word for word, pos in lemmas_and_pos if pos not in ["VERB", "AUX", "PUNCT"]
     ]
-    return vocab
+    return list(set(vocab))
 
 
-def get_tokens_from_lemmas_and_pos(lemmas_and_pos: Set[Tuple[str, str]]) -> list[str]:
+def get_tokens_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract tokens from a set of (word, pos) tuples."""
     tokens = [word for word, pos in lemmas_and_pos if pos not in ["PUNCT"]]
-    return tokens
+    return list(set(tokens))
 
 
 def get_text_tokens(text: str, language_code: str = "en") -> List[str]:
