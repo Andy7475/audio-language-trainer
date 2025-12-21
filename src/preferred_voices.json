@@ -90,12 +90,12 @@
     "sv-SE": {
         "flashcard": {
             "female": {
-                "provider": "azure",
-                "voice_id": "sv-SE-SofieNeural"
+                "provider": "google",
+                "voice_id": "sv-SE-Wavenet-F"
             },
             "male": {
-                "provider": "azure",
-                "voice_id": "sv-SE-MattiasNeural"
+                "provider": "google",
+                "voice_id": "sv-SE-Wavenet-G"
             }
         },
         "story": {
