@@ -30,6 +30,7 @@ Example usage:
 """
 
 import os
+import shutil
 import uuid
 from pathlib import Path
 from typing import List, Union, Optional
@@ -267,7 +268,7 @@ def create_anki_deck(
     target_language: Union[str, BCP47Language],
     deck_name: Optional[str] = None,
     model: Optional[genanki.Model] = None,
-) -> genanki.Package:
+) -> (genanki.Package, TemporaryDirectory):
     """Create an Anki deck package from a list of Phrase objects.
 
     This is the main function for creating Anki decks. It handles:
@@ -285,6 +286,7 @@ def create_anki_deck(
 
     Returns:
         genanki.Package: Package ready to be saved to .apkg file
+        Temporary directory for storing media files
 
     Raises:
         ValueError: If phrases list is empty or translations are missing
@@ -324,8 +326,7 @@ def create_anki_deck(
     deck_id = _string_to_large_int(deck_name + "FirePhrase2")
     deck = genanki.Deck(deck_id, deck_name)
 
-    # Use temporary directory for media files
-    with TemporaryDirectory() as temp_dir:
+    with TemporaryDirectory(delete=False) as temp_dir:
         all_media_files = []
         notes = []
 
@@ -369,7 +370,7 @@ def create_anki_deck(
         # Note: The package holds references to media files in temp_dir
         # Save must be called before temp_dir is destroyed
         # This is handled by save_anki_deck function
-        return package
+        return package, temp_dir
 
 
 # ============================================================================
@@ -446,7 +447,7 @@ def create_and_save_anki_deck(
         ...     phrases, "en-GB", "fr-FR", "outputs/french.apkg"
         ... )
     """
-    package = create_anki_deck(
+    package, temp_dir = create_anki_deck(
         phrases=phrases,
         source_language=source_language,
         target_language=target_language,
@@ -454,4 +455,6 @@ def create_and_save_anki_deck(
         model=model,
     )
 
-    return save_anki_deck(package, output_path)
+    save_path = save_anki_deck(package, output_path)
+    shutil.rmtree(temp_dir)
+    return save_path
