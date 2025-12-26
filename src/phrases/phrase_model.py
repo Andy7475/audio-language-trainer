@@ -825,7 +825,7 @@ class PhraseAudio(FirePhraseDataModel):
             raise ValueError(f"Failed to download audio from {self.file_path}: {e}")
 
     def generate_audio(self) -> None:
-        """Generates audio for this PhraseAudio using TTS."""
+        """Generates audio for this PhraseAudio using TTS. Uploads it to GCS"""
 
         # Generate normal or slow audio using TTS
         self.audio_segment = generate_translation_audio(
@@ -835,7 +835,7 @@ class PhraseAudio(FirePhraseDataModel):
         )
 
         self.duration_seconds = self.audio_segment.duration_seconds
-
+        #self._upload_to_gcs() # should be a separate call to .upload()
 
 class Translation(FirePhraseDataModel):
     """Pydantic model representing a translation of a phrase in Firestore.
@@ -1001,11 +1001,6 @@ class Translation(FirePhraseDataModel):
 
     def _upload_to_gcs(self, overwrite: bool = False) -> None:
         """Upload multimedia files to GCS"""
-        if not overwrite:
-            print(
-                f"Skipping upload of multimedia for {self.language.to_tag()} as overwrite is False"
-            )
-            return
 
         print(f"Uploading all multimedia for {self.language.to_tag()} translation")
 

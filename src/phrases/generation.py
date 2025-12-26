@@ -150,7 +150,7 @@ def _remove_words_from_list(
 def _generate_vocab_phrases_batch(
     vocab_list: List[str],
     max_iterations: int = 10,
-    batch_size: int = 10,
+    batch_size: int = 20,
 ) -> Tuple[List[str], Dict[str, any]]:
     """Process vocabulary items and generate phrases for each in batches.
 

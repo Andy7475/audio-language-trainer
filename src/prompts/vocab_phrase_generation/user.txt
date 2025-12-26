@@ -1,36 +1,54 @@
 Generate phrases for the following vocabulary words:
 $target_words
-
 Additional context - nearby vocabulary words you may use to create interesting combinations:
 $context_words
-
 Task:
-1. For each target word in the list, create exactly ONE phrase
-2. Each phrase must be GRAMMATICALLY COMPLETE and NATURAL:
-   - Be 3-5 words long (can extend slightly if needed for proper grammar)
-   - MUST include proper articles (a, an, the) where grammatically required
-   - MUST have complete prepositions (e.g., "on the table" NOT "on table")
-   - MUST sound natural when spoken aloud by a language learner
-   - Contain NO verbs (no actions, just descriptions, states, or positions)
-   - Feature the target word as a primary element
 
-3. Grammar checklist for every phrase - MUST satisfy all:
-   ✓ Has proper articles (a/an/the) for all nouns
-   ✓ All prepositions are complete with articles (on the, in the, by the, with the)
-   ✓ Word order is natural and idiomatic English
-   ✓ Sounds like a natural noun phrase a learner would hear or say
-   ✓ No fragments or incomplete structures
+For each target word in the list, create exactly ONE phrase
+Each phrase must be GRAMMATICALLY COMPLETE and NATURAL:
 
-4. Use context and creativity:
-   - Use adjectives, nouns, prepositions to create visual or conceptual combinations
-   - You may optionally use words from the context list to create interesting combinations
-   - Create memorable, visualizable scenarios
-   - Create variety across phrases - don't repeat similar patterns
-   - Examples of GOOD phrases: "a red apple on the table", "the old wooden door", "the blue window curtains"
-   - Examples of AVOID: "red apple" (missing article), "on table" (incomplete preposition), "big house" (too generic)
+Be 2-5 words long (can extend slightly if needed for proper grammar)
+MUST include proper determiners where grammatically required
+Determiners include: articles (a, an, the), possessives (his, her, my, our, their), quantifiers (two, three, some, many, few), demonstratives (this, that, these, those)
+MUST have complete prepositions with determiners (e.g., "on the table" NOT "on table")
+MUST sound natural when spoken aloud by a language learner
+Contain NO finite verbs or verb phrases (no actions like "is running", "will eat", "has taken")
+Participial adjectives are fine (e.g., "broken window", "painted fence", "sleeping cat")
+Feature the target word as a primary element
 
-5. For each phrase, identify any additional words you generated (beyond the target word):
-   - Example: If you create "a white mug on a shelf", record "white", "mug", "shelf" as additional words
-   - These will be struck off the vocabulary list
+
+VARIETY REQUIREMENT - This is critical:
+
+Distribute determiners naturally across ALL phrases
+Avoid defaulting to "a" or "the" for most phrases
+Include possessives: "his ham sandwich", "my coffee cup", "their old house"
+Include quantifiers: "two perfect circles", "some bread and butter", "three red apples"
+Include demonstratives: "these old books", "that blue door"
+Aim for diverse patterns - not all phrases should follow the same structure
+
+
+Grammar checklist for every phrase - MUST satisfy all:
+✓ Has proper determiners for all nouns
+✓ All prepositions are complete with determiners (on the, in the, by the, with the)
+✓ Word order is natural and idiomatic English
+✓ Sounds like a natural noun phrase a learner would hear or say
+✓ No fragments or incomplete structures
+✓ No finite verbs (but participial adjectives like "broken" or "sleeping" are acceptable)
+Use context and creativity:
+
+Use adjectives, nouns, prepositions to create visual or conceptual combinations
+You may optionally use words from the context list to create interesting combinations
+Create memorable, visualizable scenarios
+Maximize variety in phrase patterns and structures
+Examples of GOOD phrases: "a red apple on the table", "the old wooden door", "some blue curtains", "his warm jacket", "two small plates"
+Examples to AVOID: "red apple" (missing determiner), "on table" (incomplete preposition)
+
+
+For each phrase, identify any additional words you generated (beyond the target word):
+
+Example: If you create "a white mug on a shelf", record "white", "mug", "shelf" as additional words
+These will be struck off the vocabulary list
+
+
 
 Use the generate_vocab_phrases tool to return your response with the structured phrase data for all words.

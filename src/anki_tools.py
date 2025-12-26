@@ -30,6 +30,7 @@ Example usage:
 """
 
 import os
+import shutil
 import uuid
 from pathlib import Path
 from typing import List, Union, Optional
@@ -47,7 +48,7 @@ from src.utils import load_template
 # ANKI MODEL DEFINITION
 # ============================================================================
 
-def get_anki_model(model_id: int = 1607392313, model_name: str = "FirePhrase") -> genanki.Model:
+def get_anki_model(model_id: int = 1607392319, model_name: str = "FirePhrase2") -> genanki.Model:
     """Get the Anki model (note type) for language learning flashcards.
 
     This model supports three card types:
@@ -93,7 +94,7 @@ def get_anki_model(model_id: int = 1607392313, model_name: str = "FirePhrase") -
                 "afmt": load_template("card_back_template.html"),
             },
         ],
-        css=load_template("card_styles.css", parent_path="../src/templates/styles"),
+        css=load_template("card_styles.css", parent_path="../src/templates/"),
     )
 
 
@@ -139,9 +140,7 @@ def create_anki_note_from_phrase(
     target_language: Union[str, BCP47Language],
     index: int,
     model: genanki.Model,
-    temp_dir: str,
-    wiktionary_links: Optional[str] = None,
-    auto_generate_wiktionary: bool = True,
+    temp_dir: str
 ) -> tuple[genanki.Note, list[str]]:
     """Create an Anki note from a single Phrase object.
 
@@ -197,23 +196,16 @@ def create_anki_note_from_phrase(
     target_translation = phrase.translations[target_tag]
 
     # Generate wiktionary links if not provided and auto-generation enabled
-    if wiktionary_links is None and auto_generate_wiktionary:
-        try:
-            wiktionary_links = target_translation.get_wiktionary_links()
-        except Exception as e:
-            print(f"Warning: Failed to generate wiktionary links for {phrase.phrase_hash}: {e}")
-            wiktionary_links = ""
+    wiktionary_links = target_translation.get_wiktionary_links()
 
     # Download target language multimedia if not already loaded
-    if target_translation.audio.get("flashcard", {}).get("normal") is None:
-        phrase.download(language=target_lang, local=True)
+    phrase.download(language=target_lang, local=True)
 
     media_files = []
 
     # Handle image (download if needed)
     image_html = ""
-    if target_translation.image is None and target_translation.image_file_path:
-        phrase.get_image(language=target_lang, local=True)
+    phrase.get_image(language=target_lang, local=True)
 
     if target_translation.image is not None:
         image_filename = f"{uuid.uuid4()}.png"
@@ -229,30 +221,22 @@ def create_anki_note_from_phrase(
     audio_slow_html = ""
 
     # Normal speed audio
-    if "flashcard" in target_translation.audio and "normal" in target_translation.audio["flashcard"]:
-        phrase_audio_normal = target_translation.audio["flashcard"]["normal"]
-        if phrase_audio_normal.audio_segment is None:
-            phrase_audio_normal.download(local=True)
+    phrase_audio_normal = target_translation.audio["flashcard"]["normal"]
 
-        if phrase_audio_normal.audio_segment is not None:
-            audio_normal_filename = f"{uuid.uuid4()}.mp3"
-            audio_normal_path = os.path.join(temp_dir, audio_normal_filename)
-            phrase_audio_normal.audio_segment.export(audio_normal_path, format="mp3")
-            media_files.append(audio_normal_path)
-            audio_normal_html = f"[sound:{audio_normal_filename}]"
+    audio_normal_filename = f"{uuid.uuid4()}.mp3"
+    audio_normal_path = os.path.join(temp_dir, audio_normal_filename)
+    phrase_audio_normal.audio_segment.export(audio_normal_path, format="mp3")
+    media_files.append(audio_normal_path)
+    audio_normal_html = f"[sound:{audio_normal_filename}]"
 
     # Slow speed audio
-    if "flashcard" in target_translation.audio and "slow" in target_translation.audio["flashcard"]:
-        phrase_audio_slow = target_translation.audio["flashcard"]["slow"]
-        if phrase_audio_slow.audio_segment is None:
-            phrase_audio_slow.download(local=True)
+    phrase_audio_slow = target_translation.audio["flashcard"]["slow"]
 
-        if phrase_audio_slow.audio_segment is not None:
-            audio_slow_filename = f"{uuid.uuid4()}.mp3"
-            audio_slow_path = os.path.join(temp_dir, audio_slow_filename)
-            phrase_audio_slow.audio_segment.export(audio_slow_path, format="mp3")
-            media_files.append(audio_slow_path)
-            audio_slow_html = f"[sound:{audio_slow_filename}]"
+    audio_slow_filename = f"{uuid.uuid4()}.mp3"
+    audio_slow_path = os.path.join(temp_dir, audio_slow_filename)
+    phrase_audio_slow.audio_segment.export(audio_slow_path, format="mp3")
+    media_files.append(audio_slow_path)
+    audio_slow_html = f"[sound:{audio_slow_filename}]"
 
     # Create the note
     note = genanki.Note(
@@ -265,8 +249,8 @@ def create_anki_note_from_phrase(
             audio_slow_html,  # TargetAudioSlow
             wiktionary_links or "",  # WiktionaryLinks
             image_html,  # Picture
-            source_lang.language.upper(),  # SourceLanguageName (e.g., "EN")
-            target_lang.language.upper(),  # TargetLanguageName (e.g., "FR")
+            source_lang.display_name(),
+            target_lang.display_name(),
         ],
         guid=_string_to_large_int(f"{phrase.phrase_hash}_{source_tag}_{target_tag}"),
     )
@@ -282,9 +266,9 @@ def create_anki_deck(
     phrases: List[Phrase],
     source_language: Union[str, BCP47Language],
     target_language: Union[str, BCP47Language],
+    output_path: str,
     deck_name: Optional[str] = None,
     model: Optional[genanki.Model] = None,
-    wiktionary_links_func: Optional[callable] = None,
 ) -> genanki.Package:
     """Create an Anki deck package from a list of Phrase objects.
 
@@ -300,11 +284,10 @@ def create_anki_deck(
         target_language: BCP47 language tag for target (e.g., "fr-FR", "es-ES")
         deck_name: Name for the Anki deck (if None, auto-generates from languages)
         model: Custom genanki.Model to use (if None, uses default FirePhrase model)
-        wiktionary_links_func: Optional function that takes a Phrase and returns
-                               HTML string with wiktionary links
 
     Returns:
         genanki.Package: Package ready to be saved to .apkg file
+        Temporary directory for storing media files
 
     Raises:
         ValueError: If phrases list is empty or translations are missing
@@ -326,6 +309,10 @@ def create_anki_deck(
     if not phrases:
         raise ValueError("phrases list cannot be empty")
 
+    # Ensure .apkg extension
+    if not output_path.lower().endswith(".apkg"):
+        output_path += ".apkg"
+
     # Normalize languages
     source_lang = get_language(source_language)
     target_lang = get_language(target_language)
@@ -341,10 +328,9 @@ def create_anki_deck(
         model = get_anki_model()
 
     # Create deck
-    deck_id = _string_to_large_int(deck_name + "FirePhrase")
+    deck_id = _string_to_large_int(deck_name + "FirePhrase2")
     deck = genanki.Deck(deck_id, deck_name)
 
-    # Use temporary directory for media files
     with TemporaryDirectory() as temp_dir:
         all_media_files = []
         notes = []
@@ -358,9 +344,6 @@ def create_anki_deck(
         for index, phrase in enumerate(tqdm(phrases, desc="Creating notes")):
             try:
                 # Get wiktionary links if function provided
-                wiktionary_links = None
-                if wiktionary_links_func is not None:
-                    wiktionary_links = wiktionary_links_func(phrase)
 
                 # Create note
                 note, media_files = create_anki_note_from_phrase(
@@ -370,7 +353,6 @@ def create_anki_deck(
                     index=index,
                     model=model,
                     temp_dir=temp_dir,
-                    wiktionary_links=wiktionary_links,
                 )
 
                 notes.append(note)
@@ -390,92 +372,9 @@ def create_anki_deck(
 
         print(f"✅ Created deck with {len(notes)} notes")
 
-        # Note: The package holds references to media files in temp_dir
-        # Save must be called before temp_dir is destroyed
-        # This is handled by save_anki_deck function
+        # Create parent directories
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        package.write_to_file(output_path)
+        print(f"Saved Anki Deck to {output_path}")
         return package
-
-
-# ============================================================================
-# DECK SAVING
-# ============================================================================
-
-def save_anki_deck(
-    package: genanki.Package,
-    output_path: str,
-    create_dirs: bool = True,
-) -> str:
-    """Save an Anki deck package to a .apkg file.
-
-    Args:
-        package: genanki.Package to save
-        output_path: Path where .apkg file should be saved
-        create_dirs: Whether to create parent directories if they don't exist
-
-    Returns:
-        str: Absolute path to the saved .apkg file
-
-    Example:
-        >>> package = create_anki_deck(phrases, "en-GB", "fr-FR")
-        >>> save_anki_deck(package, "outputs/french_deck.apkg")
-        'c:/Users/.../outputs/french_deck.apkg'
-    """
-    # Ensure .apkg extension
-    if not output_path.lower().endswith(".apkg"):
-        output_path += ".apkg"
-
-    # Create parent directories if needed
-    if create_dirs:
-        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
-
-    # Save the package
-    package.write_to_file(output_path)
-
-    abs_path = os.path.abspath(output_path)
-    print(f"✅ Saved Anki deck to: {abs_path}")
-
-    return abs_path
-
-
-# ============================================================================
-# CONVENIENCE FUNCTIONS
-# ============================================================================
-
-def create_and_save_anki_deck(
-    phrases: List[Phrase],
-    source_language: Union[str, BCP47Language],
-    target_language: Union[str, BCP47Language],
-    output_path: str,
-    deck_name: Optional[str] = None,
-    model: Optional[genanki.Model] = None,
-) -> str:
-    """Create and save an Anki deck in one step.
-
-    Convenience function that combines create_anki_deck and save_anki_deck.
-
-    Args:
-        phrases: List of Phrase objects to include
-        source_language: BCP47 language tag for source
-        target_language: BCP47 language tag for target
-        output_path: Path where .apkg file should be saved
-        deck_name: Optional name for the deck
-        model: Optional custom model
-
-    Returns:
-        str: Absolute path to the saved .apkg file
-
-    Example:
-        >>> phrases = [get_phrase_by_english("Hello")]
-        >>> create_and_save_anki_deck(
-        ...     phrases, "en-GB", "fr-FR", "outputs/french.apkg"
-        ... )
-    """
-    package = create_anki_deck(
-        phrases=phrases,
-        source_language=source_language,
-        target_language=target_language,
-        deck_name=deck_name,
-        model=model,
-    )
-
-    return save_anki_deck(package, output_path)
