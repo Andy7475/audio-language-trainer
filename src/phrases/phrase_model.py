@@ -727,6 +727,9 @@ class PhraseAudio(FirePhraseDataModel):
     audio_segment: Optional[AudioSegment] = Field(
         default=None, exclude=True, description="Audio data (excluded from Firestore)"
     )
+    gender: Literal["MALE", "FEMALE"] = Field(
+        ..., description="Gender of the speaker"
+    )
 
     @classmethod
     def create(
@@ -736,7 +739,7 @@ class PhraseAudio(FirePhraseDataModel):
         language: BCP47Language,
         context: Literal["flashcard", "story"],
         speed: Literal["slow", "normal"],
-        gender: str = "FEMALE",
+        gender: Literal["MALE", "FEMALE"] = "FEMALE",
     ) -> PhraseAudio:
         """Factory method to create a PhraseAudio object with generated file_path.
 
@@ -759,6 +762,7 @@ class PhraseAudio(FirePhraseDataModel):
             context=context,
             speed=speed,
             voice_info=voice_info,
+            gender=gender
         )
 
     def _upload_to_gcs(self) -> None:
