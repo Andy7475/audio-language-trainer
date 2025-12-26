@@ -1,8 +1,7 @@
 {
-  "default" : "picture book illustration style, thick brushstrokes, colored pencil texture, expressive character faces, bold black outlines, textured cross-hatch shading, warm pastel color palette, whimsical cartoon proportions, soft watercolor-like backgrounds",
+  "default": "digital painting style, soft brush blending, subtle gradient shading, realistic human proportions, semi-realistic character design, muted warm color palette with peachy tones, atmospheric lighting, detailed environmental backgrounds, smooth color transitions, contemporary illustration style, gentle line work, painterly texture, expressive facial features, emotional character acting, slightly simplified facial anatomy, clear readable expressions, animated character emotion",
   "watercolor": "watercolor illustration style, fluid brush strokes, soft color transitions, vibrant pigments, organic textures, white paper showing through, loose expressive style, dynamic washes",
   "oil_painting": "oil painting style, rich impasto textures, visible brushstrokes, saturated colors, warm undertones, glazed layers, painterly details",
-  "childrens_book": "children's book illustration style, clean linework, bright cheerful colors, decorative details, playful shapes, gentle shading, hand-drawn feel",
   "ghibli": "Studio Ghibli art style, soft atmospheric colors, detailed backgrounds, gentle gradients, natural elements, dreamy lighting, painted textures",
   "modern_animation": "modern animation art style, clean vector-like shapes, bold color palette, subtle textures, smooth gradients, graphic design elements, minimalist details",
   "pencil_sketch": "detailed pencil sketch style, graphite textures, fine line work, subtle shading, artistic erasure marks, gestural drawing technique",
