@@ -7,20 +7,25 @@ from src.connections.gcloud_auth import get_firestore_client
 from src.models import BCP47Language, get_language
 from google.cloud.firestore_v1 import FieldFilter, DocumentReference
 
-def get_phrases_by_collection(collection_name: str) -> List[Phrase]:
-    """Retrieve phrases from the database by collection name.
-
-    Args:
+def get_phrases_by_collection(collection_name: str | List[str]) -> List[Phrase]:
+    """Retrieve phrases belonging to a specific collection or collections.
         collection_name: Name of the collection to filter phrases   
     Returns:
         List of Phrases.
 
     """
+
+    if isinstance(collection_name, str):
+        collection_name = [collection_name]
     db = get_firestore_client()
     phrases_ref = db.collection("phrases")
-    collection_filter = FieldFilter("collections", "array_contains", collection_name)
-    query = phrases_ref.where(filter=collection_filter)
-    results = query.stream()
+
+    results: Set[DocumentReference] = set()
+    for tag in collection_name:
+        collection_filter = FieldFilter("collections", "array_contains", tag)
+        query = phrases_ref.where(filter=collection_filter)
+        results = results.intersection(set(query.get())) if results else set(query.get())
+
 
     phrases = []
     for doc in results:
