@@ -175,6 +175,8 @@ class Phrase(FirePhraseDataModel):
         default_factory=list, description="Collections this phrase belongs to"
     )
 
+    def __str__(self) -> str:
+        return self.english
     @classmethod
     def create(cls, english_phrase: str) -> Phrase:
         """Factory method to create a Phrase with NLP processing.
@@ -727,8 +729,8 @@ class PhraseAudio(FirePhraseDataModel):
     audio_segment: Optional[AudioSegment] = Field(
         default=None, exclude=True, description="Audio data (excluded from Firestore)"
     )
-    gender: Literal["MALE", "FEMALE"] = Field(
-        ..., description="Gender of the speaker"
+    gender: Optional[Literal["MALE", "FEMALE"]] = Field(
+        default="FEMALE", description="Gender of the speaker"
     )
 
     @classmethod
