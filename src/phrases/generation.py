@@ -10,7 +10,7 @@ from typing import Dict, List, Tuple
 from src.llm_tools.verb_phrase_generation import generate_verb_phrases
 from src.llm_tools.vocab_phrase_generation import generate_vocab_phrases
 from src.nlp import get_vocab_from_phrases
-
+from src.logger import logger
 
 def generate_phrases_from_vocab_dict(
     vocab_dict: Dict[str, List[str]],
@@ -61,7 +61,7 @@ def generate_phrases_from_vocab_dict(
     vocab_list = vocab_dict["vocab"]
 
     # Generate phrases from verbs
-    print(f"Starting verb phrase generation. {len(verb_list)} verbs to process.")
+    logger.info(f"Starting verb phrase generation. {len(verb_list)} verbs to process.")
     all_phrases, verb_tracking = _generate_verb_phrases_batch(verb_list)
     tracking_info["verb_phrases"] = len(all_phrases)
     tracking_info["verbs_processed"] = verb_tracking["verbs_processed"]
@@ -70,7 +70,7 @@ def generate_phrases_from_vocab_dict(
 
     vocab_present_in_verb_phrases = get_vocab_from_phrases(all_phrases)
     vocab_list = _remove_words_from_list(vocab_list, vocab_present_in_verb_phrases)
-    print(
+    logger.info(
         f"\nStarting vocab phrase generation. {len(vocab_list)} vocab words to process."
     )
     vocab_phrases, vocab_tracking = _generate_vocab_phrases_batch(
@@ -107,7 +107,7 @@ def _generate_verb_phrases_batch(
 
     for i, verb in enumerate(verb_list, 1):
         try:
-            print(f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'")
+            logger.info(f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'")
             result = generate_verb_phrases(verb)
 
             # Extract all phrases
@@ -122,7 +122,7 @@ def _generate_verb_phrases_batch(
 
         except Exception as e:
             error_msg = f"Error generating phrases for verb '{verb}': {str(e)}"
-            print(f"  ERROR: {error_msg}")
+            logger.info(f"  ERROR: {error_msg}")
             errors.append(error_msg)
 
     return phrases, {
@@ -178,10 +178,10 @@ def _generate_vocab_phrases_batch(
 
     for iteration in range(1, max_iterations + 1):
         if not remaining_words:
-            print(f"  Iteration {iteration}: All vocabulary processed.")
+            logger.info(f"  Iteration {iteration}: All vocabulary processed.")
             break
 
-        print(f"  Iteration {iteration}/{max_iterations}")
+        logger.info(f"  Iteration {iteration}/{max_iterations}")
 
         # Always take from the front of remaining_words
         batch_num = 0
@@ -199,7 +199,7 @@ def _generate_vocab_phrases_batch(
             batch_end_display = processed_so_far + len(batch_words)
 
             try:
-                print(
+                logger.info(
                     f"    [{batch_start_display}-{batch_end_display}/{initial_count}] Generating phrases for {len(batch_words)} words"
                 )
                 result = generate_vocab_phrases(
@@ -226,7 +226,7 @@ def _generate_vocab_phrases_batch(
 
             except Exception as e:
                 error_msg = f"Error generating phrases for batch {batch_start_display}-{batch_end_display}: {str(e)}"
-                print(f"    ERROR: {error_msg}")
+                logger.info(f"    ERROR: {error_msg}")
                 errors.append(error_msg)
                 # Move past this batch even on error
                 remaining_words = remaining_words[len(batch_words) :]
@@ -234,7 +234,7 @@ def _generate_vocab_phrases_batch(
         # After completing iteration, prepare for next iteration if needed
         # remaining_words already has used words removed, so we'll process what's left
         if remaining_words:
-            print(
+            logger.info(
                 f"  Completed iteration {iteration}. {len(remaining_words)} words remaining for next iteration."
             )
 
