@@ -5,7 +5,7 @@ from typing import List, Optional, Literal, Annotated
 from pydantic import BaseModel, Field, field_validator, BeforeValidator, ConfigDict
 from pydub import AudioSegment
 from PIL import Image
-
+from src.logger import logger
 from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
 from google.cloud.firestore import Client as FirestoreClient
@@ -230,6 +230,8 @@ class Phrase(FirePhraseDataModel):
         Returns:
             DocumentReference: Firestore document reference for the translation
         """
+        if self.firestore_document_ref is None:
+            self._get_firestore_document_reference()
         translation_doc_ref = self.firestore_document_ref.collection("translations").document(language.to_tag())
         return translation_doc_ref
     
@@ -268,8 +270,13 @@ class Phrase(FirePhraseDataModel):
         Returns:
             Translation: An English translation with en-GB language tag
         """
+
+        firestore_document_ref = self._get_translation_firestore_document_ref(
+            BCP47Language.get("en-GB")
+        )
         return Translation(
             key=self.key,
+            firestore_document_ref=firestore_document_ref,
             language=BCP47Language.get("en-GB"),
             text=self.english,
             text_lower=self.english_lower,
@@ -311,14 +318,14 @@ class Phrase(FirePhraseDataModel):
         Example:
             >>> phrase = Phrase.create("Hello, how are you?")
             >>> fr_translation = phrase.translate(BCP47Language.get("fr-FR"))
-            >>> print(fr_translation.text)
+            >>> logger.info(fr_translation.text)
             'Bonjour, comment allez-vous ?'
         """
         # Check if translation already exists
         target_language = get_language(target_language)
 
         if self._has_translation(target_language) and not overwrite:
-            print(f"Translation for {target_language.to_tag()} already exists")
+            logger.info(f"Translation for {target_language.to_tag()} already exists")
             return self._get_translation(target_language)
 
         if translated_text is None:
@@ -381,9 +388,9 @@ class Phrase(FirePhraseDataModel):
             RuntimeError: If upload fails
         """
         if language:
-            print(f"Uploading phrase {self.key} with {language.to_tag()} translation to Firestore and GCS")
+            logger.info(f"Uploading phrase {self.key} with {language.to_tag()} translation to Firestore and GCS")
         else:
-            print(f"Uploading phrase {self.key} with all translations to Firestore and GCS")
+            logger.info(f"Uploading phrase {self.key} with all translations to Firestore and GCS")
 
 
         doc_ref = self._upload_to_firestore()
@@ -414,9 +421,9 @@ class Phrase(FirePhraseDataModel):
 
         """
         if language:
-            print(f"Downloading multimedia for phrase {self.key} - {language.to_tag()} translation only")
+            logger.info(f"Downloading multimedia for phrase {self.key} - {language.to_tag()} translation only")
         else:
-            print(f"Downloading multimedia for phrase {self.key} - all translations")
+            logger.info(f"Downloading multimedia for phrase {self.key} - all translations")
 
         download_all_languages = True
         if language is not None:
@@ -522,7 +529,7 @@ class Phrase(FirePhraseDataModel):
             translation._set_image_file_path(default=False)
 
         if check_blob_exists(self.bucket_name, translation.image_file_path) and not overwrite:
-            print(f"Image already exists at {translation.image_file_path}, skipping generation")
+            logger.info(f"Image already exists at {translation.image_file_path}, skipping generation")
             self.download(language=target_language, local=False)
             return
 
@@ -547,7 +554,7 @@ class Phrase(FirePhraseDataModel):
 
         # Set the image on the translation
         translation.image = image
-        print(f"✅ Generated image for {language_tag}")
+        logger.info(f"✅ Generated image for {language_tag}")
 
     def get_audio(
         self,
@@ -602,7 +609,7 @@ class Phrase(FirePhraseDataModel):
 
         # Download if not already loaded
         if phrase_audio.audio_segment is None:
-            print(f"Downloading audio for {language_tag} {context}/{speed}...")
+            logger.info(f"Downloading audio for {language_tag} {context}/{speed}...")
             phrase_audio.download(local=local)
 
         return phrase_audio.audio_segment
@@ -662,7 +669,7 @@ class Phrase(FirePhraseDataModel):
 
         # Download if not already loaded
         if translation.image is None:
-            print(f"Downloading image for {language_tag}...")
+            logger.info(f"Downloading image for {language_tag}...")
             translation._download_image_from_gcs(local=local)
 
         return translation.image
@@ -793,7 +800,7 @@ class PhraseAudio(FirePhraseDataModel):
             Warning(f"No audio_segment to upload for {self.model_dump()}")
             return
 
-        print(f"Uploading audio: {self.language.to_tag()} {self.context}/{self.speed} to {self.file_path} (local cache enabled)")
+        logger.info(f"Uploading audio: {self.language.to_tag()} {self.context}/{self.speed} to {self.file_path} (local cache enabled)")
 
         try:
             upload_file_to_gcs(
@@ -827,7 +834,7 @@ class PhraseAudio(FirePhraseDataModel):
             ValueError: If download fails
         """
         local_status = "with local cache" if local else "without local cache"
-        print(f"Downloading audio: {self.language.to_tag()} {self.context}/{self.speed} from {self.file_path} ({local_status})")
+        logger.info(f"Downloading audio: {self.language.to_tag()} {self.context}/{self.speed} from {self.file_path} ({local_status})")
 
         try:
             audio_segment = download_from_gcs(
@@ -939,7 +946,7 @@ class Translation(FirePhraseDataModel):
         Example:
             >>> translation = phrase.translations["fr-FR"]
             >>> html = translation.get_wiktionary_links()
-            >>> print(html)
+            >>> logger.info(html)
             '<a href="...">Bonjour</a> <a href="...">le</a> monde'
 
         Note:
@@ -989,7 +996,7 @@ class Translation(FirePhraseDataModel):
     def _download_from_gcs(self, local:bool) -> None:
         """Downloads multimedia files from GCS"""
 
-        print(f"Downloading all multimedia for {self.language.to_tag()} translation")
+        logger.info(f"Downloading all multimedia for {self.language.to_tag()} translation")
 
         for context_dict in self.audio.values():
             for phrase_audio in context_dict.values():
@@ -1014,18 +1021,18 @@ class Translation(FirePhraseDataModel):
     def _upload_to_gcs(self, overwrite: bool = False) -> None:
         """Upload multimedia files to GCS"""
 
-        print(f"Uploading all multimedia for {self.language.to_tag()} translation")
+        logger.info(f"Uploading all multimedia for {self.language.to_tag()} translation")
 
         if self.audio:
             for context_dict in self.audio.values():
                 for phrase_audio in context_dict.values():
                     if check_blob_exists(self.bucket_name, phrase_audio.file_path) and not overwrite:
-                        print(f"Audio already exists at {phrase_audio.file_path}, skipping upload")
+                        logger.info(f"Audio already exists at {phrase_audio.file_path}, skipping upload")
                     else:
                         phrase_audio._upload_to_gcs()
         if self.image:
             if check_blob_exists(self.bucket_name, self.image_file_path) and not overwrite:
-                print(f"Image already exists at {self.image_file_path}, skipping upload")
+                logger.info(f"Image already exists at {self.image_file_path}, skipping upload")
             else:
                 self._upload_image_to_gcs()
 
@@ -1055,11 +1062,11 @@ class Translation(FirePhraseDataModel):
             ValueError: If image is not set or upload fails
         """
         if self.image is None:
-            print(f"No image attached to translation ({self.language.to_tag()})")
+            logger.info(f"No image attached to translation ({self.language.to_tag()})")
         if self.image_file_path is None:
             raise ValueError("image_file_path is not set")
 
-        print(f"Uploading image: {self.language.to_tag()} to {self.image_file_path} (local cache enabled)")
+        logger.info(f"Uploading image: {self.language.to_tag()} to {self.image_file_path} (local cache enabled)")
 
         uri = upload_file_to_gcs(
             obj=self.image,
@@ -1074,7 +1081,7 @@ class Translation(FirePhraseDataModel):
         """Downloads image file from GCS"""
 
         local_status = "with local cache" if local else "without local cache"
-        print(f"Downloading image: {self.language.to_tag()} from {self.image_file_path} ({local_status})")
+        logger.info(f"Downloading image: {self.language.to_tag()} from {self.image_file_path} ({local_status})")
 
         # Download from GCS (will use local cache if available)
         image = download_from_gcs(
@@ -1143,7 +1150,7 @@ class Translation(FirePhraseDataModel):
         for speed in speeds:
             # Check if PhraseAudio already exists in memory
             if self._phrase_audio_exists(context, speed) and not overwrite:
-                print(
+                logger.info(
                     f"Audio already exists for {self.language.to_tag()} {context} {speed}, skipping generation"
                 )
                 continue
@@ -1160,7 +1167,7 @@ class Translation(FirePhraseDataModel):
                     context=context,
                     speed=speed,
                 )
-                print(f"Downloading existing audio from GCS for {self.language.to_tag()} {context} {speed}")
+                logger.info(f"Downloading existing audio from GCS for {self.language.to_tag()} {context} {speed}")
                 audio_segment = download_from_gcs(
                     bucket_name=self.bucket_name,
                     file_path=file_path,
@@ -1170,7 +1177,7 @@ class Translation(FirePhraseDataModel):
 
             # Create PhraseAudio object (either with downloaded or newly generated audio)
             phrase_audio = PhraseAudio.create(
-                phrase_hash=self.key,
+                key=self.key,
                 text=self.text,
                 language=self.language,
                 context=context,

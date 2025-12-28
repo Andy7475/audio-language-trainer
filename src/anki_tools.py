@@ -42,7 +42,7 @@ from tqdm import tqdm
 from src.models import BCP47Language, get_language
 from src.phrases.phrase_model import Phrase
 from src.utils import load_template
-
+from src.logger import logger
 
 # ============================================================================
 # ANKI MODEL DEFINITION
@@ -182,13 +182,13 @@ def create_anki_note_from_phrase(
 
     if source_tag not in phrase.translations:
         raise ValueError(
-            f"Phrase '{phrase.phrase_hash}' missing source translation: {source_tag}. "
+            f"Phrase '{phrase.key}' missing source translation: {source_tag}. "
             f"Available: {list(phrase.translations.keys())}"
         )
 
     if target_tag not in phrase.translations:
         raise ValueError(
-            f"Phrase '{phrase.phrase_hash}' missing target translation: {target_tag}. "
+            f"Phrase '{phrase.key}' missing target translation: {target_tag}. "
             f"Available: {list(phrase.translations.keys())}"
         )
 
@@ -252,7 +252,7 @@ def create_anki_note_from_phrase(
             source_lang.display_name(),
             target_lang.display_name(),
         ],
-        guid=_string_to_large_int(f"{phrase.phrase_hash}_{source_tag}_{target_tag}"),
+        guid=_string_to_large_int(f"{phrase.key}_{source_tag}_{target_tag}"),
     )
 
     return note, media_files
@@ -335,10 +335,10 @@ def create_anki_deck(
         all_media_files = []
         notes = []
 
-        print(f"Creating Anki deck: {deck_name}")
-        print(f"Source language: {source_lang.to_tag()}")
-        print(f"Target language: {target_lang.to_tag()}")
-        print(f"Processing {len(phrases)} phrases...")
+        logger.info(f"Creating Anki deck: {deck_name}")
+        logger.info(f"Source language: {source_lang.to_tag()}")
+        logger.info(f"Target language: {target_lang.to_tag()}")
+        logger.info(f"Processing {len(phrases)} phrases...")
 
         # Create notes from phrases
         for index, phrase in enumerate(tqdm(phrases, desc="Creating notes")):
@@ -359,7 +359,7 @@ def create_anki_deck(
                 all_media_files.extend(media_files)
 
             except Exception as e:
-                print(f"Error processing phrase {phrase.phrase_hash}: {str(e)}")
+                logger.info(f"Error processing phrase {phrase.key}: {str(e)}")
                 continue
 
         # Add notes to deck
@@ -370,11 +370,11 @@ def create_anki_deck(
         package = genanki.Package(deck)
         package.media_files = all_media_files
 
-        print(f"✅ Created deck with {len(notes)} notes")
+        logger.info(f"✅ Created deck with {len(notes)} notes")
 
         # Create parent directories
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         package.write_to_file(output_path)
-        print(f"Saved Anki Deck to {output_path}")
+        logger.info(f"Saved Anki Deck to {output_path}")
         return package

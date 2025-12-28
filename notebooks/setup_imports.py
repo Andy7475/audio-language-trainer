@@ -11,21 +11,21 @@ Or add the path manually with:
 
 import sys
 from pathlib import Path
-
+from src.logger import logger
 # Get the project root directory (parent of notebooks/)
 project_root = Path(__file__).parent.parent
 
 # Add project root to Python path if not already there
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
-    print(f"✅ Added {project_root} to Python path")
+    logger.info(f"✅ Added {project_root} to Python path")
 else:
-    print(f"✓ {project_root} already in Python path")
+    logger.info(f"✓ {project_root} already in Python path")
 
 # Verify imports work
 try:
     import src
 
-    print("✅ 'src' module is now importable")
+    logger.info("✅ 'src' module is now importable")
 except ImportError as e:
-    print(f"⚠ Warning: Could not import 'src': {e}")
+    logger.info(f"⚠ Warning: Could not import 'src': {e}")

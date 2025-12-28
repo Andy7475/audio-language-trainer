@@ -6,7 +6,8 @@ Every phrase MUST include proper determiners for all nouns
 Determiners include: articles (a, an, the), possessives (his, her, my, our, their), quantifiers (two, three, some, many, few), demonstratives (this, that, these, those)
 Every phrase MUST have complete prepositions with determiners (on the, in the, with the - NOT just "on", "in", "with")
 Create phrases with nouns, adjectives, adverbs (of manner/place), and prepositions
-Use NO finite verbs or verb phrases (no actions like "is running", "will eat", "has taken")
+Try to use NO finite verbs or verb phrases (no actions like "is running", "will eat", "has taken")
+However, you may use very common basic verbs if it makes a better phrase (verbs like 'to have' or 'to be')
 Participial adjectives ARE acceptable (e.g., "broken window", "painted fence", "sleeping cat")
 Variety is important:
 Include possessives: "his ham sandwich", "my coffee cup"

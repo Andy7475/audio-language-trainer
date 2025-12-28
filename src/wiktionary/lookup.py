@@ -15,8 +15,7 @@ from src.wiktionary.utils import (
     get_wiktionary_language_name,
     find_language_section,
 )
-
-
+from src.logger import logger
 USER_AGENT = {
     "User-Agent": "Mozilla/5.0 (compatible; WiktionaryBot/1.0; +https://github.com/Andy7475/audio-language-trainer)"
 }
@@ -143,7 +142,7 @@ def _try_wiktionary_lookup(
         return _create_not_found_entry(lookup_word.lower(), language_code)
 
     except requests.RequestException as e:
-        print(f"Wiktionary lookup failed for '{lookup_word}': {e}")
+        logger.error(f"Wiktionary lookup failed for '{lookup_word}': {e}")
         return _create_not_found_entry(lookup_word.lower(), language_code)
 
 

@@ -18,7 +18,7 @@ from pydub import AudioSegment
 
 from src.models import BCP47Language
 from src.connections.gcloud_auth import get_storage_client
-
+from src.logger import logger
 
 # ============================================================================
 # BUCKET CONSTANTS
@@ -532,7 +532,7 @@ def download_from_gcs(
                     with open(local_path, "rb") as f:
                         return f.read()
             except Exception as e:
-                print(f"Error reading local file {local_path}: {str(e)}")
+                logger.exception(f"Error reading local file {local_path}")
                 # Fall back to GCS if local read fails
 
     # Download from GCS

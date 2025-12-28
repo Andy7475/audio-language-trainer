@@ -3,7 +3,7 @@ from typing import List, Set, Tuple
 
 from src.connections.gcloud_auth import get_nlp_client
 from google.cloud import language_v1
-
+from src.logger import logger
 
 def analyze_text_syntax(
     text: str, language_code: str = "en"
@@ -123,6 +123,6 @@ def get_text_tokens(text: str, language_code: str = "en") -> List[str]:
         tokens = [token.text.content for token in response.tokens]
         return tokens if tokens else text.split()
     except Exception as e:
-        print(f"API Tokenization failed: {str(e)}")
+        logger.exception(f"API Tokenization failed for {language_code}")
         # Fallback: split on spaces if present, otherwise return whole text as one token
         return text.split() if " " in text else [text]

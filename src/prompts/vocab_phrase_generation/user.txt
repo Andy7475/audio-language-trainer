@@ -13,6 +13,7 @@ Determiners include: articles (a, an, the), possessives (his, her, my, our, thei
 MUST have complete prepositions with determiners (e.g., "on the table" NOT "on table")
 MUST sound natural when spoken aloud by a language learner
 Contain NO finite verbs or verb phrases (no actions like "is running", "will eat", "has taken")
+If creating a meaningful phrase is difficult without verbs, you can use very simple verbs like 'have', 'is/are'
 Participial adjectives are fine (e.g., "broken window", "painted fence", "sleeping cat")
 Feature the target word as a primary element
 
@@ -33,7 +34,7 @@ Grammar checklist for every phrase - MUST satisfy all:
 ✓ Word order is natural and idiomatic English
 ✓ Sounds like a natural noun phrase a learner would hear or say
 ✓ No fragments or incomplete structures
-✓ No finite verbs (but participial adjectives like "broken" or "sleeping" are acceptable)
+✓ Avoid finite verbs where possible (but participial adjectives like "broken" or "sleeping" are acceptable)
 Use context and creativity:
 
 Use adjectives, nouns, prepositions to create visual or conceptual combinations
@@ -43,12 +44,9 @@ Maximize variety in phrase patterns and structures
 Examples of GOOD phrases: "a red apple on the table", "the old wooden door", "some blue curtains", "his warm jacket", "two small plates"
 Examples to AVOID: "red apple" (missing determiner), "on table" (incomplete preposition)
 
-
 For each phrase, identify any additional words you generated (beyond the target word):
 
 Example: If you create "a white mug on a shelf", record "white", "mug", "shelf" as additional words
 These will be struck off the vocabulary list
-
-
 
 Use the generate_vocab_phrases tool to return your response with the structured phrase data for all words.
