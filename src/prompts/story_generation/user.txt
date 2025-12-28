@@ -1,10 +1,10 @@
 Create an English dialogue story for language learning with the following requirements:
 
 Vocabulary to incorporate:
-The learner has practised the vocabulary in the following phrases:
+The learner has practised the following vocabulary:
 $phrases_to_use
 
-DO NOT force the use of all phrases, but pick a selection (or words from the core vocabulalry) that help make an engaging story.
+DO NOT force the use of all vocabulary, but pick a selection (of phrases or words) that help make an engaging story.
 
 Story Structure:
 $structure_description

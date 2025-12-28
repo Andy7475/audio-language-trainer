@@ -43,11 +43,15 @@ def _build_story_schema() -> Dict[str, Any]:
             "type": "string",
             "description": "Engaging title for the story",
         },
-        "introduction": part_schema(),
-        "development": part_schema(),
-        "resolution": part_schema(),
+        "summary": {
+            "type": "string",
+            "description": "Brief 1 - 2 sentence summary of the story"
+        },
+        "part_1": part_schema(),
+        "part_2": part_schema(),
+        "part_3": part_schema(),
     }
-    required = ["story_name", "introduction", "development", "resolution"]
+    required = ["story_name", "part_1", "part_2", "part_3"]
 
     return {
         "name": "generate_story",
@@ -71,9 +75,9 @@ def _get_structure_description() -> Tuple[str, int, str]:
     """
 
     description = """Three parts:
-   - introduction: Set up the situation and characters
-   - development: Present a challenge or complication
-   - resolution: Resolve the situation"""
+   - introduction (part 1): Set up the situation and characters
+   - development (part 2): Present a challenge or complication
+   - resolution (part 3): Resolve the situation"""
     part_count = 3
     target_length = "1-2 minutes per part (about 150-300 words each)"
 

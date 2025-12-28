@@ -68,7 +68,7 @@ def get_phrase(
     phrase_data = doc.to_dict()
 
     core_phrase_references = {
-        "phrase_hash": phrase_hash,
+        "key": phrase_hash,
         "firestore_document_ref": doc_ref,
     }
 
@@ -113,7 +113,9 @@ class FirePhraseDataModel(BaseModel):
     """Parent model for common variables and storage details for FireStore"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
-
+    firestore_collection: Optional[Literal["phrases", "stories"]] = Field(
+        default="phrases", description="Context for the phrase in FireStore"
+    )
     bucket_name: str = Field(default=PRIVATE_BUCKET)
     firestore_database: str = Field(
         default="firephrases", description="database name in FireStore"
@@ -123,15 +125,15 @@ class FirePhraseDataModel(BaseModel):
         exclude=True,
         description="The firestore document reference of the parent phrase",
     )
-    phrase_hash: str = Field(
-        ..., description="Hash of the associated English root phrase"
+    key: str = Field(
+        ..., description="Key in Firestore to get the document reference"
     )
 
     def _get_firestore_document_reference(self) -> DocumentReference:
         """Get or create a Firestore document reference for this phrase.
 
         Returns the existing reference if available, otherwise creates one
-        from the phrase_hash and caches it.
+        from the key and caches it.
 
         Returns:
             DocumentReference: Firestore document reference
@@ -141,7 +143,7 @@ class FirePhraseDataModel(BaseModel):
 
         # Create a new reference and cache it
         client = get_firestore_client(self.firestore_database)
-        doc_ref = client.collection("phrases").document(self.phrase_hash)
+        doc_ref = client.collection(self.firestore_collection).document(self.key)
         self.firestore_document_ref = doc_ref
         return doc_ref
 
@@ -154,6 +156,7 @@ class Phrase(FirePhraseDataModel):
     verbs, and vocabulary. Translations are stored in a subcollection and fetched separately.
     """
 
+    firestore_collection: str = Field(default="phrases", description="Firestore collection name for phrases")
     english: str = Field(
         ..., description="Original English phrase with original capitalisation"
     )
@@ -192,7 +195,7 @@ class Phrase(FirePhraseDataModel):
         tokens = get_tokens_from_lemmas_and_pos(lemmas_and_pos)
 
         phrase = cls(
-            phrase_hash=phrase_hash,
+            key=phrase_hash,
             english=english_phrase,
             english_lower=english_phrase,
             tokens=tokens,
@@ -219,6 +222,17 @@ class Phrase(FirePhraseDataModel):
         """
         return generate_phrase_hash(self.english)
 
+    def _get_translation_firestore_document_ref(self, language: BCP47Language) -> DocumentReference:
+        """Get the Firestore document reference for a specific translation.
+
+        Args:
+            language: BCP47 language tag for the translation
+        Returns:
+            DocumentReference: Firestore document reference for the translation
+        """
+        translation_doc_ref = self.firestore_document_ref.collection("translations").document(language.to_tag())
+        return translation_doc_ref
+    
     def _has_translation(self, language: BCP47Language) -> bool:
         """Check if a translation exists for the given language.
 
@@ -255,13 +269,13 @@ class Phrase(FirePhraseDataModel):
             Translation: An English translation with en-GB language tag
         """
         return Translation(
-            phrase_hash=self.phrase_hash,
+            key=self.key,
             language=BCP47Language.get("en-GB"),
             text=self.english,
             text_lower=self.english_lower,
             tokens=self.tokens,
             image_file_path=get_phrase_image_path(
-                phrase_hash=self.phrase_hash, language=BCP47Language.get("en-GB")
+                phrase_hash=self.key, language=BCP47Language.get("en-GB")
             ),
         )
 
@@ -328,10 +342,11 @@ class Phrase(FirePhraseDataModel):
         language_code = target_language.language
         tokens = get_text_tokens(translated_text, language_code=language_code)
 
+        translation_document_ref = self._get_translation_firestore_document_ref(target_language)
         # Step 4: Create the Translation object
         translation = Translation(
-            phrase_hash=self.phrase_hash,
-            firestore_document_ref=self._get_firestore_document_reference(),
+            key=self.key,
+            firestore_document_ref=translation_document_ref,
             language=target_language,
             text=translated_text,
             text_lower=translated_text.lower(),
@@ -366,15 +381,13 @@ class Phrase(FirePhraseDataModel):
             RuntimeError: If upload fails
         """
         if language:
-            print(f"Uploading phrase {self.phrase_hash} with {language.to_tag()} translation to Firestore and GCS")
+            print(f"Uploading phrase {self.key} with {language.to_tag()} translation to Firestore and GCS")
         else:
-            print(f"Uploading phrase {self.phrase_hash} with all translations to Firestore and GCS")
+            print(f"Uploading phrase {self.key} with all translations to Firestore and GCS")
 
-        firestore_client = get_firestore_client(self.firestore_database)
 
-        # Step 1 & 2: Upload phrase and translations to Firestore
-        doc_ref = self._upload_to_firestore(firestore_client=firestore_client)
-        self.firestore_document_ref = doc_ref
+        doc_ref = self._upload_to_firestore()
+
 
         # Step 3 & 4: Upload audio and images to GCS
         self._upload_translations(language=language, overwrite=overwrite)
@@ -401,9 +414,9 @@ class Phrase(FirePhraseDataModel):
 
         """
         if language:
-            print(f"Downloading multimedia for phrase {self.phrase_hash} - {language.to_tag()} translation only")
+            print(f"Downloading multimedia for phrase {self.key} - {language.to_tag()} translation only")
         else:
-            print(f"Downloading multimedia for phrase {self.phrase_hash} - all translations")
+            print(f"Downloading multimedia for phrase {self.key} - all translations")
 
         download_all_languages = True
         if language is not None:
@@ -655,19 +668,20 @@ class Phrase(FirePhraseDataModel):
         return translation.image
 
     def _upload_to_firestore(
-        self, firestore_client: FirestoreClient
+        self
     ) -> DocumentReference:
         """Upload a phrase and its translations to Firestore.
 
         Uploads the phrase document to `phrases/{phrase_hash}` and each translation to
         `phrases/{phrase_hash}/translations/{language_code}` subcollection.
         """
-        # Upload phrase document (without translations)
+        
+        if self.firestore_document_ref is None:
+            self.firestore_document_ref = self._get_firestore_document_reference()
         phrase_data = self.model_dump(mode="json", exclude={"translations"})
-        doc_ref = firestore_client.collection("phrases").document(self.phrase_hash)
-        doc_ref.set(phrase_data)
+        self.firestore_document_ref.set(phrase_data)
 
-        return doc_ref
+        return self.firestore_document_ref
 
     def _upload_translations(
         self, language: BCP47Language | None = None, overwrite: bool = False
@@ -702,9 +716,6 @@ class PhraseAudio(FirePhraseDataModel):
     Binary audio_segment data is excluded from Firestore serialization and loaded on demand.
     """
 
-    model_config = {
-        "arbitrary_types_allowed": True
-    }  # allow us to use AudioSegment and VoiceInfo types
     text: str = Field(..., description="Translated text of the phrase")
     file_path: str = Field(
         ...,
@@ -736,7 +747,7 @@ class PhraseAudio(FirePhraseDataModel):
     @classmethod
     def create(
         cls,
-        phrase_hash: str,
+        key: str,
         text: str,
         language: BCP47Language,
         context: Literal["flashcard", "story"],
@@ -749,7 +760,7 @@ class PhraseAudio(FirePhraseDataModel):
             phrase_hash: Hash of the associated English root phrase"""
 
         file_path = get_phrase_audio_path(
-            phrase_hash=phrase_hash, language=language, context=context, speed=speed
+            phrase_hash=key, language=language, context=context, speed=speed
         )
 
         voice_info = get_voice_model(
@@ -757,7 +768,7 @@ class PhraseAudio(FirePhraseDataModel):
         )
 
         return cls(
-            phrase_hash=phrase_hash,
+            key=key,
             text=text,
             file_path=file_path,
             language=language,
@@ -997,13 +1008,8 @@ class Translation(FirePhraseDataModel):
         """Uploads the translation text and URLs to firestore"""
 
         translation_data = self.model_dump(mode="json")
-        translation_doc_ref = (
-            self._get_firestore_document_reference()
-            .collection("translations")
-            .document(self.language.to_tag())
-        )
-        translation_doc_ref.set(translation_data)
-        return translation_doc_ref
+        self.firestore_document_ref.set(translation_data)
+        return self.firestore_document_ref
 
     def _upload_to_gcs(self, overwrite: bool = False) -> None:
         """Upload multimedia files to GCS"""
@@ -1032,7 +1038,7 @@ class Translation(FirePhraseDataModel):
             language = self.language
 
         self.image_file_path = get_phrase_image_path(
-            phrase_hash=self.phrase_hash,
+            phrase_hash=self.key,
             language=language,
         )
 
@@ -1108,7 +1114,7 @@ class Translation(FirePhraseDataModel):
             bool: True if audio file exists in GCS, False otherwise
         """
         file_path = get_phrase_audio_path(
-            phrase_hash=self.phrase_hash,
+            phrase_hash=self.key,
             language=self.language,
             context=context,
             speed=speed,
@@ -1149,7 +1155,7 @@ class Translation(FirePhraseDataModel):
             if not overwrite and self._check_audio_file_exists(context, speed):
                 # Download existing audio from GCS
                 file_path = get_phrase_audio_path(
-                    phrase_hash=self.phrase_hash,
+                    phrase_hash=self.key,
                     language=self.language,
                     context=context,
                     speed=speed,
@@ -1164,7 +1170,7 @@ class Translation(FirePhraseDataModel):
 
             # Create PhraseAudio object (either with downloaded or newly generated audio)
             phrase_audio = PhraseAudio.create(
-                phrase_hash=self.phrase_hash,
+                phrase_hash=self.key,
                 text=self.text,
                 language=self.language,
                 context=context,

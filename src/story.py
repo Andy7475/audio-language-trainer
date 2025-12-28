@@ -1,18 +1,16 @@
+from collections import defaultdict
 import json
 from pathlib import Path
 from string import Template
 from typing import Dict, List, Optional, Tuple
 
-from google.cloud import storage
 from pydub import AudioSegment
 from tqdm import tqdm
 
-)  # Keep for backward compatibility with existing functions
+  # Keep for backward compatibility with existing functions
 from src.convert import (
-    convert_audio_to_base64,
-    convert_PIL_image_to_base64,
     get_story_title,
-    get_collection_title,
+    get_collection_title
 )
 from src.gcs_storage import (
     check_blob_exists,
@@ -26,10 +24,124 @@ from src.storage import (
     PRIVATE_BUCKET,
     PUBLIC_BUCKET,
     get_story_dialogue_path,
-    upload_file_to_gcs,
+    upload_file_to_gcs
 )
 from src.utils import load_template
 
+from typing import List, Dict, Optional
+from pydantic import BaseModel, Field, model_validator
+from src.models import BCP47Language
+from src.phrases.phrase_model import Phrase
+from google.cloud.firestore import DocumentReference
+from src.connections.gcloud_auth import get_firestore_client
+from src.phrases.utils import generate_phrase_hash
+from src.phrases.phrase_model import FirePhraseDataModel, Phrase, Translation
+
+class StoryPhrase(Phrase):
+    """Phrase model specifically for story dialogues with context-aware translations."""
+    story_title_hash: str = Field(..., description="Hash of the parent story")
+    story_part: str = Field(..., description="Part of the story (e.g., introduction, development)")
+    sequence: int = Field(..., description="Utterance sequence within the story part", gte=0)
+
+    @classmethod
+    def create(cls, english_phrase: str, story_title_hash: str, story_part: str, sequence: int, collections:List[str] = []) -> "StoryPhrase":
+        """Factory method to create a StoryPhrase with story-specific hash."""
+        # Create base phrase for NLP processing
+        base_phrase = Phrase.create(english_phrase=english_phrase)
+        base_phrase.collections = collections
+        # Generate story-specific phrase hash
+        story_specific_hash = cls._generate_story_phrase_hash(english_phrase, story_title_hash, story_part, sequence)
+        
+        return cls(
+            **base_phrase.model_dump(exclude={"key", "translations"}),
+            key=story_specific_hash,
+            story_title_hash=story_title_hash,
+            story_part=story_part,
+            sequence=sequence
+        )
+    
+    @staticmethod
+    def _generate_story_phrase_hash(english_phrase: str, story_title_hash: str, story_part: str, sequence: int) -> str:
+        """Generate a unique hash combining phrase text and story context.
+        
+        Args:
+            english_phrase: The English phrase text
+            story_title_hash: Hash of the story title
+            
+        Returns:
+            str: Combined hash like "hello_abc123_story_xyz789"
+        """
+        phrase_hash = generate_phrase_hash(english_phrase)
+        # Combine: phrase_hash + "_story_" + story_title_hash
+        return f"story_{story_title_hash}#{story_part}#{sequence}#{phrase_hash}"
+    
+StoryPhrase.model_rebuild()
+
+class Utterance(BaseModel):
+    sequence: int = Field(..., description="Sequence number of the dialogue line")
+    speaker: str = Field(..., description="Name of the speaker")
+    text: str = Field(..., description="English Text spoken by the speaker")
+    story_phrase: Optional[StoryPhrase] = Field(None, exclude=True, description="Phrase hash for this dialogue line, uses story part and sequence")
+    phrase_hash: Optional[str] = Field(None, description="Phrase hash for this dialogue line")
+
+    @model_validator(mode="after")
+    def assign_phrase_hash(self) -> "Utterance":
+        """Assign phrase_hash from story_phrase if available."""
+        if self.story_phrase:
+            self.phrase_hash = self.story_phrase.key
+        return self
+    
+class Story(FirePhraseDataModel):
+    title: str = Field(..., description="Title of the story")
+    summary: str = Field("", description="Brief summary of the story")
+    story_parts: Dict[str, List[Utterance]] = Field(..., description="Dictionary of story parts (e.g., introduction, development)")
+    collections: List[str] = Field(default_factory=list, description="List of collections this story belongs to")
+   
+    @classmethod
+    def create(cls, title: str, summary: str, story_dialogue: Dict[str, List[Utterance]]) -> "Story":
+        """Factory method to create a Story instance."""
+        story_title_hash = generate_phrase_hash(title)
+
+        story_parts = defaultdict(list)
+        # create sequence and story part information for each piece of dialogue
+        for part_name, part_dialogue in story_dialogue.items():
+            story_parts[part_name] = [] # will be a list of utterances
+
+            for seq, utterance in enumerate(part_dialogue["dialogue"]):
+
+                story_phrase_obj = StoryPhrase.create(
+                    english_phrase=utterance["text"],
+                    story_title_hash=story_title_hash,
+                    story_part=part_name,
+                    sequence=seq,
+                    collections=["stories", title],)
+                
+                utterance_obj = Utterance(
+                    sequence=seq,
+                    speaker=utterance["speaker"],
+                    text=utterance["text"],
+                    story_title_hash=story_title_hash,   
+                    story_phrase=story_phrase_obj                
+                )
+                story_parts[part_name].append(utterance_obj)
+
+        return cls(title=title, key=story_title_hash, summary=summary, story_parts=story_parts, firestore_collection="stories")
+
+    def upload_phrase_entries(self, language:BCP47Language|None = None, overwrite:bool = False) -> List[DocumentReference]:
+        """Upload all StoryPhrase entries to Firestore."""
+        doc_refs = []
+        for part_name, utterances in self.story_parts.items():
+            for utterance in utterances:
+                if utterance.story_phrase:
+                    doc_ref = utterance.story_phrase.upload(language=language, overwrite=overwrite)
+                    doc_refs.append(doc_ref)
+        return doc_refs
+    
+    def upload(self) -> DocumentReference:
+        """Upload the story to Firestore."""
+        doc_ref = self._get_firestore_document_reference()
+        doc_ref.set(self.model_dump(mode="json"))
+        return doc_ref
 
 def upload_styles_to_gcs():
     """Upload the styles.css file to the public GCS bucket."""
@@ -56,100 +168,7 @@ def upload_styles_to_gcs():
     return public_url
 
 
-def create_and_upload_html_story(
-    prepared_data: Dict,
-    story_name: str,
-    bucket_name: str = PUBLIC_BUCKET,
-    component_path: str = "StoryViewer.js",
-    template_path: str = "story_template.html",
-    collection: str = "LM1000",
-) -> str:
-    """
-    Create a standalone HTML file from prepared story data and upload it to GCS.
 
-    Args:
-        prepared_data: Dictionary containing prepared story data with base64 encoded assets
-        story_name: Name of the story
-        bucket_name: GCS bucket name for upload
-        component_path: Path to the React component file
-        template_path: Path to the HTML template file
-        output_dir: Local directory to save HTML file before upload
-        collection: Collection name for organizing stories
-
-    Returns:
-        str: Public URL of the uploaded HTML file
-    """
-
-    # Clean the story name for display
-    story_title = get_story_title(story_name)
-
-    # Read the React component
-    react_component = load_template(component_path)
-
-    # Read the HTML template
-    template = Template(load_template(template_path))
-
-    # Substitute the template variables
-    html_content = template.substitute(
-        title=story_title,
-        story_data=json.dumps(prepared_data),
-        language=language,
-        react_component=react_component,
-        collection_name=get_collection_title(collection),
-        collection_raw=collection,
-    )
-
-    try:
-        blob_path = get_public_story_path(story_name, collection)
-
-        public_url = upload_to_gcs(
-            obj=html_content,
-            bucket_name=bucket_name,
-            file_name=blob_path,
-            content_type="text/html",
-        )
-        print(f"Uploaded HTML story to: {public_url}")
-
-        return public_url
-
-    except Exception as e:
-        print(f"Error uploading to GCS: {str(e)}")
-        return str(blob_path)  # Return local path if upload fails
-
-
-def generate_language_section(langauge: str, stories: List[Dict[str, str]]) -> str:
-    """Generate HTML for a single language section."""
-
-    stories_html = "\n".join(
-        f'<li><a href="{story["url"]}">{story["name"]}</a></li>'
-        for story in sorted(stories, key=lambda x: x["name"])
-    )
-
-    return f"""
-    <section class="language-section" id="{langauge.lower()}">
-        <h2>{langauge}</h2>
-        <ul class="story-list">
-            {stories_html}
-        </ul>
-    </section>
-    """
-
-
-def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
-    """Generate HTML for special pages section."""
-    if not special_pages:
-        return ""
-
-    links_html = "\n".join(
-        f'<a href="{page["url"]}">{page["name"]}</a>' for page in special_pages
-    )
-
-    return f"""
-    <div class="special-pages">
-        <h3>Additional Resources</h3>
-        {links_html}
-    </div>
-    """
 
 
 # ============================================================================
