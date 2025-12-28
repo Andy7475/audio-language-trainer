@@ -1,0 +1,34 @@
+{
+  "story_parts": [
+    {
+      "speaker": "Alex",
+      "text": "Hey Sam, did you book the tickets for the hiking trip this weekend?",
+      "translation": "Salut Sam, as-tu r\u00e9serv\u00e9 les billets pour la randonn\u00e9e de ce week-end ?"
+    },
+    {
+      "speaker": "Sam",
+      "text": "Yes! I just signed the forms yesterday. It's going to be amazing.",
+      "translation": "Oui ! J'ai sign\u00e9 les formulaires hier. \u00c7a va \u00eatre g\u00e9nial !"
+    },
+    {
+      "speaker": "Alex",
+      "text": "Sam! Wake up! We need to leave in thirty minutes!",
+      "translation": "Sam ! R\u00e9veille-toi ! On doit partir dans trente minutes !"
+    },
+    {
+      "speaker": "Sam",
+      "text": "What? Oh no! I hid my hiking boots somewhere and can't find them!",
+      "translation": "Quoi ? Oh non ! J'ai rang\u00e9 mes chaussures de randonn\u00e9e quelque part et je ne les retrouve pas !"
+    },
+    {
+      "speaker": "Sam",
+      "text": "Wow, that was a close call! I can't believe we made it to the train with only two minutes to spare.",
+      "translation": "Ouf, c'\u00e9tait juste ! Je n'arrive pas \u00e0 croire qu'on ait attrap\u00e9 le train avec seulement deux minutes d'avance."
+    },
+    {
+      "speaker": "Alex",
+      "text": "I told you we would survive this! Your face showed such shock after we ran through the station.",
+      "translation": "Je t'avais dit qu'on y arriverait ! Tu aurais d\u00fb voir ta t\u00eate apr\u00e8s notre course \u00e0 travers la gare."
+    }
+  ]
+}
