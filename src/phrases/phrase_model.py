@@ -126,7 +126,7 @@ class FirePhraseDataModel(BaseModel):
         description="The firestore document reference of the parent phrase",
     )
     key: str = Field(
-        ..., description="Key in Firestore to get the document reference"
+        ..., alias="phrase_hash", description="Key in Firestore to get the document reference"
     )
 
     def _get_firestore_document_reference(self) -> DocumentReference:
