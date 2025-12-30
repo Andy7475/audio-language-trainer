@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Russian Basic Introduction - Speaking Challenges</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="stylesheet" href="../styles/challenges.css">
+</head>
+
+<body>
+    <nav class="breadcrumb">
+        <a href="../">Home</a> ›
+        <a href="../swedish/">Russian</a> ›
+        <a href="../swedish/first1000/">Basic</a> ›
+        <a href="story_sunset_wedding_blues.html">Basic Introduction</a> ›
+        <span>Speaking Challenges</span>
+    </nav>
+
+    <header>
+        <h1>Speaking Challenges: Russian — Basic Introduction</h1>
+        <p class="summary">Practice Russian conversation with AI-powered roleplay scenarios</p>
+
+        <div class="api-key-section">
+            <label for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey" placeholder="sk-..." />
+            <button onclick="saveApiKey()" class="save-key-btn">Save Key</button>
+        </div>
+
+        <div class="info-box">
+            <p><strong>ℹ️ About this feature:</strong> You'll need an OpenAI API key to use these speaking challenges.
+                The AI will conduct a conversation with you in Swedish. Click "Start Challenge", then "Record" to speak
+                your responses.</p>
+            <p><strong>Estimated cost:</strong> ~$0.80 per 30-minute practice session</p>
+        </div>
+    </header>
+
+    <nav class="story-nav">
+        <a href="#challenge1">Challenge 1</a> |
+        <a href="#challenge2">Challenge 2</a>
+    </nav>
+
+    <main>
+
+        <section id="challenge2" class="story-part">
+            <h2>Challenge 2: Basic Russian Introduction</h2>
+
+            <div class="challenge-info">
+                <p><strong>Setting:</strong> Meeting a new friend in a casual social setting</p>
+                <p><strong>Speaking with:</strong> A new friend you've just met</p>
+                <p><strong>Your task:</strong> Practice a basic Russian introduction and find out the friend's name</p>
+                <p><strong>Complication:</strong> Keep interactions short and natural (1-2 sentences each turn)</p>
+            </div>
+
+            <div class="challenge-controls">
+                <button onclick="startChallenge('challenge2')" class="play-part" id="start-challenge2">
+                    ▶ Start Challenge
+                </button>
+                <button onclick="toggleRecording('challenge2')" class="record-btn" id="record-challenge2" disabled>
+                    🎤 Record
+                </button>
+                <button onclick="resetChallenge('challenge2')" class="danger-btn" id="reset-challenge2">
+                    Reset
+                </button>
+
+            </div>
+
+            <div id="status-challenge2" class="status-message"></div>
+
+            <div id="transcript-challenge2" class="transcript-box" style="display: none;">
+                <h3>Conversation History:</h3>
+                <div id="transcript-content-challenge2"></div>
+            </div>
+
+            <div class="challenge-answer">
+                <button onclick="toggleAnswer('challenge2')" class="reveal-btn">
+                    👁️ Reveal Answer
+                </button>
+                <button onclick="togglePrompt('challenge2')" class="reveal-btn">
+                    💡 View/Edit Prompt
+                </button>
+                <div id="prompt-challenge2" class="prompt-box" style="display: none;">
+                    <textarea id="prompt-text-challenge2"
+                        rows="8">## Personality
+You are a friendly new acquaintance who speaks Russian naturally and politely. Be warm, patient, and stay in character throughout the conversation.
+
+## Environment
+This is a spoken language learning roleplay session. The learner is practicing basic Russian introductions and may make mistakes — be encouraging and supportive.
+
+## Tone
+- Speak only 1-2 short sentences at a time, then pause for the learner's response
+- Use simple, everyday Russian appropriate for meeting someone new
+- If the learner uses English, gently reply in Russian and keep the conversation natural
+
+## Goal
+Help the learner complete this task: **Find out the new friend's name through a natural introduction**
+
+## Answer
+Your name is 'Putin'.
+
+## Interaction Notes
+- Do not volunteer the name immediately — let the learner ask questions or prompt an introduction
+- Respond naturally to common introductory questions (e.g., "Как тебя зовут?", "Откуда ты?")
+
+## Guardrails
+- Always speak in Russian unless explicitly asked for feedback in English
+- Keep responses brief — 1-2 short sentences before pausing
+- If you don't understand, ask for clarification in Russian
+
+## Success Criteria
+The roleplay succeeds when the learner asks for and obtains the friend's name.
+
+When that happens, switch to English and provide:
+- A short congratulatory note
+- The friend's name (as given in this challenge)
+- 1-2 short alternative ways the learner could have asked the question in Russian
+
+**Start now by greeting the learner in Russian as a friendly new acquaintance — 1-2 short sentences, then wait for their response.**</textarea>
+                    <button onclick="copyPrompt('challenge2')" class="copy-btn">📋 Copy Prompt</button>
+                </div>
+
+
+                <div id="answer-challenge2" class="answer-box" style="display: none;">
+                    <strong>Answer:</strong> Putin
+                </div>
+            </div>
+
+                <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p><a href="story_sunset_wedding_blues.html">← Back to Story</a></p>
+    </footer>
+
+    <!-- Import shared API handlers -->
+    <script src="challenge_API.js"></script>
+
+    <!-- Local page functionality -->
+    <script>
+        // Language code for this page
+        const LANGUAGE_CODE = 'ru';
+
+        // Simple UI toggle functions - keep local as they're HTML-specific
+        function togglePrompt(challengeId) {
+            const promptBox = document.getElementById(`prompt-${challengeId}`);
+            promptBox.style.display = promptBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleAnswer(challengeId) {
+            const answerBox = document.getElementById(`answer-${challengeId}`);
+            answerBox.style.display = answerBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function copyPrompt(challengeId) {
+            const promptText = document.getElementById(`prompt-text-${challengeId}`).value;
+            navigator.clipboard.writeText(promptText).then(() => {
+                alert('Prompt copied to clipboard!');
+            });
+        }
+
+        async function toggleRecording(challengeId) {
+            const recordBtn = document.getElementById(`record-${challengeId}`);
+            const isRecording = recordBtn.classList.contains('stop-btn');
+
+            if (isRecording) {
+                await stopRecording(challengeId);
+            } else {
+                await startRecording(challengeId);
+            }
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (key) {
+                ChallengeAPI.setApiKey(key);
+                localStorage.setItem('openai_api_key', key);
+                showStatus('challenge1', 'API Key saved successfully!', 'success');
+                setTimeout(() => hideStatus('challenge1'), 2000);
+            } else {
+                showStatus('challenge1', 'Please enter a valid API key', 'error');
+            }
+        }
+
+        function showStatus(challengeId, message, type = 'info') {
+            const statusEl = document.getElementById(`status-${challengeId}`);
+            statusEl.textContent = message;
+            statusEl.className = `status-message active ${type}`;
+        }
+
+        function hideStatus(challengeId) {
+            const statusEl = document.getElementById(`status-${challengeId}`);
+            statusEl.className = 'status-message';
+        }
+
+        function updateButtonStates(challengeId, isActive, recording) {
+            document.getElementById(`start-${challengeId}`).disabled = isActive;
+            const recordBtn = document.getElementById(`record-${challengeId}`);
+            recordBtn.disabled = !isActive;
+
+            // Update button appearance based on recording state
+            if (recording) {
+                recordBtn.textContent = '⏹️ Stop Recording';
+                recordBtn.classList.remove('record-btn');
+                recordBtn.classList.add('stop-btn');
+            } else {
+                recordBtn.textContent = '🎤 Record';
+                recordBtn.classList.remove('stop-btn');
+                recordBtn.classList.add('record-btn');
+            }
+        }
+
+        function updateTranscriptDisplay(challengeId, transcripts) {
+            const transcriptBox = document.getElementById(`transcript-${challengeId}`);
+            const transcriptContent = document.getElementById(`transcript-content-${challengeId}`);
+
+            transcriptBox.style.display = 'block';
+            transcriptContent.innerHTML = '';
+
+            transcripts.forEach((msg, idx) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'transcript-message';
+
+                const speaker = document.createElement('strong');
+                speaker.textContent = msg.type === 'ai' ? 'AI: ' : 'You: ';
+
+                const text = document.createTextNode(msg.text);
+
+                messageDiv.appendChild(speaker);
+                messageDiv.appendChild(text);
+
+                if (msg.type === 'ai') {
+                    const replayBtn = document.createElement('button');
+                    replayBtn.className = 'replay-btn';
+                    replayBtn.textContent = '🔊 Replay';
+                    replayBtn.onclick = () => ChallengeAPI.replayAudio(challengeId, idx);
+                    messageDiv.appendChild(replayBtn);
+                }
+
+                transcriptContent.appendChild(messageDiv);
+            });
+        }
+
+        // Wrapper functions that call the API and update UI
+        async function startChallenge(challengeId) {
+            const promptText = document.getElementById(`prompt-text-${challengeId}`).value;
+
+            showStatus(challengeId, 'Starting conversation...');
+            updateButtonStates(challengeId, false, false);
+
+            try {
+                const result = await ChallengeAPI.startChallenge(challengeId, promptText, LANGUAGE_CODE);
+
+                updateTranscriptDisplay(challengeId, result.transcripts);
+                showStatus(challengeId, 'Ready - click Record to respond', 'success');
+                updateButtonStates(challengeId, true, false);
+            } catch (error) {
+                showStatus(challengeId, `Error: ${error.message}`, 'error');
+                updateButtonStates(challengeId, false, false);
+            }
+        }
+
+        async function startRecording(challengeId) {
+            try {
+                await ChallengeAPI.startRecording(challengeId);
+                showStatus(challengeId, 'Recording... click Stop when done');
+                updateButtonStates(challengeId, true, true);
+            } catch (error) {
+                showStatus(challengeId, `Microphone error: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopRecording(challengeId) {
+            showStatus(challengeId, 'Processing your speech...');
+            updateButtonStates(challengeId, true, false);
+
+            try {
+                const result = await ChallengeAPI.stopRecording(challengeId, LANGUAGE_CODE);
+
+                updateTranscriptDisplay(challengeId, result.transcripts);
+                showStatus(challengeId, 'Ready - click Record to respond', 'success');
+            } catch (error) {
+                showStatus(challengeId, `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function resetChallenge(challengeId) {
+            ChallengeAPI.resetChallenge(challengeId);
+            hideStatus(challengeId);
+            updateButtonStates(challengeId, false, false);
+            document.getElementById(`transcript-${challengeId}`).style.display = 'none';
+        }
+
+        // Load saved API key on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('openai_api_key');
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                ChallengeAPI.setApiKey(savedKey);
+            }
+        });
+    </script>
+</body>
+
+</html>
