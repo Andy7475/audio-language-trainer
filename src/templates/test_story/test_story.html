@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Test Story</title>
+    <link rel="stylesheet" href="../styles/styles.css">
+</head>
+
+<body>
+    <nav class="breadcrumb">
+        <a href="../">Home</a> ›
+        <a href="../fr-FR/">French (France)</a> ›
+        <span>A Test Story</span>
+    </nav>
+
+    <header>
+        <h1>A Test Story</h1>
+        <p class="summary">A brief summary of the test story.</p>
+        <button onclick="playAllParts()" class="play-all">▶ Play Entire Story</button>
+        <button onclick="toggleAllSource()" id="globalSourceToggle" class="toggle-source">
+            👁️ Hide All English (United Kingdom)
+        </button>
+        <a href="full_story.mp3" download="a_test_story.mp3" class="download-btn">
+            ⬇️ Download Full Story
+        </a>
+    </header>
+
+    <nav class="story-nav">
+    
+    <a href="#part_1">Part 1</a>
+    
+    <a href="#part_2">Part 2</a>
+    
+    <a href="#part_3">Part 3</a>
+    
+</nav>
+
+    <main>
+        
+        <section id="part_1" class="story-part">
+            <h2>Part 1</h2>
+            <button onclick="playPart('part_1')" class="play-part">▶ Play Part 1</button>
+
+            
+            <article class="dialogue">
+                <div class="dialogue-speaker">Alex</div>
+                <div class="dialogue-target">
+                    <a href="https://en.wiktionary.org/wiki/salut#French" target="_blank" rel="noopener">Salut</a> Sam , <a href="https://en.wiktionary.org/wiki/as#French" target="_blank" rel="noopener">as</a> - <a href="https://en.wiktionary.org/wiki/tu#French" target="_blank" rel="noopener">tu</a> <a href="https://en.wiktionary.org/wiki/r%C3%A9serv%C3%A9#French" target="_blank" rel="noopener">réservé</a> <a href="https://en.wiktionary.org/wiki/les#French" target="_blank" rel="noopener">les</a> <a href="https://en.wiktionary.org/wiki/billets#French" target="_blank" rel="noopener">billets</a> <a href="https://en.wiktionary.org/wiki/pour#French" target="_blank" rel="noopener">pour</a> <a href="https://en.wiktionary.org/wiki/la#French" target="_blank" rel="noopener">la</a> <a href="https://en.wiktionary.org/wiki/randonn%C3%A9e#French" target="_blank" rel="noopener">randonnée</a> <a href="https://en.wiktionary.org/wiki/de#French" target="_blank" rel="noopener">de</a> <a href="https://en.wiktionary.org/wiki/ce#French" target="_blank" rel="noopener">ce</a> week - end ?
+                </div>
+                <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">Hey Sam, did you book the tickets for the hiking trip this weekend?</div>
+                <div class="dialogue-controls">
+                    <button onclick="playAudio('part_1_alex_0_normal.mp3')" title="Play audio">🔊</button>
+                    <button onclick='copyText("Salut Sam, as-tu r\u00e9serv\u00e9 les billets pour la randonn\u00e9e de ce week-end ?")'
+                        title="Copy phrase">📋</button>
+                    <button onclick='copyPrompt("Salut Sam, as-tu r\u00e9serv\u00e9 les billets pour la randonn\u00e9e de ce week-end ?")'
+                        title="Get help understanding">💡</button>
+                </div>
+            </article>
+            
+            <article class="dialogue">
+                <div class="dialogue-speaker">Sam</div>
+                <div class="dialogue-target">
+                    <a href="https://en.wiktionary.org/wiki/oui#French" target="_blank" rel="noopener">Oui</a> ! <a href="https://en.wiktionary.org/wiki/j#French" target="_blank" rel="noopener">J'</a> <a href="https://en.wiktionary.org/wiki/ai#French" target="_blank" rel="noopener">ai</a> <a href="https://en.wiktionary.org/wiki/sign%C3%A9#French" target="_blank" rel="noopener">signé</a> <a href="https://en.wiktionary.org/wiki/les#French" target="_blank" rel="noopener">les</a> <a href="https://en.wiktionary.org/wiki/formulaires#French" target="_blank" rel="noopener">formulaires</a> <a href="https://en.wiktionary.org/wiki/hier#French" target="_blank" rel="noopener">hier</a> . <a href="https://en.wiktionary.org/wiki/%C3%A7a#French" target="_blank" rel="noopener">Ça</a> <a href="https://en.wiktionary.org/wiki/va#French" target="_blank" rel="noopener">va</a> <a href="https://en.wiktionary.org/wiki/%C3%AAtre#French" target="_blank" rel="noopener">être</a> <a href="https://en.wiktionary.org/wiki/g%C3%A9nial#French" target="_blank" rel="noopener">génial</a> !
+                </div>
+                <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">Yes! I just signed the forms yesterday. It's going to be amazing.</div>
+                <div class="dialogue-controls">
+                    <button onclick="playAudio('part_1_sam_1_normal.mp3')" title="Play audio">🔊</button>
+                    <button onclick='copyText("Oui ! J\u0027ai sign\u00e9 les formulaires hier. \u00c7a va \u00eatre g\u00e9nial !")'
+                        title="Copy phrase">📋</button>
+                    <button onclick='copyPrompt("Oui ! J\u0027ai sign\u00e9 les formulaires hier. \u00c7a va \u00eatre g\u00e9nial !")'
+                        title="Get help understanding">💡</button>
+                </div>
+            </article>
+            
+            
+           
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        
+        <section id="part_2" class="story-part">
+            <h2>Part 2</h2>
+            <button onclick="playPart('part_2')" class="play-part">▶ Play Part 2</button>
+
+            
+            <article class="dialogue">
+                <div class="dialogue-speaker">Alex</div>
+                <div class="dialogue-target">
+                    Sam ! <a href="https://en.wiktionary.org/wiki/r%C3%A9veille#French" target="_blank" rel="noopener">Réveille</a> - <a href="https://en.wiktionary.org/wiki/toi#French" target="_blank" rel="noopener">toi</a> ! <a href="https://en.wiktionary.org/wiki/on#French" target="_blank" rel="noopener">On</a> <a href="https://en.wiktionary.org/wiki/doit#French" target="_blank" rel="noopener">doit</a> <a href="https://en.wiktionary.org/wiki/partir#French" target="_blank" rel="noopener">partir</a> <a href="https://en.wiktionary.org/wiki/dans#French" target="_blank" rel="noopener">dans</a> <a href="https://en.wiktionary.org/wiki/trente#French" target="_blank" rel="noopener">trente</a> <a href="https://en.wiktionary.org/wiki/minutes#French" target="_blank" rel="noopener">minutes</a> !
+                </div>
+                <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">Sam! Wake up! We need to leave in thirty minutes!</div>
+                <div class="dialogue-controls">
+                    <button onclick="playAudio('part_2_alex_0_normal.mp3')" title="Play audio">🔊</button>
+                    <button onclick='copyText("Sam ! R\u00e9veille-toi ! On doit partir dans trente minutes !")'
+                        title="Copy phrase">📋</button>
+                    <button onclick='copyPrompt("Sam ! R\u00e9veille-toi ! On doit partir dans trente minutes !")'
+                        title="Get help understanding">💡</button>
+                </div>
+            </article>
+            
+            <article class="dialogue">
+                <div class="dialogue-speaker">Sam</div>
+                <div class="dialogue-target">
+                    <a href="https://en.wiktionary.org/wiki/quoi#French" target="_blank" rel="noopener">Quoi</a> ? <a href="https://en.wiktionary.org/wiki/oh#French" target="_blank" rel="noopener">Oh</a> <a href="https://en.wiktionary.org/wiki/non#French" target="_blank" rel="noopener">non</a> ! <a href="https://en.wiktionary.org/wiki/j#French" target="_blank" rel="noopener">J'</a> <a href="https://en.wiktionary.org/wiki/ai#French" target="_blank" rel="noopener">ai</a> <a href="https://en.wiktionary.org/wiki/cach%C3%A9#French" target="_blank" rel="noopener">caché</a> <a href="https://en.wiktionary.org/wiki/mes#French" target="_blank" rel="noopener">mes</a> <a href="https://en.wiktionary.org/wiki/chaussures#French" target="_blank" rel="noopener">chaussures</a> <a href="https://en.wiktionary.org/wiki/de#French" target="_blank" rel="noopener">de</a> <a href="https://en.wiktionary.org/wiki/randonn%C3%A9e#French" target="_blank" rel="noopener">randonnée</a> <a href="https://en.wiktionary.org/wiki/quelque#French" target="_blank" rel="noopener">quelque</a> <a href="https://en.wiktionary.org/wiki/part#French" target="_blank" rel="noopener">part</a> <a href="https://en.wiktionary.org/wiki/et#French" target="_blank" rel="noopener">et</a> <a href="https://en.wiktionary.org/wiki/je#French" target="_blank" rel="noopener">je</a> <a href="https://en.wiktionary.org/wiki/ne#French" target="_blank" rel="noopener">ne</a> <a href="https://en.wiktionary.org/wiki/les#French" target="_blank" rel="noopener">les</a> <a href="https://en.wiktionary.org/wiki/retrouve#French" target="_blank" rel="noopener">retrouve</a> <a href="https://en.wiktionary.org/wiki/pas#French" target="_blank" rel="noopener">pas</a> !
+                </div>
+                <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">What? Oh no! I hid my hiking boots somewhere and can't find them!</div>
+                <div class="dialogue-controls">
+                    <button onclick="playAudio('part_2_sam_1_normal.mp3')" title="Play audio">🔊</button>
+                    <button onclick='copyText("Quoi ? Oh non ! J\u0027ai cach\u00e9 mes chaussures de randonn\u00e9e quelque part et je ne les retrouve pas !")'
+                        title="Copy phrase">📋</button>
+                    <button onclick='copyPrompt("Quoi ? Oh non ! J\u0027ai cach\u00e9 mes chaussures de randonn\u00e9e quelque part et je ne les retrouve pas !")'
+                        title="Get help understanding">💡</button>
+                </div>
+            </article>
+            
+            
+           
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        
+        <section id="part_3" class="story-part">
+            <h2>Part 3</h2>
+            <button onclick="playPart('part_3')" class="play-part">▶ Play Part 3</button>
+
+            
+            <article class="dialogue">
+                <div class="dialogue-speaker">Sam</div>
+                <div class="dialogue-target">
+                    <a href="https://en.wiktionary.org/wiki/ouf#French" target="_blank" rel="noopener">Ouf</a> , <a href="https://en.wiktionary.org/wiki/on#French" target="_blank" rel="noopener">on</a> <a href="https://en.wiktionary.org/wiki/l#French" target="_blank" rel="noopener">l'</a> <a href="https://en.wiktionary.org/wiki/a#French" target="_blank" rel="noopener">a</a> <a href="https://en.wiktionary.org/wiki/%C3%A9chapp%C3%A9#French" target="_blank" rel="noopener">échappé</a> <a href="https://en.wiktionary.org/wiki/belle#French" target="_blank" rel="noopener">belle</a> ! <a href="https://en.wiktionary.org/wiki/incroyable#French" target="_blank" rel="noopener">Incroyable</a> <a href="https://en.wiktionary.org/wiki/qu#French" target="_blank" rel="noopener">qu'</a> <a href="https://en.wiktionary.org/wiki/on#French" target="_blank" rel="noopener">on</a> <a href="https://en.wiktionary.org/wiki/ait#French" target="_blank" rel="noopener">ait</a> <a href="https://en.wiktionary.org/wiki/r%C3%A9ussi#French" target="_blank" rel="noopener">réussi</a> <a href="https://en.wiktionary.org/wiki/%C3%A0#French" target="_blank" rel="noopener">à</a> <a href="https://en.wiktionary.org/wiki/attraper#French" target="_blank" rel="noopener">attraper</a> <a href="https://en.wiktionary.org/wiki/le#French" target="_blank" rel="noopener">le</a> <a href="https://en.wiktionary.org/wiki/train#French" target="_blank" rel="noopener">train</a> <a href="https://en.wiktionary.org/wiki/%C3%A0#French" target="_blank" rel="noopener">à</a> <a href="https://en.wiktionary.org/wiki/deux#French" target="_blank" rel="noopener">deux</a> <a href="https://en.wiktionary.org/wiki/minutes#French" target="_blank" rel="noopener">minutes</a> <a href="https://en.wiktionary.org/wiki/pr%C3%A8s#French" target="_blank" rel="noopener">près</a> .
+                </div>
+                <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">Wow, that was a close call! I can't believe we made it to the train with only two minutes to spare.</div>
+                <div class="dialogue-controls">
+                    <button onclick="playAudio('part_3_sam_0_normal.mp3')" title="Play audio">🔊</button>
+                    <button onclick='copyText("Ouf, on l\u0027a \u00e9chapp\u00e9 belle ! Incroyable qu\u0027on ait r\u00e9ussi \u00e0 attraper le train \u00e0 deux minutes pr\u00e8s.")'
+                        title="Copy phrase">📋</button>
+                    <button onclick='copyPrompt("Ouf, on l\u0027a \u00e9chapp\u00e9 belle ! Incroyable qu\u0027on ait r\u00e9ussi \u00e0 attraper le train \u00e0 deux minutes pr\u00e8s.")'
+                        title="Get help understanding">💡</button>
+                </div>
+            </article>
+            
+            <article class="dialogue">
+                <div class="dialogue-speaker">Alex</div>
+                <div class="dialogue-target">
+                    <a href="https://en.wiktionary.org/wiki/je#French" target="_blank" rel="noopener">Je</a> <a href="https://en.wiktionary.org/wiki/te#French" target="_blank" rel="noopener">te</a> <a href="https://en.wiktionary.org/wiki/l#French" target="_blank" rel="noopener">l'</a> <a href="https://en.wiktionary.org/wiki/avais#French" target="_blank" rel="noopener">avais</a> <a href="https://en.wiktionary.org/wiki/dit#French" target="_blank" rel="noopener">dit</a> <a href="https://en.wiktionary.org/wiki/qu#French" target="_blank" rel="noopener">qu'</a> <a href="https://en.wiktionary.org/wiki/on#French" target="_blank" rel="noopener">on</a> <a href="https://en.wiktionary.org/wiki/survivrait#French" target="_blank" rel="noopener">survivrait</a> ! <a href="https://en.wiktionary.org/wiki/ton#French" target="_blank" rel="noopener">Ton</a> <a href="https://en.wiktionary.org/wiki/visage#French" target="_blank" rel="noopener">visage</a> <a href="https://en.wiktionary.org/wiki/%C3%A9tait#French" target="_blank" rel="noopener">était</a> <a href="https://en.wiktionary.org/wiki/tellement#French" target="_blank" rel="noopener">tellement</a> <a href="https://en.wiktionary.org/wiki/choqu%C3%A9#French" target="_blank" rel="noopener">choqué</a> <a href="https://en.wiktionary.org/wiki/apr%C3%A8s#French" target="_blank" rel="noopener">après</a> <a href="https://en.wiktionary.org/wiki/notre#French" target="_blank" rel="noopener">notre</a> <a href="https://en.wiktionary.org/wiki/course#French" target="_blank" rel="noopener">course</a> <a href="https://en.wiktionary.org/wiki/%C3%A0#French" target="_blank" rel="noopener">à</a> <a href="https://en.wiktionary.org/wiki/travers#French" target="_blank" rel="noopener">travers</a> <a href="https://en.wiktionary.org/wiki/la#French" target="_blank" rel="noopener">la</a> <a href="https://en.wiktionary.org/wiki/gare#French" target="_blank" rel="noopener">gare</a> .
+                </div>
+                <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">I told you we would survive this! Your face showed such shock after we ran through the station.</div>
+                <div class="dialogue-controls">
+                    <button onclick="playAudio('part_3_alex_1_normal.mp3')" title="Play audio">🔊</button>
+                    <button onclick='copyText("Je te l\u0027avais dit qu\u0027on survivrait ! Ton visage \u00e9tait tellement choqu\u00e9 apr\u00e8s notre course \u00e0 travers la gare.")'
+                        title="Copy phrase">📋</button>
+                    <button onclick='copyPrompt("Je te l\u0027avais dit qu\u0027on survivrait ! Ton visage \u00e9tait tellement choqu\u00e9 apr\u00e8s notre course \u00e0 travers la gare.")'
+                        title="Get help understanding">💡</button>
+                </div>
+            </article>
+            
+            
+           
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        
+
+    </main>
+
+    <footer>
+        <p><a href="../">← Back to Stories</a></p>
+    </footer>
+
+    <script>
+        let currentAudio = null;
+
+        function playAudio(filename) {
+            if (currentAudio) {
+                currentAudio.pause();
+            }
+            currentAudio = new Audio(filename);
+            currentAudio.play();
+        }
+
+        function playPart(partName) {
+            playAudio(`${partName}.m4a`);
+        }
+
+        function playAllParts() {
+            playAudio('full_story.m4a');
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Phrase copied to clipboard!');
+            });
+        }
+
+        function copyPrompt(phrase) {
+            const prompt = `Can you help me understand this French (France) phrase and how to use it? Respond to me in my native language of English (United Kingdom) \n\nPhrase: "${phrase}"`;
+            navigator.clipboard.writeText(prompt).then(() => {
+                alert('Prompt copied! You can now paste this into Claude or another AI assistant.');
+            });
+        }
+
+       // Global state for Source Language visibility
+let allSourceHidden = false;
+
+// Toggle all Source translations
+function toggleAllSource() {
+    const button = document.getElementById('globalSourceToggle');
+    const allSource = document.querySelectorAll('.dialogue-source');
+    
+    allSourceHidden = !allSourceHidden;
+    
+    allSource.forEach(element => {
+        if (allSourceHidden) {
+            element.classList.add('hidden');
+        } else {
+            element.classList.remove('hidden');
+        }
+    });
+    
+    // Update button text
+    button.textContent = allSourceHidden ? '👁️ Show All English (United Kingdom)' : '👁️ Hide All English (United Kingdom)';
+}
+
+// Toggle individual Source translation
+function toggleSource(element) {
+    // Toggle just this one translation
+    element.classList.toggle('hidden');
+}
+    </script>
+</body>
+
+</html>

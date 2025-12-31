@@ -2,7 +2,7 @@ from collections import defaultdict
 import json
 from pathlib import Path
 from string import Template
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Self, Tuple
 
 from pydub import AudioSegment
 from tqdm import tqdm
@@ -27,7 +27,7 @@ from src.storage import (
 from src.utils import load_template
 
 from typing import List, Dict, Optional
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, computed_field, model_validator
 from src.models import BCP47Language, get_language
 from src.phrases.phrase_model import Phrase
 from google.cloud.firestore import DocumentReference
@@ -35,6 +35,7 @@ from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
 from src.phrases.phrase_model import FirePhraseDataModel, Phrase, Translation, get_phrase
 from src.logger import logger
+from langcodes import Language
 
 def get_story(story_title: str, hash:bool=False) -> Optional["Story"]:
     """Retrieve a Story from Firestore by its title hash."""
@@ -68,7 +69,7 @@ class StoryPhrase(Phrase):
         story_specific_hash = cls._generate_story_phrase_hash(english_phrase, story_title_hash, story_part, sequence)
         
         return cls(
-            **base_phrase.model_dump(exclude={"key", "translations"}),
+            **base_phrase.model_dump(exclude={"key"}),
             key=story_specific_hash,
             story_title_hash=story_title_hash,
             story_part=story_part,
@@ -96,9 +97,25 @@ class Utterance(BaseModel):
     sequence: int = Field(..., description="Sequence number of the dialogue line")
     speaker: str = Field(..., description="Name of the speaker")
     text: str = Field(..., description="English Text spoken by the speaker")
-    story_phrase: Optional[StoryPhrase] = Field(None, exclude=True, description="Phrase hash for this dialogue line, uses story part and sequence")
+    story_phrase: Optional[StoryPhrase] = Field(None, exclude=True, description="Phrase data like audio etc")
     phrase_hash: Optional[str] = Field(None, description="Phrase hash for this dialogue line")
+    part_name: str = Field(..., description="Name of the story part this utterance belongs to, 'introduction' etc")
+    target_text: Optional[str] = Field(None, description="Translated text for this utterance")
+    wiktionary_links: Optional[str] = Field(None, description="Wiktionary links for target text, space separted")
+    source_text: Optional[str] = Field(None, description="Source text if different from English, e.g., for reverse translations")
 
+    @computed_field
+    @property
+    def audio_filename_normal(self) -> str:
+        """Get the expected audio filename for normal speed."""
+        return f"{self.part_name}_{self.speaker}_{self.sequence}_normal.mp3".lower()
+    
+    @computed_field
+    @property
+    def part_name_titlecase(self) -> str:
+        """Get the part name in title case."""
+        return self.part_name.replace("_", " ").title()
+   
     @model_validator(mode="after")
     def assign_phrase_hash(self) -> "Utterance":
         """Assign phrase_hash from story_phrase if available."""
@@ -114,18 +131,63 @@ class Utterance(BaseModel):
             story_phrase = get_phrase(self.phrase_hash)
             self.story_phrase = story_phrase
         return self
-    
+
+    def get_audio(self, language:Language | str, speed:str = "normal") -> AudioSegment:
+        """Get combined audio for the utterance in the specified language."""
+        language = get_language(language)
+        if self.story_phrase:
+            logger.debug(f"Retrieving audio for utterance seq {self.sequence} in language {language.to_tag()}")
+            phrase_audio = self.story_phrase.get_audio(language=language, context="story", speed=speed)
+            return phrase_audio
+        else:
+            logger.debug(f"Skipping audio retrieval for utterance seq {self.sequence} - no story phrase found")
+            return AudioSegment.silent(duration=0)  # Return silent audio if no phrase found
+
+    def get_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
+        """Get the translated text with Wiktionary links for vocabulary words.
+        Adds new fields into the model: target_text and wiktionary_links"""
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
+        
+        if self.story_phrase:
+            source_translation = self.story_phrase._get_translation(source_language)
+            target_translation = self.story_phrase._get_translation(target_language)
+            if source_translation:
+                self.source_text = source_translation.text
+            else:
+                logger.debug(f"No source translation found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}")
+                raise ValueError(f"Source translation not found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}")
+            if target_translation:
+                self.wiktionary_links = target_translation.get_wiktionary_links()
+                self.target_text = target_translation.text
+            else:
+                logger.debug(f"No translation found for phrase hash {self.phrase_hash} in language {target_language.to_tag()}")
+                raise ValueError(f"Translation not found for phrase hash {self.phrase_hash} in language {target_language.to_tag()}")
+        else:
+            logger.debug(f"No story phrase found for utterance seq {self.sequence}")
+            raise ValueError(f"No story phrase found for utterance seq {self.sequence}")
+        
 class Story(FirePhraseDataModel):
     title: str = Field(..., description="Title of the story")
     summary: str = Field("", description="Brief summary of the story")
     story_parts: Dict[str, List[Utterance]] = Field(..., description="Dictionary of story parts (e.g., introduction, development)")
     collections: List[str] = Field(default_factory=list, description="List of collections this story belongs to")
-   
+    target_language_name: Optional[str] = Field(None, description="Name of the target language for translation")
+    source_language_name: Optional[str] = Field(None, description="Name of the source language")
+    target_language_tag: Optional[str] = Field(None, description="BCP47 tag of the target language for translation")
+    source_language_tag: Optional[str] = Field(None, description="BCP47 tag of the source language for translation")
+
     @model_validator(mode="after")
     def sort_story_parts(self) -> "Story":
         """Ensure each story_part is sorted."""
         self.story_parts = dict(sorted(self.story_parts.items()))
         return self
+    
+    @computed_field
+    @property
+    def title_snake_case(self) -> str:
+        """Get the story title in snake case."""
+        return self.title.lower().replace(" ", "_")
     
     @classmethod
     def create(cls, title: str, summary: str, story_dialogue: Dict[str, List[Utterance]]) -> "Story":
@@ -151,15 +213,40 @@ class Story(FirePhraseDataModel):
                     speaker=utterance["speaker"],
                     text=utterance["text"],
                     story_title_hash=story_title_hash,   
-                    story_phrase=story_phrase_obj                
+                    story_phrase=story_phrase_obj,
+                    part_name=part_name          
                 )
                 story_parts[part_name].append(utterance_obj)
 
         return cls(title=title, key=story_title_hash, summary=summary, story_parts=story_parts, firestore_collection="stories")
 
+    def get_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> Self:
+        """Get the translated text with Wiktionary links for vocabulary words for all utterances.
+        Adds new fields into each Utterance: target_text and wiktionary_links"""
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
 
-    def generate_audio(self, language:BCP47Language, overwrite:bool = False) -> None:
+        self.target_language_name = target_language.display_name()
+        self.source_language_name = source_language.display_name()
+        self.target_language_tag = target_language.to_tag()
+        self.source_language_tag = source_language.to_tag()
+
+        for part_name, utterances in self.story_parts.items():
+            for utterance in utterances:
+                utterance.get_story_translation(target_language=target_language, source_language=source_language)
+        return self
+    
+    def get_public_gcs_path(self, target_language:Language|str, source_language:Language|str="en-GB") -> str:
+        """Get the public GCS path for the story webpage"""
+
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
+
+        return f"stories/{source_language}/{target_language}/{self.key}.html"
+    
+    def generate_audio(self, language:Language|str, overwrite:bool = False) -> None:
         """Generate audio for all utterances in the story for the specified language."""
+        language = get_language(language)
         for part_name, utterances in self.story_parts.items():
             for utterance in utterances:
                 gender = "MALE" if utterance.speaker.lower().strip() == "sam" else "FEMALE"
@@ -169,7 +256,7 @@ class Story(FirePhraseDataModel):
                 else:
                     logger.debug(f"Skipping audio generation for utterance seq {utterance.text} in part '{part_name}' - no story phrase found")
 
-    def get_audio(self, language:BCP47Language | str, speed:str = "normal") -> Dict[str, List[AudioSegment]]:
+    def get_audio(self, language:Language | str, speed:str = "normal") -> Dict[str, List[AudioSegment]]:
         """Get combined audio for the entire story in the specified language."""
         language = get_language(language)
         all_audio = defaultdict(list)
@@ -183,14 +270,18 @@ class Story(FirePhraseDataModel):
                     logger.debug(f"Skipping audio retrieval for utterance seq {utterance.text} in part '{part_name}' - no story phrase found")
         return all_audio
     
-    def upload(self, language:BCP47Language|None = None, overwrite:bool = False) -> DocumentReference:
+    def upload(self, language:Language|str| None = None, overwrite:bool = False) -> DocumentReference:
         """Upload the story to Firestore including all phrases and their audio etc.
         Returns the DocumentReference for the story itself."""
+        if language:
+            language = get_language(language)
         self._upload_phrase_entries(language=language, overwrite=overwrite)
         return self._upload_to_firestore()
 
-    def _upload_phrase_entries(self, language:BCP47Language|None = None, overwrite:bool = False) -> List[DocumentReference]:
+    def _upload_phrase_entries(self, language:Language| str |None = None, overwrite:bool = False) -> List[DocumentReference]:
         """Upload all StoryPhrase entries to Firestore."""
+        if language:
+            language = get_language(language)
         doc_refs = []
         for part_name, utterances in self.story_parts.items():
             for utterance in utterances:
@@ -202,23 +293,25 @@ class Story(FirePhraseDataModel):
     def _upload_to_firestore(self) -> DocumentReference:
         """Upload the story to Firestore."""
         doc_ref = self._get_firestore_document_reference()
-        doc_ref.set(self.model_dump(mode="json"))
+        doc_ref.set(self.model_dump(mode="json", exclude={"source_text", "target_text", "wiktionary_links"}))
         return doc_ref
     
-    def translate(self, target_language: BCP47Language, refine:bool = False, overwrite: bool = False) -> None:
+    def translate(self, target_language: Language | str, refine:bool = False, overwrite: bool = False) -> None:
         """Translate all utterances in the story to the target language."""
+        target_language = get_language(target_language)
+
         for part_name, utterances in self.story_parts.items():
             for utterance in utterances:
                 if utterance.story_phrase:
                     logger.debug(f"Translating utterance seq {utterance.text} in part '{part_name}'")
                     utterance.story_phrase.translate(target_language, refine=False, overwrite=overwrite)
-        if refine and overwrite:
+        if refine:
             logger.debug(f"Refining translations for story '{self.title}' to language {target_language.to_tag()}'")
             self._refine_translations(target_language)
         else:
             logger.debug(f"Skipping refinement of translations for story '{self.title}' to language {target_language.to_tag()}'")
 
-    def _replace_translations(self, refined_translations: Dict[str, List[Dict[str, str]]], target_language: BCP47Language) -> None:
+    def _replace_translations(self, refined_translations: Dict[str, List[Dict[str, str]]], target_language: Language) -> None:
         """Replace translations in the story with refined translations."""
 
         for part_name, utterances in self.story_parts.items():
@@ -231,14 +324,14 @@ class Story(FirePhraseDataModel):
                 utterance.story_phrase.translate(target_language=target_language, overwrite=True, translated_text=refined_text)
                 logger.debug(f"Replaced translation for utterance with '{refined_text}'")
 
-    def _refine_translations(self, target_language: BCP47Language) -> None:
+    def _refine_translations(self, target_language: Language) -> None:
         """Refine translations for all utterances in the story to the target language."""
         translation_dialogue = self._get_dialogue_with_translations(target_language)
         refined_dialogue = refine_story_translation(story_parts = translation_dialogue, language=target_language)
         self._replace_translations(refined_dialogue, target_language)
 
 
-    def _get_dialogue_with_translations(self, target_language: BCP47Language) -> Dict[str, List[Dict]]:
+    def _get_dialogue_with_translations(self, target_language: Language) -> Dict[str, List[Dict]]:
         """Get the story dialogue with translations for the target language."""
         dialogue_with_translations = {}
         for part_name, utterances in self.story_parts.items():

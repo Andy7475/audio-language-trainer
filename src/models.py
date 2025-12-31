@@ -1,6 +1,5 @@
 from typing import Annotated, Union
 
-import langcodes
 from langcodes import Language
 from pydantic import PlainSerializer, BeforeValidator
 
@@ -8,14 +7,13 @@ from pydantic import PlainSerializer, BeforeValidator
 def _validate_language_tag(tag: str) -> Language:
     """Validate and standardize a language tag using langcodes."""
 
-    language = langcodes.get(tag)
+    language = Language.get(tag)
     if language.is_valid() and language.territory:
         return language
     else:
         raise ValueError(f"Invalid language tag: {tag}")
 
 
-# Your custom type - that's it!
 BCP47Language = Annotated[
     Language,
     BeforeValidator(_validate_language_tag),
@@ -23,9 +21,9 @@ BCP47Language = Annotated[
 ]
 
 
-def get_language(language: Union[str, BCP47Language]) -> BCP47Language:
+def get_language(language: Union[str, Language]) -> Language:
     """
-    Convert language parameter to BCP47Language (Language) object.
+    Convert language parameter to Language (Language) object.
 
     Normalizes language input - accepts either a Language object or a string
     language tag (e.g., "fr-FR") and returns a Language object.
@@ -43,7 +41,7 @@ def get_language(language: Union[str, BCP47Language]) -> BCP47Language:
         'fr-FR'
     """
     if isinstance(language, str):
-        return BCP47Language.get(language)
+        return Language.get(language)
     return language
 
 

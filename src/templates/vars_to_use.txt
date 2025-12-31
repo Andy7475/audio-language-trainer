@@ -1,0 +1,9 @@
+title (display)
+title_snake_case (this_is_my_story).mp3
+target_tag (fr-FR)
+target_language_name (user friendly name like 'French')
+source_language_name
+story_summary
+
+story_part.part_name_titlecase
+story_part.part_name

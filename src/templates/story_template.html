@@ -1,60 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>$title</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles.css">
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="../styles/styles.css">
 </head>
-<body class="template-body">
-    <div id="loading-message" class="loading-message">
-        <h2>Loading Story Content</h2>
-        <p>Please wait while we prepare your language learning content...</p>
-    </div>
-    
-    <div id="root"></div>
-    <a href="https://storage.googleapis.com/audio-language-trainer-stories/time_compressed_speech.html" 
-       target="_blank" 
-       rel="noopener noreferrer"
-       class="template-info-link"
-       title="Learn about speed listening practice">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="12" y1="16" x2="12" y2="12"></line>
-            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-        </svg>
-        <span>About Speed Listening</span>
-    </a>
+
+<body>
+    <nav class="breadcrumb">
+        <a href="../">Home</a> ›
+        <a href="../{{ target_language_tag }}/">{{ target_language_name }}</a> ›
+        <span>{{ title }}</span>
+    </nav>
+
+    <header>
+        <h1>{{ title }}</h1>
+        <p class="summary">{{ summary }}</p>
+        <button onclick="playAllParts()" class="play-all">▶ Play Entire Story</button>
+        <button onclick="toggleAllSource()" id="globalSourceToggle" class="toggle-source">
+            👁️ Hide All {{ source_language_name }}
+        </button>
+        <a href="full_story.mp3" download="{{ title_snake_case }}.mp3" class="download-btn">
+            ⬇️ Download Full Story
+        </a>
+    </header>
+
+    <nav class="story-nav">
+    {% for part_name, utterances in story_parts.items() %}
+    <a href="#{{ part_name }}">{{ utterances[0].part_name_titlecase }}</a>
+    {% endfor %}
+</nav>
+
+    <main>
+        {% for part_name, utterances in story_parts.items() %}
+        <section id="{{ part_name }}" class="story-part">
+            <h2>{{ utterances[0].part_name_titlecase }}</h2>
+            <button onclick="playPart('{{ part_name }}')" class="play-part">▶ Play {{ utterances[0].part_name_titlecase }}</button>
+
+            {% for utterance in utterances %}
+            <article class="dialogue">
+                <div class="dialogue-speaker">{{ utterance.speaker }}</div>
+                <div class="dialogue-target">
+                    {{ utterance.wiktionary_links }}
+                </div>
+                <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">{{ utterance.source_text}}</div>
+                <div class="dialogue-controls">
+                    <button onclick="playAudio('{{ utterance.audio_filename_normal }}')" title="Play audio">🔊</button>
+                    <button onclick='copyText({{ utterance.target_text|tojson }})'
+                        title="Copy phrase">📋</button>
+                    <button onclick='copyPrompt({{ utterance.target_text|tojson }})'
+                        title="Get help understanding">💡</button>
+                </div>
+            </article>
+            {% endfor %}
+            
+           
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        {% endfor %}
+
+    </main>
+
+    <footer>
+        <p><a href="../">← Back to Stories</a></p>
+    </footer>
+
     <script>
-        // Define the function to hide loading message
-        const hideLoadingMessage = () => {
-            const loader = document.getElementById('loading-message');
-            if (loader) {
-                loader.classList.add('hidden');
+        let currentAudio = null;
+
+        function playAudio(filename) {
+            if (currentAudio) {
+                currentAudio.pause();
             }
-        };
+            currentAudio = new Audio(filename);
+            currentAudio.play();
+        }
 
-        // Make it available globally so React can call it
-        window.hideLoadingMessage = hideLoadingMessage;
+        function playPart(partName) {
+            playAudio(`${partName}.m4a`);
+        }
 
-        // Embed the story data
-        const storyData = $story_data;
-        const targetLanguage = "$language";
-        
-        $react_component
-        
-        // Render the app
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(StoryViewer, { 
-            storyData: storyData,
-            targetLanguage: targetLanguage,
-            title: "$title",
-            collectionName: "$collection_name",
-            collectionRaw: "$collection_raw"
-        }));
+        function playAllParts() {
+            playAudio('full_story.m4a');
+        }
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Phrase copied to clipboard!');
+            });
+        }
+
+        function copyPrompt(phrase) {
+            const prompt = `Can you help me understand this {{ target_language_name }} phrase and how to use it? Respond to me in my native language of {{ source_language_name }} \n\nPhrase: "${phrase}"`;
+            navigator.clipboard.writeText(prompt).then(() => {
+                alert('Prompt copied! You can now paste this into Claude or another AI assistant.');
+            });
+        }
+
+       // Global state for Source Language visibility
+let allSourceHidden = false;
+
+// Toggle all Source translations
+function toggleAllSource() {
+    const button = document.getElementById('globalSourceToggle');
+    const allSource = document.querySelectorAll('.dialogue-source');
+    
+    allSourceHidden = !allSourceHidden;
+    
+    allSource.forEach(element => {
+        if (allSourceHidden) {
+            element.classList.add('hidden');
+        } else {
+            element.classList.remove('hidden');
+        }
+    });
+    
+    // Update button text
+    button.textContent = allSourceHidden ? '👁️ Show All {{ source_language_name }}' : '👁️ Hide All {{ source_language_name }}';
+}
+
+// Toggle individual Source translation
+function toggleSource(element) {
+    // Toggle just this one translation
+    element.classList.toggle('hidden');
+}
     </script>
 </body>
+
 </html>

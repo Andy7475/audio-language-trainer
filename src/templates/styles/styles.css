@@ -70,13 +70,13 @@ button {
 }
 
 
-.download-btn {
+/* .download-btn {
     background: #28a745;
 }
 
 .download-btn:hover {
     background: #218838;
-}
+} */
 /* Story navigation */
 .story-nav {
     background: white;
@@ -140,13 +140,13 @@ button {
     font-size: 14px;
 }
 
-.dialogue-french {
+.dialogue-target {
     font-size: 18px;
     line-height: 1.8;
     margin-bottom: 10px;
 }
 
-.dialogue-french a {
+.dialogue-target a {
     color: #0066cc;
     text-decoration: none;
     padding: 2px 4px;
@@ -154,12 +154,12 @@ button {
     transition: background-color 0.2s;
 }
 
-.dialogue-french a:hover {
+.dialogue-target a:hover {
     background: #e6f2ff;
     text-decoration: underline;
 }
 
-.dialogue-english {
+.dialogue-source {
     color: #666;
     font-style: italic;
     margin-bottom: 12px;
@@ -223,7 +223,7 @@ footer a:hover {
         width: auto;
     }
 
-    .dialogue-french {
+    .dialogue-target {
         font-size: 20px;
     }
 
@@ -236,7 +236,7 @@ footer a:hover {
 @media print {
     .breadcrumb,
     .story-nav,
-    .play-all, #globalEnglishToggle, .download-btn,
+    .play-all, #globalSourceToggle, .download-btn,
     .play-part,
     .dialogue-controls,
     footer {
@@ -252,8 +252,8 @@ footer a:hover {
     }
 }
 
-/* English translation - clickable */
-.dialogue-english {
+/* source translation - clickable */
+.dialogue-source {
     color: #666;
     font-style: italic;
     margin-bottom: 12px;
@@ -265,25 +265,25 @@ footer a:hover {
     user-select: none; /* Prevent text selection on click */
 }
 
-.dialogue-english:hover {
+.dialogue-source:hover {
     background: #f8f9fa;
 }
 
 /* Hidden state - blurred with hint */
-.dialogue-english.hidden {
+.dialogue-source.hidden {
     color: transparent;
     text-shadow: 0 0 12px rgba(102, 102, 102, 0.5);
     background: #f0f0f0;
     border: 1px dashed #999;
 }
 
-.dialogue-english.hidden:hover {
+.dialogue-source.hidden:hover {
     background: #e9ecef;
     text-shadow: 0 0 10px rgba(102, 102, 102, 0.6);
 }
 
 /* Optional: Add a visual hint on hidden state */
-.dialogue-english.hidden::before {
+.dialogue-source.hidden::before {
     content: '👁️ Click to reveal';
     color: #999;
     font-size: 12px;
@@ -293,19 +293,19 @@ footer a:hover {
     text-shadow: none;
 }
 
-/* Global English toggle button */
-#globalEnglishToggle, .reveal-btn {
+/* Global source toggle button */
+#globalSourceToggle, .reveal-btn {
     background: #6c757d;
     color: white;   
 }
 
-#globalEnglishToggle:hover, .reveal-btn:hover {
+#globalSourceToggle:hover, .reveal-btn:hover {
     background: #5a6268;
 }
 
 /* On mobile, make it full width like play-all */
 @media (max-width: 767px) {
-    #globalEnglishToggle {
+    #globalSourceToggle {
         width: 100%;
     }
 }
