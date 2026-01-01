@@ -5,13 +5,13 @@ from typing import List, Dict, Optional, Tuple
 import os
 import sys
 
+from storage import upload_to_gcs
+
 module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from src.config_loader import config
-from src.gcs_storage import (
-    upload_to_gcs,
+from src.storage import (
     get_subtitles_path,
     get_story_translated_dialogue_path,
 )

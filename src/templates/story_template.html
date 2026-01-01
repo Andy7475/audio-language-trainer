@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
-    <link rel="stylesheet" href="../styles/styles.css">
+    <link rel="stylesheet" href="../../../../styles/styles.css">
 </head>
 
 <body>
@@ -47,7 +47,7 @@
                 </div>
                 <div class="dialogue-source" onclick="toggleSource(this)" title="Click to reveal/hide translation">{{ utterance.source_text}}</div>
                 <div class="dialogue-controls">
-                    <button onclick="playAudio('{{ utterance.audio_filename_normal }}')" title="Play audio">🔊</button>
+                    <button onclick="playAudio('{{ utterance.target_audio_filename_normal }}')" title="Play audio">🔊</button>
                     <button onclick='copyText({{ utterance.target_text|tojson }})'
                         title="Copy phrase">📋</button>
                     <button onclick='copyPrompt({{ utterance.target_text|tojson }})'
@@ -81,11 +81,11 @@
         }
 
         function playPart(partName) {
-            playAudio(`${partName}.m4a`);
+            playAudio(`${partName}.mp3`);
         }
 
         function playAllParts() {
-            playAudio('full_story.m4a');
+            playAudio('full_story.mp3');
         }
 
         function copyText(text) {

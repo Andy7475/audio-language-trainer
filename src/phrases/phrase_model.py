@@ -257,8 +257,13 @@ class Phrase(FirePhraseDataModel):
         Returns:
             Optional[Translation]: The translation if found, None otherwise
         """
+
         language = get_language(language)
         if not self._has_translation(language):
+            if language.to_tag() == "en-GB":
+                logger.info("No existing en-GB translation, creating one")
+                self.translations['en-GB'] = self._get_english_translation()
+                return self.translations['en-GB']
             raise ValueError(f"No translation found for language {language.to_tag()}")
 
         return self.translations[language.to_tag()]
@@ -331,6 +336,9 @@ class Phrase(FirePhraseDataModel):
             logger.info(f"Translation for {target_language.to_tag()} already exists")
             return self._get_translation(target_language)
 
+        if target_language.to_tag() == "en-GB":
+            self.translations['en-GB'] = self._get_english_translation()
+            return self.translations['en-GB']
         if translated_text is None:
             # Step 1: Translate with Google Translate
             translated_text = translate_with_google_translate(

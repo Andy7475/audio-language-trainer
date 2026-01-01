@@ -8,6 +8,8 @@ This tutorial uses a card-based navigation system and includes live examples of 
 
 from typing import Dict, Any, List, Optional
 
+from storage import upload_to_gcs
+
 # Import the necessary functions from your modules
 try:
     from src.template_testing import (
@@ -17,7 +19,7 @@ try:
     )
     from src.config_loader import config
     from src.utils import load_template
-    from src.gcs_storage import upload_to_gcs, get_tutorial_path
+    from src.gcs_storage import get_tutorial_path
 except ImportError as e:
     print(f"Warning: Could not import required modules: {e}")
     print("Make sure you're running from the project root directory")

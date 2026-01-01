@@ -11,6 +11,7 @@ import json
 import mimetypes
 import os
 from typing import Any, Literal, Optional, Union
+import warnings
 
 import langcodes
 from PIL import Image
@@ -348,13 +349,17 @@ def upload_file_to_gcs(
     if content_type is None:
         content_type, _ = mimetypes.guess_type(file_path)
 
+    if save_local:
+        local_path = os.path.join(local_base_dir, bucket_name, file_path)
+        directory = os.path.dirname(local_path)
+        logger.debug(f"creating directory for local save to {directory=} for {file_path=}")
+        os.makedirs(directory, exist_ok=True)
+
     # Handle different object types
     if isinstance(obj, bytes):
         # Direct bytes upload
         blob.upload_from_string(obj, content_type=content_type)
         if save_local:
-            local_path = os.path.join(local_base_dir, bucket_name, file_path)
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "wb") as f:
                 f.write(obj)
 
@@ -383,8 +388,6 @@ def upload_file_to_gcs(
         # Upload the content
         blob.upload_from_string(content, content_type=content_type)
         if save_local:
-            local_path = os.path.join(local_base_dir, bucket_name, file_path)
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "w", encoding="utf-8") as f:
                 f.write(content)
 
@@ -413,8 +416,6 @@ def upload_file_to_gcs(
 
         blob.upload_from_file(buffer, content_type=content_type or audio_content_type)
         if save_local:
-            local_path = os.path.join(local_base_dir, bucket_name, file_path)
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "wb") as f:
                 f.write(buffer.getvalue())
 
@@ -445,8 +446,6 @@ def upload_file_to_gcs(
 
             blob.upload_from_file(buffer, content_type=content_type or img_content_type)
             if save_local:
-                local_path = os.path.join(local_base_dir, bucket_name, file_path)
-                os.makedirs(os.path.dirname(local_path), exist_ok=True)
                 with open(local_path, "wb") as f:
                     f.write(buffer.getvalue())
         except Exception as e:
@@ -466,8 +465,6 @@ def upload_file_to_gcs(
             obj.seek(0)
             file_content = obj.read()
 
-            local_path = os.path.join(local_base_dir, bucket_name, file_path)
-            os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "wb") as f:
                 f.write(file_content)
 
@@ -623,3 +620,106 @@ def check_blob_exists(bucket_name: str, file_path: str) -> bool:
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(file_path)
     return blob.exists()
+
+
+def upload_to_gcs(
+    obj: Any,
+    bucket_name: str,
+    file_name: str,
+    base_prefix: str = "",
+    content_type: Optional[str] = None,
+    save_local: bool = True,
+    local_base_dir: str = "../outputs/gcs",
+) -> str:
+    """
+    DEPRECATED: Use upload_file_to_gcs from src.storage instead.
+
+    Upload various file types directly to Google Cloud Storage without writing to local disk.
+
+    Args:
+        obj: The object to upload (bytes, dict, str, PIL Image, AudioSegment, List[str], etc.)
+        bucket_name: Name of the GCS bucket
+        file_name: Name of the file to upload
+        base_prefix: Prefix/folder path in the bucket. Defaults to ''.
+        content_type: MIME content type. If None, will be inferred.
+        save_local: Whether to save a local copy of the file (default: True)
+        local_base_dir: Base directory for local GCS mirror (default: "../outputs/gcs")
+
+    Returns:
+        GCS URI of the uploaded file
+
+    Raises:
+        ValueError: If unsupported object type is provided
+    """
+    warnings.warn(
+        "upload_to_gcs() is deprecated. Use upload_file_to_gcs() from src.storage instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    # Construct full blob path from base_prefix and file_name (old API)
+    file_path = f"{base_prefix.rstrip('/')}/{file_name}".lstrip("/")
+
+    # Call new API
+    return upload_file_to_gcs(
+        obj=obj,
+        bucket_name=bucket_name,
+        file_path=file_path,
+        content_type=content_type,
+        save_local=save_local,
+        local_base_dir=local_base_dir,
+    )
+
+
+def read_from_gcs(
+    bucket_name: str,
+    file_path: str,
+    expected_type: Optional[str] = None,
+    use_local: bool = True,
+    local_base_dir: str = "../outputs/gcs",
+) -> Any:
+    """
+    DEPRECATED: Use download_from_gcs from src.storage instead.
+
+    Download a file from GCS or read from local cache if available.
+
+    Args:
+        bucket_name: Name of the GCS bucket
+        file_path: Path to the file within the bucket
+        expected_type: Optional type hint ('audio', 'image', 'json', 'bytes', 'text', 'list')
+                      If None, will be inferred from file extension
+        use_local: Whether to check for a local copy first (default: True)
+        local_base_dir: Base directory for local GCS mirror (default: "../outputs/gcs")
+
+    Returns:
+        The file content as an appropriate Python object
+    """
+    warnings.warn(
+        "read_from_gcs() is deprecated. Use download_from_gcs() from src.storage instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    # Call new API
+    return download_from_gcs(
+        bucket_name=bucket_name,
+        file_path=file_path,
+        expected_type=expected_type,
+        use_local=use_local,
+        local_base_dir=local_base_dir,
+    )
+
+
+# Import from new location
+
+def sanitize_path_component(s: str) -> str:
+    """
+    Sanitize a string for use in GCS paths.
+    Replaces spaces with underscores, removes special characters, and converts to lowercase.
+    """
+    # Replace one or more spaces with a single underscore
+    s = re.sub(r"\s+", "_", s)
+    # Remove any characters that aren't alphanumeric, underscore, or hyphen
+    s = "".join(c for c in s if c.isalnum() or c in "_-")
+    # Convert to lowercase for consistency
+    return s.lower()

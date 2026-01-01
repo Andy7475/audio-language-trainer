@@ -4,7 +4,8 @@ from typing import Dict, List
 from src.convert import get_story_title, get_collection_title
 from src.anki_tools import load_template
 from src.config_loader import config
-from src.gcs_storage import get_story_translated_challenges_path, upload_to_gcs
+from src.gcs_storage import get_story_translated_challenges_path
+from storage import upload_to_gcs
 
 
 def get_challenge_generation_prompt(story_dialogue: dict) -> str:

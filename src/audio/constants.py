@@ -1,7 +1,7 @@
 """Audio processing constants and configuration."""
 
 from enum import Enum
-
+from pydub import AudioSegment
 # Audio processing constants
 DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_FRAME_RATE = 44100
@@ -25,6 +25,8 @@ AUDIO_SPEED_FAST = 2.0
 # De-reverb settings for audio processing
 DE_REVERB_TIME = 0.3  # Adjust to control de-reverb strength (in seconds)
 
+INTER_UTTERANCE_GAP = AudioSegment.silent(duration=100)
+STORY_PART_TRANSITION = AudioSegment.from_file("../data/transition.mp3", format="mp3")
 
 class VoiceProvider(str, Enum):
     """Supported text-to-speech providers."""

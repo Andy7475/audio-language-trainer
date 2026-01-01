@@ -16,11 +16,14 @@ from tqdm import tqdm
 import pandas as pd
 import glob
 
+from storage import upload_to_gcs
+
 # Add the parent directory to the path to import src modules
 module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
+from storage import read_from_gcs
 from src.anki_tools import create_anki_deck_from_gcs
 from src.audio_generation import (
     generate_and_upload_fast_audio,
@@ -43,8 +46,6 @@ from src.gcs_storage import (
     get_story_translated_dialogue_path,
     get_translated_phrases_path,
     get_wiktionary_cache_path,
-    read_from_gcs,
-    upload_to_gcs,
 )
 from src.story import (
     create_album_files,

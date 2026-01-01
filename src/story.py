@@ -9,12 +9,9 @@ from tqdm import tqdm
 
   # Keep for backward compatibility with existing functions
 
-from src.gcs_storage import (
+from src.storage import read_from_gcs, sanitize_path_component
+from src.storage import (
     check_blob_exists,
-
-    read_from_gcs,
-    upload_to_gcs,
-    sanitize_path_component,
 )
 from src.llm_tools.story_generation import generate_story
 from src.llm_tools.refine_story_translation import refine_story_translation
@@ -27,7 +24,7 @@ from src.storage import (
 from src.utils import load_template
 
 from typing import List, Dict, Optional
-from pydantic import BaseModel, Field, computed_field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from src.models import BCP47Language, get_language
 from src.phrases.phrase_model import Phrase
 from google.cloud.firestore import DocumentReference
@@ -36,6 +33,8 @@ from src.phrases.utils import generate_phrase_hash
 from src.phrases.phrase_model import FirePhraseDataModel, Phrase, Translation, get_phrase
 from src.logger import logger
 from langcodes import Language
+from src.audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
+from storage import upload_to_gcs
 
 def get_story(story_title: str, hash:bool=False) -> Optional["Story"]:
     """Retrieve a Story from Firestore by its title hash."""
@@ -94,6 +93,8 @@ class StoryPhrase(Phrase):
 StoryPhrase.model_rebuild()
 
 class Utterance(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     sequence: int = Field(..., description="Sequence number of the dialogue line")
     speaker: str = Field(..., description="Name of the speaker")
     text: str = Field(..., description="English Text spoken by the speaker")
@@ -103,10 +104,11 @@ class Utterance(BaseModel):
     target_text: Optional[str] = Field(None, description="Translated text for this utterance")
     wiktionary_links: Optional[str] = Field(None, description="Wiktionary links for target text, space separted")
     source_text: Optional[str] = Field(None, description="Source text if different from English, e.g., for reverse translations")
+    target_audio_normal: Optional[AudioSegment] = Field(None, exclude=True, description="Translated audio at normal speed")
 
     @computed_field
     @property
-    def audio_filename_normal(self) -> str:
+    def target_audio_filename_normal(self) -> str:
         """Get the expected audio filename for normal speed."""
         return f"{self.part_name}_{self.speaker}_{self.sequence}_normal.mp3".lower()
     
@@ -132,22 +134,38 @@ class Utterance(BaseModel):
             self.story_phrase = story_phrase
         return self
 
-    def get_audio(self, language:Language | str, speed:str = "normal") -> AudioSegment:
-        """Get combined audio for the utterance in the specified language."""
+    def _verify_translation_loaded(self):
+
+        if all([self.target_text, self.wiktionary_links, self.source_text, self.target_audio_normal]):
+            return
+        else:
+            raise ValueError(f"Utternace not loaded with audio or text: {self.model_dump()}")
+        
+    def _load_target_audio(self, language:Language | str, speed:str = "normal") -> AudioSegment:
+        """Get combined audio for the utterance in the specified language. Adds audio to target_audio_normal."""
         language = get_language(language)
         if self.story_phrase:
             logger.debug(f"Retrieving audio for utterance seq {self.sequence} in language {language.to_tag()}")
-            phrase_audio = self.story_phrase.get_audio(language=language, context="story", speed=speed)
-            return phrase_audio
+            self.target_audio_normal = self.story_phrase.get_audio(language=language, context="story", speed=speed)
+            return self.target_audio_normal
         else:
-            logger.debug(f"Skipping audio retrieval for utterance seq {self.sequence} - no story phrase found")
-            return AudioSegment.silent(duration=0)  # Return silent audio if no phrase found
+            raise ValueError(f"No story phrase found for utterance seq {self.sequence}")
 
-    def get_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
+    def _publish_audio_to_gcs(self, base_prefix:str) -> str:
+        """Publish the audio for this utterance to GCS and return the public URL.
+        base prefix is the story location"""
+        if not self.target_audio_normal:
+            raise ValueError(f"No audio to upload for utterance seq {self.sequence}")
+        
+        return upload_to_gcs(obj=self.target_audio_normal, base_prefix=base_prefix, bucket_name=PUBLIC_BUCKET,file_name=self.target_audio_filename_normal, save_local=True)
+        
+    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
         """Get the translated text with Wiktionary links for vocabulary words.
         Adds new fields into the model: target_text and wiktionary_links"""
         target_language = get_language(target_language)
         source_language = get_language(source_language)
+        self.get_story_phrase()
+        self.story_phrase.translate(target_language=target_language, refine=False, overwrite=False)
         
         if self.story_phrase:
             source_translation = self.story_phrase._get_translation(source_language)
@@ -167,11 +185,21 @@ class Utterance(BaseModel):
             logger.debug(f"No story phrase found for utterance seq {self.sequence}")
             raise ValueError(f"No story phrase found for utterance seq {self.sequence}")
         
+class PublishedStory(BaseModel):
+    source_language_tag: str = Field(..., description="BCP47 tag of the source language")
+    target_language_tag: str = Field(..., description="BCP47 tag of the target language")
+    gcs_path: str = Field(..., description="GCS path of the published story")
+    active: bool = Field(default=True, description="Whether this published version is active")
+    public_url: str = Field(default="", description="Public URL for story")
+
+
 class Story(FirePhraseDataModel):
     title: str = Field(..., description="Title of the story")
     summary: str = Field("", description="Brief summary of the story")
     story_parts: Dict[str, List[Utterance]] = Field(..., description="Dictionary of story parts (e.g., introduction, development)")
+    firestore_collection: str = Field("stories", description="Firestore collection name for stories")
     collections: List[str] = Field(default_factory=list, description="List of collections this story belongs to")
+    published: Dict[str, PublishedStory] = Field(default_factory=dict, description="Dictionary of published versions of the story, key is source_tag-target_tag")
     target_language_name: Optional[str] = Field(None, description="Name of the target language for translation")
     source_language_name: Optional[str] = Field(None, description="Name of the source language")
     target_language_tag: Optional[str] = Field(None, description="BCP47 tag of the target language for translation")
@@ -218,9 +246,161 @@ class Story(FirePhraseDataModel):
                 )
                 story_parts[part_name].append(utterance_obj)
 
-        return cls(title=title, key=story_title_hash, summary=summary, story_parts=story_parts, firestore_collection="stories")
+        return cls(title=title, key=story_title_hash, summary=summary, story_parts=story_parts)
 
-    def get_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> Self:
+    def _get_published_tag(self, target_language:Language, source_language:Language):
+        """Dictionary key for the published dictionary such as en-GB-fr-FR"""
+
+        return f"{source_language.to_tag()}-{target_language.to_tag()}"
+
+    def _verify_utterances_loaded(self)->None:
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                utterance._verify_translation_loaded()
+
+    def _verify_translation_loaded(self)->None:
+
+        if all([self.target_language_name, self.source_language_name, self.target_language_tag, self.source_language_tag]):
+            self._verify_utterances_loaded()
+            return
+        else:
+            raise ValueError(f"We do not have a translation loaded into the story, run self._load_story_translation()")
+    
+    def _publish_story_parts_audio(self)->List[str]:
+        """Publish all story parts audio"""
+
+        all_files_published = []
+        for story_part in self.story_parts:
+            all_files_published.append(self._publish_story_part_audio(story_part))
+
+        return all_files_published
+    
+    def _publish_story_part_audio(self, story_part:str)->str:
+        """Publish the audio part of the store, returning the gcs file path"""
+
+        story_part_audio = self._get_story_part_audio(story_part)
+        story_part_filename = story_part + ".mp3"
+        return upload_to_gcs(obj=story_part_audio, bucket_name=PUBLIC_BUCKET, base_prefix=self._get_gcs_path(), file_name=story_part_filename)
+    
+    def _publish_full_story_audio(self)->str:
+
+        all_story_audio = self._get_story_audio()
+        all_story_filename = "full_story.mp3"
+        return upload_to_gcs(
+            obj=all_story_audio,
+            file_name=all_story_filename,
+            bucket_name=PUBLIC_BUCKET,
+            base_prefix=self._get_gcs_path()
+        )
+    def _get_story_part_audio(self, story_part:str)->AudioSegment:
+
+        all_audio = []
+        utterances = self.story_parts[story_part]
+        for utterance in utterances:
+            all_audio.append(utterance.target_audio_normal)
+            all_audio.append(INTER_UTTERANCE_GAP)
+        
+        return sum(all_audio)
+    
+    def _get_story_audio(self)->AudioSegment:
+        """Returns a single audio segment for the entire story"""
+
+        all_audio: List[AudioSegment] = []
+        for story_part in self.story_parts:
+            all_audio.append(self._get_story_part_audio(story_part))
+            all_audio.append(STORY_PART_TRANSITION)
+
+        return sum(all_audio)
+
+    def _publish_all_audio(self)->None:
+        """Publish all audio files to story GCS bucket"""
+        full_file = self._publish_full_story_audio()
+        logger.info(f"Published full story {full_file}")
+        story_part_files = self._publish_story_parts_audio()
+        logger.info(f"Published parts {','.join(story_part_files)}")
+        utterances = self._publish_audio_utterances()
+        logger.info(f"Published utterances {','.join(utterances)}")
+
+    def _publish_audio_utterances(self) -> List[str]:
+        """Publish all utterance audio to GCS and return list of public URLs."""
+
+        public_urls = []
+        for part_name, utterances in self.story_parts.items():
+            for utterance in utterances:
+                logger.debug(f"Publishing audio for utterance seq {utterance.text} in part '{part_name}'")
+                public_url = utterance._publish_audio_to_gcs(base_prefix=self._get_gcs_path())
+                public_urls.append(public_url)
+        return public_urls
+    
+    def _get_public_url(self):
+        gcs_stub = self._get_gcs_path()
+        full_path = f"https://storage.googleapis.com/{PUBLIC_BUCKET}/{gcs_stub}index.html"
+        return full_path
+    
+    def publish_story(self, target_language:Language|str, source_language:Language|str="en-GB", overwrite:bool=False) -> None:
+        """Publish the story to the public GCS bucket for the specified language pair."""
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
+
+        # Check if already published
+        if not overwrite:
+            if self._is_published(target_language=target_language, source_language=source_language):
+                logger.info(f"Story '{self.title}' already published for {source_language.to_tag()} -> {target_language.to_tag()}")
+                return
+            
+        self._load_story_translation(target_language=target_language, source_language=source_language)
+        self._verify_translation_loaded()
+        gcs_path = self._get_gcs_path()
+
+        # Upload HTML to GCS
+        html_content = self._render_story_html()
+        
+        story_page = upload_to_gcs(
+            obj=html_content,
+            bucket_name=PUBLIC_BUCKET,
+            base_prefix = gcs_path,
+            file_name="index.html",
+            content_type="text/html",
+        )
+        logger.info(f"Published story at {story_page}")
+
+        self._publish_all_audio()
+
+
+        # Add to published dictionary
+        self.published[f"{source_language.to_tag()}-{target_language.to_tag()}"] = PublishedStory(
+            source_language_tag=self.source_language_tag,
+            target_language_tag=self.target_language_tag,
+            gcs_path=gcs_path,
+            active=True,
+            public_url=self._get_public_url()
+        )
+
+
+        logger.info(f"Finished Publishing story '{self.title}' to GCS at {gcs_path} for {source_language.to_tag()} -> {target_language.to_tag()}")
+    
+    def _render_story_html(self) -> str:
+        """Render the story as an HTML page for the specified language pair."""
+
+        from jinja2 import Environment, FileSystemLoader
+
+        loader = FileSystemLoader(["templates", "../src/templates", "src/templates"])
+        env = Environment(loader=loader, autoescape=False)
+        template = env.get_template("story_template.html")
+        html_content = template.render(self.model_dump())
+
+        return html_content
+
+    def _is_published(self, target_language:Language, source_language:Language) -> bool:
+        """Check if the story is already published for the specified language pair."""
+        published_key = self._get_published_tag(target_language, source_language)
+        if published_key in self.published:
+            if self.published[published_key].active:
+                return True
+        else:
+            return False
+    
+    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
         """Get the translated text with Wiktionary links for vocabulary words for all utterances.
         Adds new fields into each Utterance: target_text and wiktionary_links"""
         target_language = get_language(target_language)
@@ -233,16 +413,20 @@ class Story(FirePhraseDataModel):
 
         for part_name, utterances in self.story_parts.items():
             for utterance in utterances:
-                utterance.get_story_translation(target_language=target_language, source_language=source_language)
-        return self
+                logger.debug(f"Getting translation for utterance seq {utterance.text} in part '{part_name}'")
+                utterance._load_story_translation(target_language=target_language, source_language=source_language)
+
+        logger.debug(f"Generating audio with overwrite as False for {target_language}")
+        self.generate_audio(language=target_language, overwrite=False)
+
+        self._load_audio(target_language=target_language, speed="normal")
     
-    def get_public_gcs_path(self, target_language:Language|str, source_language:Language|str="en-GB") -> str:
+    def _get_gcs_path(self) -> str:
         """Get the public GCS path for the story webpage"""
+        if not self.target_language_tag or not self.source_language_tag:
+            raise ValueError(f"Run self._load_story_translation() first to populate self.target_language_tag")
 
-        target_language = get_language(target_language)
-        source_language = get_language(source_language)
-
-        return f"stories/{source_language}/{target_language}/{self.key}.html"
+        return f"stories/{self.source_language_tag}/{self.target_language_tag}/{self.key}/"
     
     def generate_audio(self, language:Language|str, overwrite:bool = False) -> None:
         """Generate audio for all utterances in the story for the specified language."""
@@ -256,18 +440,17 @@ class Story(FirePhraseDataModel):
                 else:
                     logger.debug(f"Skipping audio generation for utterance seq {utterance.text} in part '{part_name}' - no story phrase found")
 
-    def get_audio(self, language:Language | str, speed:str = "normal") -> Dict[str, List[AudioSegment]]:
+    def _load_audio(self, target_language:Language | str, speed:str = "normal") -> Dict[str, List[AudioSegment]]:
         """Get combined audio for the entire story in the specified language."""
-        language = get_language(language)
+        target_language = get_language(target_language)
         all_audio = defaultdict(list)
         for part_name, utterances in self.story_parts.items():
             for utterance in utterances:
-                if utterance.story_phrase:
-                    logger.debug(f"Retrieving audio for utterance seq {utterance.text} in language {language.to_tag()}")
-                    phrase_audio = utterance.story_phrase.get_audio(language=language, context="story", speed=speed)
+                phrase_audio = utterance._load_target_audio(language=target_language, speed=speed)
+                if phrase_audio:
                     all_audio[part_name].append(phrase_audio)
                 else:
-                    logger.debug(f"Skipping audio retrieval for utterance seq {utterance.text} in part '{part_name}' - no story phrase found")
+                    raise ValueError(f"No audio found for utterance seq {utterance.text} in part '{part_name}'")
         return all_audio
     
     def upload(self, language:Language|str| None = None, overwrite:bool = False) -> DocumentReference:
@@ -293,7 +476,7 @@ class Story(FirePhraseDataModel):
     def _upload_to_firestore(self) -> DocumentReference:
         """Upload the story to Firestore."""
         doc_ref = self._get_firestore_document_reference()
-        doc_ref.set(self.model_dump(mode="json", exclude={"source_text", "target_text", "wiktionary_links"}))
+        doc_ref.set(self.model_dump(mode="json", exclude={"source_text", "target_text", "wiktionary_links", "target_language_name", "source_language_name", "target_language_tag", "source_language_tag"}))
         return doc_ref
     
     def translate(self, target_language: Language | str, refine:bool = False, overwrite: bool = False) -> None:

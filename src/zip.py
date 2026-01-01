@@ -5,11 +5,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
 
+from storage import read_from_gcs
 from src.config_loader import config
 from src.gcs_storage import (
     get_m4a_file_path,
     get_story_collection_path,
-    read_from_gcs,
 )
 from src.utils import get_story_position
 
@@ -185,7 +185,7 @@ def _get_story_m4a_files(
     story_position = get_story_position(story_name, collection)
 
     # Get the story parts from the dialogue data in GCS
-    from src.gcs_storage import get_story_dialogue_path, read_from_gcs
+    from src.gcs_storage import get_story_dialogue_path
 
     dialogue_path = get_story_dialogue_path(story_name, collection)
     try:
