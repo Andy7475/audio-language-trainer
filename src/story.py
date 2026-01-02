@@ -30,6 +30,7 @@ from src.logger import logger
 from langcodes import Language
 from src.audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
 from storage import upload_to_gcs
+from src.utils import render_html_content
 
 def get_story(story_title: str, hash:bool=False) -> Optional["Story"]:
     """Retrieve a Story from Firestore by its title hash."""
@@ -395,13 +396,7 @@ class Story(FirePhraseDataModel):
     def _render_story_html(self) -> str:
         """Render the story as an HTML page for the specified language pair."""
 
-        from jinja2 import Environment, FileSystemLoader
-
-        loader = FileSystemLoader(["templates", "../src/templates", "src/templates"])
-        env = Environment(loader=loader, autoescape=False)
-        template = env.get_template("story_template.html")
-        html_content = template.render(self.model_dump())
-
+        html_content = render_html_content(self.model_dump(), "story_template.html")
         return html_content
 
     def _is_published(self, target_language:Language, source_language:Language) -> bool:

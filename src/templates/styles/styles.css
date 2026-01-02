@@ -303,6 +303,11 @@ footer a:hover {
     background: #5a6268;
 }
 
+.story-list {
+    padding-block: 25px;
+    line-height: 2;
+}
+
 /* On mobile, make it full width like play-all */
 @media (max-width: 767px) {
     #globalSourceToggle {

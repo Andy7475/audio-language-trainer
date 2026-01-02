@@ -5,7 +5,7 @@ from src.models import get_language
 from langcodes import Language
 from src.logger import logger
 from collections import defaultdict
-from jinja2 import Environment, FileSystemLoader
+from src.utils import render_html_content
 from src.storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
 
 def get_source_language_index_prefix(source_language: Language | str)->str:
@@ -26,12 +26,7 @@ def upload_source_language_index(html_content:str, source_language: Language | s
 
 def render_source_language_index_html(data:dict)->str:
     """The HTML source of the source language index"""
-
-    loader = FileSystemLoader(["templates", "../src/templates", "src/templates"])
-    env = Environment(loader=loader, autoescape=False)
-    template = env.get_template("source_language_index.html")
-    html_content = template.render(data)
-    return html_content
+    return render_html_content(data, "source_language_index.html")
 
 
 def get_source_language_index_dict(stories: List[Story], source_language: Language | str)->dict:

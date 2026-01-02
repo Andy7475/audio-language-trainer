@@ -13,7 +13,7 @@ from anthropic import Anthropic, AnthropicVertex
 from dotenv import load_dotenv
 from google.cloud import aiplatform
 from tqdm import tqdm
-
+from jinja2 import Environment, FileSystemLoader
 
 load_dotenv()  # so we can use environment variables for various global settings
 
@@ -273,3 +273,18 @@ def extract_json_from_llm_response(response):
         print("No JSON-like structure found in the response")
         return None
 
+def render_html_content(data:dict, template_name:str)->str:
+    """Renders HTML content via Jinja2
+
+    Args:
+        data (dict): dictionary that will be fed directly into the the Jinja Template
+        template_name (str): name of template  in src/templates
+
+    Returns:
+        str: html_content
+    """
+    loader = FileSystemLoader(["templates", "../src/templates", "src/templates"])
+    env = Environment(loader=loader, autoescape=False)
+    template = env.get_template(template_name)
+    html_content = template.render(data)
+    return html_content
