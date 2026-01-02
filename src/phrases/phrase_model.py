@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Literal, Annotated
+from typing import Dict, List, Optional, Literal, Annotated
 
 from langcodes import Language
 from pydantic import AliasChoices, BaseModel, Field, field_validator, BeforeValidator, ConfigDict
@@ -178,6 +178,7 @@ class Phrase(FirePhraseDataModel):
     collections: List[str] = Field(
         default_factory=list, description="Collections this phrase belongs to"
     )
+    decks: Dict[str, List[str]] = Field(default_factory=dict, description="What decks this story supports. Key is a collection ID, and list of deck names")
 
     def __str__(self) -> str:
         return self.english

@@ -199,6 +199,7 @@ class Story(FirePhraseDataModel):
     story_parts: Dict[str, List[Utterance]] = Field(..., description="Dictionary of story parts (e.g., introduction, development)")
     firestore_collection: str = Field("stories", description="Firestore collection name for stories")
     collections: List[str] = Field(default_factory=list, description="List of collections this story belongs to")
+    decks: Dict[str, List[str]] = Field(default_factory=dict, description="What decks this story supports. Key is a collection ID, and list of deck names")
     published: Dict[str, PublishedStory] = Field(default_factory=dict, description="Dictionary of published versions of the story, key is source_tag-target_tag")
     target_language_name: Optional[str] = Field(None, description="Name of the target language for translation")
     source_language_name: Optional[str] = Field(None, description="Name of the source language")
