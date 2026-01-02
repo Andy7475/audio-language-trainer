@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import defaultdict
 import json
 from pathlib import Path
@@ -7,19 +9,12 @@ from typing import Dict, List, Optional, Self, Tuple
 from pydub import AudioSegment
 from tqdm import tqdm
 
-  # Keep for backward compatibility with existing functions
 
-from src.storage import read_from_gcs, sanitize_path_component
-from src.storage import (
-    check_blob_exists,
-)
 from src.llm_tools.story_generation import generate_story
 from src.llm_tools.refine_story_translation import refine_story_translation
 from src.storage import (
     PRIVATE_BUCKET,
     PUBLIC_BUCKET,
-    get_story_dialogue_path,
-    upload_file_to_gcs
 )
 from src.utils import load_template
 
@@ -52,6 +47,23 @@ def get_story(story_title: str, hash:bool=False) -> Optional["Story"]:
         logger.warning(f"Story with hash {story_title_hash} not found in Firestore.")
         return None
     
+def get_all_stories() -> List[Story]:
+    """Gets all story title hashes from firestore
+
+    Returns:
+        List[str]: the story titles
+    """
+
+    client = get_firestore_client()
+    collection_ref = client.collection("stories")
+    docs = collection_ref.stream()
+    
+    ALL_STORIES = []
+    for story in docs:
+        ALL_STORIES.append(Story.model_validate(story.to_dict()))
+
+    return ALL_STORIES
+
 class StoryPhrase(Phrase):
     """Phrase model specifically for story dialogues with context-aware translations."""
     story_title_hash: str = Field(..., description="Hash of the parent story")
@@ -200,7 +212,7 @@ class Story(FirePhraseDataModel):
     firestore_collection: str = Field("stories", description="Firestore collection name for stories")
     collections: List[str] = Field(default_factory=list, description="List of collections this story belongs to")
     decks: Dict[str, List[str]] = Field(default_factory=dict, description="What decks this story supports. Key is a collection ID, and list of deck names")
-    published: Dict[str, PublishedStory] = Field(default_factory=dict, description="Dictionary of published versions of the story, key is source_tag-target_tag")
+    published: Dict[str, PublishedStory] = Field(default_factory=dict, description="Dictionary of published versions of the story, key is source_tag|target_tag")
     target_language_name: Optional[str] = Field(None, description="Name of the target language for translation")
     source_language_name: Optional[str] = Field(None, description="Name of the source language")
     target_language_tag: Optional[str] = Field(None, description="BCP47 tag of the target language for translation")
@@ -252,7 +264,7 @@ class Story(FirePhraseDataModel):
     def _get_published_tag(self, target_language:Language, source_language:Language):
         """Dictionary key for the published dictionary such as en-GB-fr-FR"""
 
-        return f"{source_language.to_tag()}-{target_language.to_tag()}"
+        return f"{source_language.to_tag()}|{target_language.to_tag()}"
 
     def _verify_utterances_loaded(self)->None:
         for story_part, utterances in self.story_parts.items():
@@ -367,9 +379,9 @@ class Story(FirePhraseDataModel):
 
         self._publish_all_audio()
 
-
+        publish_tag = self._get_published_tag(target_language, source_language)
         # Add to published dictionary
-        self.published[f"{source_language.to_tag()}-{target_language.to_tag()}"] = PublishedStory(
+        self.published[publish_tag] = PublishedStory(
             source_language_tag=self.source_language_tag,
             target_language_tag=self.target_language_tag,
             gcs_path=gcs_path,
@@ -538,90 +550,4 @@ class Story(FirePhraseDataModel):
 
         return dict(sorted(dialogue_with_translations.items()))
 
-def upload_styles_to_gcs():
-    """Upload the styles.css file to the public GCS bucket."""
 
-    # Load the CSS content with correct path handling
-    try:
-        # Try current directory first (when running from project root)
-        styles_content = load_template("styles.css", "src/templates")
-    except FileNotFoundError:
-        # Fallback to relative path (when running from subdirectory)
-        styles_content = load_template("styles.css", "../src/templates")
-
-    # Upload to GCS
-    public_url = upload_to_gcs(
-        obj=styles_content,
-        bucket_name=PUBLIC_BUCKET,
-        file_name="styles.css",
-        content_type="text/css",
-    )
-
-    print("✅ Styles uploaded successfully!")
-    print(f"🌐 Public URL: {public_url}")
-
-    return public_url
-
-
-
-
-
-# ============================================================================
-# NEW STORY GENERATION FUNCTIONS (using llm_tools pattern)
-# ============================================================================
-
-
-def generate_and_upload_story(
-    verbs: List[str],
-    vocab: List[str],
-    collection: str = "LM1000",
-    bucket_name: str = PRIVATE_BUCKET,
-) -> Tuple[str, Dict, str]:
-    """Generate English story and upload to GCS using modern llm_tools pattern.
-
-    Stories are ALWAYS generated in English. Translation happens separately
-    using existing translation functions.
-
-    This is the recommended way to generate new stories. It uses:
-    - src.llm_tools.story_generation for LLM calls
-    - src.storage for path generation and uploads
-    - Dynamic story structure based on verb count
-
-    Args:
-        verbs: List of verbs to incorporate in the story
-        vocab: List of other vocabulary words to use
-        collection: Collection name (default: "LM1000")
-        bucket_name: GCS bucket for upload (default: PRIVATE_BUCKET)
-
-    Returns:
-        Tuple of (story_name, story_dialogue, gcs_uri)
-        - story_name: 3-word story title
-        - story_dialogue: Dictionary with story parts and dialogue
-        - gcs_uri: GCS URI where dialogue JSON was uploaded
-
-    Example:
-        >>> story_name, dialogue, uri = generate_and_upload_story(
-        ...     verbs=["go", "see", "want"],
-        ...     vocab=["coffee", "table", "friend"],
-        ...     collection="LM1000"
-        ... )
-        >>> print(f"Created story: {story_name}")
-        >>> print(f"Saved to: {uri}")
-    """
-    # Generate story using LLM tool (always in English)
-    print(f"Generating story from {len(verbs)} verbs and {len(vocab)} vocab words...")
-    story_name, story_dialogue = generate_story(verbs, vocab)
-
-    print(f"Generated story: {story_name}")
-
-    # Upload dialogue to GCS
-    dialogue_path = get_story_dialogue_path(story_name, collection)
-    gcs_uri = upload_file_to_gcs(
-        obj=story_dialogue,
-        bucket_name=bucket_name,
-        file_path=dialogue_path,
-    )
-
-    print(f"Uploaded story dialogue to: {gcs_uri}")
-
-    return story_name, story_dialogue, gcs_uri
