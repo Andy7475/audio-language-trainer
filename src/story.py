@@ -20,11 +20,11 @@ from src.utils import load_template
 
 from typing import List, Dict, Optional
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
-from src.models import BCP47Language, get_language
+from src.models import get_language
 from src.phrases.phrase_model import Phrase
 from google.cloud.firestore import DocumentReference
 from src.connections.gcloud_auth import get_firestore_client
-from src.phrases.utils import generate_phrase_hash
+from src.phrases.utils import generate_phrase_hash, generate_deck_name
 from src.phrases.phrase_model import FirePhraseDataModel, Phrase, Translation, get_phrase
 from src.logger import logger
 from langcodes import Language
@@ -72,11 +72,11 @@ class StoryPhrase(Phrase):
     sequence: int = Field(..., description="Utterance sequence within the story part", gte=0)
 
     @classmethod
-    def create(cls, english_phrase: str, story_title_hash: str, story_part: str, sequence: int, collections:List[str] = []) -> "StoryPhrase":
+    def create(cls, english_phrase: str, story_title_hash: str, story_part: str, sequence: int) -> "StoryPhrase":
         """Factory method to create a StoryPhrase with story-specific hash."""
         # Create base phrase for NLP processing
         base_phrase = Phrase.create(english_phrase=english_phrase)
-        base_phrase.collections = collections
+
         # Generate story-specific phrase hash
         story_specific_hash = cls._generate_story_phrase_hash(english_phrase, story_title_hash, story_part, sequence)
         
@@ -87,6 +87,7 @@ class StoryPhrase(Phrase):
             story_part=story_part,
             sequence=sequence
         )
+    
     
     @staticmethod
     def _generate_story_phrase_hash(english_phrase: str, story_title_hash: str, story_part: str, sequence: int) -> str:
@@ -204,6 +205,16 @@ class PublishedStory(BaseModel):
     gcs_path: str = Field(..., description="GCS path of the published story")
     active: bool = Field(default=True, description="Whether this published version is active")
     public_url: str = Field(default="", description="Public URL for story")
+    title:str = Field(..., description="The title of the corresponding Story")
+    deck: str = Field(..., description="The deck of the corresponding Story")
+    collection: str = Field(..., description="Collection story comes from")
+    def _is_published(self, source_language: Language, target_language: Language | None = None)->bool:
+        """Checks for a match based on source and optional target language"""
+
+        source_match = self.source_language_tag == source_language.to_tag()
+        target_match = (target_language is None) or (self.target_language_tag == target_language.to_tag())
+        return source_match and target_match
+
 
 
 class Story(FirePhraseDataModel):
@@ -211,8 +222,8 @@ class Story(FirePhraseDataModel):
     summary: str = Field("", description="Brief summary of the story")
     story_parts: Dict[str, List[Utterance]] = Field(..., description="Dictionary of story parts (e.g., introduction, development)")
     firestore_collection: str = Field("stories", description="Firestore collection name for stories")
-    collections: List[str] = Field(default_factory=list, description="List of collections this story belongs to")
-    decks: Dict[str, List[str]] = Field(default_factory=dict, description="What decks this story supports. Key is a collection ID, and list of deck names")
+    collection: Optional[str] = Field(default=None, description="List of collections this story belongs to")
+    deck: Optional[str] = Field(default = None, description="What decks this story supports. Name made from collection ID and deck name, e.g. LM2000-Pack01")
     published: Dict[str, PublishedStory] = Field(default_factory=dict, description="Dictionary of published versions of the story, key is source_tag|target_tag")
     target_language_name: Optional[str] = Field(None, description="Name of the target language for translation")
     source_language_name: Optional[str] = Field(None, description="Name of the source language")
@@ -232,7 +243,7 @@ class Story(FirePhraseDataModel):
         return self.title.lower().replace(" ", "_")
     
     @classmethod
-    def create(cls, title: str, summary: str, story_dialogue: Dict[str, List[Utterance]]) -> "Story":
+    def create(cls, title: str, summary: str, story_dialogue: Dict[str, List[Utterance]], collection:str|None = None, deck:str|None = None) -> "Story":
         """Factory method to create a Story instance."""
         story_title_hash = generate_phrase_hash(title)
 
@@ -248,7 +259,7 @@ class Story(FirePhraseDataModel):
                     story_title_hash=story_title_hash,
                     story_part=part_name,
                     sequence=seq,
-                    collections=["stories", title],)
+                    )
                 
                 utterance_obj = Utterance(
                     sequence=seq,
@@ -260,13 +271,72 @@ class Story(FirePhraseDataModel):
                 )
                 story_parts[part_name].append(utterance_obj)
 
-        return cls(title=title, key=story_title_hash, summary=summary, story_parts=story_parts)
+        story_obj = cls(title=title, key=story_title_hash, summary=summary, story_parts=story_parts, collection=collection, deck=deck)
 
+        return story_obj
+
+    def publish_story(self, target_language:Language|str, source_language:Language|str="en-GB", overwrite:bool=False) -> str:
+        """Publish the story to the public GCS bucket for the specified language pair."""
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
+
+        # Check if already published
+        if not overwrite:
+            if self._is_published(target_language=target_language, source_language=source_language):
+                logger.info(f"Story '{self.title}' already published for {source_language.to_tag()} -> {target_language.to_tag()}")
+                return
+            
+        self._load_story_translation(target_language=target_language, source_language=source_language)
+        self._verify_translation_loaded()
+        gcs_path = self._get_gcs_path()
+
+        # Upload HTML to GCS
+        html_content = self._render_story_html()
+        
+        story_page = upload_to_gcs(
+            obj=html_content,
+            bucket_name=PUBLIC_BUCKET,
+            base_prefix = gcs_path,
+            file_name="index.html",
+            content_type="text/html",
+        )
+        logger.info(f"Published story at {story_page}")
+
+        self._publish_all_audio()
+
+        publish_tag = self._get_published_tag(target_language, source_language)
+        # Add to published dictionary
+        public_url = self._get_public_url()
+        self.published[publish_tag] = PublishedStory(
+            source_language_tag=self.source_language_tag,
+            target_language_tag=self.target_language_tag,
+            gcs_path=gcs_path,
+            active=True,
+            public_url=public_url,
+            title = self.title,
+            deck = self.deck,
+            collection=self.collection
+        )
+
+
+        logger.info(f"Finished Publishing story '{self.title}' to GCS at {gcs_path} for {source_language.to_tag()} -> {target_language.to_tag()}")
+        self.upload()
+        return public_url
+    
     def _get_published_tag(self, target_language:Language, source_language:Language):
         """Dictionary key for the published dictionary such as en-GB-fr-FR"""
 
         return f"{source_language.to_tag()}|{target_language.to_tag()}"
 
+    def get_published_stories(self, source_language:Language, target_language: Language | None = None)->List[PublishedStory]:
+        """all published elements matching languages"""
+
+        matching_published = []
+        for _, _published in self.published.items():
+            if _published._is_published(source_language, target_language):
+                matching_published.append(_published)
+        return matching_published
+    
     def _verify_utterances_loaded(self)->None:
         for story_part, utterances in self.story_parts.items():
             for utterance in utterances:
@@ -351,63 +421,21 @@ class Story(FirePhraseDataModel):
         full_path = f"https://storage.googleapis.com/{PUBLIC_BUCKET}/{gcs_stub}index.html"
         return full_path
     
-    def publish_story(self, target_language:Language|str, source_language:Language|str="en-GB", overwrite:bool=False) -> None:
-        """Publish the story to the public GCS bucket for the specified language pair."""
-        target_language = get_language(target_language)
-        source_language = get_language(source_language)
 
-        # Check if already published
-        if not overwrite:
-            if self._is_published(target_language=target_language, source_language=source_language):
-                logger.info(f"Story '{self.title}' already published for {source_language.to_tag()} -> {target_language.to_tag()}")
-                return
-            
-        self._load_story_translation(target_language=target_language, source_language=source_language)
-        self._verify_translation_loaded()
-        gcs_path = self._get_gcs_path()
-
-        # Upload HTML to GCS
-        html_content = self._render_story_html()
-        
-        story_page = upload_to_gcs(
-            obj=html_content,
-            bucket_name=PUBLIC_BUCKET,
-            base_prefix = gcs_path,
-            file_name="index.html",
-            content_type="text/html",
-        )
-        logger.info(f"Published story at {story_page}")
-
-        self._publish_all_audio()
-
-        publish_tag = self._get_published_tag(target_language, source_language)
-        # Add to published dictionary
-        self.published[publish_tag] = PublishedStory(
-            source_language_tag=self.source_language_tag,
-            target_language_tag=self.target_language_tag,
-            gcs_path=gcs_path,
-            active=True,
-            public_url=self._get_public_url()
-        )
-
-
-        logger.info(f"Finished Publishing story '{self.title}' to GCS at {gcs_path} for {source_language.to_tag()} -> {target_language.to_tag()}")
-    
     def _render_story_html(self) -> str:
         """Render the story as an HTML page for the specified language pair."""
 
         html_content = render_html_content(self.model_dump(), "story_template.html")
         return html_content
 
-    def _is_published(self, target_language:Language, source_language:Language) -> bool:
+    def _is_published(self, target_language:Language | None, source_language:Language) -> bool:
         """Check if the story is already published for the specified language pair."""
-        published_key = self._get_published_tag(target_language, source_language)
-        if published_key in self.published:
-            if self.published[published_key].active:
+
+        for _, published_story in self.published.items():
+            if published_story._is_published(source_language=source_language, target_language=target_language):
                 return True
-        else:
-            return False
-    
+        return False
+
     def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
         """Get the translated text with Wiktionary links for vocabulary words for all utterances.
         Adds new fields into each Utterance: target_text and wiktionary_links"""

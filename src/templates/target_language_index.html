@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning Stories</title>
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles/styles.css">
+</head>
+<body>
+    <nav class="breadcrumb">
+        <a href="../../">Home</a> ›
+        <a href="../index.html">{{ source_language_name }}</a> ›
+        {{ target_language_name }} ›
+    </nav>
+
+    <main>
+        <h1>{{ source_language_name }} Speaker Learning {{ target_language_name }}</h1>
+
+        <h2>Jump to Collection:</h2>
+        <nav class="story-nav">
+            {% for collection_name in all_collections %}
+            <a href="#{{ collection_name | replace(' ', '_') }}">{{ collection_name }}</a>
+            {% endfor %}
+        </nav>
+
+        <h2>Stories by Collection:</h2>
+        {% for collection_name, published_stories in stories_by_collection.items() %}
+        <section id="{{ collection_name | replace(' ', '_') }}" class="story-list">
+            <h3>{{ collection_name }}</h3>
+            {% for story in published_stories %}
+            <h4>{{ deck_name }}</h4>
+            <ul>
+                <li><a href="{{ story.public_url }}">{{ story.title }}</a> | {{ story.deck }}</li>
+
+            </ul>
+            {% endfor %}
+        </section>
+        {% endfor %}
+
+        <div class="back-to-top">
+            <a href="#top">Back to Top</a>
+        </div>
+    </main>
+
+    {% include "index_footer.html" %}
+</body>
+</html>

@@ -8,7 +8,7 @@ from pydub import AudioSegment
 from PIL import Image
 from src.logger import logger
 from src.connections.gcloud_auth import get_firestore_client
-from src.phrases.utils import generate_phrase_hash
+from src.phrases.utils import generate_phrase_hash, generate_deck_name
 from google.cloud.firestore import Client as FirestoreClient
 from src.nlp import (
     extract_lemmas_and_pos,
@@ -175,10 +175,9 @@ class Phrase(FirePhraseDataModel):
         default_factory=dict,
         description="Dictionary of translations keyed by language tag (e.g., 'fr-FR')",
     )
-    collections: List[str] = Field(
-        default_factory=list, description="Collections this phrase belongs to"
+    collection: Optional[str] = Field(default=None, description="Collection this phrase belongs to"
     )
-    decks: Dict[str, List[str]] = Field(default_factory=dict, description="What decks this story supports. Key is a collection ID, and list of deck names")
+    deck: Optional[str] = Field(default=None, description="What deck this phrase is in e.g. Pack01")
 
     def __str__(self) -> str:
         return self.english
@@ -210,7 +209,7 @@ class Phrase(FirePhraseDataModel):
         phrase.translations[en_translation.language.to_tag()] = en_translation
 
         return phrase
-
+    
     def get_phrase_hash(self) -> str:
         """Generate a unique hash for this phrase based on English text.
 

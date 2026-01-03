@@ -22,3 +22,6 @@ def generate_phrase_hash(english_text: str) -> str:
     slug = slug.replace(" ", "_")[:50]
 
     return f"{slug}_{hash_suffix}"
+
+def generate_deck_name(collection:str, deck:str)->str:
+    return f"{collection}-{deck}"
