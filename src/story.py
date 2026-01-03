@@ -328,6 +328,10 @@ class Story(FirePhraseDataModel):
 
         return f"{source_language.to_tag()}|{target_language.to_tag()}"
 
+    def get_all_published_source_language_tags(self)->List[Language]:
+        """all published elements matching languages"""
+
+        return [published.source_language_tag for _, published in self.published.items()]
     def get_published_stories(self, source_language:Language, target_language: Language | None = None)->List[PublishedStory]:
         """all published elements matching languages"""
 

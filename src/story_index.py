@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, computed_field
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 from typing import List, Dict
 from src.story import Story, PublishedStory
 from src.models import get_language, BCP47Language
@@ -7,6 +7,7 @@ from src.logger import logger
 from collections import defaultdict
 from src.utils import render_html_content
 from src.storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
+from src.story import get_all_stories
 
 def get_source_language_index_prefix(source_language: Language | str)->str:
     """the bucket location"""
@@ -17,6 +18,37 @@ def get_target_language_index_prefix(source_language: Language, target_langauge:
 
     source_prefix = get_source_language_index_prefix(source_language)
     return f"{source_prefix}/{target_langauge.to_tag()}"
+
+#TODO - fix links to source language page
+class LangaugeIndex(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    source_languages: List[BCP47Language] = Field(...)
+
+    @property
+    def base_prefix(self)->str:
+        return "stories"
+    
+    def _render_index_html(self)->str:
+        return render_html_content(self.model_dump(), "language_index.html")
+    
+    @field_serializer("source_languages")
+    def serialize_source_languages(self, source_languages: List[BCP47Language])->List[tuple[str, str]]:
+        return [(lang.to_tag(), lang.language_name()) for lang in source_languages]
+    
+    def upload_html(self)->str:
+        html_content = self._render_index_html()
+        gcs_path = upload_to_gcs(obj = html_content,
+        bucket_name=PUBLIC_BUCKET,
+        base_prefix = self.base_prefix,
+        file_name = "index.html",
+        content_type="text/html")
+
+        return get_public_url_from_gcs_stub(gcs_path)
+
+def get_language_index()->LangaugeIndex:
+    all_stories = get_all_stories()
+    ALL_SOURCE_LANGUAGES = set(tag for story in all_stories for tag in story.get_all_published_source_language_tags())
+    return LangaugeIndex(source_languages=ALL_SOURCE_LANGUAGES)
 
 class TargetLanguageIndex(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -136,3 +168,4 @@ def get_source_language_index_dict(stories: List[Story], source_language: Langua
         data["target_languages"].append((target_tag , target_name))
 
     return data
+

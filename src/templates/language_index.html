@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Index</title>
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles/styles.css">
+</head>
+<body>
+    <nav class="breadcrumb">
+        <a href="../">Home</a> ›
+        Language Index ›
+    </nav>
+
+    <main>
+        <h1>Language Index</h1>
+
+        <h2>My Native Language is:</h2>
+        <ul>
+            {% for source_language_tag, source_language_name in source_languages %}
+            <li><a href="/{{ source_language_tag }}/index.html">{{ source_language_name }}</a></li>
+            {% endfor %}
+        </ul>
+    </main>
+
+    {% include "index_footer.html" %}
+</body>
+</html>
