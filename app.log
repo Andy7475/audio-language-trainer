@@ -1,2 +1,2 @@
-2026-01-02 20:55:57 - audio-language-trainer - DEBUG - storage.py:245 - creating directory for local save to directory='../outputs/gcs\\audio-language-trainer-stories\\styles' for file_path='styles/styles.css'
-2026-01-02 20:55:57 - audio-language-trainer - DEBUG - storage.py:245 - creating directory for local save to directory='../outputs/gcs\\audio-language-trainer-stories\\styles' for file_path='styles/challenges.css'
+2026-01-03 22:07:14 - audio-language-trainer - DEBUG - storage.py:246 - creating directory for local save to directory='../outputs/gcs\\audio-language-trainer-stories\\styles' for file_path='styles/styles.css'
+2026-01-03 22:07:14 - audio-language-trainer - DEBUG - storage.py:246 - creating directory for local save to directory='../outputs/gcs\\audio-language-trainer-stories\\styles' for file_path='styles/challenges.css'

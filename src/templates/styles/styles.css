@@ -308,6 +308,10 @@ footer a:hover {
     line-height: 2;
 }
 
+.story-list li {
+    list-style-type: none;
+}
+
 /* On mobile, make it full width like play-all */
 @media (max-width: 767px) {
     #globalSourceToggle {

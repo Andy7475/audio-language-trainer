@@ -9,53 +9,50 @@ from src.utils import render_html_content
 from src.storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
 from src.story import get_all_stories
 
-def get_source_language_index_prefix(source_language: Language | str)->str:
-    """the bucket location"""
-    source_language = get_language(source_language)
-    return f"stories/{source_language.to_tag()}"
 
-def get_target_language_index_prefix(source_language: Language, target_langauge: Language)->str:
 
-    source_prefix = get_source_language_index_prefix(source_language)
-    return f"{source_prefix}/{target_langauge.to_tag()}"
-
-#TODO - fix links to source language page
-class LangaugeIndex(BaseModel):
+class IndexPage(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
-    source_languages: List[BCP47Language] = Field(...)
-
+    template_name: str
     @property
     def base_prefix(self)->str:
         return "stories"
     
     def _render_index_html(self)->str:
-        return render_html_content(self.model_dump(), "language_index.html")
-    
-    @field_serializer("source_languages")
-    def serialize_source_languages(self, source_languages: List[BCP47Language])->List[tuple[str, str]]:
-        return [(lang.to_tag(), lang.language_name()) for lang in source_languages]
+        return render_html_content(self.model_dump(), self.template_name)
     
     def upload_html(self)->str:
         html_content = self._render_index_html()
         gcs_path = upload_to_gcs(obj = html_content,
-        bucket_name=PUBLIC_BUCKET,
+        bucket_name=PUBLIC_BUCKET,    
         base_prefix = self.base_prefix,
         file_name = "index.html",
         content_type="text/html")
 
         return get_public_url_from_gcs_stub(gcs_path)
+class LangaugeIndex(IndexPage):
+    source_languages: List[BCP47Language] = Field(...)
+    template_name: str = "language_index.html"
+    @property
+    def base_prefix(self)->str:
+        return "stories"
+    
+    @field_serializer("source_languages")
+    def serialize_source_languages(self, source_languages: List[BCP47Language])->List[tuple[str, str]]:
+        return [(lang.to_tag(), lang.language_name()) for lang in source_languages]
+    
 
-def get_language_index()->LangaugeIndex:
+
+def create_language_index()->LangaugeIndex:
     all_stories = get_all_stories()
     ALL_SOURCE_LANGUAGES = set(tag for story in all_stories for tag in story.get_all_published_source_language_tags())
     return LangaugeIndex(source_languages=ALL_SOURCE_LANGUAGES)
 
-class TargetLanguageIndex(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+class TargetLanguageIndex(IndexPage):
     source_language: BCP47Language = Field(...)
     target_language: BCP47Language = Field(...)
     published_stories: List[PublishedStory] = Field(default_factory=list) # collection -> story -> List[PublishedStory]
-
+    template_name: str = "target_language_index.html"
     @property
     def base_prefix(self)->str:
         return f"stories/{self.source_language.to_tag()}/{self.target_language.to_tag()}"
@@ -88,54 +85,43 @@ class TargetLanguageIndex(BaseModel):
                     stories_by_collection[collection].append(published_story)
 
         return dict(sorted(stories_by_collection.items(), key=lambda x: (x[0], sorted(x[1], key= lambda y: y.deck))))
-    
-    def _render_index_html(self)->str:
-        return render_html_content(self.model_dump(), "target_language_index.html")
 
-    def upload_html(self)->str:
-        html_content = self._render_index_html()
-        gcs_path = upload_to_gcs(obj = html_content,
-        bucket_name=PUBLIC_BUCKET,
-        base_prefix = self.base_prefix,
-        file_name = "index.html",
-        content_type="text/html")
-
-        return get_public_url_from_gcs_stub(gcs_path)
     
 TargetLanguageIndex.model_rebuild()
-def create_target_language_index(stories:List[Story], source_langauge:Language | str, target_language:Language | str)->TargetLanguageIndex:
+def create_target_language_index(stories:List[Story], source_language:Language | str, target_language:Language | str)->TargetLanguageIndex:
     """Data we need to create the target language index"""
-    source_langauge = get_language(source_langauge)
+    source_language = get_language(source_language)
     target_language = get_language(target_language)
 
     ALL_PUBLISHED = []
     for story in stories:
-        ALL_PUBLISHED.extend(story.get_published_stories(source_langauge, target_language))
+        ALL_PUBLISHED.extend(story.get_published_stories(source_language, target_language))
 
     logger.debug(f"Stories to add {len(ALL_PUBLISHED)} and they are {ALL_PUBLISHED}")
     return TargetLanguageIndex(
-        source_language = source_langauge,
+        source_language = source_language,
         target_language = target_language,
         published_stories = ALL_PUBLISHED
     )
 
-def upload_source_language_index(html_content:str, source_language: Language | str)->str:
-    """The index.html page for the source language"""
-    base_prefix = get_source_language_index_prefix(source_language)
-    gcs_path = upload_to_gcs(obj = html_content,
-    bucket_name=PUBLIC_BUCKET,
-    base_prefix = base_prefix,
-    file_name = "index.html",
-    content_type="text/html")
+class SourceLanguageIndex(TargetLanguageIndex):
+    template_name: str = "source_language_index.html"
 
-    return get_public_url_from_gcs_stub(gcs_path)
+    @property
+    def base_prefix(self)->str:
+        return f"stories/{self.source_language.to_tag()}"
+    
+    @computed_field
+    @property
+    def target_languages(self)->List[tuple[str,str]]:
+        return list({(published_story.target_language.to_tag(), published_story.target_language.language_name()) for  published_story in self.published_stories})
 
 def render_source_language_index_html(data:dict)->str:
     """The HTML source of the source language index"""
     return render_html_content(data, "source_language_index.html")
 
 
-def get_source_language_index_dict(stories: List[Story], source_language: Language | str)->dict:
+def create_source_language_index(stories: List[Story], source_language: Language | str)->SourceLanguageIndex:
     """
     Gets a dictionary of all data needed to populate the source_language_index_template
     This lists target languages available from the source language
@@ -143,29 +129,16 @@ def get_source_language_index_dict(stories: List[Story], source_language: Langua
     Returns:
         Dict: with all bits needed for template
 
-        {source_language_tag : en-GB,
-        source_language_name : english,
-        target_languages : [(fr-FR, French)
-                            ]}
     """
     source_language = get_language(source_language)
-    source_language_tag = source_language.to_tag()
-    data = defaultdict()
-    data["source_language_tag"] = source_language_tag
-    data["source_language_name"] = source_language.language_name()
-    data["target_languages"] = []
 
-    ALL_TARGETS = set()
+    ALL_PUBLISHED = []
     for story in stories:
-        matching_published = story.get_published_stories(source_language)
+        ALL_PUBLISHED.extend(story.get_published_stories(source_language))
 
-        for _published in matching_published:
-            if _published._is_published(source_language):
-                ALL_TARGETS.add(_published.target_language_tag)
-    
-    for target_tag in ALL_TARGETS:
-        target_name = get_language(target_tag).language_name()
-        data["target_languages"].append((target_tag , target_name))
+    return SourceLanguageIndex(
+        source_language = source_language,
+        published_stories = ALL_PUBLISHED
+    )
 
-    return data
 
