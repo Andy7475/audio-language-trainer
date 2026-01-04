@@ -4,17 +4,17 @@ import json
 from typing import Dict, List, Optional
 from string import Template
 
-from src.convert import get_story_title, get_collection_title
-from src.llm_tools.challenge_generation import generate_challenges
-from src.models import BCP47Language
-from src.storage import (
+from .convert import get_story_title, get_collection_title
+from .llm_tools.challenge_generation import generate_challenges
+from .models import BCP47Language
+from .storage import (
     PRIVATE_BUCKET,
     PUBLIC_BUCKET,
     get_story_challenges_path,
     get_story_translated_challenges_path,
     upload_file_to_gcs,
 )
-from src.utils import load_template
+from .utils import load_template
 
 
 def generate_roleplay_prompt(

@@ -24,20 +24,20 @@ if module_path not in sys.path:
     sys.path.append(module_path)
 
 from storage import read_from_gcs
-from src.anki_tools import create_anki_deck_from_gcs
-from src.audio_generation import (
+from .anki_tools import create_anki_deck_from_gcs
+from .audio_generation import (
     generate_and_upload_fast_audio,
     generate_dialogue_audio_and_upload,
     upload_phrases_audio_to_gcs,
 )
-from src.chat import create_html_challenges, get_html_challenge_inputs
-from src.config_loader import config
-from src.convert import clean_filename
+from .chat import create_html_challenges, get_html_challenge_inputs
+from .config_loader import config
+from .convert import clean_filename
 from contextlib import contextmanager
-from src.dialogue_generation import translate_and_upload_dialogue
-from src.shop import generate_product_images, generate_shopify_csv
-from src.zip import create_m4a_zip_collections
-from src.gcs_storage import (
+from .dialogue_generation import translate_and_upload_dialogue
+from .shop import generate_product_images, generate_shopify_csv
+from .zip import create_m4a_zip_collections
+from .gcs_storage import (
     check_blob_exists,
     get_stories_from_collection,
     get_story_challenges_path,
@@ -47,7 +47,7 @@ from src.gcs_storage import (
     get_translated_phrases_path,
     get_wiktionary_cache_path,
 )
-from src.story import (
+from .story import (
     create_album_files,
     create_and_upload_html_story,
     prepare_dialogue_with_wiktionary,
@@ -55,13 +55,13 @@ from src.story import (
     update_all_index_pages_hierarchical,
     upload_styles_to_gcs,
 )
-from src.translation import (
+from .translation import (
     review_story_dialogue_translations,
     review_translated_phrases_batch,
     translate_phrases,
 )
-from src.wiktionary import add_wiktionary_links
-from src.convert import get_language_code
+from .wiktionary import add_wiktionary_links
+from .convert import get_language_code
 
 
 def setup_authentication():

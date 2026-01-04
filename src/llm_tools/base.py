@@ -4,7 +4,7 @@ import os
 from string import Template
 from typing import Dict, Optional
 
-from src.connections.anthropic_auth import get_anthropic_client as _get_anthropic_client
+from ..connections.anthropic_auth import get_anthropic_client as _get_anthropic_client
 
 
 # Default model for all LLM tools

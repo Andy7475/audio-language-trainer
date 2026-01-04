@@ -7,10 +7,10 @@ generating phrases and naturally tracking which words have been used.
 
 from typing import Dict, List, Tuple
 
-from src.llm_tools.verb_phrase_generation import generate_verb_phrases
-from src.llm_tools.vocab_phrase_generation import generate_vocab_phrases
-from src.nlp import get_vocab_from_phrases
-from src.logger import logger
+from ..llm_tools.verb_phrase_generation import generate_verb_phrases
+from ..llm_tools.vocab_phrase_generation import generate_vocab_phrases
+from ..nlp import get_vocab_from_phrases
+from ..logger import logger
 
 def generate_phrases_from_vocab_dict(
     vocab_dict: Dict[str, List[str]],

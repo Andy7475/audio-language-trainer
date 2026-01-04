@@ -1,14 +1,13 @@
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 from typing import List, Dict
-from src.story import Story, PublishedStory
-from src.models import get_language, BCP47Language
+from .story import Story, PublishedStory
+from .models import get_language, BCP47Language
 from langcodes import Language
-from src.logger import logger
+from .logger import logger
 from collections import defaultdict
-from src.utils import render_html_content
-from src.storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
-from src.story import get_all_stories
-
+from .utils import render_html_content
+from .storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
+from .story import get_all_stories
 
 
 class IndexPage(BaseModel):
@@ -28,11 +27,14 @@ class IndexPage(BaseModel):
         base_prefix = self.base_prefix,
         file_name = "index.html",
         content_type="text/html")
-
-        return get_public_url_from_gcs_stub(gcs_path)
+        public_url = get_public_url_from_gcs_stub(gcs_path)
+        logger.info(f"Published index at {public_url}")
+        return public_url
+    
 class LangaugeIndex(IndexPage):
     source_languages: List[BCP47Language] = Field(...)
     template_name: str = "language_index.html"
+    all_stories: List[Story] = Field(default_factory=list)
     @property
     def base_prefix(self)->str:
         return "stories"
@@ -45,8 +47,8 @@ class LangaugeIndex(IndexPage):
 
 def create_language_index()->LangaugeIndex:
     all_stories = get_all_stories()
-    ALL_SOURCE_LANGUAGES = set(tag for story in all_stories for tag in story.get_all_published_source_language_tags())
-    return LangaugeIndex(source_languages=ALL_SOURCE_LANGUAGES)
+    ALL_SOURCE_LANGUAGES = set(tag for story in all_stories for tag in story.get_all_published_source_languages())
+    return LangaugeIndex(source_languages=ALL_SOURCE_LANGUAGES, all_stories=all_stories)
 
 class TargetLanguageIndex(IndexPage):
     source_language: BCP47Language = Field(...)
@@ -97,28 +99,29 @@ def create_target_language_index(stories:List[Story], source_language:Language |
     for story in stories:
         ALL_PUBLISHED.extend(story.get_published_stories(source_language, target_language))
 
-    logger.debug(f"Stories to add {len(ALL_PUBLISHED)} and they are {ALL_PUBLISHED}")
+    logger.info(f"Stories to add {len(ALL_PUBLISHED)} for {source_language} -> {target_language}")
     return TargetLanguageIndex(
         source_language = source_language,
         target_language = target_language,
         published_stories = ALL_PUBLISHED
     )
 
-class SourceLanguageIndex(TargetLanguageIndex):
+class SourceLanguageIndex(IndexPage):
+    """From a single source language to multiple target languages"""
     template_name: str = "source_language_index.html"
-
+    published_stories: List[PublishedStory] = Field(default_factory=list)
+    source_language: BCP47Language = Field(...)
     @property
     def base_prefix(self)->str:
         return f"stories/{self.source_language.to_tag()}"
-    
+    @computed_field
+    @property
+    def source_language_name(self)->str:
+        return self.source_language.language_name()
     @computed_field
     @property
     def target_languages(self)->List[tuple[str,str]]:
         return list({(published_story.target_language.to_tag(), published_story.target_language.language_name()) for  published_story in self.published_stories})
-
-def render_source_language_index_html(data:dict)->str:
-    """The HTML source of the source language index"""
-    return render_html_content(data, "source_language_index.html")
 
 
 def create_source_language_index(stories: List[Story], source_language: Language | str)->SourceLanguageIndex:
@@ -135,10 +138,30 @@ def create_source_language_index(stories: List[Story], source_language: Language
     ALL_PUBLISHED = []
     for story in stories:
         ALL_PUBLISHED.extend(story.get_published_stories(source_language))
-
+    logger.info(f"Adding {len(ALL_PUBLISHED)} stories for {source_language}")
+    logger.debug(f"Stories to add {len(ALL_PUBLISHED)} and they are {ALL_PUBLISHED}")
     return SourceLanguageIndex(
         source_language = source_language,
         published_stories = ALL_PUBLISHED
     )
 
+def update_indexes()->None:
+    """Update all indexes for all published stories"""
+
+    lang_index = create_language_index()
+    lang_index.upload_html()
+    
+    for source_lang in lang_index.source_languages:
+        logger.info(f"Updating index for {source_lang} with {len(lang_index.all_stories)} stories")
+        source_lang_index = create_source_language_index(lang_index.all_stories, source_lang)
+        source_lang_index.upload_html()
+
+        for target_lang in source_lang_index.target_languages:
+            logger.info(f"Updating index for {source_lang} -> {target_lang}")
+            target_lang_index = create_target_language_index(lang_index.all_stories, source_lang, target_lang[0])
+            target_lang_index.upload_html()
+
+
+if __name__ == "__main__":
+    update_indexes()
 

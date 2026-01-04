@@ -6,7 +6,7 @@ from typing import Dict, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from src.audio.constants import VoiceProvider
+from .constants import VoiceProvider
 
 
 class VoiceInfo(BaseModel):

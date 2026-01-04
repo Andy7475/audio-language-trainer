@@ -8,7 +8,7 @@ Key features:
 - Token-preserving HTML link generation
 """
 
-from src.wiktionary.cache import (
+from .cache import (
     get_wiktionary_entry,
     save_wiktionary_entry,
     batch_get_wiktionary_entries,
@@ -17,11 +17,11 @@ from src.wiktionary.cache import (
     batch_get_or_fetch_wiktionary_entries,
 )
 
-from src.wiktionary.lookup import fetch_wiktionary_entry
+from .lookup import fetch_wiktionary_entry
 
-from src.wiktionary.models import WiktionaryEntry, get_firestore_path
+from .models import WiktionaryEntry, get_firestore_path
 
-from src.wiktionary.utils import (
+from .utils import (
     clean_word_for_lookup,
     get_wiktionary_language_name,
     find_language_section,

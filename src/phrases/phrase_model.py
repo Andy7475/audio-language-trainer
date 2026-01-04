@@ -1,28 +1,28 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Literal, Annotated
+from typing import Dict, List, Optional, Literal, Annotated, Self
 
 from langcodes import Language
-from pydantic import AliasChoices, BaseModel, Field, field_validator, BeforeValidator, ConfigDict
+from pydantic import AliasChoices, BaseModel, Field, field_validator, BeforeValidator, ConfigDict, model_validator
 from pydub import AudioSegment
 from PIL import Image
-from src.logger import logger
-from src.connections.gcloud_auth import get_firestore_client
-from src.phrases.utils import generate_phrase_hash, generate_deck_name
+from ..logger import logger
+from ..connections.gcloud_auth import get_firestore_client
+from .utils import generate_phrase_hash, generate_deck_name
 from google.cloud.firestore import Client as FirestoreClient
-from src.nlp import (
+from ..nlp import (
     extract_lemmas_and_pos,
     get_tokens_from_lemmas_and_pos,
     get_verbs_from_lemmas_and_pos,
     get_vocab_from_lemmas_and_pos,
     get_text_tokens,
 )
-from src.models import BCP47Language, get_language
-from src.translation import (
+from ..models import BCP47Language, get_language
+from ..translation import (
     translate_with_google_translate,
     refine_translation_with_anthropic,
 )
-from src.storage import (
+from ..storage import (
     upload_file_to_gcs,
     download_from_gcs,
     get_phrase_image_path,
@@ -30,12 +30,12 @@ from src.storage import (
     check_blob_exists,
     PRIVATE_BUCKET,
 )
-from src.audio.voices import get_voice_model, VoiceInfo
-from src.audio.generation import generate_translation_audio
+from ..audio.voices import get_voice_model, VoiceInfo
+from ..audio.generation import generate_translation_audio
 from google.cloud.firestore import DocumentReference
-from src.llm_tools.image_generation import generate_phrase_image_prompt
-from src.images.generator import generate_image as generate_image_with_provider
-from src.images.manipulation import resize_image
+from ..llm_tools.image_generation import generate_phrase_image_prompt
+from ..images.generator import generate_image as generate_image_with_provider
+from ..images.manipulation import resize_image
 
 LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip())]
 
@@ -113,7 +113,7 @@ def get_phrase_by_english(
 class FirePhraseDataModel(BaseModel):
     """Parent model for common variables and storage details for FireStore"""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
     firestore_collection: Optional[Literal["phrases", "stories"]] = Field(
         default="phrases", description="Context for the phrase in FireStore"
     )
@@ -129,6 +129,12 @@ class FirePhraseDataModel(BaseModel):
     key: str = Field(
         ..., validation_alias=AliasChoices("phrase_hash", "key"), description="Key in Firestore to get the document reference"
     )
+
+    @model_validator(mode="after")
+    def set_firestore_document_ref(self)->Self:
+        if self.firestore_document_ref is None:
+            self.firestore_document_ref = self._get_firestore_document_reference()
+        return self
 
     def _get_firestore_document_reference(self) -> DocumentReference:
         """Get or create a Firestore document reference for this phrase.
@@ -883,9 +889,7 @@ class Translation(FirePhraseDataModel):
     Audio segments are attached to PhraseAudio objects and loaded on demand.
     """
 
-    model_config = {
-        "arbitrary_types_allowed": True
-    }  # allow us to use Language and binary types
+
     language: BCP47Language = Field(
         ..., description="BCP-47 language tag for the translation"
     )
@@ -965,7 +969,7 @@ class Translation(FirePhraseDataModel):
             - Returns plain text for tokens without Wiktionary entries
             - Preserves original token order and casing
         """
-        from src.wiktionary import batch_get_or_fetch_wiktionary_entries
+        from ..wiktionary import batch_get_or_fetch_wiktionary_entries
 
         # Extract language code (e.g., 'fr' from 'fr-FR')
         language_code = self.language.language
@@ -1022,6 +1026,13 @@ class Translation(FirePhraseDataModel):
         self._upload_to_gcs(overwrite=overwrite)
         return doc_ref
 
+
+    def _get_firestore_document_reference(self) -> DocumentReference:
+        """Get or create a Firestore document reference for this phrase.
+        """
+        client = get_firestore_client(self.firestore_database)
+        doc_ref = client.collection("phrases").document(self.key).collection("translations").document(self.language.to_tag())
+        return doc_ref
     def _upload_to_firestore(self) -> DocumentReference:
         """Uploads the translation text and URLs to firestore"""
         if self.firestore_document_ref is None:

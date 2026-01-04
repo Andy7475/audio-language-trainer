@@ -9,7 +9,7 @@ import numpy as np
 import soundfile as sf
 from pydub import AudioSegment
 
-from src.audio.constants import (
+from .constants import (
     AUDIO_SPEED_FAST,
     AUDIO_SPEED_NORMAL,
     DE_REVERB_TIME,

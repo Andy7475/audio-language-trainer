@@ -6,12 +6,12 @@ from typing import Dict, List, Optional, Tuple
 from tqdm import tqdm
 
 from storage import read_from_gcs
-from src.config_loader import config
-from src.gcs_storage import (
+from .config_loader import config
+from .gcs_storage import (
     get_m4a_file_path,
     get_story_collection_path,
 )
-from src.utils import get_story_position
+from .utils import get_story_position
 
 
 def create_m4a_zip_collections(
@@ -147,7 +147,7 @@ def create_m4a_zip_collections(
                 individual_zip_name = f"{language}_{collection.lower()}_story_{story_position:02d}_{story.replace('story_', '').replace('_', '-')}_audio.zip"
                 individual_zip_path = zip_output_dir / individual_zip_name
 
-                from src.convert import get_story_title
+                from .convert import get_story_title
 
                 story_title = get_story_title(story)
 
@@ -185,7 +185,7 @@ def _get_story_m4a_files(
     story_position = get_story_position(story_name, collection)
 
     # Get the story parts from the dialogue data in GCS
-    from src.gcs_storage import get_story_dialogue_path
+    from .gcs_storage import get_story_dialogue_path
 
     dialogue_path = get_story_dialogue_path(story_name, collection)
     try:

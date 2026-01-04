@@ -28,16 +28,16 @@
     </header>
 
     <nav class="story-nav">
-    {% for part_name, utterances in story_parts.items() %}
-    <a href="#{{ part_name }}">{{ utterances[0].part_name_titlecase }}</a>
+    {% for story_part, utterances in story_parts.items() %}
+    <a href="#{{ story_part }}">{{ utterances[0].story_part_titlecase }}</a>
     {% endfor %}
 </nav>
 
     <main>
-        {% for part_name, utterances in story_parts.items() %}
-        <section id="{{ part_name }}" class="story-part">
-            <h2>{{ utterances[0].part_name_titlecase }}</h2>
-            <button onclick="playPart('{{ part_name }}')" class="play-part">▶ Play {{ utterances[0].part_name_titlecase }}</button>
+        {% for story_part, utterances in story_parts.items() %}
+        <section id="{{ story_part }}" class="story-part">
+            <h2>{{ utterances[0].story_part_titlecase }}</h2>
+            <button onclick="playPart('{{ story_part }}')" class="play-part">▶ Play {{ utterances[0].story_part_titlecase }}</button>
 
             {% for utterance in utterances %}
             <article class="dialogue">

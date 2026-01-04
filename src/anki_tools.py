@@ -39,10 +39,10 @@ from tempfile import TemporaryDirectory
 import genanki
 from tqdm import tqdm
 
-from src.models import BCP47Language, get_language
-from src.phrases.phrase_model import Phrase
-from src.utils import load_template
-from src.logger import logger
+from .models import BCP47Language, get_language
+from .phrases.phrase_model import Phrase
+from .utils import load_template
+from .logger import logger
 
 # ============================================================================
 # ANKI MODEL DEFINITION

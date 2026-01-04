@@ -2,9 +2,9 @@ from typing import List, Optional, Union
 
 import langcodes
 
-from src.connections.gcloud_auth import get_translate_client
-from src.llm_tools.review_translation import refine_translation
-from src.models import BCP47Language, get_language
+from .connections.gcloud_auth import get_translate_client
+from .llm_tools.review_translation import refine_translation
+from .models import BCP47Language, get_language
 
 
 def translate_with_google_translate(

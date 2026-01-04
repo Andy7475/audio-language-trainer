@@ -2,13 +2,13 @@
 
 from typing import Dict
 
-from src.llm_tools.base import (
+from .base import (
     DEFAULT_MODEL,
     get_anthropic_client,
     extract_tool_response,
     load_prompt_template,
 )
-from src.models import BCP47Language
+from ..models import BCP47Language
 
 
 # Fixed tool schema - always 5 scenarios with 3 complications each

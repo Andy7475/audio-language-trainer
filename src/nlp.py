@@ -1,9 +1,9 @@
 from typing import List, Set, Tuple
 
 
-from src.connections.gcloud_auth import get_nlp_client
+from .connections.gcloud_auth import get_nlp_client
 from google.cloud import language_v1
-from src.logger import logger
+from .logger import logger
 
 def analyze_text_syntax(
     text: str, language_code: str = "en"

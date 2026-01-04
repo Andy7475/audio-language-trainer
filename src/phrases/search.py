@@ -2,9 +2,9 @@
 
 from typing import List, Optional, Set, Dict, Tuple
 
-from src.phrases.phrase_model import Phrase, Translation
-from src.connections.gcloud_auth import get_firestore_client
-from src.models import BCP47Language, get_language
+from .phrase_model import Phrase, Translation
+from ..connections.gcloud_auth import get_firestore_client
+from ..models import BCP47Language, get_language
 from google.cloud.firestore_v1 import FieldFilter, DocumentReference
 
 def get_phrases_by_collection(collection_name: str) -> List[Phrase]:
