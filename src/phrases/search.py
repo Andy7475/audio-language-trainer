@@ -7,7 +7,7 @@ from ..connections.gcloud_auth import get_firestore_client
 from ..models import BCP47Language, get_language
 from google.cloud.firestore_v1 import FieldFilter, DocumentReference
 
-def get_phrases_by_collection(collection_name: str) -> List[Phrase]:
+def get_phrases_by_collection(collection_name: str, deck:str | None = None) -> List[Phrase]:
     """Retrieve phrases belonging to a specific collection or collections.
         collection_name: Name of the collection to filter phrases   
     Returns:
@@ -18,10 +18,11 @@ def get_phrases_by_collection(collection_name: str) -> List[Phrase]:
     db = get_firestore_client()
     phrases_ref = db.collection("phrases")
 
-    results: Set[DocumentReference] = set()
-
-    collection_filter = FieldFilter("collections", "equal_to", collection_name)
+    collection_filter = FieldFilter("collection", "==", collection_name)
     query = phrases_ref.where(filter=collection_filter)
+    if deck:
+        deck_filter = FieldFilter("deck", "==", deck)
+        query = query.where(filter=deck_filter)
     results = query.get()
 
     phrases = []

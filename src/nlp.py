@@ -3,6 +3,7 @@ from typing import List, Set, Tuple
 
 from .connections.gcloud_auth import get_nlp_client
 from google.cloud import language_v1
+from google.api_core.exceptions import InvalidArgument
 from .logger import logger
 
 def analyze_text_syntax(
@@ -26,14 +27,23 @@ def analyze_text_syntax(
         language=language_code,
     )
 
-    response = client.analyze_syntax(
-        request={
-            "document": document,
-            "encoding_type": language_v1.EncodingType.UTF8,
-        }
-    )
+    try:
+        response = client.analyze_syntax(
+            request={
+                "document": document,
+                "encoding_type": language_v1.EncodingType.UTF8,
+            }
+        )
 
-    return response
+        return response
+    except InvalidArgument as e:
+        # Raised by the API when the provided language is not supported
+        logger.warning(
+            "analyze_text_syntax: language not supported by Google NLP: %s", language_code
+        )
+        raise ValueError(
+            f"Language '{language_code}' may not be supported by Google Natural Language API for syntax analysis."
+        ) from e
 
 
 def extract_lemmas_and_pos(
