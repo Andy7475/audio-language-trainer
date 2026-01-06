@@ -4,7 +4,7 @@ This module handles fetching dictionary entries from Wiktionary's web interface.
 """
 
 import urllib.parse
-from typing import Optional, Literal
+from typing import Literal
 
 import requests
 from bs4 import BeautifulSoup
@@ -124,6 +124,8 @@ def _try_wiktionary_lookup(
         response = requests.get(url, headers=USER_AGENT, timeout=timeout)
 
         if response.status_code != 200:
+            logger.error(f"Wiktionary lookup failed for '{lookup_word}': {response.status_code}")
+            logger.error(f"Response: {response.text}")
             return _create_not_found_entry(lookup_word.lower(), language_code)
 
         soup = BeautifulSoup(response.content, "html.parser")

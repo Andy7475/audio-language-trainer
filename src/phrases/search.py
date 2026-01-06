@@ -1,6 +1,6 @@
 """Querying and searching phrases in the database."""
 
-from typing import List, Optional, Set, Dict, Tuple
+from typing import List, Optional, Set, Tuple
 
 from .phrase_model import Phrase, Translation
 from ..connections.gcloud_auth import get_firestore_client

@@ -1,31 +1,24 @@
 from __future__ import annotations
 
 from collections import defaultdict
-import json
-from pathlib import Path
-from string import Template
-from typing import Dict, List, Optional, Self, Tuple
+from typing import Dict, List, Optional
 
 from pydub import AudioSegment
-from tqdm import tqdm
 
 
-from .llm_tools.story_generation import generate_story
 from .llm_tools.refine_story_translation import refine_story_translation
 from .storage import (
-    PRIVATE_BUCKET,
     PUBLIC_BUCKET,
 )
-from .utils import load_template
 
-from typing import List, Dict, Optional
+
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from .models import BCP47Language, get_language
 from .phrases.phrase_model import Phrase
 from google.cloud.firestore import DocumentReference
 from .connections.gcloud_auth import get_firestore_client
-from .phrases.utils import generate_phrase_hash, generate_deck_name
-from .phrases.phrase_model import FirePhraseDataModel, Phrase, Translation, get_phrase
+from .phrases.utils import generate_phrase_hash
+from .phrases.phrase_model import FirePhraseDataModel, get_phrase, Translation
 from .logger import logger
 from langcodes import Language
 from .audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
@@ -172,7 +165,7 @@ class Utterance(BaseModel):
         
         return upload_to_gcs(obj=self.target_audio_normal, base_prefix=base_prefix, bucket_name=PUBLIC_BUCKET,file_name=self.target_audio_filename_normal, save_local=True)
         
-    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
+    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB"), force_refresh:bool = False) -> None:
         """Get the translated text with Wiktionary links for vocabulary words.
         Adds new fields into the model: target_text and wiktionary_links"""
         target_language = get_language(target_language)
@@ -189,7 +182,7 @@ class Utterance(BaseModel):
                 logger.debug(f"No source translation found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}")
                 raise ValueError(f"Source translation not found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}")
             if target_translation:
-                self.wiktionary_links = target_translation.get_wiktionary_links()
+                self.wiktionary_links = target_translation.get_wiktionary_links(force_refresh=force_refresh)
                 self.target_text = target_translation.text
             else:
                 logger.debug(f"No translation found for phrase hash {self.phrase_hash} in language {target_language.to_tag()}")
@@ -275,7 +268,7 @@ class Story(FirePhraseDataModel):
 
         return story_obj
 
-    def publish_story(self, target_language:Language|str, source_language:Language|str="en-GB", overwrite:bool=False) -> str:
+    def publish_story(self, target_language:Language|str, source_language:Language|str="en-GB", overwrite:bool=False, force_wiktionary_refresh:bool=False) -> str:
         """Publish the story to the public GCS bucket for the specified language pair."""
         target_language = get_language(target_language)
         source_language = get_language(source_language)
@@ -286,7 +279,7 @@ class Story(FirePhraseDataModel):
                 logger.info(f"Story '{self.title}' already published for {source_language.to_tag()} -> {target_language.to_tag()}")
                 return
             
-        self._load_story_translation(target_language=target_language, source_language=source_language)
+        self._load_story_translation(target_language=target_language, source_language=source_language, force_refresh=force_wiktionary_refresh)
         self._verify_translation_loaded()
         gcs_path = self._get_gcs_path()
 
@@ -352,7 +345,7 @@ class Story(FirePhraseDataModel):
             self._verify_utterances_loaded()
             return
         else:
-            raise ValueError(f"We do not have a translation loaded into the story, run self._load_story_translation()")
+            raise ValueError("We do not have a translation loaded into the story, run self._load_story_translation()")
     
     def _publish_story_parts_audio(self)->List[str]:
         """Publish all story parts audio"""
@@ -440,7 +433,7 @@ class Story(FirePhraseDataModel):
                 return True
         return False
 
-    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
+    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB"), force_refresh:bool = False) -> None:
         """Get the translated text with Wiktionary links for vocabulary words for all utterances.
         Adds new fields into each Utterance: target_text and wiktionary_links"""
         target_language = get_language(target_language)
@@ -454,7 +447,7 @@ class Story(FirePhraseDataModel):
         for story_part, utterances in self.story_parts.items():
             for utterance in utterances:
                 logger.debug(f"Getting translation for utterance seq {utterance.text} in part '{story_part}'")
-                utterance._load_story_translation(target_language=target_language, source_language=source_language)
+                utterance._load_story_translation(target_language=target_language, source_language=source_language, force_refresh=force_refresh)
 
         logger.debug(f"Generating audio with overwrite as False for {target_language}")
         self.generate_audio(language=target_language, overwrite=False)
@@ -464,7 +457,7 @@ class Story(FirePhraseDataModel):
     def _get_gcs_path(self) -> str:
         """Get the public GCS path for the story webpage"""
         if not self.target_language_tag or not self.source_language_tag:
-            raise ValueError(f"Run self._load_story_translation() first to populate self.target_language_tag")
+            raise ValueError("Run self._load_story_translation() first to populate self.target_language_tag")
 
         return f"stories/{self.source_language_tag}/{self.target_language_tag}/{self.key}/"
     

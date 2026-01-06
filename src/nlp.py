@@ -90,6 +90,20 @@ def get_vocab_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
     vocab = get_vocab_from_lemmas_and_pos(lemmas_and_pos)
     return vocab
 
+def get_verbs_from_phrases(phrases: List[str], language_code: str = "en") -> List[str]:
+    """
+    Extract verbs from a list of phrases.
+
+    Args:
+        phrases: List of phrases to analyze
+        language_code: BCP-47 language code (default: 'en')
+
+    Returns:
+        List of verbs
+    """
+    lemmas_and_pos = extract_lemmas_and_pos(phrases, language_code)
+    verbs = get_verbs_from_lemmas_and_pos(lemmas_and_pos)
+    return verbs
 
 def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract verbs from a set of (word, pos) tuples."""

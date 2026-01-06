@@ -1,7 +1,9 @@
 """Story generation LLM tool for creating English dialogue-based stories."""
 
-from typing import Any, Dict, List, Tuple
-
+import random
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..phrases.phrase_model import Phrase
 from .base import (
     DEFAULT_MODEL,
     get_anthropic_client,
@@ -85,10 +87,11 @@ def _get_structure_description() -> Tuple[str, int, str]:
 
 
 def generate_story(
-    phrase_list: List[str],
+    phrase_list: List[Phrase],
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
     temperature: float = 0.4,
+    num_phrases:int = 5
 ) -> Tuple[str, Dict]:
     """Generate an English dialogue-based story for language learning.
 
@@ -119,11 +122,16 @@ def generate_story(
             
         )
 
+        verbs = list({verb for phrase in phrase_list for verb in phrase.verbs})
+        vocab = list({word for phrase in phrase_list for word in phrase.vocab})
         # Load prompt templates
         system_template = load_prompt_template("story_generation", "system")
         user_template = load_prompt_template("story_generation", "user")
 
-        phrases_to_use = ", ".join(phrase_list)
+        phrase_list_text =list(map(str, phrase_list))
+        phrases_to_use = ", ".join(random.choices(phrase_list_text, k=num_phrases))
+        random.shuffle(verbs)
+        random.shuffle(vocab)
         # Substitute variables
         system_prompt = system_template.substitute()
         user_prompt = user_template.substitute(
@@ -131,6 +139,8 @@ def generate_story(
             structure_description=structure_desc,
             part_count=str(part_count),
             target_length=target_length,
+            verbs=", ".join(verbs),
+            vocab=", ".join(vocab),
         )
 
         # Get Anthropic client and create message
@@ -164,7 +174,8 @@ def generate_story(
         if not story_dialogue:
             raise ValueError("No dialogue parts found in response")
 
-        return story_name, story_dialogue
+        summary = story_dialogue.pop("summary")
+        return story_name, summary, story_dialogue
 
     except Exception as e:
         raise RuntimeError(f"Failed to generate story: {e}")
