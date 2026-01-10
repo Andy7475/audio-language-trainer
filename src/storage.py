@@ -136,7 +136,7 @@ def get_phrase_image_path(
 # ============================================================================
 
 
-def get_public_url_from_gcs_stub(gcs_stub:str)->str:
+def get_public_url_from_gcs_stub(gcs_stub: str) -> str:
     """Returns the public URL bit for the bucket/file_path element"""
     gcs_stub = gcs_stub.removeprefix("gs://")
     return f"https://storage.googleapis.com/{gcs_stub}"
@@ -243,7 +243,9 @@ def upload_file_to_gcs(
     if save_local:
         local_path = os.path.join(local_base_dir, bucket_name, file_path)
         directory = os.path.dirname(local_path)
-        logger.debug(f"creating directory for local save to {directory=} for {file_path=}")
+        logger.debug(
+            f"creating directory for local save to {directory=} for {file_path=}"
+        )
         os.makedirs(directory, exist_ok=True)
 
     # Handle different object types
@@ -419,7 +421,7 @@ def download_from_gcs(
                 else:  # Default to bytes
                     with open(local_path, "rb") as f:
                         return f.read()
-            except Exception as e:
+            except Exception:
                 logger.exception(f"Error reading local file {local_path}")
                 # Fall back to GCS if local read fails
 
@@ -602,6 +604,7 @@ def read_from_gcs(
 
 
 # Import from new location
+
 
 def sanitize_path_component(s: str) -> str:
     """

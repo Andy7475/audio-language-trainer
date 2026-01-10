@@ -12,6 +12,7 @@ from src.llm_tools.vocab_phrase_generation import generate_vocab_phrases
 from src.nlp import get_vocab_from_phrases
 from src.logger import logger
 
+
 def generate_phrases_from_vocab_dict(
     vocab_dict: Dict[str, List[str]],
     max_iterations: int = 10,
@@ -107,7 +108,9 @@ def _generate_verb_phrases_batch(
 
     for i, verb in enumerate(verb_list, 1):
         try:
-            logger.info(f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'")
+            logger.info(
+                f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'"
+            )
             result = generate_verb_phrases(verb)
 
             # Extract all phrases

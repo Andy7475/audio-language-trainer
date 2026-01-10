@@ -7,7 +7,7 @@ from typing import Literal, Optional
 import vertexai
 from PIL import Image
 from vertexai.preview.vision_models import ImageGenerationModel
-from src.connections.gcloud_auth import setup_authentication, _project_id, _credentials
+from src.connections.gcloud_auth import setup_authentication, _project_id
 from src.images.providers.base import ImageProvider
 
 

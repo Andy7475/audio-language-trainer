@@ -1,15 +1,22 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Literal, Annotated, Self
+from typing import List, Optional, Literal, Annotated, Self
 
 from langcodes import Language
-from pydantic import AliasChoices, BaseModel, Field, field_validator, BeforeValidator, ConfigDict, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    Field,
+    field_validator,
+    BeforeValidator,
+    ConfigDict,
+    model_validator,
+)
 from pydub import AudioSegment
 from PIL import Image
 from src.logger import logger
 from src.connections.gcloud_auth import get_firestore_client
-from src.phrases.utils import generate_phrase_hash, generate_deck_name
-from google.cloud.firestore import Client as FirestoreClient
+from src.phrases.utils import generate_phrase_hash
 from src.nlp import (
     extract_lemmas_and_pos,
     get_tokens_from_lemmas_and_pos,
@@ -127,11 +134,13 @@ class FirePhraseDataModel(BaseModel):
         description="The firestore document reference of the parent phrase",
     )
     key: str = Field(
-        ..., validation_alias=AliasChoices("phrase_hash", "key"), description="Key in Firestore to get the document reference"
+        ...,
+        validation_alias=AliasChoices("phrase_hash", "key"),
+        description="Key in Firestore to get the document reference",
     )
 
     @model_validator(mode="after")
-    def set_firestore_document_ref(self)->Self:
+    def set_firestore_document_ref(self) -> Self:
         if self.firestore_document_ref is None:
             self.firestore_document_ref = self._get_firestore_document_reference()
         return self
@@ -163,7 +172,9 @@ class Phrase(FirePhraseDataModel):
     verbs, and vocabulary. Translations are stored in a subcollection and fetched separately.
     """
 
-    firestore_collection: str = Field(default="phrases", description="Firestore collection name for phrases")
+    firestore_collection: str = Field(
+        default="phrases", description="Firestore collection name for phrases"
+    )
     english: str = Field(
         ..., description="Original English phrase with original capitalisation"
     )
@@ -181,12 +192,16 @@ class Phrase(FirePhraseDataModel):
         default_factory=dict,
         description="Dictionary of translations keyed by language tag (e.g., 'fr-FR')",
     )
-    collection: Optional[str] = Field(default=None, description="Collection this phrase belongs to"
+    collection: Optional[str] = Field(
+        default=None, description="Collection this phrase belongs to"
     )
-    deck: Optional[str] = Field(default=None, description="What deck this phrase is in e.g. Pack01")
+    deck: Optional[str] = Field(
+        default=None, description="What deck this phrase is in e.g. Pack01"
+    )
 
     def __str__(self) -> str:
         return self.english
+
     @classmethod
     def create(cls, english_phrase: str) -> Phrase:
         """Factory method to create a Phrase with NLP processing.
@@ -215,7 +230,7 @@ class Phrase(FirePhraseDataModel):
         phrase.translations[en_translation.language.to_tag()] = en_translation
 
         return phrase
-    
+
     def get_phrase_hash(self) -> str:
         """Generate a unique hash for this phrase based on English text.
 
@@ -229,7 +244,9 @@ class Phrase(FirePhraseDataModel):
         """
         return generate_phrase_hash(self.english)
 
-    def _get_translation_firestore_document_ref(self, language: Language) -> DocumentReference:
+    def _get_translation_firestore_document_ref(
+        self, language: Language
+    ) -> DocumentReference:
         """Get the Firestore document reference for a specific translation.
 
         Args:
@@ -239,9 +256,11 @@ class Phrase(FirePhraseDataModel):
         """
         if self.firestore_document_ref is None:
             self._get_firestore_document_reference()
-        translation_doc_ref = self.firestore_document_ref.collection("translations").document(language.to_tag())
+        translation_doc_ref = self.firestore_document_ref.collection(
+            "translations"
+        ).document(language.to_tag())
         return translation_doc_ref
-    
+
     def _has_translation(self, language: Language | str) -> bool:
         """Check if a translation exists for the given language.
 
@@ -268,8 +287,8 @@ class Phrase(FirePhraseDataModel):
         if not self._has_translation(language):
             if language.to_tag() == "en-GB":
                 logger.info("No existing en-GB translation, creating one")
-                self.translations['en-GB'] = self._get_english_translation()
-                return self.translations['en-GB']
+                self.translations["en-GB"] = self._get_english_translation()
+                return self.translations["en-GB"]
             raise ValueError(f"No translation found for language {language.to_tag()}")
 
         return self.translations[language.to_tag()]
@@ -343,8 +362,8 @@ class Phrase(FirePhraseDataModel):
             return self._get_translation(target_language)
 
         if target_language.to_tag() == "en-GB":
-            self.translations['en-GB'] = self._get_english_translation()
-            return self.translations['en-GB']
+            self.translations["en-GB"] = self._get_english_translation()
+            return self.translations["en-GB"]
         if translated_text is None:
             # Step 1: Translate with Google Translate
             translated_text = translate_with_google_translate(
@@ -366,7 +385,9 @@ class Phrase(FirePhraseDataModel):
         language_code = target_language.language
         tokens = get_text_tokens(translated_text, language_code=language_code)
 
-        translation_document_ref = self._get_translation_firestore_document_ref(target_language)
+        translation_document_ref = self._get_translation_firestore_document_ref(
+            target_language
+        )
         # Step 4: Create the Translation object
         translation = Translation(
             key=self.key,
@@ -405,20 +426,22 @@ class Phrase(FirePhraseDataModel):
             RuntimeError: If upload fails
         """
         if language:
-            logger.info(f"Uploading phrase {self.key} with {language.to_tag()} translation to Firestore and GCS")
+            logger.info(
+                f"Uploading phrase {self.key} with {language.to_tag()} translation to Firestore and GCS"
+            )
         else:
-            logger.info(f"Uploading phrase {self.key} with all translations to Firestore and GCS")
-
+            logger.info(
+                f"Uploading phrase {self.key} with all translations to Firestore and GCS"
+            )
 
         doc_ref = self._upload_to_firestore()
-
 
         # Step 3 & 4: Upload audio and images to GCS
         self._upload_translations(language=language, overwrite=overwrite)
 
         return doc_ref
 
-    def download(self, language: Language | None = None, local:bool = True) -> None:
+    def download(self, language: Language | None = None, local: bool = True) -> None:
         """Download multimedia files for all translations from GCS.
 
         This method downloads audio and image files for all translations (or a specific language).
@@ -438,9 +461,13 @@ class Phrase(FirePhraseDataModel):
 
         """
         if language:
-            logger.info(f"Downloading multimedia for phrase {self.key} - {language.to_tag()} translation only")
+            logger.info(
+                f"Downloading multimedia for phrase {self.key} - {language.to_tag()} translation only"
+            )
         else:
-            logger.info(f"Downloading multimedia for phrase {self.key} - all translations")
+            logger.info(
+                f"Downloading multimedia for phrase {self.key} - all translations"
+            )
 
         download_all_languages = True
         if language is not None:
@@ -483,7 +510,8 @@ class Phrase(FirePhraseDataModel):
         if language is not None:
             language = get_language(language)
             self.translations[language.to_tag()].generate_audio(
-                context=context, gender=gender, overwrite=overwrite, local=local)
+                context=context, gender=gender, overwrite=overwrite, local=local
+            )
 
         else:
             for translation in self.translations.values():
@@ -541,16 +569,19 @@ class Phrase(FirePhraseDataModel):
             )
         translation = self.translations[language_tag]
 
-       # Update image file path for bespoke images - it will have a default one created during translation
+        # Update image file path for bespoke images - it will have a default one created during translation
         if language_tag != "en-GB":
             translation._set_image_file_path(default=False)
 
-        if check_blob_exists(self.bucket_name, translation.image_file_path) and not overwrite:
-            logger.info(f"Image already exists at {translation.image_file_path}, skipping generation")
+        if (
+            check_blob_exists(self.bucket_name, translation.image_file_path)
+            and not overwrite
+        ):
+            logger.info(
+                f"Image already exists at {translation.image_file_path}, skipping generation"
+            )
             self.download(language=target_language, local=False)
             return
-
- 
 
         prompt = generate_phrase_image_prompt(self.english)
 
@@ -691,15 +722,13 @@ class Phrase(FirePhraseDataModel):
 
         return translation.image
 
-    def _upload_to_firestore(
-        self
-    ) -> DocumentReference:
+    def _upload_to_firestore(self) -> DocumentReference:
         """Upload a phrase and its translations to Firestore.
 
         Uploads the phrase document to `phrases/{phrase_hash}` and each translation to
         `phrases/{phrase_hash}/translations/{language_code}` subcollection.
         """
-        
+
         if self.firestore_document_ref is None:
             self.firestore_document_ref = self._get_firestore_document_reference()
         phrase_data = self.model_dump(mode="json", exclude={"translations"})
@@ -799,7 +828,7 @@ class PhraseAudio(FirePhraseDataModel):
             context=context,
             speed=speed,
             voice_info=voice_info,
-            gender=gender
+            gender=gender,
         )
 
     def _upload_to_gcs(self) -> None:
@@ -817,7 +846,9 @@ class PhraseAudio(FirePhraseDataModel):
             Warning(f"No audio_segment to upload for {self.model_dump()}")
             return
 
-        logger.info(f"Uploading audio: {self.language.to_tag()} {self.context}/{self.speed} to {self.file_path} (local cache enabled)")
+        logger.info(
+            f"Uploading audio: {self.language.to_tag()} {self.context}/{self.speed} to {self.file_path} (local cache enabled)"
+        )
 
         try:
             upload_file_to_gcs(
@@ -829,14 +860,14 @@ class PhraseAudio(FirePhraseDataModel):
         except Exception as e:
             raise ValueError(f"Failed to upload audio to {self.file_path}: {e}")
 
-    def download(self, local:bool=True) -> None:
+    def download(self, local: bool = True) -> None:
         """Download audio file from GCS.
 
         Public method to download the audio segment from GCS and populate the audio_segment field.
         """
         self._download_from_gcs(local=local)
 
-    def _download_from_gcs(self, local:bool) -> AudioSegment:
+    def _download_from_gcs(self, local: bool) -> AudioSegment:
         """Download this audio file from GCS.
 
         Downloads the audio from GCS using the stored file_path and stores it in audio_segment.
@@ -851,7 +882,9 @@ class PhraseAudio(FirePhraseDataModel):
             ValueError: If download fails
         """
         local_status = "with local cache" if local else "without local cache"
-        logger.info(f"Downloading audio: {self.language.to_tag()} {self.context}/{self.speed} from {self.file_path} ({local_status})")
+        logger.info(
+            f"Downloading audio: {self.language.to_tag()} {self.context}/{self.speed} from {self.file_path} ({local_status})"
+        )
 
         try:
             audio_segment = download_from_gcs(
@@ -876,7 +909,8 @@ class PhraseAudio(FirePhraseDataModel):
         )
 
         self.duration_seconds = self.audio_segment.duration_seconds
-        #self._upload_to_gcs() # should be a separate call to .upload()
+        # self._upload_to_gcs() # should be a separate call to .upload()
+
 
 class Translation(FirePhraseDataModel):
     """Pydantic model representing a translation of a phrase in Firestore.
@@ -888,7 +922,6 @@ class Translation(FirePhraseDataModel):
     Binary data (image) are excluded from Firestore serialization.
     Audio segments are attached to PhraseAudio objects and loaded on demand.
     """
-
 
     language: BCP47Language = Field(
         ..., description="BCP-47 language tag for the translation"
@@ -915,7 +948,9 @@ class Translation(FirePhraseDataModel):
 
     @field_validator("audio", mode="before")
     @classmethod
-    def _ensure_audio_dict(cls, value: None | dict | List[PhraseAudio]) -> dict[str, dict[str, PhraseAudio]]:
+    def _ensure_audio_dict(
+        cls, value: None | dict | List[PhraseAudio]
+    ) -> dict[str, dict[str, PhraseAudio]]:
         """Ensure audio is always a dict, even if None or list is provided.
 
         Handles migration from old list format to new nested dict format.
@@ -969,15 +1004,16 @@ class Translation(FirePhraseDataModel):
             - Preserves original token order and casing
         """
         from src.wiktionary.lookup import get_wiktionary_urls
+
         # Extract language code (e.g., 'fr' from 'fr-FR')
         language_code = self.language.language
 
         # Get or fetch entries for all tokens (batch operation)
-        links =  get_wiktionary_urls(words=self.tokens, lang_code=language_code)
+        links = get_wiktionary_urls(words=self.tokens, lang_code=language_code)
 
         return separator.join(links)
 
-    def download(self, local:bool = True) -> None:
+    def download(self, local: bool = True) -> None:
         """Download all multimedia files from GCS.
 
         Public method to download all audio files and the image for this translation.
@@ -988,10 +1024,12 @@ class Translation(FirePhraseDataModel):
         """
         self._download_from_gcs(local=local)
 
-    def _download_from_gcs(self, local:bool) -> None:
+    def _download_from_gcs(self, local: bool) -> None:
         """Downloads multimedia files from GCS"""
 
-        logger.info(f"Downloading all multimedia for {self.language.to_tag()} translation")
+        logger.info(
+            f"Downloading all multimedia for {self.language.to_tag()} translation"
+        )
 
         for context_dict in self.audio.values():
             for phrase_audio in context_dict.values():
@@ -1006,13 +1044,17 @@ class Translation(FirePhraseDataModel):
         self._upload_to_gcs(overwrite=overwrite)
         return doc_ref
 
-
     def _get_firestore_document_reference(self) -> DocumentReference:
-        """Get or create a Firestore document reference for this phrase.
-        """
+        """Get or create a Firestore document reference for this phrase."""
         client = get_firestore_client(self.firestore_database)
-        doc_ref = client.collection("phrases").document(self.key).collection("translations").document(self.language.to_tag())
+        doc_ref = (
+            client.collection("phrases")
+            .document(self.key)
+            .collection("translations")
+            .document(self.language.to_tag())
+        )
         return doc_ref
+
     def _upload_to_firestore(self) -> DocumentReference:
         """Uploads the translation text and URLs to firestore"""
         if self.firestore_document_ref is None:
@@ -1024,18 +1066,30 @@ class Translation(FirePhraseDataModel):
     def _upload_to_gcs(self, overwrite: bool = False) -> None:
         """Upload multimedia files to GCS"""
 
-        logger.info(f"Uploading all multimedia for {self.language.to_tag()} translation")
+        logger.info(
+            f"Uploading all multimedia for {self.language.to_tag()} translation"
+        )
 
         if self.audio:
             for context_dict in self.audio.values():
                 for phrase_audio in context_dict.values():
-                    if check_blob_exists(self.bucket_name, phrase_audio.file_path) and not overwrite:
-                        logger.info(f"Audio already exists at {phrase_audio.file_path}, skipping upload")
+                    if (
+                        check_blob_exists(self.bucket_name, phrase_audio.file_path)
+                        and not overwrite
+                    ):
+                        logger.info(
+                            f"Audio already exists at {phrase_audio.file_path}, skipping upload"
+                        )
                     else:
                         phrase_audio._upload_to_gcs()
         if self.image:
-            if check_blob_exists(self.bucket_name, self.image_file_path) and not overwrite:
-                logger.info(f"Image already exists at {self.image_file_path}, skipping upload")
+            if (
+                check_blob_exists(self.bucket_name, self.image_file_path)
+                and not overwrite
+            ):
+                logger.info(
+                    f"Image already exists at {self.image_file_path}, skipping upload"
+                )
             else:
                 self._upload_image_to_gcs()
 
@@ -1069,7 +1123,9 @@ class Translation(FirePhraseDataModel):
         if self.image_file_path is None:
             raise ValueError("image_file_path is not set")
 
-        logger.info(f"Uploading image: {self.language.to_tag()} to {self.image_file_path} (local cache enabled)")
+        logger.info(
+            f"Uploading image: {self.language.to_tag()} to {self.image_file_path} (local cache enabled)"
+        )
 
         uri = upload_file_to_gcs(
             obj=self.image,
@@ -1080,11 +1136,13 @@ class Translation(FirePhraseDataModel):
 
         return uri
 
-    def _download_image_from_gcs(self, local:bool) -> Image.Image:
+    def _download_image_from_gcs(self, local: bool) -> Image.Image:
         """Downloads image file from GCS"""
 
         local_status = "with local cache" if local else "without local cache"
-        logger.info(f"Downloading image: {self.language.to_tag()} from {self.image_file_path} ({local_status})")
+        logger.info(
+            f"Downloading image: {self.language.to_tag()} from {self.image_file_path} ({local_status})"
+        )
 
         # Download from GCS (will use local cache if available)
         image = download_from_gcs(
@@ -1136,7 +1194,7 @@ class Translation(FirePhraseDataModel):
         context: Literal["flashcard", "story"],
         gender: Literal["MALE", "FEMALE"] = "FEMALE",
         overwrite: bool = False,
-        local:bool = True,
+        local: bool = True,
     ) -> None:
         """Generate audio for this translation at appropriate speeds based on context."""
 
@@ -1170,7 +1228,9 @@ class Translation(FirePhraseDataModel):
                     context=context,
                     speed=speed,
                 )
-                logger.info(f"Downloading existing audio from GCS for {self.language.to_tag()} {context} {speed}")
+                logger.info(
+                    f"Downloading existing audio from GCS for {self.language.to_tag()} {context} {speed}"
+                )
                 audio_segment = download_from_gcs(
                     bucket_name=self.bucket_name,
                     file_path=file_path,

@@ -7,9 +7,12 @@ from src.connections.gcloud_auth import get_firestore_client
 from src.models import BCP47Language, get_language
 from google.cloud.firestore_v1 import FieldFilter, DocumentReference
 
-def get_phrases_by_collection(collection_name: str, deck:str | None = None) -> List[Phrase]:
+
+def get_phrases_by_collection(
+    collection_name: str, deck: str | None = None
+) -> List[Phrase]:
     """Retrieve phrases belonging to a specific collection or collections.
-        collection_name: Name of the collection to filter phrases   
+        collection_name: Name of the collection to filter phrases
     Returns:
         List of Phrases.
 
@@ -34,7 +37,8 @@ def get_phrases_by_collection(collection_name: str, deck:str | None = None) -> L
 
     return phrases
 
-def _get_translations(document_ref:DocumentReference) -> dict[str, Translation]:
+
+def _get_translations(document_ref: DocumentReference) -> dict[str, Translation]:
     """Helper function to get translations for a phrase document.
 
     Args:
@@ -50,7 +54,9 @@ def _get_translations(document_ref:DocumentReference) -> dict[str, Translation]:
     return TRANSLATIONS
 
 
-def _get_phrase_coverage(phrase: Phrase, target_verbs: Set[str], target_vocab: Set[str]) -> float:
+def _get_phrase_coverage(
+    phrase: Phrase, target_verbs: Set[str], target_vocab: Set[str]
+) -> float:
     """Helper function to get which target items a phrase covers.
 
     Args:
@@ -76,6 +82,7 @@ def _get_phrase_coverage(phrase: Phrase, target_verbs: Set[str], target_vocab: S
     target_items = target_verbs | target_vocab
     covered_items = phrase_items & target_items
     return covered_items
+
 
 def find_minimum_coverage_phrases(
     phrases: List[Phrase],
@@ -116,19 +123,22 @@ def find_minimum_coverage_phrases(
     def _update_verbs(phrase: Phrase, remaining_verbs: Set[str]) -> Set[str]:
         phrase_verbs = set(phrase.verbs)
         return remaining_verbs - phrase_verbs
-    
+
     def _update_vocab(phrase: Phrase, remaining_vocab: Set[str]) -> Set[str]:
         phrase_vocab = set(phrase.vocab)
         return remaining_vocab - phrase_vocab
+
     # Track selected phrases
     selected_phrases: List[Phrase] = []
 
-    while (remaining_verbs or remaining_vocab):
+    while remaining_verbs or remaining_vocab:
         best_phrase = None
         best_coverage = 0.0
 
         for phrase in phrases:
-            phrase_coverage = _get_phrase_coverage(phrase, remaining_verbs, remaining_vocab)
+            phrase_coverage = _get_phrase_coverage(
+                phrase, remaining_verbs, remaining_vocab
+            )
             if phrase_coverage == 1:
                 best_phrase = phrase
                 break
@@ -136,7 +146,9 @@ def find_minimum_coverage_phrases(
                 best_phrase = phrase
 
         if not best_phrase:
-            print(f"Warning: Cannot achieve complete coverage. Missing verbs: {remaining_verbs}, vocab: {remaining_vocab}")
+            print(
+                f"Warning: Cannot achieve complete coverage. Missing verbs: {remaining_verbs}, vocab: {remaining_vocab}"
+            )
             break
 
         selected_phrases.append(best_phrase)

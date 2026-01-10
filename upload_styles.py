@@ -14,7 +14,9 @@ def upload_styles_to_gcs():
     # Load the CSS content
 
     for style_sheet in style_sheets:
-        styles_content = load_template(filename=style_sheet, parent_path=f"src/templates")
+        styles_content = load_template(
+            filename=style_sheet, parent_path="src/templates"
+        )
 
         # Upload to GCS
         public_url = upload_to_gcs(
@@ -27,6 +29,7 @@ def upload_styles_to_gcs():
 
         print("✅ Styles uploaded successfully!")
         print(f"🌐 Public URL: {public_url}")
+
 
 if __name__ == "__main__":
     upload_styles_to_gcs()

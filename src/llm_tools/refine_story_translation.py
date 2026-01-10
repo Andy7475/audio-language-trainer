@@ -11,19 +11,22 @@ from src.llm_tools.base import (
     DEFAULT_MODEL,
 )
 
+
 def return_story_part_schema() -> Dict[str, Any]:
     return {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "speaker": {"type": "string"},
-                        "text": {"type": "string"},
-                        "translation": {"type": "string"},
-                    },
-                    "required": ["speaker", "text", "translation"],
-                },
-            }
+        "type": "array",
+        "items": {
+            "type": "object",
+            "properties": {
+                "speaker": {"type": "string"},
+                "text": {"type": "string"},
+                "translation": {"type": "string"},
+            },
+            "required": ["speaker", "text", "translation"],
+        },
+    }
+
+
 # Tool definition
 TOOL_SCHEMA = {
     "name": "refine_story_translation",
@@ -36,7 +39,7 @@ TOOL_SCHEMA = {
             "part_3": return_story_part_schema(),
         },
         "required": ["part_1", "part_2", "part_3"],
-    }
+    },
 }
 
 

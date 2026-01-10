@@ -4,15 +4,10 @@ import json
 import os
 import pickle
 import re
-import time
 from collections import defaultdict
 from typing import Any, Dict, List, Literal, Optional
 
-import vertexai
-from anthropic import Anthropic, AnthropicVertex
 from dotenv import load_dotenv
-from google.cloud import aiplatform
-from tqdm import tqdm
 from jinja2 import Environment, FileSystemLoader
 
 load_dotenv()  # so we can use environment variables for various global settings
@@ -248,8 +243,6 @@ def get_caller_name():
     return caller_frame.function
 
 
-
-
 def extract_json_from_llm_response(response):
     """
     Extract JSON from an LLM response.
@@ -273,7 +266,8 @@ def extract_json_from_llm_response(response):
         print("No JSON-like structure found in the response")
         return None
 
-def render_html_content(data:dict, template_name:str)->str:
+
+def render_html_content(data: dict, template_name: str) -> str:
     """Renders HTML content via Jinja2
 
     Args:

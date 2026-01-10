@@ -43,5 +43,3 @@ def get_language(language: Union[str, Language]) -> Language:
     if isinstance(language, str):
         return Language.get(language)
     return language
-
-

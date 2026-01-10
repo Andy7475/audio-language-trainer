@@ -1,10 +1,11 @@
-from typing import List, Set, Tuple
+from typing import List, Tuple
 
 
 from src.connections.gcloud_auth import get_nlp_client
 from google.cloud import language_v1
 from google.api_core.exceptions import InvalidArgument
 from src.logger import logger
+
 
 def analyze_text_syntax(
     text: str, language_code: str = "en"
@@ -39,7 +40,8 @@ def analyze_text_syntax(
     except InvalidArgument as e:
         # Raised by the API when the provided language is not supported
         logger.warning(
-            "analyze_text_syntax: language not supported by Google NLP: %s", language_code
+            "analyze_text_syntax: language not supported by Google NLP: %s",
+            language_code,
         )
         raise ValueError(
             f"Language '{language_code}' may not be supported by Google Natural Language API for syntax analysis."
@@ -90,6 +92,7 @@ def get_vocab_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
     vocab = get_vocab_from_lemmas_and_pos(lemmas_and_pos)
     return vocab
 
+
 def get_verbs_from_phrases(phrases: List[str], language_code: str = "en") -> List[str]:
     """
     Extract verbs from a list of phrases.
@@ -104,6 +107,7 @@ def get_verbs_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
     lemmas_and_pos = extract_lemmas_and_pos(phrases, language_code)
     verbs = get_verbs_from_lemmas_and_pos(lemmas_and_pos)
     return verbs
+
 
 def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract verbs from a set of (word, pos) tuples."""
@@ -146,7 +150,7 @@ def get_text_tokens(text: str, language_code: str = "en") -> List[str]:
         response = analyze_text_syntax(text, language_code)
         tokens = [token.text.content for token in response.tokens]
         return tokens if tokens else text.split()
-    except Exception as e:
+    except Exception:
         logger.exception(f"API Tokenization failed for {language_code}")
         # Fallback: split on spaces if present, otherwise return whole text as one token
         return text.split() if " " in text else [text]

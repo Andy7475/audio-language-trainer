@@ -2,6 +2,7 @@
 
 import random
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
+
 if TYPE_CHECKING:
     from src.phrases.phrase_model import Phrase
 from src.llm_tools.base import (
@@ -40,6 +41,7 @@ def _build_story_schema() -> Dict[str, Any]:
             },
             "required": ["dialogue"],
         }
+
     properties = {
         "story_name": {
             "type": "string",
@@ -47,7 +49,7 @@ def _build_story_schema() -> Dict[str, Any]:
         },
         "summary": {
             "type": "string",
-            "description": "Brief 1 - 2 sentence summary of the story"
+            "description": "Brief 1 - 2 sentence summary of the story",
         },
         "part_1": part_schema(),
         "part_2": part_schema(),
@@ -91,7 +93,7 @@ def generate_story(
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
     temperature: float = 0.4,
-    num_phrases:int = 5
+    num_phrases: int = 5,
 ) -> Tuple[str, Dict]:
     """Generate an English dialogue-based story for language learning.
 
@@ -113,14 +115,11 @@ def generate_story(
 
     """
     try:
-
         # Build dynamic schema based on verb count
         story_schema = _build_story_schema()
 
         # Get structure description for prompt
-        structure_desc, part_count, target_length = _get_structure_description(
-            
-        )
+        structure_desc, part_count, target_length = _get_structure_description()
 
         verbs = list({verb for phrase in phrase_list for verb in phrase.verbs})
         vocab = list({word for phrase in phrase_list for word in phrase.vocab})
@@ -128,7 +127,7 @@ def generate_story(
         system_template = load_prompt_template("story_generation", "system")
         user_template = load_prompt_template("story_generation", "user")
 
-        phrase_list_text =list(map(str, phrase_list))
+        phrase_list_text = list(map(str, phrase_list))
         phrases_to_use = ", ".join(random.choices(phrase_list_text, k=num_phrases))
         random.shuffle(verbs)
         random.shuffle(vocab)

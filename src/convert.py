@@ -237,5 +237,3 @@ def convert_PIL_image_to_base64(pil_image, format="PNG") -> str:
     buffer.seek(0)
     image_bytes = buffer.read()
     return convert_bytes_to_base64(image_bytes)
-
-

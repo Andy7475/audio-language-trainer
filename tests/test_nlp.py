@@ -7,6 +7,7 @@ from src.nlp import (
     remove_matching_words,
 )
 import pytest
+from typing import Dict, List
 
 
 @pytest.mark.parametrize(
@@ -114,10 +115,6 @@ def test_extract_substring_matches_question_marks(
 ):
     result = extract_substring_matches(new_phrases, target_phrases)
     assert result == expected
-
-
-import pytest
-from typing import Dict, List
 
 
 @pytest.mark.parametrize(

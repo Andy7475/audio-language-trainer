@@ -4,7 +4,7 @@ This script shows various ways to create flashcard decks from Phrase objects
 with different source and target language combinations.
 """
 
-from src.phrases.phrase_model import get_phrase_by_english, Phrase
+from src.phrases.phrase_model import get_phrase_by_english
 from src.anki_tools import (
     create_anki_deck,
     save_anki_deck,

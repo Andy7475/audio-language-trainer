@@ -30,9 +30,7 @@ Example usage:
 """
 
 import os
-import shutil
 import uuid
-from pathlib import Path
 from typing import List, Union, Optional
 from tempfile import TemporaryDirectory
 
@@ -48,7 +46,10 @@ from src.logger import logger
 # ANKI MODEL DEFINITION
 # ============================================================================
 
-def get_anki_model(model_id: int = 1607392319, model_name: str = "FirePhrase2") -> genanki.Model:
+
+def get_anki_model(
+    model_id: int = 1607392319, model_name: str = "FirePhrase2"
+) -> genanki.Model:
     """Get the Anki model (note type) for language learning flashcards.
 
     This model supports three card types:
@@ -102,6 +103,7 @@ def get_anki_model(model_id: int = 1607392319, model_name: str = "FirePhrase2") 
 # HELPER FUNCTIONS
 # ============================================================================
 
+
 def _get_sort_field(order: int, text: str) -> str:
     """Create a unique sort field using order and text hash.
 
@@ -127,12 +129,13 @@ def _string_to_large_int(text: str) -> int:
         int: Large integer suitable for Anki IDs
     """
     # Use Python's hash function and ensure it's positive and large enough
-    return abs(hash(text)) % (10 ** 10)
+    return abs(hash(text)) % (10**10)
 
 
 # ============================================================================
 # CORE FUNCTIONS: PHRASE TO ANKI NOTE
 # ============================================================================
+
 
 def create_anki_note_from_phrase(
     phrase: Phrase,
@@ -140,7 +143,7 @@ def create_anki_note_from_phrase(
     target_language: Union[str, BCP47Language],
     index: int,
     model: genanki.Model,
-    temp_dir: str
+    temp_dir: str,
 ) -> tuple[genanki.Note, list[str]]:
     """Create an Anki note from a single Phrase object.
 
@@ -261,6 +264,7 @@ def create_anki_note_from_phrase(
 # ============================================================================
 # DECK CREATION
 # ============================================================================
+
 
 def create_anki_deck(
     phrases: List[Phrase],

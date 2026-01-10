@@ -14,7 +14,9 @@ def test_firestore_connection():
     logger.info("Testing Firestore connection...")
     try:
         client = get_firestore_client()
-        logger.info(f"✓ Successfully connected to Firestore database: {client.database}")
+        logger.info(
+            f"✓ Successfully connected to Firestore database: {client.database}"
+        )
         return True
     except Exception as e:
         logger.info(f"✗ Failed to connect to Firestore: {e}")
@@ -82,7 +84,9 @@ def main():
     connection_ok = test_firestore_connection()
 
     if not connection_ok:
-        logger.info("\n⚠ Firestore connection failed. Cannot proceed with further tests.")
+        logger.info(
+            "\n⚠ Firestore connection failed. Cannot proceed with further tests."
+        )
         logger.info("Make sure your Google Cloud credentials are configured:")
         logger.info("  - Run: gcloud auth application-default login")
         logger.info("  - Or set GOOGLE_APPLICATION_CREDENTIALS environment variable")
@@ -108,7 +112,9 @@ def main():
     logger.info("=" * 60)
 
     if connection_ok and model_ok and upload_ok:
-        logger.info("\n🎉 All tests passed! Firestore integration is working correctly.")
+        logger.info(
+            "\n🎉 All tests passed! Firestore integration is working correctly."
+        )
     else:
         logger.info("\n⚠ Some tests failed. Please review the output above.")
 

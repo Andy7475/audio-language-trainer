@@ -3,6 +3,7 @@
 from enum import Enum
 from pydub import AudioSegment
 from pathlib import Path
+
 # Audio processing constants
 DEFAULT_SAMPLE_RATE = 16000
 DEFAULT_FRAME_RATE = 44100

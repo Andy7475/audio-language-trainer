@@ -23,5 +23,6 @@ def generate_phrase_hash(english_text: str) -> str:
 
     return f"{slug}_{hash_suffix}"
 
-def generate_deck_name(collection:str, deck:str)->str:
+
+def generate_deck_name(collection: str, deck: str) -> str:
     return f"{collection}-{deck}"

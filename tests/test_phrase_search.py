@@ -1,7 +1,6 @@
 """Tests for phrase search and coverage algorithms."""
 
 import pytest
-from typing import Set
 
 from src.phrases.phrase_model import Phrase, Translation
 from src.phrases.search import (

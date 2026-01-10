@@ -6,7 +6,6 @@ flashcard decks from Phrase objects with various language combinations.
 
 import os
 import tempfile
-from unittest.mock import Mock, patch
 
 import pytest
 import genanki
@@ -158,7 +157,7 @@ def test_string_to_large_int():
 
     # Should be a large positive integer
     assert id1 > 0
-    assert id1 < 10 ** 10
+    assert id1 < 10**10
 
 
 def test_create_anki_note_from_phrase(mock_phrase):
