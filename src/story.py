@@ -165,7 +165,7 @@ class Utterance(BaseModel):
         
         return upload_to_gcs(obj=self.target_audio_normal, base_prefix=base_prefix, bucket_name=PUBLIC_BUCKET,file_name=self.target_audio_filename_normal, save_local=True)
         
-    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB"), force_refresh:bool = False) -> None:
+    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
         """Get the translated text with Wiktionary links for vocabulary words.
         Adds new fields into the model: target_text and wiktionary_links"""
         target_language = get_language(target_language)
@@ -182,7 +182,7 @@ class Utterance(BaseModel):
                 logger.debug(f"No source translation found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}")
                 raise ValueError(f"Source translation not found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}")
             if target_translation:
-                self.wiktionary_links = target_translation.get_wiktionary_links(force_refresh=force_refresh)
+                self.wiktionary_links = target_translation.get_wiktionary_links()
                 self.target_text = target_translation.text
             else:
                 logger.debug(f"No translation found for phrase hash {self.phrase_hash} in language {target_language.to_tag()}")
@@ -268,8 +268,10 @@ class Story(FirePhraseDataModel):
 
         return story_obj
 
-    def publish_story(self, target_language:Language|str, source_language:Language|str="en-GB", overwrite:bool=False, force_wiktionary_refresh:bool=False) -> str:
-        """Publish the story to the public GCS bucket for the specified language pair."""
+    def publish_story(self, target_language:Language|str, source_language:Language|str="en-GB", overwrite:bool=False) -> str:
+        """Publish the story to the public GCS bucket for the specified language pair.
+        Overwrite will collect translation data again and re-publish, if overwrite is False and the story is already published
+        it will be skipped."""
         target_language = get_language(target_language)
         source_language = get_language(source_language)
 
@@ -279,7 +281,7 @@ class Story(FirePhraseDataModel):
                 logger.info(f"Story '{self.title}' already published for {source_language.to_tag()} -> {target_language.to_tag()}")
                 return
             
-        self._load_story_translation(target_language=target_language, source_language=source_language, force_refresh=force_wiktionary_refresh)
+        self._load_story_translation(target_language=target_language, source_language=source_language)
         self._verify_translation_loaded()
         gcs_path = self._get_gcs_path()
 
@@ -433,7 +435,7 @@ class Story(FirePhraseDataModel):
                 return True
         return False
 
-    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB"), force_refresh:bool = False) -> None:
+    def _load_story_translation(self, target_language:Language | str, source_language:Language | str =Language.get("en-GB")) -> None:
         """Get the translated text with Wiktionary links for vocabulary words for all utterances.
         Adds new fields into each Utterance: target_text and wiktionary_links"""
         target_language = get_language(target_language)
@@ -447,7 +449,7 @@ class Story(FirePhraseDataModel):
         for story_part, utterances in self.story_parts.items():
             for utterance in utterances:
                 logger.debug(f"Getting translation for utterance seq {utterance.text} in part '{story_part}'")
-                utterance._load_story_translation(target_language=target_language, source_language=source_language, force_refresh=force_refresh)
+                utterance._load_story_translation(target_language=target_language, source_language=source_language)
 
         logger.debug(f"Generating audio with overwrite as False for {target_language}")
         self.generate_audio(language=target_language, overwrite=False)

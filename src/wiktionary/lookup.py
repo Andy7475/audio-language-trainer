@@ -26,7 +26,10 @@ def _find_wiktionary_url_from_token(word:str, lang_code:str)->str:
     def _is_link(url:str)->bool:
         return url.startswith("<a href")
     
-    words_to_try = [word, word.lower(), word.title(), word.upper(), word.strip(string.punctuation)]
+    cases_to_try = [word, word.lower(), word.title(), word.upper()]
+    punc_strip = [word.strip(string.punctuation) for word in cases_to_try]
+    words_to_try = cases_to_try + punc_strip
+
     
     for search_word in words_to_try:
         url = get_wiktionary_url(search_word=search_word, original_word=word, lang_code=lang_code)

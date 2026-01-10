@@ -87,7 +87,7 @@ def _get_structure_description() -> Tuple[str, int, str]:
 
 
 def generate_story(
-    phrase_list: List[Phrase],
+    phrase_list: List["Phrase"],
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
     temperature: float = 0.4,
