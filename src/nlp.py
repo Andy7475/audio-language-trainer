@@ -9,7 +9,7 @@ from src.logger import logger
 
 def analyze_text_syntax(
     text: str, language_code: str = "en"
-) -> language_v1.AnalyzeSyntaxResponse:
+) -> language_v1.AnalyzeSyntaxResponse | None:
     """
     Analyze text syntax using Google Natural Language API.
 
@@ -43,9 +43,7 @@ def analyze_text_syntax(
             "analyze_text_syntax: language not supported by Google NLP: %s",
             language_code,
         )
-        raise ValueError(
-            f"Language '{language_code}' may not be supported by Google Natural Language API for syntax analysis."
-        ) from e
+        return None
 
 
 def extract_lemmas_and_pos(
@@ -65,14 +63,16 @@ def extract_lemmas_and_pos(
 
     for phrase in phrases:
         response = analyze_text_syntax(phrase, language_code)
+        if response:
+            for token in response.tokens:
+                # Get POS tag name (e.g., 'VERB', 'NOUN', 'ADJ')
+                pos_tag = language_v1.PartOfSpeech.Tag(token.part_of_speech.tag).name
 
-        for token in response.tokens:
-            # Get POS tag name (e.g., 'VERB', 'NOUN', 'ADJ')
-            pos_tag = language_v1.PartOfSpeech.Tag(token.part_of_speech.tag).name
+                lemma = token.lemma.lower()
 
-            lemma = token.lemma.lower()
+                vocab_set.append((lemma, pos_tag))
 
-            vocab_set.append((lemma, pos_tag))
+        return vocab_set
 
     return vocab_set
 
@@ -89,7 +89,14 @@ def get_vocab_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
         List of vocabulary words (non-verbs)
     """
     lemmas_and_pos = extract_lemmas_and_pos(phrases, language_code)
-    vocab = get_vocab_from_lemmas_and_pos(lemmas_and_pos)
+    if lemmas_and_pos:
+        vocab = get_vocab_from_lemmas_and_pos(lemmas_and_pos)
+    else:
+        logger.warning(
+            "get_vocab_from_phrases: no vocabulary found for phrases: %s",
+            phrases,
+        )
+        vocab = []
     return vocab
 
 
@@ -146,11 +153,9 @@ def get_text_tokens(text: str, language_code: str = "en") -> List[str]:
     if not text:
         return []
 
-    try:
-        response = analyze_text_syntax(text, language_code)
-        tokens = [token.text.content for token in response.tokens]
-        return tokens if tokens else text.split()
-    except Exception:
-        logger.exception(f"API Tokenization failed for {language_code}")
-        # Fallback: split on spaces if present, otherwise return whole text as one token
+    response = analyze_text_syntax(text, language_code)
+    if response:
+        return [token.text.content for token in response.tokens]
+    else:
         return text.split() if " " in text else [text]
+
