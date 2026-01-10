@@ -204,7 +204,7 @@ def text_to_speech_long_form(
     try:
         # Wait for the operation to complete
         operation.result(timeout=timeout)
-        print("✅ Audio generation complete!")
+        print("(y) Audio generation complete!")
 
         # Return the public URL
         public_url = f"https://storage.googleapis.com/{bucket_name}/{file_path}"

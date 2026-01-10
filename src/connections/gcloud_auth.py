@@ -53,7 +53,7 @@ def setup_authentication() -> Tuple[Credentials, str]:
         _credentials = credentials
         _project_id = project
 
-        print(f"✅ Authenticated with Google Cloud project: {project}")
+        print(f"(y) Authenticated with Google Cloud project: {project}")
         return credentials, project
     except Exception as e:
         print(f"❌ Failed to authenticate with Google Cloud: {e}")
@@ -116,7 +116,7 @@ def get_nlp_client() -> language_v1.LanguageServiceClient:
 
         # Create Natural Language client
         _nlp_client = language_v1.LanguageServiceClient()
-        print("✅ Natural Language API client initialized")
+        print("(y) Natural Language API client initialized")
         return _nlp_client
     except Exception as e:
         raise RuntimeError(f"Failed to create Natural Language API client: {e}")
@@ -143,7 +143,7 @@ def get_translate_client() -> translate.Client:
 
         # Create Translate client
         _translate_client = translate.Client()
-        print("✅ Google Translate API client initialized")
+        print("(y) Google Translate API client initialized")
         return _translate_client
     except Exception as e:
         raise RuntimeError(f"Failed to create Google Translate API client: {e}")
@@ -170,7 +170,7 @@ def get_texttospeech_client() -> texttospeech.TextToSpeechClient:
 
         # Create Text-to-Speech client
         _texttospeech_client = texttospeech.TextToSpeechClient()
-        print("✅ Google Text-to-Speech API client initialized")
+        print("(y) Google Text-to-Speech API client initialized")
         return _texttospeech_client
     except Exception as e:
         raise RuntimeError(f"Failed to create Text-to-Speech API client: {e}")
@@ -197,7 +197,7 @@ def get_storage_client() -> storage.Client:
 
         # Create Storage client
         _storage_client = storage.Client()
-        print("✅ Google Cloud Storage client initialized")
+        print("(y) Google Cloud Storage client initialized")
         return _storage_client
     except Exception as e:
         raise RuntimeError(f"Failed to create Storage client: {e}")
@@ -226,7 +226,7 @@ def get_texttospeech_long_client() -> (
 
         # Create Long Audio TTS client
         _texttospeech_long_client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
-        print("✅ Google Text-to-Speech Long Audio API client initialized")
+        print("(y) Google Text-to-Speech Long Audio API client initialized")
         return _texttospeech_long_client
     except Exception as e:
         raise RuntimeError(

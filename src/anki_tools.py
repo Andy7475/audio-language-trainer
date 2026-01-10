@@ -374,7 +374,7 @@ def create_anki_deck(
         package = genanki.Package(deck)
         package.media_files = all_media_files
 
-        logger.info(f"✅ Created deck with {len(notes)} notes")
+        logger.info(f"(y) Created deck with {len(notes)} notes")
 
         # Create parent directories
         os.makedirs(os.path.dirname(output_path), exist_ok=True)

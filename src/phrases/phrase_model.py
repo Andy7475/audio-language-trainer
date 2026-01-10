@@ -602,7 +602,7 @@ class Phrase(FirePhraseDataModel):
 
         # Set the image on the translation
         translation.image = image
-        logger.info(f"✅ Generated image for {language_tag}")
+        logger.info(f"(y) Generated image for {language_tag}")
 
     def get_audio(
         self,

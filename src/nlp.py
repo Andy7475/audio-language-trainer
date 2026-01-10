@@ -126,7 +126,7 @@ def get_vocab_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list
 def get_tokens_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract tokens from a set of (word, pos) tuples."""
     tokens = [word for word, pos in lemmas_and_pos if pos not in ["PUNCT"]]
-    return list(set(tokens))
+    return tokens
 
 
 def get_text_tokens(text: str, language_code: str = "en") -> List[str]:

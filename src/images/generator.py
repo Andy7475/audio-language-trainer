@@ -46,7 +46,7 @@ def generate_image(
                 provider = ImagenProvider()
                 image = provider.generate(prompt)
                 if image:
-                    print(f"✅ Successfully generated image with {model}")
+                    print(f"(y) Successfully generated image with {model}")
                     return image
                 else:
                     print(f"❌ {model} failed: API returned None")
@@ -55,7 +55,7 @@ def generate_image(
                 provider = StabilityProvider()
                 image = provider.generate(prompt)
                 if image:
-                    print(f"✅ Successfully generated image with {model}")
+                    print(f"(y) Successfully generated image with {model}")
                     return image
                 else:
                     print(f"❌ {model} failed: API returned None")
@@ -64,7 +64,7 @@ def generate_image(
                 provider = DeepAIProvider()
                 image = provider.generate(prompt)
                 if image:
-                    print(f"✅ Successfully generated image with {model}")
+                    print(f"(y) Successfully generated image with {model}")
                     return image
                 else:
                     print(f"❌ {model} failed: API returned None")

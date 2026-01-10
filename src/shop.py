@@ -516,7 +516,7 @@ def generate_product_images(
     )
 
     created_images["template_types"] = template_types_uri
-    print(f"✅ Template types image: {template_types_uri}")
+    print(f"(y) Template types image: {template_types_uri}")
 
     # Clean up template types temp files
     os.remove(temp_output)

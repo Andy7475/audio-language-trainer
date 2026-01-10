@@ -27,7 +27,7 @@ def upload_styles_to_gcs():
             content_type="text/css",
         )
 
-        print("✅ Styles uploaded successfully!")
+        print("(y) Styles uploaded successfully!")
         print(f"🌐 Public URL: {public_url}")
 
 

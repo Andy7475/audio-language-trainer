@@ -79,6 +79,7 @@ class ImagenProvider(ImageProvider):
             # Generate the image
             images = generation_model.generate_images(
                 prompt=prompt,
+                negative_prompt="text, words",
                 number_of_images=1,
                 aspect_ratio=aspect_ratio,
             )
