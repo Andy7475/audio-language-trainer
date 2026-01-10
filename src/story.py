@@ -6,24 +6,24 @@ from typing import Dict, List, Optional
 from pydub import AudioSegment
 
 
-from .llm_tools.refine_story_translation import refine_story_translation
-from .storage import (
+from src.llm_tools.refine_story_translation import refine_story_translation
+from src.storage import (
     PUBLIC_BUCKET,
 )
 
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
-from .models import BCP47Language, get_language
-from .phrases.phrase_model import Phrase
+from src.models import BCP47Language, get_language
+from src.phrases.phrase_model import Phrase
 from google.cloud.firestore import DocumentReference
-from .connections.gcloud_auth import get_firestore_client
-from .phrases.utils import generate_phrase_hash
-from .phrases.phrase_model import FirePhraseDataModel, get_phrase, Translation
-from .logger import logger
+from src.connections.gcloud_auth import get_firestore_client
+from src.phrases.utils import generate_phrase_hash
+from src.phrases.phrase_model import FirePhraseDataModel, get_phrase, Translation
+from src.logger import logger
 from langcodes import Language
-from .audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
-from .storage import upload_to_gcs
-from .utils import render_html_content
+from src.audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
+from src.storage import upload_to_gcs
+from src.utils import render_html_content
 
 def get_story(story_title: str | None = None, story_title_hash:str|None = None) -> Optional["Story"]:
     """Retrieve a Story from Firestore by its title hash."""

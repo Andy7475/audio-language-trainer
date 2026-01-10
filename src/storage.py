@@ -18,9 +18,9 @@ import langcodes
 from PIL import Image
 from pydub import AudioSegment
 
-from .models import BCP47Language
-from .connections.gcloud_auth import get_storage_client
-from .logger import logger
+from src.models import BCP47Language
+from src.connections.gcloud_auth import get_storage_client
+from src.logger import logger
 
 # ============================================================================
 # BUCKET CONSTANTS

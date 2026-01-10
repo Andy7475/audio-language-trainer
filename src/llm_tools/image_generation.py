@@ -1,6 +1,6 @@
 """LLM tool for generating image prompts from language learning phrases."""
 
-from .base import (
+from src.base import (
     load_prompt_template,
     get_anthropic_client,
     DEFAULT_MODEL,

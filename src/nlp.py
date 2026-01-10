@@ -1,10 +1,10 @@
 from typing import List, Set, Tuple
 
 
-from .connections.gcloud_auth import get_nlp_client
+from src.connections.gcloud_auth import get_nlp_client
 from google.cloud import language_v1
 from google.api_core.exceptions import InvalidArgument
-from .logger import logger
+from src.logger import logger
 
 def analyze_text_syntax(
     text: str, language_code: str = "en"

@@ -1,6 +1,6 @@
 """LLM tool for reviewing and refining a single translation."""
 
-from .base import (
+from src.base import (
     load_prompt_template,
     get_anthropic_client,
     extract_tool_response,

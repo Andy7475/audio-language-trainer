@@ -1,11 +1,11 @@
 import os
 
 # Import the necessary functions from your modules
-from .phrase import build_phrase_dict_from_gcs
-from .config_loader import config
-from .utils import load_template
-from .convert import convert_PIL_image_to_base64, convert_audio_to_base64
-from .images import create_png_of_html
+from src.phrase import build_phrase_dict_from_gcs
+from src.config_loader import config
+from src.utils import load_template
+from src.convert import convert_PIL_image_to_base64, convert_audio_to_base64
+from src.images import create_png_of_html
 
 
 def batch_convert_anki_cards(html_folder, output_folder=None, device_presets=None):

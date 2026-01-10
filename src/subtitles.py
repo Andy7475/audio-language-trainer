@@ -11,12 +11,12 @@ module_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from .storage import (
+from src.storage import (
     get_subtitles_path,
     get_story_translated_dialogue_path,
 )
-from .convert import clean_filename
-from .story import prepare_dialogue_with_wiktionary
+from src.convert import clean_filename
+from src.story import prepare_dialogue_with_wiktionary
 
 
 def subriptime_to_seconds(srt_time) -> float:

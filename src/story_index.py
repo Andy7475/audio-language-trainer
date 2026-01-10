@@ -1,13 +1,13 @@
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 from typing import List, Dict
-from .story import Story, PublishedStory
-from .models import get_language, BCP47Language
+from src.story import Story, PublishedStory
+from src.models import get_language, BCP47Language
 from langcodes import Language
-from .logger import logger
+from src.logger import logger
 from collections import defaultdict
-from .utils import render_html_content
-from .storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
-from .story import get_all_stories
+from src.utils import render_html_content
+from src.storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
+from src.story import get_all_stories
 
 
 class IndexPage(BaseModel):
@@ -31,7 +31,7 @@ class IndexPage(BaseModel):
         logger.info(f"Published index at {public_url}")
         return public_url
     
-class LangaugeIndex(IndexPage):
+class LanguageIndex(IndexPage):
     source_languages: List[BCP47Language] = Field(...)
     template_name: str = "language_index.html"
     all_stories: List[Story] = Field(default_factory=list)
@@ -41,14 +41,14 @@ class LangaugeIndex(IndexPage):
     
     @field_serializer("source_languages")
     def serialize_source_languages(self, source_languages: List[BCP47Language])->List[tuple[str, str]]:
-        return [(lang.to_tag(), lang.language_name()) for lang in source_languages]
+        return [(lang.to_tag(), lang.display_name()) for lang in source_languages]
     
 
 
-def create_language_index()->LangaugeIndex:
+def create_language_index()->LanguageIndex:
     all_stories = get_all_stories()
     ALL_SOURCE_LANGUAGES = set(tag for story in all_stories for tag in story.get_all_published_source_languages())
-    return LangaugeIndex(source_languages=ALL_SOURCE_LANGUAGES, all_stories=all_stories)
+    return LanguageIndex(source_languages=ALL_SOURCE_LANGUAGES, all_stories=all_stories)
 
 class TargetLanguageIndex(IndexPage):
     source_language: BCP47Language = Field(...)
@@ -61,12 +61,12 @@ class TargetLanguageIndex(IndexPage):
     @computed_field
     @property
     def source_language_name(self)->str:
-        return self.source_language.language_name()
+        return self.source_language.display_name()
     
     @computed_field
     @property
     def target_language_name(self)->str:
-        return self.target_language.language_name()
+        return self.target_language.display_name()
 
     @computed_field
     @property
@@ -117,11 +117,11 @@ class SourceLanguageIndex(IndexPage):
     @computed_field
     @property
     def source_language_name(self)->str:
-        return self.source_language.language_name()
+        return self.source_language.display_name()
     @computed_field
     @property
     def target_languages(self)->List[tuple[str,str]]:
-        return list({(published_story.target_language.to_tag(), published_story.target_language.language_name()) for  published_story in self.published_stories})
+        return list({(published_story.target_language.to_tag(), published_story.target_language.display_name()) for  published_story in self.published_stories})
 
 
 def create_source_language_index(stories: List[Story], source_language: Language | str)->SourceLanguageIndex:

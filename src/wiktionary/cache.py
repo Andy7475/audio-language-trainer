@@ -10,8 +10,8 @@ This module provides functions to:
 from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 
-from ..connections.gcloud_auth import get_firestore_client
-from .models import WiktionaryEntry, get_firestore_path
+from src.connections.gcloud_auth import get_firestore_client
+from src.models import WiktionaryEntry, get_firestore_path
 
 
 def get_wiktionary_entry(
@@ -191,7 +191,7 @@ def get_or_fetch_wiktionary_entry(
         >>> entry = get_or_fetch_wiktionary_entry("bonjour", "fr")
         >>> html_link = entry.get_html_link("Bonjour!")
     """
-    from .lookup import fetch_wiktionary_entry
+    from src.lookup import fetch_wiktionary_entry
 
     # Check cache first (unless force refresh)
     if not force_refresh:
@@ -235,7 +235,7 @@ def batch_get_or_fetch_wiktionary_entries(
         >>> for token, entry in entries.items():
         ...     print(entry.get_html_link(token))
     """
-    from .lookup import fetch_wiktionary_entry
+    from src.lookup import fetch_wiktionary_entry
 
     results = {}
 

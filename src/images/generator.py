@@ -4,8 +4,8 @@ from typing import List, Literal, Optional
 
 from PIL import Image
 
-from .providers import ImagenProvider, StabilityProvider, DeepAIProvider
-from .styles import add_image_style, load_image_styles
+from src.images.providers import ImagenProvider, StabilityProvider, DeepAIProvider
+from src.images.styles import add_image_style, load_image_styles
 
 
 def generate_image(

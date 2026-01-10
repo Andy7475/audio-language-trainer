@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Union
 
-from .base import (
+from src.base import (
     load_prompt_template,
     get_anthropic_client,
     DEFAULT_MODEL,

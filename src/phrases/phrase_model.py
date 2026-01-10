@@ -6,23 +6,23 @@ from langcodes import Language
 from pydantic import AliasChoices, BaseModel, Field, field_validator, BeforeValidator, ConfigDict, model_validator
 from pydub import AudioSegment
 from PIL import Image
-from ..logger import logger
-from ..connections.gcloud_auth import get_firestore_client
-from .utils import generate_phrase_hash, generate_deck_name
+from src.logger import logger
+from src.connections.gcloud_auth import get_firestore_client
+from src.utils import generate_phrase_hash, generate_deck_name
 from google.cloud.firestore import Client as FirestoreClient
-from ..nlp import (
+from src.nlp import (
     extract_lemmas_and_pos,
     get_tokens_from_lemmas_and_pos,
     get_verbs_from_lemmas_and_pos,
     get_vocab_from_lemmas_and_pos,
     get_text_tokens,
 )
-from ..models import BCP47Language, get_language
-from ..translation import (
+from src.models import BCP47Language, get_language
+from src.translation import (
     translate_with_google_translate,
     refine_translation_with_anthropic,
 )
-from ..storage import (
+from src.storage import (
     upload_file_to_gcs,
     download_from_gcs,
     get_phrase_image_path,
@@ -30,12 +30,12 @@ from ..storage import (
     check_blob_exists,
     PRIVATE_BUCKET,
 )
-from ..audio.voices import get_voice_model, VoiceInfo
-from ..audio.generation import generate_translation_audio
+from src.audio.voices import get_voice_model, VoiceInfo
+from src.audio.generation import generate_translation_audio
 from google.cloud.firestore import DocumentReference
-from ..llm_tools.image_generation import generate_phrase_image_prompt
-from ..images.generator import generate_image as generate_image_with_provider
-from ..images.manipulation import resize_image
+from src.llm_tools.image_generation import generate_phrase_image_prompt
+from src.images.generator import generate_image as generate_image_with_provider
+from src.images.manipulation import resize_image
 
 LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip())]
 
@@ -969,7 +969,7 @@ class Translation(FirePhraseDataModel):
             - Returns plain text for tokens without Wiktionary entries
             - Preserves original token order and casing
         """
-        from ..wiktionary import batch_get_or_fetch_wiktionary_entries
+        from src.wiktionary import batch_get_or_fetch_wiktionary_entries
 
         # Extract language code (e.g., 'fr' from 'fr-FR')
         language_code = self.language.language

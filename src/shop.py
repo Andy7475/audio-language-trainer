@@ -8,17 +8,17 @@ from PIL import Image
 from tqdm import tqdm
 
 from storage import read_from_gcs
-from .convert import clean_filename, get_story_title, get_collection_title
-from .storage import (
+from src.convert import clean_filename, get_story_title, get_collection_title
+from src.storage import (
     get_phrase_path,
     get_story_collection_path,
     get_story_index_path,
     get_marketing_image_path,
     get_public_story_path,
 )
-from .images import create_png_of_html
-from .template_testing import generate_test_html
-from .utils import get_story_position, load_template
+from src.images import create_png_of_html
+from src.template_testing import generate_test_html
+from src.utils import get_story_position, load_template
 from storage import upload_to_gcs
 
 

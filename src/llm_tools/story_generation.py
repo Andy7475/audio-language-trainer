@@ -3,8 +3,8 @@
 import random
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 if TYPE_CHECKING:
-    from ..phrases.phrase_model import Phrase
-from .base import (
+    from src.phrases.phrase_model import Phrase
+from src.base import (
     DEFAULT_MODEL,
     get_anthropic_client,
     extract_tool_response,

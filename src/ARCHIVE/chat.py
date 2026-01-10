@@ -1,10 +1,10 @@
 import json
 from string import Template
 from typing import Dict, List
-from ..convert import get_story_title, get_collection_title
-from ..anki_tools import load_template
-from ..config_loader import config
-from ..gcs_storage import get_story_translated_challenges_path
+from src.convert import get_story_title, get_collection_title
+from src.anki_tools import load_template
+from src.config_loader import config
+from src.gcs_storage import get_story_translated_challenges_path
 from storage import upload_to_gcs
 
 
