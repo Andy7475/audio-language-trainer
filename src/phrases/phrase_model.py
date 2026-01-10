@@ -8,7 +8,7 @@ from pydub import AudioSegment
 from PIL import Image
 from src.logger import logger
 from src.connections.gcloud_auth import get_firestore_client
-from src.utils import generate_phrase_hash, generate_deck_name
+from src.phrases.utils import generate_phrase_hash, generate_deck_name
 from google.cloud.firestore import Client as FirestoreClient
 from src.nlp import (
     extract_lemmas_and_pos,
@@ -942,7 +942,6 @@ class Translation(FirePhraseDataModel):
 
     def get_wiktionary_links(
         self,
-        force_refresh: bool = False,
         separator: str = " ",
     ) -> str:
         """Generate HTML links to Wiktionary for each token in this translation.
@@ -969,31 +968,12 @@ class Translation(FirePhraseDataModel):
             - Returns plain text for tokens without Wiktionary entries
             - Preserves original token order and casing
         """
-        from src.wiktionary import batch_get_or_fetch_wiktionary_entries
-
+        from src.wiktionary.lookup import get_wiktionary_urls
         # Extract language code (e.g., 'fr' from 'fr-FR')
         language_code = self.language.language
 
         # Get or fetch entries for all tokens (batch operation)
-        entries = batch_get_or_fetch_wiktionary_entries(
-            tokens=self.tokens,
-            language_code=language_code,
-            force_refresh=force_refresh,
-            database_name=self.firestore_database,
-        )
-
-        # Generate HTML links preserving token order
-        links = []
-        for token in self.tokens:
-            token_lower = token.lower()
-            entry = entries.get(token_lower)
-
-            if entry and entry.exists:
-                # Use entry to generate link with original token casing
-                links.append(entry.get_html_link(token))
-            else:
-                # No entry found, return plain text
-                links.append(token)
+        links =  get_wiktionary_urls(words=self.tokens, lang_code=language_code)
 
         return separator.join(links)
 

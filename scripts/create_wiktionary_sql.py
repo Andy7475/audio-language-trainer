@@ -15,7 +15,7 @@ conn = sqlite3.connect(db_file)
 c = conn.cursor()
 
 # Drop table if exists (for clean rebuilds)
-c.execute('DROP TABLE IF EXISTS entries')
+#c.execute('DROP TABLE IF EXISTS entries')
 
 # Create table with composite primary key
 c.execute('''CREATE TABLE entries 

@@ -7,7 +7,7 @@ from typing import Literal, Optional, Union
 import requests
 from PIL import Image
 
-from src.base import ImageProvider
+from src.images.providers.base import ImageProvider
 
 
 class DeepAIProvider(ImageProvider):
