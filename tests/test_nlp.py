@@ -8,6 +8,7 @@ from src.nlp import (
 )
 import pytest
 from typing import Dict, List
+from src.nlp import create_flashcard_index, process_phrase_vocabulary
 
 
 @pytest.mark.parametrize(
@@ -163,10 +164,6 @@ def test_get_vocab_dictionary_from_phrases(
     assert sorted(result["vocab"]) == sorted(expected_dict["vocab"])
 
 
-import pytest
-from src.nlp import create_flashcard_index, process_phrase_vocabulary
-
-
 @pytest.mark.parametrize(
     "phrase,expected_verb_count,expected_vocab_count",
     [
@@ -237,9 +234,6 @@ def test_complex_example():
     # Check word counts for first phrase
     assert result["word_counts"][0]["verb_count"] == 1  # 'runs'
     assert result["word_counts"][0]["vocab_count"] >= 3  # 'big', 'cat', 'quickly'
-
-
-import pytest
 
 
 def test_find_candidate_cards():
