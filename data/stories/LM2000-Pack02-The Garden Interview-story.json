@@ -1,0 +1,194 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Thanks for coming over to help with my garden today, Alex."
+      },
+      {
+        "speaker": "Alex",
+        "text": "No problem! I promised I'd help you clear these old plants."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I've been so busy preparing for my interview tomorrow that I've neglected the garden completely."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's a big interview, right? With that new media company?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, it's for a secretary position. I'm excited but nervous too."
+      },
+      {
+        "speaker": "Alex",
+        "text": "You'll do great! What are you wearing to the interview?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "My new dress with the elegant blue pattern. Do you think that's appropriate?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect choice. Professional but not too formal. Can you hand me that bucket?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Here you go. I've been practicing answers all week. My brother gave me such silly advice from my neighbor."
+      },
+      {
+        "speaker": "Alex",
+        "text": "What did they say?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "To act like I don't need the job. That's not honest or helpful."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I agree. Just be yourself and show your strengths. Let's move these wooden planters."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thanks. I value your opinion. Oh, look at that spider on the gate!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "It's building quite an impressive web. Nature is so interesting."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Speaking of interesting, I found that perfect spot under the tree for our new bench."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Let's take a break. I brought some chocolate cake and biscuits."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That sounds great! I'll get us some plates and ice cream to go with it."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Be careful on those steps, they're..."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Whoa! Ouch!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Sam! Are you okay? That was quite a fall!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I blame myself for not watching where I was going. My knee really hurts."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Let me help you up and into the house. We need to check that knee."
+      },
+      {
+        "speaker": "Sam",
+        "text": "What about my interview tomorrow? I can't go with a bruised knee!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Let's treat it first before we worry. Do you have any ice in the freezer?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, in the kitchen. This is terrible timing. The pain is intense."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Here, put this ice on it. The swelling should go down by tomorrow."
+      },
+      {
+        "speaker": "Sam",
+        "text": "What if I can't walk properly? They'll notice and think I'm clumsy."
+      },
+      {
+        "speaker": "Alex",
+        "text": "You could wear a longer dress to cover the bruise. No one will know."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I don't have any other appropriate dresses. This is an obstacle I didn't expect."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Don't worry. We'll figure something out. The interview is about your skills, not your knee."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Alex! I have to tell you about the interview yesterday!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "How did it go? I've been waiting for your text all morning."
+      },
+      {
+        "speaker": "Sam",
+        "text": "The interview went well, despite my bruised knee from the fall."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Really? Did they notice you were in pain?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, but it actually helped! When they asked about overcoming challenges, I mentioned it."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That was smart thinking! What did you say?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I explained how I problem-solved quickly to still be professional and prepared."
+      },
+      {
+        "speaker": "Alex",
+        "text": "And they appreciated your honesty about the situation?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Exactly! The interviewer said it showed my strength of character and positive attitude."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's wonderful! So do you think you'll get the job?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "They just called! I got it! I start next Monday as their new secretary!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Congratulations! I knew you could do it! We should celebrate!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Let's finish our garden project first. I feel like I can tackle anything now."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Even with your sore knee? We can leave it for another day."
+      },
+      {
+        "speaker": "Sam",
+        "text": "No, I want to complete what we started. Then we'll have cake without any accidents this time!"
+      }
+    ]
+  }
+}

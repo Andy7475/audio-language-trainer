@@ -20,3 +20,4 @@ snoop.txt
 notebooks/app.log
 **/wiktionary.db
 app.log
+*.log

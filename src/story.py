@@ -33,9 +33,7 @@ def get_story(
     if story_title:
         story_title_hash = generate_phrase_hash(story_title)
 
-    client = get_firestore_client()
-    doc_ref = client.collection("stories").document(story_title_hash)
-    doc = doc_ref.get()
+    doc = _get_story_doc_ref(story_title_hash).get()
     if doc.exists:
         story_data = doc.to_dict()
         return Story.model_validate(story_data)
@@ -43,6 +41,13 @@ def get_story(
         logger.warning(f"Story with hash {story_title_hash} not found in Firestore.")
         return None
 
+def _story_exists(story_title_hash: str) -> bool:
+    doc = _get_story_doc_ref(story_title_hash).get()
+    return doc.exists
+
+def _get_story_doc_ref(story_title_hash: str) -> DocumentReference:
+    client = get_firestore_client()
+    return client.collection("stories").document(story_title_hash)
 
 def get_all_stories() -> List[Story]:
     """Gets all story title hashes from firestore
@@ -346,7 +351,8 @@ class Story(FirePhraseDataModel):
     ) -> "Story":
         """Factory method to create a Story instance."""
         story_title_hash = generate_phrase_hash(title)
-
+        if _story_exists(story_title_hash):
+            raise ValueError(f"Story with title {title} already exists in Firestore.")
         story_parts = defaultdict(list)
         # create sequence and story part information for each piece of dialogue
         for story_part, part_dialogue in story_dialogue.items():
