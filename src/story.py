@@ -14,7 +14,7 @@ from src.storage import (
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from src.models import BCP47Language, get_language
-from src.phrases.phrase_model import Phrase
+from src.phrases.phrase_model import Phrase, Translation
 from google.cloud.firestore import DocumentReference
 from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
@@ -806,3 +806,6 @@ class Story(FirePhraseDataModel):
                         )
 
         return dict(sorted(dialogue_with_translations.items()))
+
+
+Story.model_rebuild()

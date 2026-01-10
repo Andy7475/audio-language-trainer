@@ -307,13 +307,14 @@ class Phrase(FirePhraseDataModel):
         firestore_document_ref = self._get_translation_firestore_document_ref(
             Language.get("en-GB")
         )
+        tokens = get_text_tokens(self.english, language_code="en")
         return Translation(
             key=self.key,
             firestore_document_ref=firestore_document_ref,
             language=Language.get("en-GB"),
             text=self.english,
             text_lower=self.english_lower,
-            tokens=self.tokens,
+            tokens=tokens,
             image_file_path=get_phrase_image_path(
                 phrase_hash=self.key, language=Language.get("en-GB")
             ),

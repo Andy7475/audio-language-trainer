@@ -19,3 +19,4 @@ snoop.txt
 **/.claude/settings.local.json
 notebooks/app.log
 **/wiktionary.db
+app.log
