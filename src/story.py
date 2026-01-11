@@ -6,6 +6,7 @@ from typing import Dict, List, Optional
 from pydub import AudioSegment
 
 
+from phrases.search import get_phrase
 from src.llm_tools.refine_story_translation import refine_story_translation
 from src.storage import (
     PUBLIC_BUCKET,
@@ -18,7 +19,7 @@ from src.phrases.phrase_model import Phrase
 from google.cloud.firestore import DocumentReference
 from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
-from src.phrases.phrase_model import FirePhraseDataModel, get_phrase
+from src.phrases.phrase_model import FirePhraseDataModel
 from src.logger import logger
 from langcodes import Language
 from src.audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION

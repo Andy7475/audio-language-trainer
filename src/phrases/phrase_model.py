@@ -47,74 +47,14 @@ from src.images.manipulation import resize_image
 LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip())]
 
 
-def get_phrase(
-    phrase_hash: str, database_name: str = "firephrases"
-) -> Optional[Phrase]:
-    """Fetch a phrase from Firestore by its hash, including all translations.
-
-    Fetches the phrase document from `phrases/{phrase_hash}` and all translations from
-    the `phrases/{phrase_hash}/translations` subcollection.
-
-    Args:
-        phrase_hash: The phrase hash (document ID)
-        database_name: Name of the Firestore database (default: "firephrases")
-
-    Returns:
-        Optional[Phrase]: The phrase object with translations if found, None otherwise
-
-    Raises:
-        RuntimeError: If Firestore query fails
-    """
-    client = get_firestore_client(database_name)
-    doc_ref = client.collection("phrases").document(phrase_hash)
-    doc = doc_ref.get()
-
-    if not doc.exists:
-        raise ValueError(f"Phrase with hash {phrase_hash} not found in Firestore")
-
-    # Get phrase data
-    phrase_data = doc.to_dict()
-
-    core_phrase_references = {
-        "key": phrase_hash,
-        "firestore_document_ref": doc_ref,
-    }
-
-    # Fetch all translations from subcollection
-    translations_docs = doc_ref.collection("translations").stream()
-    translations = {}
-    for translated_doc in translations_docs:
-        translation_data = translated_doc.to_dict()
-        translation = Translation.model_validate(translation_data)
-        # Use language tag as the key
-        translations[translation.language.to_tag()] = translation
-
-    # Add translations to phrase data
-    phrase_data["translations"] = translations
-    phrase_data.update(core_phrase_references)
-    return Phrase.model_validate(phrase_data)
+def _get_phrase_doc_ref(phrase_hash: str) -> DocumentReference:
+    db = get_firestore_client()
+    return db.collection("phrases").document(phrase_hash)
 
 
-def get_phrase_by_english(
-    english_phrase: str, database_name: str = "firephrases"
-) -> Optional[Phrase]:
-    """Fetch a phrase from Firestore using its English text.
-
-    Convenience wrapper that generates the phrase hash from English text and fetches
-    the corresponding phrase document with all translations.
-
-    Args:
-        english_phrase: The English phrase text (e.g., "She runs to the store daily")
-        database_name: Name of the Firestore database (default: "firephrases")
-
-    Returns:
-        Optional[Phrase]: The phrase object with translations if found, None otherwise
-
-    Raises:
-        RuntimeError: If Firestore query fails
-    """
-    phrase_hash = generate_phrase_hash(english_phrase)
-    return get_phrase(phrase_hash, database_name=database_name)
+def phrase_exists(phrase_hash: str) -> bool:
+    doc = _get_phrase_doc_ref(phrase_hash).get()
+    return doc.exists
 
 
 class FirePhraseDataModel(BaseModel):
@@ -213,6 +153,10 @@ class Phrase(FirePhraseDataModel):
             Phrase: A new Phrase object with NLP analysis and default en-GB translation
         """
         phrase_hash = generate_phrase_hash(english_phrase)
+        if phrase_exists(phrase_hash):
+            raise ValueError(
+                f"Phrase with hash {phrase_hash} already exists in Firestore"
+            )
         lemmas_and_pos = extract_lemmas_and_pos([english_phrase], language_code="en")
         tokens = get_tokens_from_lemmas_and_pos(lemmas_and_pos)
 
@@ -230,19 +174,6 @@ class Phrase(FirePhraseDataModel):
         phrase.translations[en_translation.language.to_tag()] = en_translation
 
         return phrase
-
-    def get_phrase_hash(self) -> str:
-        """Generate a unique hash for this phrase based on English text.
-
-        Returns:
-            str: Phrase hash in format: {slug}_{hash_suffix}
-
-        Example:
-            >>> phrase = Phrase(english="She runs to the store daily", ...)
-            >>> phrase.get_phrase_hash()
-            'she_runs_to_the_store_daily_a3f8d2'
-        """
-        return generate_phrase_hash(self.english)
 
     def _get_translation_firestore_document_ref(
         self, language: Language

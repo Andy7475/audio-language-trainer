@@ -1,8 +1,8 @@
 """Test script to verify Firestore connectivity and phrase model functionality."""
 
+from phrases.search import get_phrase
 from src.phrases.phrase_model import (
     Phrase,
-    get_phrase,
     upload_phrase,
     get_firestore_client,
 )
