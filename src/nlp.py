@@ -37,7 +37,7 @@ def analyze_text_syntax(
         )
 
         return response
-    except InvalidArgument as e:
+    except InvalidArgument:
         # Raised by the API when the provided language is not supported
         logger.warning(
             "analyze_text_syntax: language not supported by Google NLP: %s",
@@ -158,4 +158,3 @@ def get_text_tokens(text: str, language_code: str = "en") -> List[str]:
         return [token.text.content for token in response.tokens]
     else:
         return text.split() if " " in text else [text]
-

@@ -406,7 +406,7 @@ class Phrase(FirePhraseDataModel):
         return translation
 
     def upload(
-        self, language: Language | None = None, overwrite: bool = False
+        self, language: Language | str | None = None, overwrite: bool = False
     ) -> DocumentReference:
         """Upload the phrase and its translations to Firestore and GCS. If language specified, then just upload that language.
 
@@ -426,6 +426,8 @@ class Phrase(FirePhraseDataModel):
         Raises:
             RuntimeError: If upload fails
         """
+
+        language = get_language(language)
         if language:
             logger.info(
                 f"Uploading phrase {self.key} with {language.to_tag()} translation to Firestore and GCS"

@@ -14,7 +14,7 @@ from src.storage import (
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from src.models import BCP47Language, get_language
-from src.phrases.phrase_model import Phrase, Translation
+from src.phrases.phrase_model import Phrase
 from google.cloud.firestore import DocumentReference
 from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
@@ -41,13 +41,16 @@ def get_story(
         logger.warning(f"Story with hash {story_title_hash} not found in Firestore.")
         return None
 
+
 def _story_exists(story_title_hash: str) -> bool:
     doc = _get_story_doc_ref(story_title_hash).get()
     return doc.exists
 
+
 def _get_story_doc_ref(story_title_hash: str) -> DocumentReference:
     client = get_firestore_client()
     return client.collection("stories").document(story_title_hash)
+
 
 def get_all_stories() -> List[Story]:
     """Gets all story title hashes from firestore
