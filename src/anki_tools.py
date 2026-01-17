@@ -184,16 +184,15 @@ def create_anki_note_from_phrase(
     target_tag = target_lang.to_tag()
 
     if source_tag not in phrase.translations:
-        raise ValueError(
-            f"Phrase '{phrase.key}' missing source translation: {source_tag}. "
-            f"Available: {list(phrase.translations.keys())}"
-        )
+        logger.info(f"Phrase '{phrase.key}' missing source translation: {source_tag}")
+        phrase.translate(source_lang)
+        phrase.upload(language=source_lang)
 
     if target_tag not in phrase.translations:
-        raise ValueError(
-            f"Phrase '{phrase.key}' missing target translation: {target_tag}. "
-            f"Available: {list(phrase.translations.keys())}"
-        )
+        logger.info(f"Phrase '{phrase.key}' missing target translation: {target_tag}")
+        phrase.translate(target_lang)
+        phrase.generate_audio("flashcard", target_lang)
+        phrase.upload(language=target_lang)
 
     source_translation = phrase.translations[source_tag]
     target_translation = phrase.translations[target_tag]

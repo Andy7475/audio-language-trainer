@@ -5,6 +5,8 @@ The learner has practised the following vocabulary (past, present and future):
 verbs: $verbs
 vocab: $vocab
 
+Learner ability:
+The learner is a $learner_level, so adjust the story length and language complexity accordingly
 DO NOT force the use of all vocabulary, but pick a selection that help make an engaging story.
 Try to weave in a selection of these phrases (do not force all of them):
 
@@ -18,6 +20,6 @@ Requirements:
 2. Structure the story in $part_count part(s) as specified
 3. Each part should be approximately $target_length when spoken
 4. Naturally incorporate vocabulary and parts of each phrase from the provided list (do NOT force the use of all vocab, the priority is an engaging story)
-5. Keep exchanges realistic (10-15 words per utterance)
+5. Keep exchanges realistic
 6. Alternate between Alex and Sam speakers
 7. Generate ALL dialogue in English

@@ -10,6 +10,7 @@ Your role is to generate stories IN ENGLISH that:
 
 Key principles:
 - Generate ALL content in English
+- Try to stick to only using the verbs provided (you may add common verbs like 'to have' and 'to be')
 - Prioritize natural, realistic dialogue over forcing all vocabulary
 - Create coherent, engaging narratives
 - Use simple, clear sentence structures

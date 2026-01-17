@@ -68,7 +68,7 @@ def _build_story_schema() -> Dict[str, Any]:
     }
 
 
-def _get_structure_description() -> Tuple[str, int, str]:
+def _get_structure_description(story_length: str) -> Tuple[str, int, str]:
     """Get story structure details based on verb count.
 
     Args:
@@ -83,7 +83,7 @@ def _get_structure_description() -> Tuple[str, int, str]:
    - development (part 2): Present a challenge or complication
    - resolution (part 3): Resolve the situation"""
     part_count = 3
-    target_length = "1-2 minutes per part (about 150-300 words each)"
+    target_length = f"about {story_length} per part"
 
     return description, part_count, target_length
 
@@ -94,6 +94,8 @@ def generate_story(
     max_tokens: int = 4000,
     temperature: float = 0.4,
     num_phrases: int = 5,
+    learner_level: str = "beginner",
+    story_length: str = "30 seconds",
 ) -> Tuple[str, Dict]:
     """Generate an English dialogue-based story for language learning.
 
@@ -119,7 +121,9 @@ def generate_story(
         story_schema = _build_story_schema()
 
         # Get structure description for prompt
-        structure_desc, part_count, target_length = _get_structure_description()
+        structure_desc, part_count, target_length = _get_structure_description(
+            story_length
+        )
 
         verbs = list({verb for phrase in phrase_list for verb in phrase.verbs})
         vocab = list({word for phrase in phrase_list for word in phrase.vocab})
@@ -138,6 +142,7 @@ def generate_story(
             structure_description=structure_desc,
             part_count=str(part_count),
             target_length=target_length,
+            learner_level=learner_level,
             verbs=", ".join(verbs),
             vocab=", ".join(vocab),
         )

@@ -218,5 +218,23 @@
                 "voice_id": "cy-GB-AledNeural"
             }
         }
+    },
+    "sr-RS": {
+        "flashcard": {
+            "female": {
+                "provider": "google",
+                "voice_id": "sr-RS-Standard-B"
+            }
+        },
+        "story": {
+            "female": {
+                "provider": "google",
+                "voice_id": "sr-RS-Chirp3-HD-Achernar"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "sr-RS-Chirp3-HD-Achird"
+            }
+        }
     }
 }

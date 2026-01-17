@@ -26,7 +26,6 @@ from src.audio.providers import (
 )
 from src.audio.text_processing import (
     clean_tts_text,
-    tokenize_text,
 )
 from src.audio.voices import (
     VoiceInfo,
@@ -52,7 +51,6 @@ __all__ = [
     "get_voice_models",
     # Text processing
     "clean_tts_text",
-    "tokenize_text",
     # TTS providers
     "text_to_speech",
     "slow_text_to_speech",

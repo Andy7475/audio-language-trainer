@@ -13,7 +13,8 @@ from src.audio.constants import (
     SPEAKING_RATE_NORMAL,
     DEFAULT_WORD_BREAK_MS,
 )
-from src.audio.text_processing import clean_tts_text, tokenize_text
+from src.audio.text_processing import clean_tts_text
+from src.nlp import get_text_tokens
 from src.audio.voices import VoiceInfo
 from src.connections.gcloud_auth import get_texttospeech_client
 
@@ -79,7 +80,7 @@ def slow_text_to_speech(
     """
     # Clean the text and tokenize it
     cleaned_text = clean_tts_text(text)
-    tokens = tokenize_text(cleaned_text, voice_model.language_code)
+    tokens = get_text_tokens(cleaned_text, voice_model.language_code)
 
     if voice_model.provider == VoiceProvider.ELEVENLABS:
         return _slow_text_to_speech_elevenlabs(

@@ -15,7 +15,6 @@ from src.audio import (
     get_voice_models,
     join_audio_segments,
     load_voices_from_json,
-    tokenize_text,
 )
 
 
@@ -90,32 +89,6 @@ class TestTextProcessing:
         assert clean_tts_text("Hello") == "Hello"
         assert clean_tts_text("It&#39;s") == "It's"
         assert clean_tts_text("&quot;test&quot;") == '"test"'
-
-    def test_tokenize_text_basic(self):
-        """Test basic text tokenization."""
-        tokens = tokenize_text("Hello world", "en-GB")
-        assert tokens == ["Hello", "world"]
-
-    def test_tokenize_text_multiple_spaces(self):
-        """Test tokenization with extra spaces."""
-        tokens = tokenize_text("Hello   world", "en-GB")
-        assert tokens == ["Hello", "world"]
-
-    def test_tokenize_text_french(self):
-        """Test tokenization with French text."""
-        tokens = tokenize_text("Bonjour comment allez-vous", "fr-FR")
-        assert len(tokens) > 0
-        assert "Bonjour" in tokens
-
-    def test_tokenize_text_empty(self):
-        """Test tokenization of empty string."""
-        tokens = tokenize_text("", "en-GB")
-        assert tokens == []
-
-    def test_tokenize_text_only_whitespace(self):
-        """Test tokenization of whitespace-only string."""
-        tokens = tokenize_text("   ", "en-GB")
-        assert tokens == []
 
 
 class TestAudioProcessing:

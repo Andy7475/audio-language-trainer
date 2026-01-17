@@ -38,6 +38,30 @@ def _find_wiktionary_url_from_token(word: str, lang_code: str) -> str:
     return word
 
 
+def normalize_lang_code_for_wiktionary(lang_code: str) -> str:
+    """
+    Normalize language codes to match Wiktionary's language code conventions.
+
+    Args:
+        lang_code: Base language code from langcodes (e.g., 'cmn', 'en', 'yue')
+
+    Returns:
+        str: Normalized language code for Wiktionary (e.g., 'zh', 'en')
+    """
+    # Mapping of language codes to Wiktionary codes
+    lang_code_mapping = {
+        "cmn": "zh",  # Mandarin Chinese -> Chinese
+        "yue": "zh",  # Cantonese -> Chinese (if applicable)
+        "nan": "zh",  # Min Nan -> Chinese (if applicable)
+        "wuu": "zh",  # Wu Chinese -> Chinese (if applicable)
+        "sr": "sh",  # Serbian -> Serbo-Croatian
+        "hr": "sh",  # Croatian -> Serbo-Croatian (if needed)
+        "bs": "sh",  # Bosnian -> Serbo-Croatian (if needed)
+    }
+
+    return lang_code_mapping.get(lang_code, lang_code)
+
+
 def get_wiktionary_url(search_word: str, original_word: str, lang_code: str):
     """
     Get Wiktionary URL for a word in a specific language.
@@ -50,11 +74,14 @@ def get_wiktionary_url(search_word: str, original_word: str, lang_code: str):
     Returns:
         str: HTML <a> tag if entry exists, otherwise the word
     """
+
+    normalized_lang_code = normalize_lang_code_for_wiktionary(lang_code)
     _conn = get_wiktionary_db()
 
     cursor = _conn.cursor()
     cursor.execute(
-        "SELECT url FROM entries WHERE word=? AND lang_code=?", (search_word, lang_code)
+        "SELECT url FROM entries WHERE word=? AND lang_code=?",
+        (search_word, normalized_lang_code),
     )
     result = cursor.fetchone()
 

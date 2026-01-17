@@ -1,4 +1,7 @@
-
+h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 18px;}
 .card {
     font-family: Arial, sans-serif;
     font-size: 20px;
