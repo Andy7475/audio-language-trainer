@@ -15,7 +15,8 @@ from src.storage import (
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from src.models import BCP47Language, get_language
-from src.phrases.phrase_model import Phrase
+
+from src.phrases.phrase_model import Phrase, Translation  # noqa: F401 - Translation needed for Pydantic model resolution
 from google.cloud.firestore import DocumentReference
 from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
@@ -288,11 +289,17 @@ class PublishedStory(BaseModel):
     collection: str = Field(..., description="Collection story comes from")
 
     def _is_published(
-        self, source_language: Language, target_language: Language | None = None
+        self,
+        source_language: Language | None = None,
+        target_language: Language | None = None,
     ) -> bool:
         """Checks for a match based on source and optional target language"""
+        if source_language is None and target_language is None:
+            raise ValueError("At least one language must be specified")
 
-        source_match = self.source_language == source_language
+        source_match = (source_language is None) or (
+            self.source_language == source_language
+        )
         target_match = (target_language is None) or (
             self.target_language == target_language
         )
@@ -453,6 +460,18 @@ class Story(FirePhraseDataModel):
         self.upload()
         return public_url
 
+    def get_story_text(self) -> str:
+        """Simple string of all utterances (english only)
+        Used to feed into LLM tools for a story summary"""
+        dialogue = ",".join(
+            [
+                utterance.text
+                for story_part, utterances in self.story_parts.items()
+                for utterance in utterances
+            ]
+        )
+        return self.title + ": summary: " + self.summary + ": dialogue: " + dialogue
+
     def _get_published_tag(self, target_language: Language, source_language: Language):
         """Dictionary key for the published dictionary such as en-GB-fr-FR"""
 
@@ -464,9 +483,14 @@ class Story(FirePhraseDataModel):
         return [published.source_language for _, published in self.published.items()]
 
     def get_published_stories(
-        self, source_language: Language, target_language: Language | None = None
+        self,
+        source_language: Language | str | None = "en-GB",
+        target_language: Language | None = None,
     ) -> List[PublishedStory]:
         """all published elements matching languages"""
+
+        source_language = get_language(source_language)
+        target_language = get_language(target_language)
 
         matching_published = []
         for _, _published in self.published.items():

@@ -1,6 +1,6 @@
 """Challenge generation LLM tool for creating language learning roleplay scenarios."""
 
-from typing import Dict
+from typing import Dict, List, Literal
 
 from src.llm_tools.base import (
     DEFAULT_MODEL,
@@ -10,64 +10,67 @@ from src.llm_tools.base import (
 )
 from src.models import BCP47Language
 
+from pydantic import BaseModel, Field
 
+
+class QandA(BaseModel):
+    question: str
+    answer: str
+
+
+class Scenario(BaseModel):
+    role_user: str = Field(
+        ..., description="Role for user to play (e.g., 'coffee shop staff')"
+    )
+    role_agent: str = Field(
+        ..., description="Role for AI agent to play (e.g., 'coffee shop staff')"
+    )
+    situation: str = Field(
+        ..., description="Setting description (e.g., 'A coffee shop')"
+    )
+    difficulty: Literal["easy", "medium", "hard"] = Field(
+        ..., description="Difficulty level (e.g., 'easy', 'medium', 'hard')"
+    )
+    task: str = Field(..., description="Main task to complete (e.g., 'Order a coffee')")
+    find_out: List[QandA] = Field(
+        ...,
+        min_length=3,
+        max_length=5,
+        description="Specific information to discover (e.g., 'What is the price?')",
+    )
+
+
+class Challenge(BaseModel):
+    story_title_hash: str = Field(..., description="Hash of the parent story")
+    scenarios: List[Scenario] = Field(
+        ...,
+        min_length=3,
+        max_length=3,
+        description="List of 3 roleplay scenarios, one at each difficult",
+    )
+
+
+# TOOL_SCHEMA = transform_schema(Challenge)
 # Fixed tool schema - always 5 scenarios with 3 complications each
-TOOL_SCHEMA = {
-    "name": "generate_challenges",
-    "description": "Generate language learning roleplay scenarios based on a story dialogue",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "scenarios": {
-                "type": "array",
-                "description": "List of 5 roleplay scenarios",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "role": {
-                            "type": "string",
-                            "description": "Role for teacher to play (e.g., 'coffee shop staff')",
-                        },
-                        "context": {
-                            "type": "string",
-                            "description": "Brief setting description",
-                        },
-                        "challenge": {
-                            "type": "string",
-                            "description": "Main task to complete (e.g., 'Order a coffee')",
-                        },
-                        "information_task": {
-                            "type": "string",
-                            "description": "Specific information to discover (e.g., 'What is the price?')",
-                        },
-                        "complications": {
-                            "type": "array",
-                            "description": "Three realistic complications that could arise",
-                            "items": {"type": "string"},
-                            "minItems": 3,
-                            "maxItems": 3,
-                        },
-                        "success_criteria": {
-                            "type": "string",
-                            "description": "What constitutes successful completion",
-                        },
-                    },
-                    "required": [
-                        "role",
-                        "context",
-                        "challenge",
-                        "information_task",
-                        "complications",
-                        "success_criteria",
-                    ],
-                },
-                "minItems": 5,
-                "maxItems": 5,
+
+
+def test_tool_use():
+    client = get_anthropic_client()
+    response = client.beta.messages.parse(
+        model=DEFAULT_MODEL,
+        betas=["structured-outputs-2025-11-13"],
+        max_tokens=1024,
+        messages=[
+            {
+                "role": "user",
+                "content": "Please genereate a challenge for coffee shop situations, just to test the tool use in the SDK",
             }
-        },
-        "required": ["scenarios"],
-    },
-}
+        ],
+        output_format=Challenge,
+    )
+
+    challenge = response.parsed_output
+    return challenge
 
 
 def generate_challenges(
@@ -77,48 +80,6 @@ def generate_challenges(
     max_tokens: int = 3000,
     temperature: float = 0.4,
 ) -> Dict:
-    """Generate roleplay challenges based on a story dialogue.
-
-    Args:
-        story_dialogue: Dictionary with story parts as keys, dialogue as values
-        target_language: BCP47Language for the target language (challenges will reference this)
-        model: Anthropic model to use
-        max_tokens: Maximum tokens for response
-        temperature: Generation temperature
-
-    Returns:
-        Dict with structure:
-        {
-            "scenarios": [
-                {
-                    "role": str,
-                    "context": str,
-                    "challenge": str,
-                    "information_task": str,
-                    "complications": [str, str, str],
-                    "success_criteria": str
-                },
-                ... (5 total scenarios)
-            ]
-        }
-
-    Raises:
-        RuntimeError: If challenge generation fails
-        ValueError: If response doesn't contain exactly 5 scenarios
-
-    Examples:
-        >>> import langcodes
-        >>> target_lang = langcodes.get("fr-FR")
-        >>> story_dialogue = {
-        ...     "setup": {"dialogue": [{"speaker": "Alex", "text": "Hello"}]},
-        ...     "resolution": {"dialogue": [{"speaker": "Sam", "text": "Goodbye"}]}
-        ... }
-        >>> result = generate_challenges(story_dialogue, target_lang)
-        >>> len(result["scenarios"])
-        5
-        >>> all(len(s["complications"]) == 3 for s in result["scenarios"])
-        True
-    """
     try:
         # Extract dialogue text from all story parts
         dialogue_lines = []
@@ -158,7 +119,7 @@ def generate_challenges(
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
             temperature=temperature,
-            tools=[TOOL_SCHEMA],
+            # tools=[TOOL_SCHEMA],
             tool_choice={"type": "tool", "name": "generate_challenges"},
         )
 
@@ -179,7 +140,7 @@ def generate_challenges(
             complications = scenario.get("complications", [])
             if len(complications) != 3:
                 raise ValueError(
-                    f"Scenario {i+1} has {len(complications)} complications, expected 3"
+                    f"Scenario {i + 1} has {len(complications)} complications, expected 3"
                 )
 
         return tool_input
