@@ -73,6 +73,8 @@ def test_tool_use():
     return challenge
 
 
+# TODO: generate challenges based on story dialogue generate_challenges(Story) - we should do all
+# published stories for target languages.
 def generate_challenges(
     story_dialogue: Dict,
     target_language: BCP47Language,
