@@ -1,62 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>$title</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
-    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles.css">
+    <title>{{ title }} - Speaking Challenges</title>
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles/styles.css">
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles/challenges.css">
 </head>
-<body class="template-body">
-    <div id="loading-message" class="loading-message">
-        <h2>Loading Challenge Content</h2>
-        <p>Please wait while we prepare your language challenges...</p>
-    </div>
-    
-    <div id="root"></div>
-    <a href="https://storage.cloud.google.com/audio-language-trainer-stories/speaking-challenges-guide.html" 
-       target="_blank" 
-       rel="noopener noreferrer"
-       class="template-info-link"
-       title="Learn about speaking challenges">
-         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-             <circle cx="12" cy="12" r="10"></circle>
-             <line x1="12" y1="16" x2="12" y2="12"></line>
-             <line x1="12" y1="8" x2="12.01" y2="8"></line>
-         </svg>
-         <span>About Speaking Challenges</span>
-     </a>
 
+<body>
+    <nav class="breadcrumb">
+        <a href="https://storage.googleapis.com/audio-language-trainer-stories/">Home</a> ›
+        <a href="https://storage.googleapis.com/audio-language-trainer-stories/{{ target_language_code }}/">{{ target_language }}</a> ›
+        <span>Speaking Challenges</span>
+    </nav>
+
+    <header>
+        <h1>Speaking Challenges: {{ target_language }} — {{ title }}</h1>
+        <p class="summary">Practice {{ target_language }} conversation with AI-powered roleplay scenarios</p>
+
+        <div class="api-key-section">
+            <label for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey" placeholder="sk-..." />
+            <button onclick="saveApiKey()" class="save-key-btn">Save Key</button>
+        </div>
+
+        <div class="info-box">
+            <p><strong>ℹ️ About this feature:</strong> You'll need an OpenAI API key to use these speaking challenges.
+                The AI will conduct a conversation with you in {{ target_language }}. Click "Start Challenge", then "Record" to speak
+                your responses.</p>
+            <p><strong>Estimated cost:</strong> ~$0.80 per 30-minute practice session</p>
+        </div>
+    </header>
+
+    <nav class="story-nav">
+        {% for scenario in scenarios %}
+        <a href="#challenge{{ loop.index }}">Challenge {{ loop.index }}</a>{% if not loop.last %} |{% endif %}
+        {% endfor %}
+    </nav>
+
+    <main>
+        {% for scenario in scenarios %}
+        <section id="challenge{{ loop.index }}" class="story-part">
+            <h2>Challenge {{ loop.index }}: {{ scenario.task }}</h2>
+
+            <div class="challenge-info">
+                <p><strong>Difficulty:</strong> <span class="difficulty-badge difficulty-{{ scenario.difficulty }}">{{ scenario.difficulty|capitalize }}</span></p>
+                <p><strong>Setting:</strong> {{ scenario.situation }}</p>
+                <p><strong>Your Role:</strong> {{ scenario.role_learner }}</p>
+                <p><strong>Speaking with:</strong> {{ scenario.role_teacher }}</p>
+                <p><strong>Your task:</strong> {{ scenario.task }}</p>
+            </div>
+
+            <div class="challenge-controls">
+                <button onclick="startChallenge('challenge{{ loop.index }}')" class="play-part" id="start-challenge{{ loop.index }}">
+                    ▶ Start Challenge
+                </button>
+                <button onclick="toggleRecording('challenge{{ loop.index }}')" class="record-btn" id="record-challenge{{ loop.index }}" disabled>
+                    🎤 Record
+                </button>
+                <button onclick="resetChallenge('challenge{{ loop.index }}')" class="danger-btn" id="reset-challenge{{ loop.index }}">
+                    Reset
+                </button>
+            </div>
+
+            <div id="status-challenge{{ loop.index }}" class="status-message"></div>
+
+            <div id="transcript-challenge{{ loop.index }}" class="transcript-box" style="display: none;">
+                <h3>Conversation History:</h3>
+                <div id="transcript-content-challenge{{ loop.index }}"></div>
+            </div>
+
+            <div class="challenge-answer">
+                <button onclick="togglePrompt('challenge{{ loop.index }}')" class="reveal-btn">
+                    💡 View/Edit Prompt
+                </button>
+                <div id="prompt-challenge{{ loop.index }}" class="prompt-box" style="display: none;">
+                    <textarea id="prompt-text-challenge{{ loop.index }}" rows="15">## Personality
+You are a {{ scenario.role_teacher }} who speaks {{ target_language }} naturally and authentically. Be warm, patient, and stay in character throughout the conversation.
+
+## Environment
+This is a spoken language learning roleplay session. The learner is practicing {{ target_language }} and may make mistakes — be encouraging and supportive.
+
+## Tone
+- Speak only 1-2 short sentences at a time, then pause for the learner's response
+- Use simple, everyday {{ target_language }} appropriate for this situation
+- If the learner uses English, gently reply in {{ target_language }} and keep the conversation natural
+
+## Situation
+{{ scenario.situation }}
+
+## Goal
+Help the learner complete this task: **{{ scenario.task }}**
+
+## Information to Share
+During the conversation, the learner needs to discover the following information. Do NOT volunteer this information immediately - let the learner ask questions naturally:
+{% for item in scenario.find_out %}
+- {{ item.question }} → Answer: {{ item.answer }}
+{% endfor %}
+
+## Interaction Notes
+- Respond naturally to the learner's questions and prompts
+- Guide the conversation gently if the learner seems stuck
+- Stay in character as {{ scenario.role_teacher }}
+
+## Guardrails
+- Always speak in {{ target_language }} unless explicitly asked for feedback in English
+- Keep responses brief — 1-2 short sentences before pausing
+- If you don't understand, ask for clarification in {{ target_language }}
+
+## Success Criteria
+The roleplay succeeds when the learner has discovered all the required information through natural conversation.
+
+When that happens, switch to English and provide:
+- A short congratulatory note
+- A summary of what was learned
+- 1-2 alternative ways the learner could have asked the questions in {{ target_language }}
+
+**Start now by beginning the roleplay as {{ scenario.role_teacher }} in the situation described above — 1-2 short sentences in {{ target_language }}, then wait for the learner's response.**</textarea>
+                    <button onclick="copyPrompt('challenge{{ loop.index }}')" class="copy-btn">📋 Copy Prompt</button>
+                </div>
+
+                <div class="answer-section">
+                    <h4>Information to Discover:</h4>
+                    {% set outer_index = loop.index %}
+                    {% for item in scenario.find_out %}
+                    <div class="answer-item">
+                        <p><strong>{{ loop.index }}. {{ item.question }}</strong></p>
+                        <button onclick="toggleIndividualAnswer('challenge{{ outer_index }}-answer{{ loop.index }}')" class="reveal-btn-small">
+                            👁️ Reveal Answer
+                        </button>
+                        <div id="challenge{{ outer_index }}-answer{{ loop.index }}" class="answer-box" style="display: none;">
+                            <strong>Answer:</strong> {{ item.answer }}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        {% endfor %}
+    </main>
+
+    <footer>
+        <p><a href="https://storage.googleapis.com/audio-language-trainer-stories/">← Back to Home</a></p>
+    </footer>
+
+    <!-- Import shared API handlers -->
+    <script src="https://storage.googleapis.com/audio-language-trainer-stories/scripts/challenge_API.js"></script>
+
+    <!-- Local page functionality -->
     <script>
-        // Hide loading message function
-        const hideLoadingMessage = () => {
-            const loader = document.getElementById('loading-message');
-            if (loader) {
-                loader.classList.add('hidden');
-            }
-        };
-        window.hideLoadingMessage = hideLoadingMessage;
+        // Language code for this page
+        const LANGUAGE_CODE = '{{ target_language_code }}';
 
-        // Embed the challenge data
-        const challengeData = $challenge_data;
-        const targetLanguage = "$language";
-        const languageCode = "$language_code";
-        
-        $react_component
-        
-        // Render the app
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(ChallengeViewer, { 
-            challengeData: challengeData,
-            targetLanguage: targetLanguage,
-            languageCode: languageCode,
-            title: "$title",
-            collectionName: "$collection_name",
-            collectionRaw: "$collection_raw"
-        }));
+        // Simple UI toggle functions - keep local as they're HTML-specific
+        function togglePrompt(challengeId) {
+            const promptBox = document.getElementById(`prompt-${challengeId}`);
+            promptBox.style.display = promptBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleIndividualAnswer(answerId) {
+            const answerBox = document.getElementById(answerId);
+            answerBox.style.display = answerBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function copyPrompt(challengeId) {
+            const promptText = document.getElementById(`prompt-text-${challengeId}`).value;
+            navigator.clipboard.writeText(promptText).then(() => {
+                alert('Prompt copied to clipboard!');
+            });
+        }
+
+        async function toggleRecording(challengeId) {
+            const recordBtn = document.getElementById(`record-${challengeId}`);
+            const isRecording = recordBtn.classList.contains('stop-btn');
+
+            if (isRecording) {
+                await stopRecording(challengeId);
+            } else {
+                await startRecording(challengeId);
+            }
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (key) {
+                ChallengeAPI.setApiKey(key);
+                localStorage.setItem('openai_api_key', key);
+                showStatus('challenge1', 'API Key saved successfully!', 'success');
+                setTimeout(() => hideStatus('challenge1'), 2000);
+            } else {
+                showStatus('challenge1', 'Please enter a valid API key', 'error');
+            }
+        }
+
+        function showStatus(challengeId, message, type = 'info') {
+            const statusEl = document.getElementById(`status-${challengeId}`);
+            statusEl.textContent = message;
+            statusEl.className = `status-message active ${type}`;
+        }
+
+        function hideStatus(challengeId) {
+            const statusEl = document.getElementById(`status-${challengeId}`);
+            statusEl.className = 'status-message';
+        }
+
+        function updateButtonStates(challengeId, isActive, recording) {
+            document.getElementById(`start-${challengeId}`).disabled = isActive;
+            const recordBtn = document.getElementById(`record-${challengeId}`);
+            recordBtn.disabled = !isActive;
+
+            // Update button appearance based on recording state
+            if (recording) {
+                recordBtn.textContent = '⏹️ Stop Recording';
+                recordBtn.classList.remove('record-btn');
+                recordBtn.classList.add('stop-btn');
+            } else {
+                recordBtn.textContent = '🎤 Record';
+                recordBtn.classList.remove('stop-btn');
+                recordBtn.classList.add('record-btn');
+            }
+        }
+
+        function updateTranscriptDisplay(challengeId, transcripts) {
+            const transcriptBox = document.getElementById(`transcript-${challengeId}`);
+            const transcriptContent = document.getElementById(`transcript-content-${challengeId}`);
+
+            transcriptBox.style.display = 'block';
+            transcriptContent.innerHTML = '';
+
+            transcripts.forEach((msg, idx) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'transcript-message';
+
+                const speaker = document.createElement('strong');
+                speaker.textContent = msg.type === 'ai' ? 'AI: ' : 'You: ';
+
+                const text = document.createTextNode(msg.text);
+
+                messageDiv.appendChild(speaker);
+                messageDiv.appendChild(text);
+
+                if (msg.type === 'ai') {
+                    const replayBtn = document.createElement('button');
+                    replayBtn.className = 'replay-btn';
+                    replayBtn.textContent = '🔊 Replay';
+                    replayBtn.onclick = () => ChallengeAPI.replayAudio(challengeId, idx);
+                    messageDiv.appendChild(replayBtn);
+                }
+
+                transcriptContent.appendChild(messageDiv);
+            });
+        }
+
+        // Wrapper functions that call the API and update UI
+        async function startChallenge(challengeId) {
+            const promptText = document.getElementById(`prompt-text-${challengeId}`).value;
+
+            showStatus(challengeId, 'Starting conversation...');
+            updateButtonStates(challengeId, false, false);
+
+            try {
+                const result = await ChallengeAPI.startChallenge(challengeId, promptText, LANGUAGE_CODE);
+
+                updateTranscriptDisplay(challengeId, result.transcripts);
+                showStatus(challengeId, 'Ready - click Record to respond', 'success');
+                updateButtonStates(challengeId, true, false);
+            } catch (error) {
+                showStatus(challengeId, `Error: ${error.message}`, 'error');
+                updateButtonStates(challengeId, false, false);
+            }
+        }
+
+        async function startRecording(challengeId) {
+            try {
+                await ChallengeAPI.startRecording(challengeId);
+                showStatus(challengeId, 'Recording... click Stop when done');
+                updateButtonStates(challengeId, true, true);
+            } catch (error) {
+                showStatus(challengeId, `Microphone error: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopRecording(challengeId) {
+            showStatus(challengeId, 'Processing your speech...');
+            updateButtonStates(challengeId, true, false);
+
+            try {
+                const result = await ChallengeAPI.stopRecording(challengeId, LANGUAGE_CODE);
+
+                updateTranscriptDisplay(challengeId, result.transcripts);
+                showStatus(challengeId, 'Ready - click Record to respond', 'success');
+            } catch (error) {
+                showStatus(challengeId, `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function resetChallenge(challengeId) {
+            ChallengeAPI.resetChallenge(challengeId);
+            hideStatus(challengeId);
+            updateButtonStates(challengeId, false, false);
+            document.getElementById(`transcript-${challengeId}`).style.display = 'none';
+        }
+
+        // Load saved API key on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('openai_api_key');
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                ChallengeAPI.setApiKey(savedKey);
+            }
+        });
     </script>
 </body>
+
 </html>

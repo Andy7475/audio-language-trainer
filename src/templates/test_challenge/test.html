@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Winter Morning Walk - Speaking Challenges</title>
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles/styles.css">
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles/challenges.css">
+</head>
+
+<body>
+    <nav class="breadcrumb">
+        <a href="https://storage.googleapis.com/audio-language-trainer-stories/">Home</a> ›
+        <a href="https://storage.googleapis.com/audio-language-trainer-stories/sv-SE/">Swedish</a> ›
+        <span>Speaking Challenges</span>
+    </nav>
+
+    <header>
+        <h1>Speaking Challenges: Swedish — A Winter Morning Walk</h1>
+        <p class="summary">Practice Swedish conversation with AI-powered roleplay scenarios</p>
+
+        <div class="api-key-section">
+            <label for="apiKey">OpenAI API Key:</label>
+            <input type="password" id="apiKey" placeholder="sk-..." />
+            <button onclick="saveApiKey()" class="save-key-btn">Save Key</button>
+        </div>
+
+        <div class="info-box">
+            <p><strong>ℹ️ About this feature:</strong> You'll need an OpenAI API key to use these speaking challenges.
+                The AI will conduct a conversation with you in Swedish. Click "Start Challenge", then "Record" to speak
+                your responses.</p>
+            <p><strong>Estimated cost:</strong> ~$0.80 per 30-minute practice session</p>
+        </div>
+    </header>
+
+    <nav class="story-nav">
+        
+        <a href="#challenge1">Challenge 1</a> |
+        
+        <a href="#challenge2">Challenge 2</a> |
+        
+        <a href="#challenge3">Challenge 3</a>
+        
+    </nav>
+
+    <main>
+        
+        <section id="challenge1" class="story-part">
+            <h2>Challenge 1: Get ready for the walk and find out what to bring</h2>
+
+            <div class="challenge-info">
+                <p><strong>Difficulty:</strong> <span class="difficulty-badge difficulty-easy">Easy</span></p>
+                <p><strong>Setting:</strong> Two friends preparing to go for a winter walk outside their home</p>
+                <p><strong>Your Role:</strong> person going for a walk</p>
+                <p><strong>Speaking with:</strong> walking companion</p>
+                <p><strong>Your task:</strong> Get ready for the walk and find out what to bring</p>
+            </div>
+
+            <div class="challenge-controls">
+                <button onclick="startChallenge('challenge1')" class="play-part" id="start-challenge1">
+                    ▶ Start Challenge
+                </button>
+                <button onclick="toggleRecording('challenge1')" class="record-btn" id="record-challenge1" disabled>
+                    🎤 Record
+                </button>
+                <button onclick="resetChallenge('challenge1')" class="danger-btn" id="reset-challenge1">
+                    Reset
+                </button>
+            </div>
+
+            <div id="status-challenge1" class="status-message"></div>
+
+            <div id="transcript-challenge1" class="transcript-box" style="display: none;">
+                <h3>Conversation History:</h3>
+                <div id="transcript-content-challenge1"></div>
+            </div>
+
+            <div class="challenge-answer">
+                <button onclick="toggleAnswer('challenge1')" class="reveal-btn">
+                    👁️ Reveal Answers
+                </button>
+                <button onclick="togglePrompt('challenge1')" class="reveal-btn">
+                    💡 View/Edit Prompt
+                </button>
+                <div id="prompt-challenge1" class="prompt-box" style="display: none;">
+                    <textarea id="prompt-text-challenge1" rows="15">## Personality
+You are a walking companion who speaks Swedish naturally and authentically. Be warm, patient, and stay in character throughout the conversation.
+
+## Environment
+This is a spoken language learning roleplay session. The learner is practicing Swedish and may make mistakes — be encouraging and supportive.
+
+## Tone
+- Speak only 1-2 short sentences at a time, then pause for the learner's response
+- Use simple, everyday Swedish appropriate for this situation
+- If the learner uses English, gently reply in Swedish and keep the conversation natural
+
+## Situation
+Two friends preparing to go for a winter walk outside their home
+
+## Goal
+Help the learner complete this task: **Get ready for the walk and find out what to bring**
+
+## Information to Share
+During the conversation, the learner needs to discover the following information. Do NOT volunteer this information immediately - let the learner ask questions naturally:
+
+- What clothing items should be worn? → Answer: Blue jeans and a hat
+
+- What drink should be brought along? → Answer: Coffee
+
+- What should be done before leaving? → Answer: Check how cold it is by opening the window
+
+
+## Interaction Notes
+- Respond naturally to the learner's questions and prompts
+- Guide the conversation gently if the learner seems stuck
+- Stay in character as walking companion
+
+## Guardrails
+- Always speak in Swedish unless explicitly asked for feedback in English
+- Keep responses brief — 1-2 short sentences before pausing
+- If you don't understand, ask for clarification in Swedish
+
+## Success Criteria
+The roleplay succeeds when the learner has discovered all the required information through natural conversation.
+
+When that happens, switch to English and provide:
+- A short congratulatory note
+- A summary of what was learned
+- 1-2 alternative ways the learner could have asked the questions in Swedish
+
+**Start now by beginning the roleplay as walking companion in the situation described above — 1-2 short sentences in Swedish, then wait for the learner's response.**</textarea>
+                    <button onclick="copyPrompt('challenge1')" class="copy-btn">📋 Copy Prompt</button>
+                </div>
+
+                <div id="answer-challenge1" class="answer-box" style="display: none;">
+                    <strong>Information to Discover:</strong>
+                    <ul>
+                        
+                        <li><strong>What clothing items should be worn?</strong><br>Answer: Blue jeans and a hat</li>
+                        
+                        <li><strong>What drink should be brought along?</strong><br>Answer: Coffee</li>
+                        
+                        <li><strong>What should be done before leaving?</strong><br>Answer: Check how cold it is by opening the window</li>
+                        
+                    </ul>
+                </div>
+            </div>
+
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        
+        <section id="challenge2" class="story-part">
+            <h2>Challenge 2: Recognize you're lost and figure out how to get help</h2>
+
+            <div class="challenge-info">
+                <p><strong>Difficulty:</strong> <span class="difficulty-badge difficulty-medium">Medium</span></p>
+                <p><strong>Setting:</strong> Two people walking in a snowy park who realize they might be lost</p>
+                <p><strong>Your Role:</strong> lost walker in the park</p>
+                <p><strong>Speaking with:</strong> walking companion</p>
+                <p><strong>Your task:</strong> Recognize you're lost and figure out how to get help</p>
+            </div>
+
+            <div class="challenge-controls">
+                <button onclick="startChallenge('challenge2')" class="play-part" id="start-challenge2">
+                    ▶ Start Challenge
+                </button>
+                <button onclick="toggleRecording('challenge2')" class="record-btn" id="record-challenge2" disabled>
+                    🎤 Record
+                </button>
+                <button onclick="resetChallenge('challenge2')" class="danger-btn" id="reset-challenge2">
+                    Reset
+                </button>
+            </div>
+
+            <div id="status-challenge2" class="status-message"></div>
+
+            <div id="transcript-challenge2" class="transcript-box" style="display: none;">
+                <h3>Conversation History:</h3>
+                <div id="transcript-content-challenge2"></div>
+            </div>
+
+            <div class="challenge-answer">
+                <button onclick="toggleAnswer('challenge2')" class="reveal-btn">
+                    👁️ Reveal Answers
+                </button>
+                <button onclick="togglePrompt('challenge2')" class="reveal-btn">
+                    💡 View/Edit Prompt
+                </button>
+                <div id="prompt-challenge2" class="prompt-box" style="display: none;">
+                    <textarea id="prompt-text-challenge2" rows="15">## Personality
+You are a walking companion who speaks Swedish naturally and authentically. Be warm, patient, and stay in character throughout the conversation.
+
+## Environment
+This is a spoken language learning roleplay session. The learner is practicing Swedish and may make mistakes — be encouraging and supportive.
+
+## Tone
+- Speak only 1-2 short sentences at a time, then pause for the learner's response
+- Use simple, everyday Swedish appropriate for this situation
+- If the learner uses English, gently reply in Swedish and keep the conversation natural
+
+## Situation
+Two people walking in a snowy park who realize they might be lost
+
+## Goal
+Help the learner complete this task: **Recognize you're lost and figure out how to get help**
+
+## Information to Share
+During the conversation, the learner needs to discover the following information. Do NOT volunteer this information immediately - let the learner ask questions naturally:
+
+- Does your companion think you're going the wrong way? → Answer: Yes, they don't recognize this part of the park
+
+- What solution does your companion suggest? → Answer: Ask someone for directions
+
+- Where should you wait while they ask? → Answer: Wait here while they talk to the person
+
+
+## Interaction Notes
+- Respond naturally to the learner's questions and prompts
+- Guide the conversation gently if the learner seems stuck
+- Stay in character as walking companion
+
+## Guardrails
+- Always speak in Swedish unless explicitly asked for feedback in English
+- Keep responses brief — 1-2 short sentences before pausing
+- If you don't understand, ask for clarification in Swedish
+
+## Success Criteria
+The roleplay succeeds when the learner has discovered all the required information through natural conversation.
+
+When that happens, switch to English and provide:
+- A short congratulatory note
+- A summary of what was learned
+- 1-2 alternative ways the learner could have asked the questions in Swedish
+
+**Start now by beginning the roleplay as walking companion in the situation described above — 1-2 short sentences in Swedish, then wait for the learner's response.**</textarea>
+                    <button onclick="copyPrompt('challenge2')" class="copy-btn">📋 Copy Prompt</button>
+                </div>
+
+                <div id="answer-challenge2" class="answer-box" style="display: none;">
+                    <strong>Information to Discover:</strong>
+                    <ul>
+                        
+                        <li><strong>Does your companion think you're going the wrong way?</strong><br>Answer: Yes, they don't recognize this part of the park</li>
+                        
+                        <li><strong>What solution does your companion suggest?</strong><br>Answer: Ask someone for directions</li>
+                        
+                        <li><strong>Where should you wait while they ask?</strong><br>Answer: Wait here while they talk to the person</li>
+                        
+                    </ul>
+                </div>
+            </div>
+
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        
+        <section id="challenge3" class="story-part">
+            <h2>Challenge 3: Find out the directions and confirm you understand the way home</h2>
+
+            <div class="challenge-info">
+                <p><strong>Difficulty:</strong> <span class="difficulty-badge difficulty-hard">Hard</span></p>
+                <p><strong>Setting:</strong> In a park after getting lost, your companion has just returned with directions from a helpful stranger</p>
+                <p><strong>Your Role:</strong> person receiving directions</p>
+                <p><strong>Speaking with:</strong> walking companion who just got directions</p>
+                <p><strong>Your task:</strong> Find out the directions and confirm you understand the way home</p>
+            </div>
+
+            <div class="challenge-controls">
+                <button onclick="startChallenge('challenge3')" class="play-part" id="start-challenge3">
+                    ▶ Start Challenge
+                </button>
+                <button onclick="toggleRecording('challenge3')" class="record-btn" id="record-challenge3" disabled>
+                    🎤 Record
+                </button>
+                <button onclick="resetChallenge('challenge3')" class="danger-btn" id="reset-challenge3">
+                    Reset
+                </button>
+            </div>
+
+            <div id="status-challenge3" class="status-message"></div>
+
+            <div id="transcript-challenge3" class="transcript-box" style="display: none;">
+                <h3>Conversation History:</h3>
+                <div id="transcript-content-challenge3"></div>
+            </div>
+
+            <div class="challenge-answer">
+                <button onclick="toggleAnswer('challenge3')" class="reveal-btn">
+                    👁️ Reveal Answers
+                </button>
+                <button onclick="togglePrompt('challenge3')" class="reveal-btn">
+                    💡 View/Edit Prompt
+                </button>
+                <div id="prompt-challenge3" class="prompt-box" style="display: none;">
+                    <textarea id="prompt-text-challenge3" rows="15">## Personality
+You are a walking companion who just got directions who speaks Swedish naturally and authentically. Be warm, patient, and stay in character throughout the conversation.
+
+## Environment
+This is a spoken language learning roleplay session. The learner is practicing Swedish and may make mistakes — be encouraging and supportive.
+
+## Tone
+- Speak only 1-2 short sentences at a time, then pause for the learner's response
+- Use simple, everyday Swedish appropriate for this situation
+- If the learner uses English, gently reply in Swedish and keep the conversation natural
+
+## Situation
+In a park after getting lost, your companion has just returned with directions from a helpful stranger
+
+## Goal
+Help the learner complete this task: **Find out the directions and confirm you understand the way home**
+
+## Information to Share
+During the conversation, the learner needs to discover the following information. Do NOT volunteer this information immediately - let the learner ask questions naturally:
+
+- What are the directions to get back? → Answer: Go straight and then turn right at the large store
+
+- Why do you recognize the location now? → Answer: The store is memorable and means we're close to home
+
+- What would you like to do before going home? → Answer: Drink the coffee together because it's cold
+
+
+## Interaction Notes
+- Respond naturally to the learner's questions and prompts
+- Guide the conversation gently if the learner seems stuck
+- Stay in character as walking companion who just got directions
+
+## Guardrails
+- Always speak in Swedish unless explicitly asked for feedback in English
+- Keep responses brief — 1-2 short sentences before pausing
+- If you don't understand, ask for clarification in Swedish
+
+## Success Criteria
+The roleplay succeeds when the learner has discovered all the required information through natural conversation.
+
+When that happens, switch to English and provide:
+- A short congratulatory note
+- A summary of what was learned
+- 1-2 alternative ways the learner could have asked the questions in Swedish
+
+**Start now by beginning the roleplay as walking companion who just got directions in the situation described above — 1-2 short sentences in Swedish, then wait for the learner's response.**</textarea>
+                    <button onclick="copyPrompt('challenge3')" class="copy-btn">📋 Copy Prompt</button>
+                </div>
+
+                <div id="answer-challenge3" class="answer-box" style="display: none;">
+                    <strong>Information to Discover:</strong>
+                    <ul>
+                        
+                        <li><strong>What are the directions to get back?</strong><br>Answer: Go straight and then turn right at the large store</li>
+                        
+                        <li><strong>Why do you recognize the location now?</strong><br>Answer: The store is memorable and means we're close to home</li>
+                        
+                        <li><strong>What would you like to do before going home?</strong><br>Answer: Drink the coffee together because it's cold</li>
+                        
+                    </ul>
+                </div>
+            </div>
+
+            <div class="part-navigation">
+                <a href="#top" class="back-to-top-inline">↑ Back to Top</a>
+            </div>
+        </section>
+        
+    </main>
+
+    <footer>
+        <p><a href="https://storage.googleapis.com/audio-language-trainer-stories/">← Back to Home</a></p>
+    </footer>
+
+    <!-- Import shared API handlers -->
+    <script src="https://storage.googleapis.com/audio-language-trainer-stories/scripts/challenge_API.js"></script>
+
+    <!-- Local page functionality -->
+    <script>
+        // Language code for this page
+        const LANGUAGE_CODE = 'sv-SE';
+
+        // Simple UI toggle functions - keep local as they're HTML-specific
+        function togglePrompt(challengeId) {
+            const promptBox = document.getElementById(`prompt-${challengeId}`);
+            promptBox.style.display = promptBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleAnswer(challengeId) {
+            const answerBox = document.getElementById(`answer-${challengeId}`);
+            answerBox.style.display = answerBox.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function copyPrompt(challengeId) {
+            const promptText = document.getElementById(`prompt-text-${challengeId}`).value;
+            navigator.clipboard.writeText(promptText).then(() => {
+                alert('Prompt copied to clipboard!');
+            });
+        }
+
+        async function toggleRecording(challengeId) {
+            const recordBtn = document.getElementById(`record-${challengeId}`);
+            const isRecording = recordBtn.classList.contains('stop-btn');
+
+            if (isRecording) {
+                await stopRecording(challengeId);
+            } else {
+                await startRecording(challengeId);
+            }
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('apiKey').value.trim();
+            if (key) {
+                ChallengeAPI.setApiKey(key);
+                localStorage.setItem('openai_api_key', key);
+                showStatus('challenge1', 'API Key saved successfully!', 'success');
+                setTimeout(() => hideStatus('challenge1'), 2000);
+            } else {
+                showStatus('challenge1', 'Please enter a valid API key', 'error');
+            }
+        }
+
+        function showStatus(challengeId, message, type = 'info') {
+            const statusEl = document.getElementById(`status-${challengeId}`);
+            statusEl.textContent = message;
+            statusEl.className = `status-message active ${type}`;
+        }
+
+        function hideStatus(challengeId) {
+            const statusEl = document.getElementById(`status-${challengeId}`);
+            statusEl.className = 'status-message';
+        }
+
+        function updateButtonStates(challengeId, isActive, recording) {
+            document.getElementById(`start-${challengeId}`).disabled = isActive;
+            const recordBtn = document.getElementById(`record-${challengeId}`);
+            recordBtn.disabled = !isActive;
+
+            // Update button appearance based on recording state
+            if (recording) {
+                recordBtn.textContent = '⏹️ Stop Recording';
+                recordBtn.classList.remove('record-btn');
+                recordBtn.classList.add('stop-btn');
+            } else {
+                recordBtn.textContent = '🎤 Record';
+                recordBtn.classList.remove('stop-btn');
+                recordBtn.classList.add('record-btn');
+            }
+        }
+
+        function updateTranscriptDisplay(challengeId, transcripts) {
+            const transcriptBox = document.getElementById(`transcript-${challengeId}`);
+            const transcriptContent = document.getElementById(`transcript-content-${challengeId}`);
+
+            transcriptBox.style.display = 'block';
+            transcriptContent.innerHTML = '';
+
+            transcripts.forEach((msg, idx) => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'transcript-message';
+
+                const speaker = document.createElement('strong');
+                speaker.textContent = msg.type === 'ai' ? 'AI: ' : 'You: ';
+
+                const text = document.createTextNode(msg.text);
+
+                messageDiv.appendChild(speaker);
+                messageDiv.appendChild(text);
+
+                if (msg.type === 'ai') {
+                    const replayBtn = document.createElement('button');
+                    replayBtn.className = 'replay-btn';
+                    replayBtn.textContent = '🔊 Replay';
+                    replayBtn.onclick = () => ChallengeAPI.replayAudio(challengeId, idx);
+                    messageDiv.appendChild(replayBtn);
+                }
+
+                transcriptContent.appendChild(messageDiv);
+            });
+        }
+
+        // Wrapper functions that call the API and update UI
+        async function startChallenge(challengeId) {
+            const promptText = document.getElementById(`prompt-text-${challengeId}`).value;
+
+            showStatus(challengeId, 'Starting conversation...');
+            updateButtonStates(challengeId, false, false);
+
+            try {
+                const result = await ChallengeAPI.startChallenge(challengeId, promptText, LANGUAGE_CODE);
+
+                updateTranscriptDisplay(challengeId, result.transcripts);
+                showStatus(challengeId, 'Ready - click Record to respond', 'success');
+                updateButtonStates(challengeId, true, false);
+            } catch (error) {
+                showStatus(challengeId, `Error: ${error.message}`, 'error');
+                updateButtonStates(challengeId, false, false);
+            }
+        }
+
+        async function startRecording(challengeId) {
+            try {
+                await ChallengeAPI.startRecording(challengeId);
+                showStatus(challengeId, 'Recording... click Stop when done');
+                updateButtonStates(challengeId, true, true);
+            } catch (error) {
+                showStatus(challengeId, `Microphone error: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopRecording(challengeId) {
+            showStatus(challengeId, 'Processing your speech...');
+            updateButtonStates(challengeId, true, false);
+
+            try {
+                const result = await ChallengeAPI.stopRecording(challengeId, LANGUAGE_CODE);
+
+                updateTranscriptDisplay(challengeId, result.transcripts);
+                showStatus(challengeId, 'Ready - click Record to respond', 'success');
+            } catch (error) {
+                showStatus(challengeId, `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function resetChallenge(challengeId) {
+            ChallengeAPI.resetChallenge(challengeId);
+            hideStatus(challengeId);
+            updateButtonStates(challengeId, false, false);
+            document.getElementById(`transcript-${challengeId}`).style.display = 'none';
+        }
+
+        // Load saved API key on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('openai_api_key');
+            if (savedKey) {
+                document.getElementById('apiKey').value = savedKey;
+                ChallengeAPI.setApiKey(savedKey);
+            }
+        });
+    </script>
+</body>
+
+</html>

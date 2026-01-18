@@ -2,8 +2,7 @@
 
 from typing import List, Optional, Set, Tuple
 
-from phrases.phrase_model import Phrase
-from phrases.utils import generate_phrase_hash
+from src.phrases.utils import generate_phrase_hash
 from src.phrases.phrase_model import Phrase, Translation
 from src.connections.gcloud_auth import get_firestore_client
 from src.models import BCP47Language, get_language

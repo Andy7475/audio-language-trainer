@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 from pydub import AudioSegment
 
 
-from phrases.search import get_phrase
+from src.phrases.search import get_phrase
 from src.llm_tools.refine_story_translation import refine_story_translation
 from src.storage import (
     PUBLIC_BUCKET,

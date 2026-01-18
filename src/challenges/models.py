@@ -1,5 +1,3 @@
-
-
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -7,8 +5,11 @@ from typing import List, Literal
 
 from src.models import BCP47Language
 
+
 class ChallengeBaseModel(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
+
 class QandA(ChallengeBaseModel):
     question: str
     answer: str
@@ -44,13 +45,14 @@ class Challenge(ChallengeBaseModel):
         description="List of 3 roleplay scenarios, one at each difficult",
     )
 
+
 class PublishedChallenge(ChallengeBaseModel):
     public_url: str
     source_language: BCP47Language
     target_language: BCP47Language
 
-class ChallengeRecord(ChallengeBaseModel):
 
+class ChallengeRecord(ChallengeBaseModel):
     story_title_hash: str = Field(..., description="Hash of the parent story")
     challenge: Challenge = Field(..., description="Challenge data")
     published: List[PublishedChallenge]
