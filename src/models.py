@@ -1,4 +1,4 @@
-from typing import Annotated, Union
+from typing import Annotated
 
 from langcodes import Language
 from pydantic import PlainSerializer, BeforeValidator

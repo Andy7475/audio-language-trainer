@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from string import Template
 
 from src.convert import get_story_title, get_collection_title
-from src.llm_tools.challenge_generation import generate_challenges
+from challenges.generate import generate_challenges
 from src.models import BCP47Language
 from src.storage import (
     PRIVATE_BUCKET,

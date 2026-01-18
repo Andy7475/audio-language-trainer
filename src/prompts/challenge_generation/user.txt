@@ -1,22 +1,6 @@
-Analyze the following story and create 5 practical roleplay scenarios for $target_language_name learners.
+Analyze the following story and create 3 practical roleplay challenges (easy, medium and hard difficulty) for language learners.
 
-Story Context (English):
-$story_context
+Story Content:
+$story_content
 
-Create 5 scenarios that:
-1. Relate to themes and vocabulary from the story
-2. Each has a main challenge to complete (e.g., "Order a coffee")
-3. Each requires discovering specific information (e.g., "What is the price?")
-4. Each includes 3 realistic complications that:
-   - Explain why the original request can't be fulfilled
-   - Suggest or hint at alternatives
-   - Don't prevent discovering the required information
-
-Requirements:
-- Make scenarios feel like real-world situations
-- Keep challenges achievable for learners
-- Ensure complications offer a path forward
-- Success means both completing the challenge AND discovering the information
-- Use vocabulary similar to the story where possible
-
-Use the generate_challenges tool to return your response with the structured scenario data.
+Remembering that the role play will be conducted only between two people.
