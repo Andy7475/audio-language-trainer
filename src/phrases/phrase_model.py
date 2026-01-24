@@ -61,7 +61,7 @@ class FirePhraseDataModel(BaseModel):
     """Parent model for common variables and storage details for FireStore"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
-    firestore_collection: Optional[Literal["phrases", "stories"]] = Field(
+    firestore_collection: Optional[Literal["phrases", "stories", "challenges"]] = Field(
         default="phrases", description="Context for the phrase in FireStore"
     )
     bucket_name: str = Field(default=PRIVATE_BUCKET)

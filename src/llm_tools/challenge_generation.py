@@ -7,7 +7,7 @@ from src.llm_tools.base import (
 )
 
 
-def generate_challenge_content(system_prompt: str, user_prompt: str):
+def generate_challenge_content(system_prompt: str, user_prompt: str) -> Challenge:
     client = get_anthropic_client()
     response = client.beta.messages.parse(
         model=DEFAULT_MODEL,

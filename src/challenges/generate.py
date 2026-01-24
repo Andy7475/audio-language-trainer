@@ -1,14 +1,12 @@
+from src.challenges.models import Challenge
 from src.llm_tools.base import load_prompt_template
 from src.llm_tools.challenge_generation import generate_challenge_content
 from src.story import Story
 
 
-from typing import Dict
-
-
 def generate_challenges(
     story: Story,
-) -> Dict:
+) -> Challenge:
     # Load prompt templates
     system_template = load_prompt_template("challenge_generation", "system")
     user_template = load_prompt_template("challenge_generation", "user")
