@@ -6,6 +6,8 @@ from google.cloud.firestore import DocumentReference
 from langcodes import Language
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
+from llm_tools.base import load_prompt_template
+from llm_tools.challenge_generation import generate_challenge_content
 from src.connections.gcloud_auth import get_firestore_client
 from src.logger import logger
 from src.models import BCP47Language, get_language
@@ -14,7 +16,6 @@ from src.storage import PUBLIC_BUCKET, upload_to_gcs
 from src.story import Story
 from src.utils import render_html_content
 from src.story import get_story
-from src.challenges.generate import generate_challenges
 
 
 def get_challenge(story_title_hash: str) -> Optional["ChallengeRecord"]:
@@ -120,6 +121,23 @@ class PublishedChallenge(BaseModel):
             self.target_language == target_language
         )
         return source_match and target_match
+
+
+def generate_challenges(
+    story: Story,
+) -> Challenge:
+    # Load prompt templates
+    system_template = load_prompt_template("challenge_generation", "system")
+    user_template = load_prompt_template("challenge_generation", "user")
+
+    # Substitute variables
+    system_prompt = system_template.substitute()
+    user_prompt = user_template.substitute(
+        story_content=story.get_story_text(),
+    )
+
+    challenge = generate_challenge_content(system_prompt, user_prompt)
+    return challenge
 
 
 class ChallengeRecord(FirePhraseDataModel):

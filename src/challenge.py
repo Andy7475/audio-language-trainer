@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from string import Template
 
 from src.convert import get_story_title, get_collection_title
-from challenges.generate import generate_challenges
+from challenges.models import generate_challenges
 from src.models import BCP47Language
 from src.storage import (
     PRIVATE_BUCKET,
@@ -44,7 +44,7 @@ A complication will arise during the roleplay: {complication}
 Introduce this naturally at an appropriate moment."""
 
     return f"""## Personality
-You are a {scenario_data['role']} in {scenario_data['context']}. You are helpful, patient, and speak naturally in {language_name}. Stay in character throughout the conversation.
+You are a {scenario_data["role"]} in {scenario_data["context"]}. You are helpful, patient, and speak naturally in {language_name}. Stay in character throughout the conversation.
 
 ## Environment
 This is a spoken language learning roleplay session. The learner is practicing {language_name} conversation skills and may make mistakes - be encouraging and supportive.
@@ -57,9 +57,9 @@ This is a spoken language learning roleplay session. The learner is practicing {
 - Speak clearly and at a moderate pace
 
 ## Goal
-Help the learner complete this task: **{scenario_data['challenge']}**
+Help the learner complete this task: **{scenario_data["challenge"]}**
 
-The learner must also discover: **{scenario_data['information_task']}**
+The learner must also discover: **{scenario_data["information_task"]}**
 - Don't volunteer this information - wait for them to ask
 - Be flexible about how they ask - they don't need perfect grammar
 - When they ask appropriately, provide a helpful answer
@@ -69,12 +69,12 @@ The learner must also discover: **{scenario_data['information_task']}**
 ## Guardrails
 - **Always speak in {language_name}** unless giving feedback
 - Keep responses brief - maximum 2 sentences before pausing
-- Stay in character as {scenario_data['role']}
+- Stay in character as {scenario_data["role"]}
 - If you don't understand, ask for clarification in {language_name}
 - Be patient with learner mistakes and continue the conversation
 
 ## Success Criteria
-The roleplay succeeds when: {scenario_data['success_criteria']}
+The roleplay succeeds when: {scenario_data["success_criteria"]}
 
 When this happens, switch to **English** and provide:
 - Congratulations on what they accomplished
@@ -82,7 +82,7 @@ When this happens, switch to **English** and provide:
 - 2-3 alternative phrases they could have used
 - One encouraging comment about their {language_name}
 
-**Start now by greeting the learner in {language_name} as {scenario_data['role']} - just 1-2 sentences, then wait for their response.**"""
+**Start now by greeting the learner in {language_name} as {scenario_data["role"]} - just 1-2 sentences, then wait for their response.**"""
 
 
 def get_html_challenge_inputs(
@@ -110,9 +110,9 @@ def get_html_challenge_inputs(
         challenge_group = []
 
         # Base description for all variants (HTML formatted)
-        base_description = f"""Setting: {scenario['context']}<br>
-Speaking with: {scenario['role']}<br>
-Task: <span class='font-bold'>{scenario['challenge']}</span> and find out: <span class='font-bold'>{scenario['information_task']}</span>"""
+        base_description = f"""Setting: {scenario["context"]}<br>
+Speaking with: {scenario["role"]}<br>
+Task: <span class='font-bold'>{scenario["challenge"]}</span> and find out: <span class='font-bold'>{scenario["information_task"]}</span>"""
 
         # Add base scenario (no complications)
         challenge_group.append(
@@ -133,7 +133,7 @@ Task: <span class='font-bold'>{scenario['challenge']}</span> and find out: <span
                         scenario, target_language, i
                     ),
                     "answer": f"The complication was: {complication}",
-                    "variant": f"Complication {i+1}",
+                    "variant": f"Complication {i + 1}",
                 }
             )
 
