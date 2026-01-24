@@ -1,18 +1,16 @@
-import unittest
 from unittest.mock import patch, MagicMock
-from typing import Dict, List, Tuple
+from typing import List
 import copy
 from src.config_loader import config
 from src.translation import (
     translate_dialogue,
     translate_from_english,
     translate_phrases,
-    tokenize_text,
 )
+from src.nlp import get_text_tokens
 
 
 import pytest
-from typing import List
 
 
 @pytest.mark.parametrize(
@@ -50,7 +48,7 @@ def test_tokenize_text(
     3. Skip API-dependent tests in certain environments
     """
     try:
-        result = tokenize_text(text, language_code)
+        result = get_text_tokens(text, language_code)
 
         # For API-based tokenization, we might want to verify patterns rather than exact matches
         if language_code in ["ja", "zh"]:
@@ -68,9 +66,9 @@ def test_tokenize_text(
         if "API" in str(e):
             # For space-separated languages, verify fallback behavior
             if " " in text:
-                assert tokenize_text(text, language_code) == text.split()
+                assert get_text_tokens(text, language_code) == text.split()
             else:
-                assert tokenize_text(text, language_code) == [text]
+                assert get_text_tokens(text, language_code) == [text]
         else:
             raise e
 

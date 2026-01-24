@@ -1,0 +1,38 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hey Sam, did you book the tickets for the hiking trip this weekend?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes! I just signed the forms yesterday. It's going to be amazing."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam! Wake up! We need to leave in thirty minutes!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "What? Oh no! I hid my hiking boots somewhere and can't find them!"
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Wow, that was a close call! I can't believe we made it to the train with only two minutes to spare."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I told you we would survive this! Your face showed such shock after we ran through the station."
+      }
+    ]
+  }
+}

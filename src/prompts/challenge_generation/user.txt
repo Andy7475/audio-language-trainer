@@ -1,0 +1,6 @@
+Analyze the following story and create 3 practical roleplay challenges (easy, medium and hard difficulty) for language learners.
+
+Story Content:
+$story_content
+
+Remembering that the role play will be conducted only between two people.

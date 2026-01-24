@@ -1,0 +1,20 @@
+Analyze this dialogue from a story scene and create a first-person perspective image prompt to visualize the location and atmosphere:
+
+$dialogue
+
+Create a detailed prompt for generating an image that captures the location, setting, and atmosphere of this scene.
+
+Your prompt should:
+1. Use first-person perspective as if the viewer is participating in the scene
+2. Focus on the environment, setting, and background elements
+3. Do NOT include the main characters (Alex, Sam, or similar named characters) in the description
+4. Include background people for atmosphere, but keep them generic and unnamed
+5. Include time of day, weather, and atmospheric details if mentioned or implied
+6. Capture the emotional tone of the conversation in the environment
+7. Limit output to 1-2 sentences focused on visual elements only
+8. Do NOT add image style details - those will be added separately
+9. Do NOT include any written text, words, or letters in the image - it should be purely visual and pictorial
+10. Provide ONLY the image generation prompt, without any explanations
+
+Example dialogue: "Alex: It's such a beautiful day! Sam: I know, let's have coffee on the terrace and watch the sunset."
+Example output: "View of a bustling city square from a cafe terrace, morning light streaming through trees, people walking past market stalls"

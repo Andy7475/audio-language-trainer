@@ -7,6 +7,8 @@ from src.nlp import (
     remove_matching_words,
 )
 import pytest
+from typing import Dict, List
+from src.nlp import create_flashcard_index, process_phrase_vocabulary
 
 
 @pytest.mark.parametrize(
@@ -68,7 +70,6 @@ import pytest
     ],
 )
 def test_remove_matching_words(phrases, original_set, expected):
-
     result = remove_matching_words(phrases, original_set)
     assert result == expected
 
@@ -117,10 +118,6 @@ def test_extract_substring_matches_question_marks(
     assert result == expected
 
 
-import pytest
-from typing import Dict, List
-
-
 @pytest.mark.parametrize(
     "phrases, expected_dict",
     [
@@ -165,10 +162,6 @@ def test_get_vocab_dictionary_from_phrases(
     # Check that each list contains exactly the expected items (order doesn't matter)
     assert sorted(result["verbs"]) == sorted(expected_dict["verbs"])
     assert sorted(result["vocab"]) == sorted(expected_dict["vocab"])
-
-
-import pytest
-from src.nlp import create_flashcard_index, process_phrase_vocabulary
 
 
 @pytest.mark.parametrize(
@@ -241,9 +234,6 @@ def test_complex_example():
     # Check word counts for first phrase
     assert result["word_counts"][0]["verb_count"] == 1  # 'runs'
     assert result["word_counts"][0]["vocab_count"] >= 3  # 'big', 'cat', 'quickly'
-
-
-import pytest
 
 
 def test_find_candidate_cards():

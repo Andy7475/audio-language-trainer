@@ -1,5 +1,4 @@
 import os
-from typing import Dict, Any
 
 # Import the necessary functions from your modules
 from src.phrase import build_phrase_dict_from_gcs
@@ -174,7 +173,7 @@ def generate_test_html(
         for placeholder, value in [
             ("{{Picture}}", picture_html),
             ("{{TargetText}}", target_text),
-            ("{{EnglishText}}", english_text),
+            ("{{SourceText}}", english_text),
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
         ]:
@@ -185,7 +184,7 @@ def generate_test_html(
         for placeholder, value in [
             ("{{Picture}}", picture_html),
             ("{{TargetText}}", target_text),
-            ("{{EnglishText}}", english_text),
+            ("{{SourceText}}", english_text),
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
             ("{{WiktionaryLinks}}", wiktionary_links),

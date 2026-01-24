@@ -1,0 +1,26 @@
+Generate phrases for the verb: "$verb"
+
+Task:
+1. Generate 3 base phrases using different tenses and contexts:
+   - One showing PRESENT tense usage
+   - One showing PAST tense usage
+   - One showing FUTURE tense usage
+   Mix different pronouns and sentence types (question, imperative, statement), focussing on combinations that are common for the verb.
+
+2. If the verb has multiple distinct meanings in English, generate 1-3 additional phrases (one per meaning), using the most useful tense for each meaning:
+   - Example: "break" could mean "physically separate" OR "interrupt" - generate one phrase for each
+   - Example: "run" could mean "move quickly" OR "operate/manage" - generate one phrase for each
+
+3. For each phrase, identify any additional words you generated beyond the verb itself:
+   - These are auxiliary words that would help exhaust a vocabulary list
+   - Example: If you generated "I want an apple", record "apple" as an additional word
+   - Record these words so they can be struck off the vocabulary list
+
+Guidelines:
+- Each phrase should be 3-5 words (aim for this, but ensure each utterance makes grammatical sense)
+- Be specific but also vary between concrete and generic examples
+- No idioms or colloquial expressions
+- phrasal verbs are OK and count as 1 word (e.g. I'm going to swim in the sea, {I'm going to} swim in the sea = 5 'words')
+- Ensure every phrase is something a learner would realistically say or hear
+
+Use the generate_verb_phrases tool to return your response with the structured phrase data.

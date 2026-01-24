@@ -1,8 +1,7 @@
 import functions_framework
 import json
-from flask import jsonify, request
+from flask import jsonify
 import requests
-from flask_cors import CORS
 
 # gcloud functions deploy create-realtime-chat-session `
 #   --runtime python312 `

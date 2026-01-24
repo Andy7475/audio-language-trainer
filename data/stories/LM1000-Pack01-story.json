@@ -1,0 +1,114 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Good morning, Sam! It's quite cold outside today."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Morning, Alex! Yes, the weather is definitely cold. It's winter, after all."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I want to go for a walk. Will you come with me?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Sure! Just let me get ready. What should I wear?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "You should wear your blue jeans and a hat. Oh, and don't forget your coffee. We can drink it while we walk."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good idea. I'll open the window first to check how cold it is."
+      },
+      {
+        "speaker": "Alex",
+        "text": "The water is running in the bathroom. Did you leave it on?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Oh! I'll go and turn it off. Can you wait for me at the door?"
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "This path is beautiful with all the snow. Look at the trees!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, it's lovely. The sunset yesterday was beautiful too. I watched it from our window."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Wait, I think we're going the wrong way. This doesn't look right."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Hmm, you may be right. I don't recognize this part of the park."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I think we're lost. This is a little difficult."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Don't worry. I can ask for directions. There's a person over there."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Good idea. Half of the time, I get lost in this park."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Let me go and talk to him. Wait here, please."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "OK, I have the information we need. The man was very helpful."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Great! What did he say?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "He said we should go straight and then turn right at the large store."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Ah, I see it now! That store figures prominently in my memory. We're close to home."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes! And look, there's our friend Tom over there."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Shall we open it? The coffee, I mean. I'm cold and would like a drink."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Certainly! Let's drink it together and then go home."
+      },
+      {
+        "speaker": "Alex",
+        "text": "This was a nice morning walk, even with our little mistake. Tomorrow, let's try a different path."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'd like that. We can explore more of the park together."
+      }
+    ]
+  }
+}

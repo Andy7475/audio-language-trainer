@@ -1,0 +1,38 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hey Sam, this is our second story"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Amazing!"
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam! Wake up! we might need a third story"
+      },
+      {
+        "speaker": "Sam",
+        "text": "What? Oh no!"
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Wow, I love bananas."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Bananas are yellow - is that why? The end of our story"
+      }
+    ]
+  }
+}

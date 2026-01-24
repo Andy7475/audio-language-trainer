@@ -17,3 +17,7 @@ snoop.txt
 .vscode/PythonImportHelper-v2-Completion.json
 
 **/.claude/settings.local.json
+notebooks/app.log
+**/wiktionary.db
+app.log
+*.log

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Learning Stories</title>
+    <link rel="stylesheet" href="https://storage.googleapis.com/audio-language-trainer-stories/styles/styles.css">
+</head>
+<body>
+    <nav class="breadcrumb">
+        <a href="../index.html">Home</a> ›
+        {{ source_language_name }} ›
+    </nav>
+
+    <main>
+
+
+    <h1>Native language : {{ source_language_name }}</h1>
+
+    <h2>I am learning:</h2>
+    <div class="story-list">
+        {% for target_language_tag, target_language_name in target_languages %}
+
+        <a href = "https://storage.googleapis.com/audio-language-trainer-stories/stories/{{ source_language }}/{{ target_language_tag }}/index.html">{{ target_language_name }}</a><br>
+
+        {% endfor %}
+    </div>
+    
+</main>
+
+    
+    
+</body>
+{% include "index_footer.html" %}
+</html>

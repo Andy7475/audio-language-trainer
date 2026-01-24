@@ -6,8 +6,9 @@ Creates a single-file HTML tutorial for explaining how to use FirePhrase flashca
 This tutorial uses a card-based navigation system and includes live examples of the flashcards.
 """
 
-import os
 from typing import Dict, Any, List, Optional
+
+from storage import upload_to_gcs
 
 # Import the necessary functions from your modules
 try:
@@ -18,7 +19,7 @@ try:
     )
     from src.config_loader import config
     from src.utils import load_template
-    from src.gcs_storage import upload_to_gcs, get_tutorial_path
+    from src.gcs_storage import get_tutorial_path
 except ImportError as e:
     print(f"Warning: Could not import required modules: {e}")
     print("Make sure you're running from the project root directory")
@@ -143,7 +144,7 @@ def generate_flashcard_tutorial(
                             <p>Took a while to remember? It'll come back in a few days.</p>
                         </div>
                         <div class="card-type-item">
-                            <h3>✅ "Good"</h3>
+                            <h3>(y) "Good"</h3>
                             <p>Got it fairly quickly? Perfect - you'll see it in about a week.</p>
                         </div>
                         <div class="card-type-item">
@@ -354,7 +355,7 @@ def generate_flashcard_tutorial(
         if phrase_dict and phrase_key in phrase_dict:
             phrase_data = phrase_dict[phrase_key]
             example_cards = generate_example_card_content(phrase_data, language)
-            print(f"✅ Loaded example phrase data for: {phrase_key}")
+            print(f"(y) Loaded example phrase data for: {phrase_key}")
         else:
             print(
                 f"⚠️  Could not find phrase with key '{phrase_key}' - tutorial will have placeholder content"
@@ -384,7 +385,7 @@ def generate_flashcard_tutorial(
         # Generate public URL
         public_url = gcs_uri.replace("gs://", "https://storage.googleapis.com/")
 
-        print(f"✅ Flashcard tutorial generated and uploaded to GCS")
+        print("(y) Flashcard tutorial generated and uploaded to GCS")
         print(f"🌐 GCS URI: {gcs_uri}")
         print(f"🔗 Public URL: {public_url}")
 
@@ -430,7 +431,7 @@ def generate_flashcard_tutorials_batch(
 
             if result:
                 results[language] = result
-                print(f"✅ {language} tutorial completed: {result}")
+                print(f"(y) {language} tutorial completed: {result}")
             else:
                 results[language] = None
                 print(f"❌ {language} tutorial failed")
@@ -443,12 +444,12 @@ def generate_flashcard_tutorials_batch(
     successful = sum(1 for result in results.values() if result)
     failed = len(results) - successful
 
-    print(f"\n🎯 Batch Generation Complete!")
-    print(f"✅ Successful: {successful}")
+    print("\n🎯 Batch Generation Complete!")
+    print(f"(y) Successful: {successful}")
     print(f"❌ Failed: {failed}")
 
     if successful > 0:
-        print(f"\n🌐 Generated tutorials:")
+        print("\n🌐 Generated tutorials:")
         for lang, result in results.items():
             if result:
                 public_url = result.replace("gs://", "https://storage.googleapis.com/")
@@ -511,7 +512,7 @@ def generate_example_card_content(
         for placeholder, value in [
             ("{{Picture}}", picture_html),
             ("{{TargetText}}", target_text),
-            ("{{EnglishText}}", english_text),
+            ("{{SourceText}}", english_text),
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
         ]:
@@ -531,7 +532,7 @@ def generate_example_card_content(
         for placeholder, value in [
             ("{{Picture}}", picture_html),
             ("{{TargetText}}", target_text),
-            ("{{EnglishText}}", english_text),
+            ("{{SourceText}}", english_text),
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
         ]:
@@ -543,7 +544,7 @@ def generate_example_card_content(
         for placeholder, value in [
             ("{{Picture}}", picture_html),
             ("{{TargetText}}", target_text),
-            ("{{EnglishText}}", english_text),
+            ("{{SourceText}}", english_text),
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
         ]:
@@ -555,7 +556,7 @@ def generate_example_card_content(
         for placeholder, value in [
             ("{{Picture}}", picture_html),
             ("{{TargetText}}", target_text),
-            ("{{EnglishText}}", english_text),
+            ("{{SourceText}}", english_text),
             ("{{TargetAudio}}", target_audio_html),
             ("{{TargetAudioSlow}}", target_audio_slow_html),
             ("{{WiktionaryLinks}}", wiktionary_links),
@@ -589,8 +590,8 @@ def generate_tutorial_html(
 
     for i, card in enumerate(tutorial_cards):
         card_html = f"""
-        <div class="tutorial-card{' active' if i == 0 else ''}" id="card-{i}">
-            <h2 class="card-title">{card['title']}</h2>
+        <div class="tutorial-card{" active" if i == 0 else ""}" id="card-{i}">
+            <h2 class="card-title">{card["title"]}</h2>
             <div class="card-content">
         """
 
@@ -1280,7 +1281,7 @@ def generate_tutorial_html(
             <div class="progress-info">
                 <div id="cardCounter">1 of {total_cards}</div>
                 <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill" style="width: {100/total_cards:.1f}%"></div>
+                    <div class="progress-fill" id="progressFill" style="width: {100 / total_cards:.1f}%"></div>
                 </div>
             </div>
             <button class="nav-button" id="nextBtn" onclick="changeCard(1)">Next</button>

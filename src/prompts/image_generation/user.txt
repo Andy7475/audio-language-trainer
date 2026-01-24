@@ -1,0 +1,15 @@
+Given the following phrase for language learners: "$phrase"
+
+Create a specific, detailed prompt for generating an image that will help learners remember this phrase.
+
+Your prompt should:
+1. Consider every element from the phrase to visualize
+2. Suggest a simple scene or composition that incorporates these elements - use your imagination to make it memorable
+3. Include any relevant emotions or atmosphere that would enhance memory retention
+4. Limit your output to 1-2 sentences
+5. Do NOT add details about image style - this will be added separately
+6. Do NOT include any written text, words, or letters in the image - it should be purely visual and pictorial
+7. Provide ONLY the image generation prompt, without any explanations or additional text
+
+Example phrase: "The bride watched the sunset from the balcony"
+Example output: "A bride on a balcony, looking at sunset over the horizon, tropical island, villa"

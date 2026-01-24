@@ -1,0 +1,161 @@
+{
+  "summary": "Alex and Sam plan a surprise visit to their favorite cousin, navigating travel arrangements and gift preparations before finally reuniting with their family.",
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hey Sam, I was thinking about my favorite cousin's birthday next week."
+      },
+      {
+        "speaker": "Sam",
+        "text": "The one who lives in the eastern part of the country?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes! I visit my grandmother there too. What if we surprise them both?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's a great idea! Will you book the flights?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I already checked the website. There are some good options."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Perfect! Let's plan the trip and prepare the gifts."
+      },
+      {
+        "speaker": "Alex",
+        "text": " We can plan everything from your comfortable sofa."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Did you visit that website for the best flight deals?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'll do that tonight. What should we get as a gift?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "What about that model airplane she wanted?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect choice! She'll love it. And some sweet juice for grandma."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Don't forget my friendly uncle from the east will be there too."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh right! He's the group leader for those hiking tours, isn't he?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes! He knows lots of fun activities."
+      },
+      {
+        "speaker": "Alex",
+        "text": "This trip is going to be amazing. I can't wait!"
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Did you book the tickets yet? We're leaving in three days."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm trying to, but the website keeps crashing. It's much worse than before."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Let's grab a taxi to the travel agency instead."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Good idea. Grab my keys, they're on the table."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Got them. We should avoid the traffic on the busy motorway."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I know this direct route to the base of town. It's faster."
+      },
+
+      {
+        "speaker": "Sam",
+        "text": "The travel agent has sent me a message."
+      },
+      {
+        "speaker": "Alex",
+        "text": "What does it say?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "The travel agent says there's an issue with our booking."
+      },
+      {
+        "speaker": "Alex",
+        "text": "What? She booked a hotel but not our flights?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "She avoided the question about the flights. I'm worried."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm expressing my feelings about this clearly. This is unacceptable!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Wait, she's checking something... We might be an inch from disaster here."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "That was close! I can't believe she found us tickets."
+      },
+      {
+        "speaker": "Sam",
+        "text": "An outstanding performance by that agent. She admitted her mistake."
+      },
+      {
+        "speaker": "Alex",
+        "text": "We just need to sign the documents."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Ok, I'll sign below. Will you sign it too? It needs both our signatures."
+      },
+      {
+        "speaker": "Alex",
+        "text": "We will survive this travel chaos. Let's print the tickets now."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Did you hide the birthday gifts?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, underneath several plastic bags."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Great, now let's start our adventure!"
+      }
+            
+    ]
+  }
+}

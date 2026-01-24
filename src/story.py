@@ -1,1086 +1,845 @@
-import base64
-import json
-import os
-import zipfile
+from __future__ import annotations
+
 from collections import defaultdict
-from pathlib import Path
-from string import Template
 from typing import Dict, List, Optional
 
-from google.cloud import storage
 from pydub import AudioSegment
-from tqdm import tqdm
 
-from src.audio_generation import create_m4a_with_timed_lyrics
-from src.config_loader import config
-from src.convert import (
-    convert_audio_to_base64,
-    convert_base64_list_to_audio_segments,
-    convert_base64_to_audio,
-    convert_PIL_image_to_base64,
-    get_story_title,
-    get_collection_title,
+
+from src.phrases.search import get_phrase
+from src.llm_tools.refine_story_translation import refine_story_translation
+from src.storage import (
+    PUBLIC_BUCKET,
 )
-from src.gcs_storage import (
-    check_blob_exists,
-    get_image_path,
-    get_m4a_file_path,
-    get_fast_audio_path,
-    get_public_story_path,
-    get_story_translated_dialogue_path,
-    get_utterance_audio_path,
-    get_wiktionary_cache_path,
-    read_from_gcs,
-    upload_to_gcs,
-    get_story_collection_path,
-    sanitize_path_component,
-)
-from src.utils import load_template, get_story_position
-from src.wiktionary import generate_wiktionary_links
 
 
-def upload_styles_to_gcs():
-    """Upload the styles.css file to the public GCS bucket."""
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from src.models import BCP47Language, get_language
 
-    # Load the CSS content with correct path handling
-    try:
-        # Try current directory first (when running from project root)
-        styles_content = load_template("styles.css", "src/templates")
-    except FileNotFoundError:
-        # Fallback to relative path (when running from subdirectory)
-        styles_content = load_template("styles.css", "../src/templates")
-
-    # Upload to GCS
-    public_url = upload_to_gcs(
-        obj=styles_content,
-        bucket_name=config.GCS_PUBLIC_BUCKET,
-        file_name="styles.css",
-        content_type="text/css",
-    )
-
-    print(f"✅ Styles uploaded successfully!")
-    print(f"🌐 Public URL: {public_url}")
-
-    return public_url
+from src.phrases.phrase_model import Phrase, Translation  # noqa: F401 - Translation needed for Pydantic model resolution
+from google.cloud.firestore import DocumentReference
+from src.connections.gcloud_auth import get_firestore_client
+from src.phrases.utils import generate_phrase_hash
+from src.phrases.phrase_model import FirePhraseDataModel
+from src.logger import logger
+from langcodes import Language
+from src.audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
+from src.storage import upload_to_gcs
+from src.utils import render_html_content
 
 
-def create_and_upload_html_story(
-    prepared_data: Dict,
-    story_name: str,
-    bucket_name: str = config.GCS_PUBLIC_BUCKET,
-    component_path: str = "StoryViewer.js",
-    template_path: str = "story_template.html",
-    collection: str = "LM1000",
-) -> str:
-    """
-    Create a standalone HTML file from prepared story data and upload it to GCS.
+def get_story(
+    story_title: str | None = None, story_title_hash: str | None = None
+) -> Optional["Story"]:
+    """Retrieve a Story from Firestore by its title hash."""
+    if story_title:
+        story_title_hash = generate_phrase_hash(story_title)
 
-    Args:
-        prepared_data: Dictionary containing prepared story data with base64 encoded assets
-        story_name: Name of the story
-        bucket_name: GCS bucket name for upload
-        component_path: Path to the React component file
-        template_path: Path to the HTML template file
-        output_dir: Local directory to save HTML file before upload
-        collection: Collection name for organizing stories
-
-    Returns:
-        str: Public URL of the uploaded HTML file
-    """
-
-    language = config.TARGET_LANGUAGE_NAME
-
-    # Clean the story name for display
-    story_title = get_story_title(story_name)
-
-    # Read the React component
-    react_component = load_template(component_path)
-
-    # Read the HTML template
-    template = Template(load_template(template_path))
-
-    # Substitute the template variables
-    html_content = template.substitute(
-        title=story_title,
-        story_data=json.dumps(prepared_data),
-        language=language,
-        react_component=react_component,
-        collection_name=get_collection_title(collection),
-        collection_raw=collection,
-    )
-
-    try:
-
-        blob_path = get_public_story_path(story_name, collection)
-
-        public_url = upload_to_gcs(
-            obj=html_content,
-            bucket_name=bucket_name,
-            file_name=blob_path,
-            content_type="text/html",
-        )
-        print(f"Uploaded HTML story to: {public_url}")
-
-        return public_url
-
-    except Exception as e:
-        print(f"Error uploading to GCS: {str(e)}")
-        return str(blob_path)  # Return local path if upload fails
-
-
-def generate_language_section(langauge: str, stories: List[Dict[str, str]]) -> str:
-    """Generate HTML for a single language section."""
-
-    stories_html = "\n".join(
-        f'<li><a href="{story["url"]}">{story["name"]}</a></li>'
-        for story in sorted(stories, key=lambda x: x["name"])
-    )
-
-    return f"""
-    <section class="language-section" id="{langauge.lower()}">
-        <h2>{langauge}</h2>
-        <ul class="story-list">
-            {stories_html}
-        </ul>
-    </section>
-    """
-
-
-def generate_special_pages_section(special_pages: List[Dict[str, str]]) -> str:
-    """Generate HTML for special pages section."""
-    if not special_pages:
-        return ""
-
-    links_html = "\n".join(
-        f'<a href="{page["url"]}">{page["name"]}</a>' for page in special_pages
-    )
-
-    return f"""
-    <div class="special-pages">
-        <h3>Additional Resources</h3>
-        {links_html}
-    </div>
-    """
-
-
-def create_album_files(
-    story_data_dict: dict, story_name: str, collection: str = "LM1000"
-):
-    """Creates and saves M4A files for the story, with album artwork.
-    Optionally uploads files to Google Cloud Storage.
-    """
-    REPEATS_OF_FAST_DIALOGUE = 10
-    PAUSE_TEXT = "---------"
-    GAP_BETWEEN_PHRASES = AudioSegment.silent(duration=500)
-
-    gcs_bucket_name = config.GCS_PRIVATE_BUCKET
-    # Get story position from collection
-    story_position = get_story_position(story_name, collection)
-
-    ALBUM_NAME = (
-        f"{story_position:02d} - "
-        + get_story_title(story_name)
-        + f" ({config.TARGET_LANGUAGE_NAME})"
-    )
-    TOTAL_TRACKS = len(story_data_dict) * 2  # 1 track normal, 1 track fast
-
-    m4a_file_paths = []
-
-    story_data_first_key = list(story_data_dict.keys())[0]
-    cover_image_base64 = story_data_dict[story_data_first_key]["image_data"]
-
-    # Create the story tracks for each story section
-    for track_number, (story_part, data) in enumerate(
-        tqdm(story_data_dict.items(), desc="creating album"), start=1
-    ):
-        audio_list = []
-        captions_list = []
-
-        # Get dialogue texts and audio
-        dialogue_list = [utterance["text"] for utterance in data["translated_dialogue"]]
-        dialogue_audio_list = convert_base64_list_to_audio_segments(
-            data["audio_data"]["dialogue"]
-        )
-
-        # Initial dialogue at normal speed
-        audio_list.append(GAP_BETWEEN_PHRASES)
-        captions_list.append(f"{story_part} - Initial Dialogue")
-
-        audio_list.extend(dialogue_audio_list)
-        captions_list.extend(dialogue_list)
-
-        # Create M4A file
-        m4a_filename = get_m4a_file_path(
-            story_name,
-            story_part,
-            fast=False,
-            story_position=story_position,
-            collection=collection,
-        )
-
-        m4a_path = create_m4a_with_timed_lyrics(
-            audio_segments=audio_list,
-            phrases=captions_list,
-            m4a_filename=m4a_filename,
-            album_name=ALBUM_NAME,
-            track_title=story_part,
-            track_number=track_number,
-            total_tracks=TOTAL_TRACKS,
-            cover_image_base64=cover_image_base64,
-            bucket_name=gcs_bucket_name,
-        )
-        m4a_file_paths.append(m4a_path)
-        print(f"Saved M4A file track number {track_number}")
-
-    # Now generate fast versions
-    for track_number, (story_part, data) in enumerate(
-        tqdm(story_data_dict.items(), desc="creating fast tracks for album"),
-        start=len(story_data_dict) + 1,
-    ):
-        audio_list = []
-        captions_list = []
-
-        # Fast dialogue section
-        captions_list.append(f"{story_part} - Fast Dialogue Practice")
-        fast_dialogue_audio = convert_base64_to_audio(
-            data["audio_data"]["fast_dialogue"]
-        )
-        # Add fast dialogue (there are 10 repeats in the audio)
-        for i in range(REPEATS_OF_FAST_DIALOGUE):
-            audio_list.append(fast_dialogue_audio)
-            captions_list.append(f"Fast Dialogue - Repetition {i+1}")
-            audio_list.append(GAP_BETWEEN_PHRASES)
-            captions_list.append(PAUSE_TEXT)
-
-        # Create M4A file
-        m4a_filename_fast = get_m4a_file_path(
-            story_name=story_name,
-            story_part=story_part,
-            fast=True,
-            story_position=story_position,
-            collection=collection,
-        )
-        m4a_path = create_m4a_with_timed_lyrics(
-            audio_segments=audio_list,
-            phrases=captions_list,
-            m4a_filename=m4a_filename_fast,
-            album_name=ALBUM_NAME,
-            track_title=story_part + " (fast)",
-            track_number=track_number,
-            total_tracks=TOTAL_TRACKS,
-            cover_image_base64=cover_image_base64,
-            bucket_name=gcs_bucket_name,
-        )
-        m4a_file_paths.append(m4a_path)
-        print(f"Saved M4A file track number {track_number}")
-
-    return m4a_file_paths
-
-
-def prepare_dialogue_with_wiktionary(story_data_dict: dict, language_name: str = None):
-    """Add wiktionary links to utterances for target language text.
-
-    Args:
-        story_data_dict: Story data dictionary containing dialogue
-        language_name: Name of target language for Wiktionary links
-
-    Returns:
-        List of processed utterances with added wiktionary_links field
-    """
-    if language_name is None:
-        language_name = config.TARGET_LANGUAGE_NAME
-
-    word_link_cache_path = get_wiktionary_cache_path()
-
-    if check_blob_exists(config.GCS_PRIVATE_BUCKET, word_link_cache_path):
-        word_link_cache = read_from_gcs(
-            config.GCS_PRIVATE_BUCKET, word_link_cache_path, "json"
-        )
-        print(f"Got word link cache of size {len(word_link_cache)} from GCS")
+    doc = _get_story_doc_ref(story_title_hash).get()
+    if doc.exists:
+        story_data = doc.to_dict()
+        return Story.model_validate(story_data)
     else:
-        word_link_cache = {}
-
-    story_data_dict_copy = story_data_dict.copy()
-    for story_part in tqdm(
-        story_data_dict_copy, desc="Getting dialogue links for story_parts"
-    ):
-        dialogue = story_data_dict_copy[story_part].get("translated_dialogue", [])
-        # Process each utterance in the dialogue
-        for utterance in dialogue:
-            # Generate Wiktionary links for the target language text
-
-            wiktionary_links, word_link_cache = generate_wiktionary_links(
-                utterance["text"],
-                language_name=language_name,
-                word_link_cache=word_link_cache,
-                return_cache=True,
-            )
-            utterance["wiktionary_links"] = wiktionary_links
-
-    # upload the additional word_link cache to GCS
-    upload_to_gcs(
-        obj=word_link_cache,
-        bucket_name=config.GCS_PRIVATE_BUCKET,
-        file_name=word_link_cache_path,
-    )
-
-    return story_data_dict_copy
-
-
-def upload_story_image(
-    image_file: str,
-    story_part: str,
-    story_name: str,
-    collection: str = "LM1000",
-    bucket_name: Optional[str] = None,
-) -> str:
-    """
-    Upload an image file for a story part to GCS.
-
-    Args:
-        image_file: Path to the image file
-        story_part: Part of the story (e.g., 'introduction')
-        story_name: Name of the story
-        collection: Collection name (e.g., 'LM1000', 'LM2000')
-        bucket_name: Optional bucket name
-
-    Returns:
-        GCS URI of the uploaded image file
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PRIVATE_BUCKET
-
-    # Ensure story_name is properly formatted
-    story_name = (
-        f"story_{story_name}" if not story_name.startswith("story_") else story_name
-    )
-
-    # Create the GCS path
-    image_path = get_image_path(story_name, story_part, collection)
-    # Read the image file
-    with open(image_file, "rb") as f:
-        image_data = f.read()
-
-    # Upload the image file
-    gcs_uri = upload_to_gcs(
-        obj=image_data,
-        bucket_name=bucket_name,
-        file_name=image_path,
-    )
-
-    print(f"Image uploaded to {gcs_uri}")
-    return gcs_uri
-
-
-def prepare_story_data_from_gcs(
-    story_name: str,
-    bucket_name: str = config.GCS_PRIVATE_BUCKET,
-    collection: str = "LM1000",
-) -> Dict:
-    """
-    Prepare story data for HTML by downloading required files from GCS.
-
-    Args:
-        bucket_name: GCS bucket name
-        story_name: Name of the story (e.g., "story_a_fishing_trip")
-        language: Target language (e.g., "french")
-        collection: Collection name (default: "LM1000")
-
-    Returns:
-        Dict: Prepared data for HTML rendering
-    """
-
-    language_name = config.TARGET_LANGUAGE_NAME.lower()
-    # Get story translated dialogue, this will have wiktionary links already
-    dialogue_path = get_story_translated_dialogue_path(story_name, collection)
-    try:
-        story_dialogue = read_from_gcs(bucket_name, dialogue_path, "json")
-    except FileNotFoundError:
-        print(f"Dialogue not found for {story_name} in {language_name}")
-        return {}
-
-    prepared_data = {}
-
-    # Process each section of the story (introduction, development, etc.)
-    for story_part, dialogue in tqdm(
-        story_dialogue.items(), desc=f"Preparing {story_name} in {language_name}"
-    ):
-        try:
-            # Initialize the section data structure
-            fast_audio_segment = read_from_gcs(
-                config.GCS_PRIVATE_BUCKET,
-                get_fast_audio_path(story_name, story_part, collection),
-                "audio",
-            )
-        except (FileNotFoundError, ValueError) as e:
-            print(f"Warning: Fast audio not found for {story_part}: {str(e)}")
-            fast_audio_segment = AudioSegment.silent(duration=1000)  # 1 second silence
-
-        prepared_data[story_part] = {
-            "dialogue": dialogue.get("dialogue", []),
-            "translated_dialogue": dialogue.get("translated_dialogue", []),
-            "audio_data": {
-                "dialogue": [],
-                "fast_dialogue": convert_audio_to_base64(
-                    fast_audio_segment
-                ),  # will be base64 encoded audio for whole story part
-            },
-        }
-
-        # Process audio for each dialogue utterance
-        for i, utterance in tqdm(
-            enumerate(dialogue.get("translated_dialogue", [])),
-            colour="red",
-            desc="Downloading utterance audio",
-        ):
-            try:
-                audio_path = get_utterance_audio_path(
-                    story_name,
-                    story_part,
-                    i,
-                    utterance["speaker"],
-                    language_name,
-                    collection,
-                )
-                audio_segment = read_from_gcs(bucket_name, audio_path, "audio")
-                audio_base64 = convert_audio_to_base64(audio_segment)
-                prepared_data[story_part]["audio_data"]["dialogue"].append(audio_base64)
-            except (FileNotFoundError, ValueError) as e:
-                print(
-                    f"Warning: Audio not found for utterance {i} in {story_part}: {str(e)}"
-                )
-
-        # Add image data
-        try:
-            image_path = get_image_path(story_name, story_part, collection)
-            image_data = read_from_gcs(bucket_name, image_path, "image")
-            image_base64 = convert_PIL_image_to_base64(image_data)
-            prepared_data[story_part]["image_data"] = image_base64
-        except (FileNotFoundError, ValueError) as e:
-            print(f"Warning: Image not found for {story_part}: {str(e)}")
-
-    return prepared_data
-
-
-def update_all_index_pages_hierarchical(
-    languages: List[str] = None,
-    collections: List[str] = None,
-    bucket_name: str = None,
-    force_upload: bool = True,
-    verbose: bool = True,
-) -> dict:
-    """
-    Update all index pages using the new hierarchical system (Language > Collection > Story).
-    Only generates index pages for stories and collections that actually exist.
-
-    This function generates and uploads:
-    - Main language selector index (index.html)
-    - Language-level collection indexes
-    - Collection-level story indexes (with numbered stories)
-
-    Args:
-        languages: List of language names (defaults to [config.TARGET_LANGUAGE_NAME])
-        collections: List of collection names (defaults to ["LM1000"])
-        bucket_name: Name of the GCS bucket (defaults to config.GCS_PUBLIC_BUCKET)
-        force_upload: Whether to upload generated files even if they exist
-        verbose: Whether to print detailed progress information
-
-    Returns:
-        dict: Dictionary with paths and URLs for all generated index pages
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-    if languages is None:
-        languages = [config.TARGET_LANGUAGE_NAME]
-    if collections is None:
-        collections = ["LM1000", "WarmUp150"]
-
-    if verbose:
-        print(f"Starting hierarchical index generation for bucket: {bucket_name}")
-        print(f"Checking existence of content for languages: {languages}")
-        print(f"Checking existence of content for collections: {collections}")
-
-    # Filter to only existing languages and collections
-    existing_languages = get_existing_languages(languages, collections, bucket_name)
-
-    if verbose:
-        print(f"Found existing languages: {existing_languages}")
-        if not existing_languages:
-            print(
-                "❌ No existing languages found with content. Skipping index generation."
-            )
-            return {"error": "No existing languages found with content"}
-
-    # Upload latest styles first
-    if verbose:
-        print("Uploading latest styles...")
-    upload_styles_to_gcs()
-
-    results = {}
-
-    try:
-        # Generate hierarchical index system with only existing content
-        if verbose:
-            print("Generating hierarchical index system...")
-
-        hierarchical_results = generate_hierarchical_index_system(
-            languages=existing_languages,
-            collections=collections,  # Pass all collections, filtering happens inside
-            bucket_name=bucket_name,
-            upload=force_upload,
-        )
-
-        results.update(
-            {
-                "main_index": {"url": hierarchical_results["main_index"]},
-                "language_indexes": hierarchical_results["language_indexes"],
-                "collection_indexes": hierarchical_results["collection_indexes"],
-            }
-        )
-
-        if verbose:
-            print(f"✅ Main index: {hierarchical_results['main_index']}")
-            for lang, url in hierarchical_results["language_indexes"].items():
-                print(f"✅ {lang} language index: {url}")
-            for key, url in hierarchical_results["collection_indexes"].items():
-                print(f"✅ {key} collection index: {url}")
-
-        return results
-
-    except Exception as e:
-        error_msg = f"Error updating hierarchical index pages: {str(e)}"
-        print(f"❌ {error_msg}")
-        results["error"] = error_msg
-        return results
-
-
-def generate_hierarchical_index_system(
-    languages: List[str] = None,
-    collections: List[str] = None,
-    bucket_name: str = None,
-    upload: bool = True,
-) -> dict:
-    """
-    Generate a hierarchical index system: Main Index > Language Index > Collection Index.
-    Only generates indexes for content that actually exists.
-
-    This replaces the bucket scraping approach with a structured system based on
-    collection data files.
-
-    Args:
-        languages: List of language names (defaults to [config.TARGET_LANGUAGE_NAME])
-        collections: List of collection names (defaults to ["LM1000"])
-        bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
-        upload: Whether to upload generated files
-
-    Returns:
-        dict: Results with URLs for all generated index pages
-    """
-
-    if languages is None:
-        languages = [config.TARGET_LANGUAGE_NAME]
-    if collections is None:
-        collections = ["LM1000"]
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-
-    print(f"🏗️  Starting hierarchical index generation...")
-    print(f"   Languages to process: {languages}")
-    print(f"   Collections to check: {collections}")
-    print(f"   Target bucket: {bucket_name}")
-
-    results = {"main_index": None, "language_indexes": {}, "collection_indexes": {}}
-
-    # 1. Generate main index (language selector) - only for existing languages
-    print(f"\n📄 Generating main language index...")
-    results["main_index"] = generate_main_language_index(
-        languages=languages,
-        bucket_name=bucket_name,
-        upload=upload,
-        collections=collections,
-    )
-
-    # 2. Generate language-level indexes only for languages with existing content
-    for language in languages:
-        print(f"\n🌐 Processing language: {language}")
-        existing_collections = get_existing_collections_for_language(
-            language, collections, bucket_name
-        )
-
-        if existing_collections:
-            print(
-                f"   Found existing collections for {language}: {existing_collections}"
-            )
-            results["language_indexes"][language] = generate_language_collection_index(
-                language=language,
-                collections=existing_collections,  # Only pass existing collections
-                bucket_name=bucket_name,
-                upload=upload,
-            )
-
-            # 3. Generate collection-level indexes for this language's existing collections
-            for collection in existing_collections:
-                print(f"   📚 Processing collection: {collection}")
-                key = f"{language}_{collection}"
-                results["collection_indexes"][key] = generate_collection_story_index(
-                    language=language,
-                    collection=collection,
-                    bucket_name=bucket_name,
-                    upload=upload,
-                )
-        else:
-            print(f"   ⚠️  No existing collections found for {language}")
-
-    print(f"\n✅ Hierarchical index generation complete!")
-    return results
-
-
-def generate_main_language_index(
-    languages: List[str],
-    bucket_name: str,
-    upload: bool = True,
-    collections: List[str] = None,
-) -> str:
-    """Generate the main index page that shows available languages.
-    Only includes languages that have existing content."""
-
-    if collections is None:
-        collections = ["LM1000"]
-
-    print(f"   🔍 Checking content for languages: {languages}")
-
-    # Get language statistics - only for languages with existing content
-    language_cards = ""
-    special_pages = get_special_pages_from_bucket(bucket_name)
-
-    for language in languages:
-        # Get existing collections for this language
-        existing_collections = get_existing_collections_for_language(
-            language, collections, bucket_name
-        )
-
-        if not existing_collections:
-            print(f"   ❌ Skipping language {language} - no existing collections found")
-            continue
-
-        print(
-            f"   ✅ Including language {language} with collections: {existing_collections}"
-        )
-
-        # Get stats for this language across existing collections
-        total_stories = 0
-
-        for collection in existing_collections:
-            try:
-                collection_data = read_from_gcs(
-                    config.GCS_PRIVATE_BUCKET,
-                    get_story_collection_path(collection),
-                    "json",
-                )
-                if collection_data:
-                    total_stories += len(collection_data)
-            except:
-                continue
-
-        stats_text = f"{len(existing_collections)} collections, {total_stories} stories"
-        language_url = f"{language.lower()}/index.html"
-
-        language_cards += f"""
-        <div class="language-card">
-            <div class="language-name">{language}</div>
-            <div class="language-stats">{stats_text}</div>
-            <a href="{language_url}" class="language-link">Browse Stories</a>
-        </div>
-        """
-
-    # Only generate main index if there are languages with content
-    if not language_cards.strip():
-        print(
-            "   ❌ No languages with existing content found. Skipping main index generation."
-        )
+        logger.warning(f"Story with hash {story_title_hash} not found in Firestore.")
         return None
 
-    # Generate special pages section
-    special_pages_html = ""
-    if special_pages:
-        special_links = "\n".join(
-            f'<a href="{page["url"]}" class="special-link">{page["name"]}</a>'
-            for page in special_pages
-        )
-        special_pages_html = f"""
-        <div class="special-section">
-            <h2>Additional Resources</h2>
-            <div class="special-links">
-                {special_links}
-            </div>
-        </div>
-        """
 
-    # Load and fill template
-    template = Template(load_template("index_template.html"))
-    html_content = template.substitute(
-        language_cards=language_cards,
-        special_pages=special_pages_html,
+def _story_exists(story_title_hash: str) -> bool:
+    doc = _get_story_doc_ref(story_title_hash).get()
+    return doc.exists
+
+
+def _get_story_doc_ref(story_title_hash: str) -> DocumentReference:
+    client = get_firestore_client()
+    return client.collection("stories").document(story_title_hash)
+
+
+def get_all_stories() -> List[Story]:
+    """Gets all story title hashes from firestore
+
+    Returns:
+        List[str]: the story titles
+    """
+
+    client = get_firestore_client()
+    collection_ref = client.collection("stories")
+    docs = collection_ref.stream()
+
+    ALL_STORIES = []
+    for story in docs:
+        ALL_STORIES.append(Story.model_validate(story.to_dict()))
+
+    return ALL_STORIES
+
+
+class StoryPhrase(Phrase):
+    """Phrase model specifically for story dialogues with context-aware translations."""
+
+    story_title_hash: str = Field(..., description="Hash of the parent story")
+    story_part: str = Field(
+        ..., description="Part of the story (e.g., introduction, development)"
+    )
+    sequence: int = Field(
+        ..., description="Utterance sequence within the story part", gte=0
     )
 
-    # Upload directly using upload_to_gcs (which handles local saving automatically)
-    if upload:
-        url = upload_to_gcs(
+    @classmethod
+    def create(
+        cls, english_phrase: str, story_title_hash: str, story_part: str, sequence: int
+    ) -> "StoryPhrase":
+        """Factory method to create a StoryPhrase with story-specific hash."""
+        # Create base phrase for NLP processing
+        base_phrase = Phrase.create(english_phrase=english_phrase)
+
+        # Generate story-specific phrase hash
+        story_specific_hash = cls._generate_story_phrase_hash(
+            english_phrase, story_title_hash, story_part, sequence
+        )
+
+        return cls(
+            **base_phrase.model_dump(exclude={"key"}),
+            key=story_specific_hash,
+            story_title_hash=story_title_hash,
+            story_part=story_part,
+            sequence=sequence,
+        )
+
+    @staticmethod
+    def _generate_story_phrase_hash(
+        english_phrase: str, story_title_hash: str, story_part: str, sequence: int
+    ) -> str:
+        """Generate a unique hash combining phrase text and story context.
+
+        Args:
+            english_phrase: The English phrase text
+            story_title_hash: Hash of the story title
+
+        Returns:
+            str: Combined hash like "hello_abc123_story_xyz789"
+        """
+        phrase_hash = generate_phrase_hash(english_phrase)
+        # Combine: phrase_hash + "_story_" + story_title_hash
+        return f"story_{story_title_hash}#{story_part}#{sequence}#{phrase_hash}"
+
+
+StoryPhrase.model_rebuild()
+
+
+class Utterance(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    sequence: int = Field(..., description="Sequence number of the dialogue line")
+    speaker: str = Field(..., description="Name of the speaker")
+    text: str = Field(..., description="English Text spoken by the speaker")
+    story_phrase: Optional[StoryPhrase] = Field(
+        None, exclude=True, description="Phrase data like audio etc"
+    )
+    phrase_hash: Optional[str] = Field(
+        None, description="Phrase hash for this dialogue line"
+    )
+    story_part: str = Field(
+        ...,
+        description="Name of the story part this utterance belongs to, 'introduction' etc",
+    )
+    target_text: Optional[str] = Field(
+        None, description="Translated text for this utterance"
+    )
+    wiktionary_links: Optional[str] = Field(
+        None, description="Wiktionary links for target text, space separted"
+    )
+    source_text: Optional[str] = Field(
+        None,
+        description="Source text if different from English, e.g., for reverse translations",
+    )
+    target_audio_normal: Optional[AudioSegment] = Field(
+        None, exclude=True, description="Translated audio at normal speed"
+    )
+
+    @computed_field
+    @property
+    def target_audio_filename_normal(self) -> str:
+        """Get the expected audio filename for normal speed."""
+        return f"{self.story_part}_{self.speaker}_{self.sequence}_normal.mp3".lower()
+
+    @computed_field
+    @property
+    def story_part_titlecase(self) -> str:
+        """Get the part name in title case."""
+        return self.story_part.replace("_", " ").title()
+
+    @model_validator(mode="after")
+    def assign_phrase_hash(self) -> "Utterance":
+        """Assign phrase_hash from story_phrase if available."""
+        if self.story_phrase:
+            self.phrase_hash = self.story_phrase.key
+        return self
+
+    @model_validator(mode="after")
+    def get_story_phrase(self) -> "Utterance":
+        """Retrieve StoryPhrase object if phrase_hash is present but story_phrase is None."""
+        if self.phrase_hash and not self.story_phrase:
+            logger.debug(
+                f"Getting Phrase data from Firestore for phrase_hash: {self.phrase_hash}"
+            )
+            story_phrase = get_phrase(self.phrase_hash)
+            self.story_phrase = story_phrase
+        return self
+
+    def _verify_translation_loaded(self):
+        if all(
+            [
+                self.target_text,
+                self.wiktionary_links,
+                self.source_text,
+                self.target_audio_normal,
+            ]
+        ):
+            return
+        else:
+            raise ValueError(
+                f"Utternace not loaded with audio or text: {self.model_dump()}"
+            )
+
+    def _load_target_audio(
+        self, language: Language | str, speed: str = "normal"
+    ) -> AudioSegment:
+        """Get combined audio for the utterance in the specified language. Adds audio to target_audio_normal."""
+        language = get_language(language)
+        if self.story_phrase:
+            logger.debug(
+                f"Retrieving audio for utterance seq {self.sequence} in language {language.to_tag()}"
+            )
+            self.target_audio_normal = self.story_phrase.get_audio(
+                language=language, context="story", speed=speed
+            )
+            return self.target_audio_normal
+        else:
+            raise ValueError(f"No story phrase found for utterance seq {self.sequence}")
+
+    def _publish_audio_to_gcs(self, base_prefix: str) -> str:
+        """Publish the audio for this utterance to GCS and return the public URL.
+        base prefix is the story location"""
+        if not self.target_audio_normal:
+            raise ValueError(f"No audio to upload for utterance seq {self.sequence}")
+
+        return upload_to_gcs(
+            obj=self.target_audio_normal,
+            base_prefix=base_prefix,
+            bucket_name=PUBLIC_BUCKET,
+            file_name=self.target_audio_filename_normal,
+            save_local=True,
+        )
+
+    def _load_story_translation(
+        self,
+        target_language: Language | str,
+        source_language: Language | str = Language.get("en-GB"),
+    ) -> None:
+        """Get the translated text with Wiktionary links for vocabulary words.
+        Adds new fields into the model: target_text and wiktionary_links"""
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
+        self.get_story_phrase()
+        self.story_phrase.translate(
+            target_language=target_language, refine=False, overwrite=False
+        )
+
+        if self.story_phrase:
+            source_translation = self.story_phrase._get_translation(source_language)
+            target_translation = self.story_phrase._get_translation(target_language)
+            if source_translation:
+                self.source_text = source_translation.text
+            else:
+                logger.debug(
+                    f"No source translation found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}"
+                )
+                raise ValueError(
+                    f"Source translation not found for phrase hash {self.phrase_hash} in language {source_language.to_tag()}"
+                )
+            if target_translation:
+                self.wiktionary_links = target_translation.get_wiktionary_links()
+                self.target_text = target_translation.text
+            else:
+                logger.debug(
+                    f"No translation found for phrase hash {self.phrase_hash} in language {target_language.to_tag()}"
+                )
+                raise ValueError(
+                    f"Translation not found for phrase hash {self.phrase_hash} in language {target_language.to_tag()}"
+                )
+        else:
+            logger.debug(f"No story phrase found for utterance seq {self.sequence}")
+            raise ValueError(f"No story phrase found for utterance seq {self.sequence}")
+
+
+class PublishedStory(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    source_language: BCP47Language = Field(
+        ..., description="BCP47 tag of the source language"
+    )
+    target_language: BCP47Language = Field(
+        ..., description="BCP47 tag of the target language"
+    )
+    gcs_path: str = Field(..., description="GCS path of the published story")
+    active: bool = Field(
+        default=True, description="Whether this published version is active"
+    )
+    public_url: str = Field(default="", description="Public URL for story")
+    title: str = Field(..., description="The title of the corresponding Story")
+    deck: str = Field(..., description="The deck of the corresponding Story")
+    collection: str = Field(..., description="Collection story comes from")
+
+    def _is_published(
+        self,
+        source_language: Language | None = None,
+        target_language: Language | None = None,
+    ) -> bool:
+        """Checks for a match based on source and optional target language"""
+        if source_language is None and target_language is None:
+            raise ValueError("At least one language must be specified")
+
+        source_match = (source_language is None) or (
+            self.source_language == source_language
+        )
+        target_match = (target_language is None) or (
+            self.target_language == target_language
+        )
+        return source_match and target_match
+
+
+class Story(FirePhraseDataModel):
+    title: str = Field(..., description="Title of the story")
+    summary: str = Field("", description="Brief summary of the story")
+    story_parts: Dict[str, List[Utterance]] = Field(
+        ..., description="Dictionary of story parts (e.g., introduction, development)"
+    )
+    firestore_collection: str = Field(
+        "stories", description="Firestore collection name for stories"
+    )
+    collection: Optional[str] = Field(
+        default=None, description="List of collections this story belongs to"
+    )
+    deck: Optional[str] = Field(
+        default=None,
+        description="What decks this story supports. Name made from collection ID and deck name, e.g. LM2000-Pack01",
+    )
+    published: Dict[str, PublishedStory] = Field(
+        default_factory=dict,
+        description="Dictionary of published versions of the story, key is source_tag|target_tag",
+    )
+    target_language_name: Optional[str] = Field(
+        None, description="Name of the target language for translation"
+    )
+    source_language_name: Optional[str] = Field(
+        None, description="Name of the source language"
+    )
+    target_language_tag: Optional[str] = Field(
+        None, description="BCP47 tag of the target language for translation"
+    )
+    source_language_tag: Optional[str] = Field(
+        None, description="BCP47 tag of the source language for translation"
+    )
+
+    @model_validator(mode="after")
+    def sort_story_parts(self) -> "Story":
+        """Ensure each story_part is sorted."""
+        self.story_parts = dict(sorted(self.story_parts.items()))
+        return self
+
+    @computed_field
+    @property
+    def title_snake_case(self) -> str:
+        """Get the story title in snake case."""
+        return self.title.lower().replace(" ", "_")
+
+    @classmethod
+    def create(
+        cls,
+        title: str,
+        summary: str,
+        story_dialogue: Dict[str, List[Utterance]],
+        collection: str | None = None,
+        deck: str | None = None,
+    ) -> "Story":
+        """Factory method to create a Story instance."""
+        story_title_hash = generate_phrase_hash(title)
+        if _story_exists(story_title_hash):
+            raise ValueError(f"Story with title {title} already exists in Firestore.")
+        story_parts = defaultdict(list)
+        # create sequence and story part information for each piece of dialogue
+        for story_part, part_dialogue in story_dialogue.items():
+            story_parts[story_part] = []  # will be a list of utterances
+
+            for seq, utterance in enumerate(part_dialogue["dialogue"]):
+                story_phrase_obj = StoryPhrase.create(
+                    english_phrase=utterance["text"],
+                    story_title_hash=story_title_hash,
+                    story_part=story_part,
+                    sequence=seq,
+                )
+
+                utterance_obj = Utterance(
+                    sequence=seq,
+                    speaker=utterance["speaker"],
+                    text=utterance["text"],
+                    story_title_hash=story_title_hash,
+                    story_phrase=story_phrase_obj,
+                    story_part=story_part,
+                )
+                story_parts[story_part].append(utterance_obj)
+
+        story_obj = cls(
+            title=title,
+            key=story_title_hash,
+            summary=summary,
+            story_parts=story_parts,
+            collection=collection,
+            deck=deck,
+        )
+
+        return story_obj
+
+    def publish_story(
+        self,
+        target_language: Language | str,
+        source_language: Language | str = "en-GB",
+        overwrite: bool = False,
+    ) -> str:
+        """Publish the story to the public GCS bucket for the specified language pair.
+        Overwrite will collect translation data again and re-publish, if overwrite is False and the story is already published
+        it will be skipped."""
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
+
+        # Check if already published
+        if not overwrite:
+            if self._is_published(
+                target_language=target_language, source_language=source_language
+            ):
+                logger.info(
+                    f"Story '{self.title}' already published for {source_language.to_tag()} -> {target_language.to_tag()}"
+                )
+                return
+
+        self._load_story_translation(
+            target_language=target_language, source_language=source_language
+        )
+        self._verify_translation_loaded()
+        gcs_path = self._get_gcs_path()
+
+        # Upload HTML to GCS
+        html_content = self._render_story_html()
+
+        story_page = upload_to_gcs(
             obj=html_content,
-            bucket_name=bucket_name,
+            bucket_name=PUBLIC_BUCKET,
+            base_prefix=gcs_path,
             file_name="index.html",
             content_type="text/html",
         )
-        print(f"   ✅ Created main index: {url}")
-        return url
+        logger.info(f"Published story at {story_page}")
 
-    return None
+        self._publish_all_audio()
 
+        publish_tag = self._get_published_tag(target_language, source_language)
+        # Add to published dictionary
+        public_url = self._get_public_url()
+        self.published[publish_tag] = PublishedStory(
+            source_language=self.source_language_tag,
+            target_language=self.target_language_tag,
+            gcs_path=gcs_path,
+            active=True,
+            public_url=public_url,
+            title=self.title,
+            deck=self.deck,
+            collection=self.collection,
+        )
 
-def generate_language_collection_index(
-    language: str,
-    collections: List[str],
-    bucket_name: str,
-    upload: bool = True,
-) -> str:
-    """Generate a language-level index showing available collections.
-    Only includes collections that exist for the given language."""
+        logger.info(
+            f"Finished Publishing story '{self.title}' to GCS at {gcs_path} for {source_language.to_tag()} -> {target_language.to_tag()}"
+        )
+        self.upload()
+        return public_url
 
-    print(
-        f"     🔍 Generating language index for {language} with collections: {collections}"
-    )
+    def get_story_text(self) -> str:
+        """Simple string of all utterances (english only)
+        Used to feed into LLM tools for a story summary"""
+        dialogue = ",".join(
+            [
+                utterance.text
+                for story_part, utterances in self.story_parts.items()
+                for utterance in utterances
+            ]
+        )
+        return self.title + ": summary: " + self.summary + ": dialogue: " + dialogue
 
-    collection_cards = ""
+    def _get_published_tag(self, target_language: Language, source_language: Language):
+        """Dictionary key for the published dictionary such as en-GB-fr-FR"""
 
-    for collection in collections:
-        try:
-            # Get collection data
-            collection_data = read_from_gcs(
-                config.GCS_PRIVATE_BUCKET, get_story_collection_path(collection), "json"
+        return f"{source_language.to_tag()}|{target_language.to_tag()}"
+
+    def get_all_published_source_languages(self) -> List[Language]:
+        """all published elements matching languages"""
+
+        return [published.source_language for _, published in self.published.items()]
+
+    def get_published_stories(
+        self,
+        source_language: Language | str | None = "en-GB",
+        target_language: Language | None = None,
+    ) -> List[PublishedStory]:
+        """all published elements matching languages"""
+
+        source_language = get_language(source_language)
+        target_language = get_language(target_language)
+
+        matching_published = []
+        for _, _published in self.published.items():
+            if _published._is_published(source_language, target_language):
+                matching_published.append(_published)
+        return matching_published
+
+    def _verify_utterances_loaded(self) -> None:
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                utterance._verify_translation_loaded()
+
+    def _verify_translation_loaded(self) -> None:
+        if all(
+            [
+                self.target_language_name,
+                self.source_language_name,
+                self.target_language_tag,
+                self.source_language_tag,
+            ]
+        ):
+            self._verify_utterances_loaded()
+            return
+        else:
+            raise ValueError(
+                "We do not have a translation loaded into the story, run self._load_story_translation()"
             )
 
-            # Double-check that this collection exists for this language
-            if not check_collection_exists_for_language(
-                collection, language, bucket_name
-            ):
-                print(
-                    f"     ❌ Collection {collection} doesn't exist for language {language}, skipping"
+    def _publish_story_parts_audio(self) -> List[str]:
+        """Publish all story parts audio"""
+
+        all_files_published = []
+        for story_part in self.story_parts:
+            all_files_published.append(self._publish_story_part_audio(story_part))
+
+        return all_files_published
+
+    def _publish_story_part_audio(self, story_part: str) -> str:
+        """Publish the audio part of the store, returning the gcs file path"""
+
+        story_part_audio = self._get_story_part_audio(story_part)
+        story_part_filename = story_part + ".mp3"
+        return upload_to_gcs(
+            obj=story_part_audio,
+            bucket_name=PUBLIC_BUCKET,
+            base_prefix=self._get_gcs_path(),
+            file_name=story_part_filename,
+        )
+
+    def _publish_full_story_audio(self) -> str:
+        all_story_audio = self._get_story_audio()
+        all_story_filename = "full_story.mp3"
+        return upload_to_gcs(
+            obj=all_story_audio,
+            file_name=all_story_filename,
+            bucket_name=PUBLIC_BUCKET,
+            base_prefix=self._get_gcs_path(),
+        )
+
+    def _get_story_part_audio(self, story_part: str) -> AudioSegment:
+        all_audio = []
+        utterances = self.story_parts[story_part]
+        for utterance in utterances:
+            all_audio.append(utterance.target_audio_normal)
+            all_audio.append(INTER_UTTERANCE_GAP)
+
+        return sum(all_audio)
+
+    def _get_story_audio(self) -> AudioSegment:
+        """Returns a single audio segment for the entire story"""
+
+        all_audio: List[AudioSegment] = []
+        for story_part in self.story_parts:
+            all_audio.append(self._get_story_part_audio(story_part))
+            all_audio.append(STORY_PART_TRANSITION)
+
+        return sum(all_audio)
+
+    def _publish_all_audio(self) -> None:
+        """Publish all audio files to story GCS bucket"""
+        full_file = self._publish_full_story_audio()
+        logger.info(f"Published full story {full_file}")
+        story_part_files = self._publish_story_parts_audio()
+        logger.info(f"Published parts {','.join(story_part_files)}")
+        utterances = self._publish_audio_utterances()
+        logger.info(f"Published utterances {','.join(utterances)}")
+
+    def _publish_audio_utterances(self) -> List[str]:
+        """Publish all utterance audio to GCS and return list of public URLs."""
+
+        public_urls = []
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                logger.debug(
+                    f"Publishing audio for utterance seq {utterance.text} in part '{story_part}'"
                 )
-                continue
-
-            story_count = len(collection_data)
-            collection_title = get_collection_title(collection)
-            print(f"     ✅ Including collection {collection} ({story_count} stories)")
-
-            collection_url = f"{collection.lower()}/index.html"
-
-            collection_cards += f"""
-            <div class="collection-card">
-                <div class="collection-title">{collection_title}</div>
-                <div class="collection-stats">{story_count} stories</div>
-                <div class="collection-links">
-                    <a href="{collection_url}" class="collection-link primary">View Stories</a>
-                </div>
-            </div>
-            """
-
-        except Exception as e:
-            print(f"     ⚠️  Warning: Could not load collection {collection}: {e}")
-            continue
-
-    # Only generate language index if there are collections with content
-    if not collection_cards.strip():
-        print(
-            f"     ❌ No collections with existing content found for language {language}. Skipping language index generation."
-        )
-        return None
-
-    # Load and fill template
-    template = Template(load_template("language_index_template.html"))
-    html_content = template.substitute(
-        language_name=language,
-        collection_cards=collection_cards,
-        main_index_url="../index.html",
-    )
-
-    # Upload directly using upload_to_gcs
-    if upload:
-        blob_path = f"{language.lower()}/index.html"
-        url = upload_to_gcs(
-            obj=html_content,
-            bucket_name=bucket_name,
-            file_name=blob_path,
-            content_type="text/html",
-        )
-        print(f"     ✅ Created language index for {language}: {url}")
-        return url
-
-    return None
-
-
-def generate_collection_story_index(
-    language: str,
-    collection: str,
-    bucket_name: str,
-    upload: bool = True,
-) -> str:
-    """Generate a collection-level index showing stories ordered by position.
-    Only includes stories that actually exist for the given language."""
-
-    print(f"       🔍 Generating collection index for {language}/{collection}")
-
-    try:
-        # Get collection data
-        collection_data = read_from_gcs(
-            config.GCS_PRIVATE_BUCKET, get_story_collection_path(collection), "json"
-        )
-
-        story_cards = ""
-        existing_story_count = 0
-
-        # Generate story cards ordered by position - only for existing stories
-        for position, (story_name, story_data) in enumerate(collection_data.items(), 1):
-            # Check if this story actually exists for this language
-            if not check_story_exists_for_language(
-                story_name, collection, language, bucket_name
-            ):
-                print(
-                    f"       ❌ Story {story_name} doesn't exist for language {language}, skipping"
+                public_url = utterance._publish_audio_to_gcs(
+                    base_prefix=self._get_gcs_path()
                 )
-                continue
+                public_urls.append(public_url)
+        return public_urls
 
-            existing_story_count += 1
-            story_title = get_story_title(story_name)
-            phrase_count = len(story_data) if isinstance(story_data, list) else 0
-
-            print(
-                f"       ✅ Including story {position:02d}: {story_title} ({phrase_count} phrases)"
-            )
-
-            # Generate URLs - relative from collection index to story folder
-            story_url = f"{story_name}/{story_name}.html"
-            challenges_url = f"{story_name}/challenges.html"
-
-            story_cards += f"""
-            <div class="story-card">
-                <div class="story-number">{position:02d}</div>
-                <div class="story-title">{story_title}</div>
-                <div class="story-info">{phrase_count} phrases</div>
-                <div class="story-links">
-                    <a href="{story_url}" class="story-link primary">Read Story</a>
-                    <a href="{challenges_url}" class="story-link secondary">Challenges</a>
-                </div>
-            </div>
-            """
-
-        # Only generate collection index if there are existing stories
-        if existing_story_count == 0:
-            print(
-                f"       ❌ No existing stories found for collection {collection} in language {language}. Skipping collection index generation."
-            )
-            return None
-
-        collection_title = get_collection_title(collection)
-
-        # Load and fill template
-        template = Template(load_template("collection_index_template.html"))
-        html_content = template.substitute(
-            collection_title=collection_title,
-            language_name=language,
-            story_count=existing_story_count,
-            story_cards=story_cards,
-            main_index_url="../../index.html",
-            language_index_url="../index.html",
+    def _get_public_url(self):
+        gcs_stub = self._get_gcs_path()
+        full_path = (
+            f"https://storage.googleapis.com/{PUBLIC_BUCKET}/{gcs_stub}index.html"
         )
+        return full_path
 
-        # Upload directly using upload_to_gcs
-        if upload:
-            blob_path = f"{language.lower()}/{collection.lower()}/index.html"
-            url = upload_to_gcs(
-                obj=html_content,
-                bucket_name=bucket_name,
-                file_name=blob_path,
-                content_type="text/html",
-            )
-            print(
-                f"       ✅ Created collection index for {language}/{collection}: {url}"
-            )
-            return url
+    def _render_story_html(self) -> str:
+        """Render the story as an HTML page for the specified language pair."""
 
-        return None
+        html_content = render_html_content(self.model_dump(), "story_template.html")
+        return html_content
 
-    except Exception as e:
-        print(
-            f"       ❌ Error generating collection index for {language}/{collection}: {e}"
-        )
-        return None
+    def _is_published(
+        self, target_language: Language | None, source_language: Language
+    ) -> bool:
+        """Check if the story is already published for the specified language pair."""
 
-
-def get_special_pages_from_bucket(bucket_name: str) -> List[Dict[str, str]]:
-    """Get special pages (non-story pages) from bucket."""
-    special_pages = []
-
-    try:
-        client = storage.Client()
-        bucket = client.bucket(bucket_name)
-
-        for blob in bucket.list_blobs():
-            if blob.name.endswith(".html"):
-                path = Path(blob.name)
-                parts = path.parts
-
-                # Only root-level files that aren't index.html
-                if len(parts) == 1 and parts[0] != "index.html":
-                    special_pages.append(
-                        {
-                            "name": parts[0]
-                            .replace(".html", "")
-                            .replace("_", " ")
-                            .title(),
-                            "url": f"https://storage.googleapis.com/{bucket_name}/{blob.name}",
-                        }
-                    )
-    except Exception as e:
-        print(f"Warning: Could not load special pages: {e}")
-
-    return special_pages
-
-
-def check_collection_exists_for_language(
-    collection: str,
-    language: str,
-    bucket_name: str = None,
-) -> bool:
-    """
-    Check if a collection has any content for a specific language.
-
-    Args:
-        collection: Collection name (e.g., "LM1000")
-        language: Language name (e.g., "French")
-        bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
-
-    Returns:
-        bool: True if the collection exists and has content for the language
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
-
-    try:
-        # First check if the collection data file exists
-        collection_data = read_from_gcs(
-            config.GCS_PRIVATE_BUCKET,
-            get_story_collection_path(collection),
-            "json",
-        )
-
-        if not collection_data:
-            return False
-
-        # Check if there's at least one story published for this language/collection
-        language_folder = sanitize_path_component(language.lower())
-        collection_folder = sanitize_path_component(collection.lower())
-
-        # Check for any story HTML files in the public bucket
-        storage_client = storage.Client()
-        bucket = storage_client.bucket(bucket_name)
-        prefix = f"{language_folder}/{collection_folder}/"
-
-        # Look for any .html files in the collection folder
-        blobs = bucket.list_blobs(prefix=prefix)
-        for blob in blobs:
-            if blob.name.endswith(".html"):
+        for _, published_story in self.published.items():
+            if published_story._is_published(
+                source_language=source_language, target_language=target_language
+            ):
                 return True
-
         return False
 
-    except Exception as e:
-        print(f"Error checking collection {collection} for language {language}: {e}")
-        return False
+    def _load_story_translation(
+        self,
+        target_language: Language | str,
+        source_language: Language | str = Language.get("en-GB"),
+    ) -> None:
+        """Get the translated text with Wiktionary links for vocabulary words for all utterances.
+        Adds new fields into each Utterance: target_text and wiktionary_links"""
+        target_language = get_language(target_language)
+        source_language = get_language(source_language)
 
+        self.target_language_name = target_language.display_name()
+        self.source_language_name = source_language.display_name()
+        self.target_language_tag = target_language.to_tag()
+        self.source_language_tag = source_language.to_tag()
 
-def check_story_exists_for_language(
-    story_name: str,
-    collection: str,
-    language: str,
-    bucket_name: str = None,
-) -> bool:
-    """
-    Check if a specific story exists for a given language and collection.
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                logger.debug(
+                    f"Getting translation for utterance seq {utterance.text} in part '{story_part}'"
+                )
+                utterance._load_story_translation(
+                    target_language=target_language, source_language=source_language
+                )
 
-    Args:
-        story_name: Name of the story
-        collection: Collection name
-        language: Language name
-        bucket_name: GCS bucket name (defaults to config.GCS_PUBLIC_BUCKET)
+        logger.debug(f"Generating audio with overwrite as False for {target_language}")
+        self.generate_audio(language=target_language, overwrite=False)
 
-    Returns:
-        bool: True if the story exists for the language
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PUBLIC_BUCKET
+        self._load_audio(target_language=target_language, speed="normal")
 
-    # Check if the story HTML file exists
-    story_path = get_public_story_path(story_name, collection)
-    # The path uses config.TARGET_LANGUAGE_NAME, so we need to construct it manually
-    language_folder = sanitize_path_component(language.lower())
-    collection_folder = sanitize_path_component(collection.lower())
-    story_folder = sanitize_path_component(story_name)
-    story_path = (
-        f"{language_folder}/{collection_folder}/{story_folder}/{story_name}.html"
-    )
+    def _get_gcs_path(self) -> str:
+        """Get the public GCS path for the story webpage"""
+        if not self.target_language_tag or not self.source_language_tag:
+            raise ValueError(
+                "Run self._load_story_translation() first to populate self.target_language_tag"
+            )
 
-    return check_blob_exists(bucket_name, story_path)
-
-
-def get_existing_collections_for_language(
-    language: str,
-    collections: List[str],
-    bucket_name: str = None,
-) -> List[str]:
-    """
-    Get list of collections that actually exist for a specific language.
-
-    Args:
-        language: Language name
-        collections: List of collection names to check
-        bucket_name: GCS bucket name
-
-    Returns:
-        List[str]: Collections that exist for the language
-    """
-    existing_collections = []
-
-    for collection in collections:
-        if check_collection_exists_for_language(collection, language, bucket_name):
-            existing_collections.append(collection)
-
-    return existing_collections
-
-
-def get_existing_languages(
-    languages: List[str],
-    collections: List[str],
-    bucket_name: str = None,
-) -> List[str]:
-    """
-    Get list of languages that have at least one collection with content.
-
-    Args:
-        languages: List of language names to check
-        collections: List of collection names to check
-        bucket_name: GCS bucket name
-
-    Returns:
-        List[str]: Languages that have existing content
-    """
-    existing_languages = []
-
-    for language in languages:
-        # Check if this language has any existing collections
-        existing_collections = get_existing_collections_for_language(
-            language, collections, bucket_name
+        return (
+            f"stories/{self.source_language_tag}/{self.target_language_tag}/{self.key}/"
         )
-        if existing_collections:
-            existing_languages.append(language)
 
-    return existing_languages
+    def generate_audio(self, language: Language | str, overwrite: bool = False) -> None:
+        """Generate audio for all utterances in the story for the specified language."""
+        language = get_language(language)
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                gender = (
+                    "MALE" if utterance.speaker.lower().strip() == "sam" else "FEMALE"
+                )
+                if utterance.story_phrase:
+                    logger.debug(
+                        f"Generating audio for utterance seq {utterance.text} in language {language.to_tag()}"
+                    )
+                    utterance.story_phrase.generate_audio(
+                        context="story",
+                        gender=gender,
+                        language=language,
+                        overwrite=overwrite,
+                    )
+                else:
+                    logger.debug(
+                        f"Skipping audio generation for utterance seq {utterance.text} in part '{story_part}' - no story phrase found"
+                    )
+
+    def _load_audio(
+        self, target_language: Language | str, speed: str = "normal"
+    ) -> Dict[str, List[AudioSegment]]:
+        """Get combined audio for the entire story in the specified language."""
+        target_language = get_language(target_language)
+        all_audio = defaultdict(list)
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                phrase_audio = utterance._load_target_audio(
+                    language=target_language, speed=speed
+                )
+                if phrase_audio:
+                    all_audio[story_part].append(phrase_audio)
+                else:
+                    raise ValueError(
+                        f"No audio found for utterance seq {utterance.text} in part '{story_part}'"
+                    )
+        return all_audio
+
+    def upload(
+        self, language: Language | str | None = None, overwrite: bool = False
+    ) -> DocumentReference:
+        """Upload the story to Firestore including all phrases and their audio etc.
+        Returns the DocumentReference for the story itself."""
+        if language:
+            language = get_language(language)
+        self._upload_phrase_entries(language=language, overwrite=overwrite)
+        return self._upload_to_firestore()
+
+    def _upload_phrase_entries(
+        self, language: Language | str | None = None, overwrite: bool = False
+    ) -> List[DocumentReference]:
+        """Upload all StoryPhrase entries to Firestore."""
+        if language:
+            language = get_language(language)
+        doc_refs = []
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                if utterance.story_phrase:
+                    doc_ref = utterance.story_phrase.upload(
+                        language=language, overwrite=overwrite
+                    )
+                    doc_refs.append(doc_ref)
+        return doc_refs
+
+    def _upload_to_firestore(self) -> DocumentReference:
+        """Upload the story to Firestore."""
+        doc_ref = self._get_firestore_document_reference()
+        doc_ref.set(
+            self.model_dump(
+                mode="json",
+                exclude={
+                    "source_text",
+                    "target_text",
+                    "wiktionary_links",
+                    "target_language_name",
+                    "source_language_name",
+                    "target_language_tag",
+                    "source_language_tag",
+                },
+            )
+        )
+        return doc_ref
+
+    def translate(
+        self,
+        target_language: Language | str,
+        refine: bool = False,
+        overwrite: bool = False,
+    ) -> None:
+        """Translate all utterances in the story to the target language."""
+        target_language = get_language(target_language)
+
+        for story_part, utterances in self.story_parts.items():
+            for utterance in utterances:
+                if utterance.story_phrase:
+                    logger.debug(
+                        f"Translating utterance seq {utterance.text} in part '{story_part}'"
+                    )
+                    utterance.story_phrase.translate(
+                        target_language, refine=False, overwrite=overwrite
+                    )
+        if refine:
+            logger.debug(
+                f"Refining translations for story '{self.title}' to language {target_language.to_tag()}'"
+            )
+            self._refine_translations(target_language)
+        else:
+            logger.debug(
+                f"Skipping refinement of translations for story '{self.title}' to language {target_language.to_tag()}'"
+            )
+
+    def _replace_translations(
+        self,
+        refined_translations: Dict[str, List[Dict[str, str]]],
+        target_language: Language,
+    ) -> None:
+        """Replace translations in the story with refined translations."""
+
+        for story_part, utterances in self.story_parts.items():
+            refined_part = refined_translations.get(story_part, [])
+            logger.debug(
+                f"Refining translations for part '{story_part}' with {len(utterances)} utterances"
+            )
+            if not refined_part:
+                raise ValueError(
+                    f"Refined dialogue missing part '{story_part}' for story '{self.title}'"
+                )
+            for utterance, refined_utterance in zip(utterances, refined_part):
+                refined_text = refined_utterance["translation"]
+                utterance.story_phrase.translate(
+                    target_language=target_language,
+                    overwrite=True,
+                    translated_text=refined_text,
+                )
+                logger.debug(
+                    f"Replaced translation for utterance with '{refined_text}'"
+                )
+
+    def _refine_translations(self, target_language: Language) -> None:
+        """Refine translations for all utterances in the story to the target language."""
+        translation_dialogue = self._get_dialogue_with_translations(target_language)
+        refined_dialogue = refine_story_translation(
+            story_parts=translation_dialogue, language=target_language
+        )
+        self._replace_translations(refined_dialogue, target_language)
+
+    def _get_dialogue_with_translations(
+        self, target_language: Language
+    ) -> Dict[str, List[Dict]]:
+        """Get the story dialogue with translations for the target language."""
+        dialogue_with_translations = {}
+        for story_part, utterances in self.story_parts.items():
+            dialogue_with_translations[story_part] = []
+            for utterance in utterances:
+                translation_text = ""
+                if utterance.story_phrase:
+                    translation = utterance.story_phrase._get_translation(
+                        target_language
+                    )
+                    if translation:
+                        translation_text = translation.text
+
+                        dialogue_with_translations[story_part].append(
+                            {
+                                "speaker": utterance.speaker,
+                                "text": utterance.text,
+                                "translation": translation_text,
+                            }
+                        )
+                    else:
+                        logger.exception(
+                            f"Translation not found for phrase hash {utterance.phrase_hash} in language {target_language.to_tag()}"
+                        )
+                        raise ValueError(
+                            f"Translation not found for phrase hash {utterance.phrase_hash} in language {target_language.to_tag()}"
+                        )
+
+        return dict(sorted(dialogue_with_translations.items()))
+
+
+Story.model_rebuild()
