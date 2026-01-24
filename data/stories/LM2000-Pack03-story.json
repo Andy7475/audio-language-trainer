@@ -1,0 +1,130 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, did you hear the news? There was an incident at the city art gallery yesterday."
+      },
+      {
+        "speaker": "Sam",
+        "text": "No, what happened? I was at the beach all day."
+      },
+      {
+        "speaker": "Alex",
+        "text": "A painting disappeared during the reception. The police suspect it was stolen, but they have no clues."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's very mysterious. Which painting was it?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "The one with two red apples on the plate. You know, the famous still life painting by Martinez."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Oh, I know that one! The apples are far apart from the others on the table. It's worth a lot of money."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Exactly. The owner is offering a reward for any information. We should investigate this ourselves."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Are you serious? That sounds crazy, but also fascinating. Where do we start?"
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "I have a contact who works at the gallery. She can give us access to the security camera data."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Perfect! Can we meet her tomorrow?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "She's prepared to meet us now, actually. But we need to be professional about this."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Of course. What did she report about the incident?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "She said the camera behind the painting was broken. Very suspicious, right?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Definitely. Someone planned this carefully. Did anyone act strangely during the reception?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, a doctor from the hospital. He was very concerned about the painting and asked many questions about it."
+      },
+      {
+        "speaker": "Sam",
+        "text": "We should talk to him. But wait, look at this picture from the reception. Do you see that man in the green jacket?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "The one holding the camera? He's standing next to the painting just before it disappeared."
+      },
+      {
+        "speaker": "Sam",
+        "text": "This is an important clue. We need to find him quickly."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "I found his contact information. His name is Dr. Chen, and he owns a residence near the gallery."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Should we report this to the police?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Not yet. We don't have enough evidence. Let's talk to him first."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Okay, but if he attempts to escape, we call the police immediately."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Agreed. Oh, he's here now! Dr. Chen, we need to talk to you about the painting."
+      },
+      {
+        "speaker": "Sam",
+        "text": "We know you were at the reception. Please represent the facts accurately. What were you doing near the painting?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Wait, Sam. Look, he has the painting in his car! We can see it clearly from here."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Dr. Chen, you need to explain this."
+      },
+      {
+        "speaker": "Alex",
+        "text": "He's trying to apologize. He says he borrowed it to study the paint technique for his own art. He was going to return it tomorrow."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's still a crime! But at least the painting is safe."
+      },
+      {
+        "speaker": "Alex",
+        "text": "The police will be pleased we solved this mystery. Great work, Sam!"
+      }
+    ]
+  }
+}

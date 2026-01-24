@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validat
 from src.models import BCP47Language, get_language
 
 from src.phrases.phrase_model import Phrase, Translation  # noqa: F401 - Translation needed for Pydantic model resolution
-from google.cloud.firestore import DocumentReference
+from google.cloud.firestore import DocumentReference, FieldFilter
 from src.connections.gcloud_auth import get_firestore_client
 from src.phrases.utils import generate_phrase_hash
 from src.phrases.phrase_model import FirePhraseDataModel
@@ -54,7 +54,9 @@ def _get_story_doc_ref(story_title_hash: str) -> DocumentReference:
     return client.collection("stories").document(story_title_hash)
 
 
-def get_all_stories() -> List[Story]:
+def get_all_stories(
+    collection: str | None = None, deck: str | None = None
+) -> List[Story]:
     """Gets all story title hashes from firestore
 
     Returns:
@@ -62,10 +64,17 @@ def get_all_stories() -> List[Story]:
     """
 
     client = get_firestore_client()
-    collection_ref = client.collection("stories")
-    docs = collection_ref.stream()
 
+    query = client.collection("stories")
+    if collection:
+        collection_filter = FieldFilter("collection", "==", collection)
+        query = query.where(filter=collection_filter)
+        if deck:
+            deck_filter = FieldFilter("deck", "==", deck)
+            query = query.where(filter=deck_filter)
+    docs = query.get()
     ALL_STORIES = []
+
     for story in docs:
         ALL_STORIES.append(Story.model_validate(story.to_dict()))
 
