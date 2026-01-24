@@ -13,7 +13,7 @@ from src.models import BCP47Language, get_language
 from src.phrases.phrase_model import FirePhraseDataModel
 from src.storage import PUBLIC_BUCKET, upload_to_gcs
 from src.story import Story
-from src.utils import render_html_content
+from src.utils import render_html_content, normalize_lang_code_for_challenges
 from src.story import get_story
 
 
@@ -317,6 +317,9 @@ class ChallengeRecord(FirePhraseDataModel):
         context = {
             "title": title,
             "target_language": target_language.display_name(),
+            "target_language_alpha2": normalize_lang_code_for_challenges(
+                target_language.language
+            ),
             "target_language_code": target_language.to_tag(),
             "source_language": source_language.display_name(),
             "source_language_code": source_language.to_tag(),

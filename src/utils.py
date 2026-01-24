@@ -282,3 +282,51 @@ def render_html_content(data: dict, template_name: str) -> str:
     template = env.get_template(template_name)
     html_content = template.render(data)
     return html_content
+
+
+def normalize_lang_code_for_wiktionary(lang_code: str) -> str:
+    """
+    Normalize language codes to match Wiktionary's language code conventions.
+
+    Args:
+        lang_code: Base language code from langcodes (e.g., 'cmn', 'en', 'yue')
+
+    Returns:
+        str: Normalized language code for Wiktionary (e.g., 'zh', 'en')
+    """
+    # Mapping of language codes to Wiktionary codes
+    lang_code_mapping = {
+        "cmn": "zh",  # Mandarin Chinese -> Chinese
+        "yue": "zh",  # Cantonese -> Chinese (if applicable)
+        "nan": "zh",  # Min Nan -> Chinese (if applicable)
+        "wuu": "zh",  # Wu Chinese -> Chinese (if applicable)
+        "sr": "sh",  # Serbian -> Serbo-Croatian
+        "hr": "sh",  # Croatian -> Serbo-Croatian (if needed)
+        "bs": "sh",  # Bosnian -> Serbo-Croatian (if needed)
+    }
+
+    return lang_code_mapping.get(lang_code, lang_code)
+
+
+def normalize_lang_code_for_challenges(lang_code: str) -> str:
+    """
+    Normalize language codes to match Wiktionary's language code conventions.
+
+    Args:
+        lang_code: Base language code from langcodes (e.g., 'cmn', 'en', 'yue')
+
+    Returns:
+        str: Normalized language code for Wiktionary (e.g., 'zh', 'en')
+    """
+    # Mapping of language codes to Wiktionary codes
+    lang_code_mapping = {
+        "cmn": "zh",  # Mandarin Chinese -> Chinese
+        "yue": "zh",  # Cantonese -> Chinese (if applicable)
+        "nan": "zh",  # Min Nan -> Chinese (if applicable)
+        "wuu": "zh",  # Wu Chinese -> Chinese (if applicable)
+        # "sr": "sh",  # Serbian -> Serbo-Croatian
+        # "hr": "sh",  # Croatian -> Serbo-Croatian (if needed)
+        # "bs": "sh",  # Bosnian -> Serbo-Croatian (if needed)
+    }
+
+    return lang_code_mapping.get(lang_code, lang_code)

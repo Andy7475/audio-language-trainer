@@ -174,7 +174,7 @@ const ChallengeAPI = (() => {
                         const formData = new FormData();
                         formData.append('file', audioBlob, 'audio.webm');
                         formData.append('model', 'whisper-1');
-                        formData.append('language', languageCode.split('-')[0]);
+                        formData.append('language', languageCode);
 
                         const transcriptionData = await callOpenAIWithFormData('audio/transcriptions', formData);
                         const userText = transcriptionData.text;

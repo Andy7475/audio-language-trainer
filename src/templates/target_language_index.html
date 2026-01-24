@@ -24,14 +24,22 @@
         </nav>
 
         <h2>Stories by Collection:</h2>
-        {% for collection_name, published_stories in stories_by_collection.items() %}
+        {% for collection_name, story_items in stories_by_collection.items() %}
         <section id="{{ collection_name | replace(' ', '_') }}" class="story-list">
             <h3>{{ collection_name }}</h3>
-            {% for story in published_stories %}
-            <h4>{{ deck_name }}</h4>
+            {% for item in story_items %}
+            <h4>{{ item.story_deck }}</h4>
             <ul>
-                <li><a href="{{ story.public_url }}">{{ story.title }}</a> | {{ story.deck }}</li>
-
+                <li>
+                    <a href="{{ item.story_public_url }}">{{ item.story_title }}</a>
+                    {% if item.has_challenge %}
+                    | <a href="{{ item.challenge_public_url }}">Challenge</a>
+                    {% endif %}
+                    | {{ item.story_deck }}
+                    <!-- Future deck purchase link:
+                    | <a href="{{ item.deck_url }}" target="_blank" rel="noopener">Buy Deck</a>
+                    -->
+                </li>
             </ul>
             {% endfor %}
         </section>

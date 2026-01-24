@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 from typing import List, Dict, Optional
 from src.story import Story, PublishedStory
-from src.challenges.models import ChallengeRecord, PublishedChallenge
+from src.challenges.models import PublishedChallenge
 from src.models import get_language, BCP47Language
 from langcodes import Language
 from src.logger import logger
@@ -73,6 +73,36 @@ class StoryWithChallenge(BaseModel):
     challenge: Optional[PublishedChallenge] = Field(
         None, description="The published challenge if it exists"
     )
+
+    @computed_field
+    @property
+    def story_deck(self) -> str:
+        """Get the deck name from the story."""
+        return self.story.deck
+
+    @computed_field
+    @property
+    def story_title(self) -> str:
+        """Get the title from the story."""
+        return self.story.title
+
+    @computed_field
+    @property
+    def story_public_url(self) -> str:
+        """Get the public URL from the story."""
+        return self.story.public_url
+
+    @computed_field
+    @property
+    def has_challenge(self) -> bool:
+        """Check if a challenge exists."""
+        return self.challenge is not None
+
+    @computed_field
+    @property
+    def challenge_public_url(self) -> str:
+        """Get the challenge public URL if it exists."""
+        return self.challenge.public_url if self.challenge else ""
 
     @computed_field
     @property

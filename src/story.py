@@ -628,8 +628,8 @@ class Story(FirePhraseDataModel):
         target_language = get_language(target_language)
         source_language = get_language(source_language)
 
-        self.target_language_name = target_language.language_name()
-        self.source_language_name = source_language.language_name()
+        self.target_language_name = target_language.display_name()
+        self.source_language_name = source_language.display_name()
         self.target_language_tag = target_language.to_tag()
         self.source_language_tag = source_language.to_tag()
 

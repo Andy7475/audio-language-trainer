@@ -28,9 +28,7 @@
         </div>
 
         <div class="info-box">
-            <p><strong>ℹ️ About this feature:</strong> You'll need an OpenAI API key to use these speaking challenges.
-                The AI will conduct a conversation with you in {{ target_language }}. Click "Start Challenge", then "Record" to speak
-                your responses.</p>
+            <p><strong>ℹ️ About this feature:</strong> You'll need an <a href="https://platform.openai.com/api-keys">OpenAI API key</a>  to use this feature. <a href="https://auth.openai.com/create-account">Get an OpenAI account</a> if you don't have one.<p>The AI will conduct a conversation with you in {{ target_language }}. Click "Start Challenge", then "Record" to speak your responses.</p>
             <p><strong>Estimated cost:</strong> ~$0.80 per 30-minute practice session</p>
         </div>
     </header>
@@ -147,9 +145,7 @@ When that happens, switch to English and provide:
         {% endfor %}
     </main>
 
-    <footer>
-        <p><a href="https://storage.googleapis.com/audio-language-trainer-stories/">← Back to Home</a></p>
-    </footer>
+        {% include "index_footer.html" %}
 
     <!-- Import shared API handlers -->
     <script src="https://storage.googleapis.com/audio-language-trainer-stories/scripts/challenge_API.js"></script>
@@ -157,7 +153,7 @@ When that happens, switch to English and provide:
     <!-- Local page functionality -->
     <script>
         // Language code for this page
-        const LANGUAGE_CODE = '{{ target_language_code }}';
+        const LANGUAGE_CODE = '{{ target_language_alpha2 }}';
 
         // Simple UI toggle functions - keep local as they're HTML-specific
         function togglePrompt(challengeId) {
