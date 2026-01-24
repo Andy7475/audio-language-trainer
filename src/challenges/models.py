@@ -82,7 +82,7 @@ class Challenge(ChallengeBaseModel):
     scenarios: List[Scenario] = Field(
         ...,
         min_length=3,
-        max_length=3,
+        max_length=5,
         description="List of 3 roleplay scenarios, one at each difficult",
     )
 

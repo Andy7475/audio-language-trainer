@@ -25,6 +25,7 @@
             <label for="apiKey">OpenAI API Key:</label>
             <input type="password" id="apiKey" placeholder="sk-..." />
             <button onclick="saveApiKey()" class="save-key-btn">Save Key</button>
+            <div id="status-api-key" class="status-message"></div>
         </div>
 
         <div class="info-box">
@@ -189,10 +190,10 @@ When that happens, switch to English and provide:
             if (key) {
                 ChallengeAPI.setApiKey(key);
                 localStorage.setItem('openai_api_key', key);
-                showStatus('challenge1', 'API Key saved successfully!', 'success');
-                setTimeout(() => hideStatus('challenge1'), 2000);
+                showStatus('api-key', 'API Key saved successfully!', 'success');
+                setTimeout(() => hideStatus('api-key'), 2000);
             } else {
-                showStatus('challenge1', 'Please enter a valid API key', 'error');
+                showStatus('api-key', 'Please enter a valid API key', 'error');
             }
         }
 
