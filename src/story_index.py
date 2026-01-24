@@ -1,6 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
-from typing import List, Dict
+from typing import List, Dict, Optional
 from src.story import Story, PublishedStory
+from src.challenges.models import ChallengeRecord, PublishedChallenge
 from src.models import get_language, BCP47Language
 from langcodes import Language
 from src.logger import logger
@@ -8,6 +9,8 @@ from collections import defaultdict
 from src.utils import render_html_content
 from src.storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
 from src.story import get_all_stories
+from src.challenges.models import get_challenge
+from urllib.parse import quote_plus
 
 
 class IndexPage(BaseModel):
@@ -61,12 +64,53 @@ def create_language_index() -> LanguageIndex:
     return LanguageIndex(source_languages=ALL_SOURCE_LANGUAGES, all_stories=all_stories)
 
 
+class StoryWithChallenge(BaseModel):
+    """Container for a published story and its optional challenge."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    story: PublishedStory = Field(..., description="The published story")
+    challenge: Optional[PublishedChallenge] = Field(
+        None, description="The published challenge if it exists"
+    )
+
+    @computed_field
+    @property
+    def deck_url(self) -> str:
+        """Generate the shop URL for this deck.
+
+        Returns URL like:
+        https://firephrase.co.uk/collections/all?filter.p.m.custom.target_language=Italian%20%28Italy%29&...
+        """
+        # URL-encode the display names to handle special characters and spaces
+        target_lang_encoded = quote_plus(self.story.target_language.display_name())
+        source_lang_encoded = quote_plus(self.story.source_language.display_name())
+        collection_encoded = (
+            quote_plus(self.story.collection) if self.story.collection else ""
+        )
+
+        base_url = "https://firephrase.co.uk/collections/all"
+        params = [
+            "filter.v.price.gte=",
+            "filter.v.price.lte=",
+            f"filter.p.m.custom.target_language={target_lang_encoded}",
+            f"filter.p.m.custom.source_language={source_lang_encoded}",
+        ]
+
+        if collection_encoded:
+            params.append(f"filter.p.m.custom.collection={collection_encoded}")
+
+        params.append("sort_by=title-ascending")
+
+        return f"{base_url}?{'&'.join(params)}"
+
+
 class TargetLanguageIndex(IndexPage):
     source_language: BCP47Language = Field(...)
     target_language: BCP47Language = Field(...)
-    published_stories: List[PublishedStory] = Field(
-        default_factory=list
-    )  # collection -> story -> List[PublishedStory]
+    stories_with_challenges: List[StoryWithChallenge] = Field(
+        default_factory=list, description="Stories with their associated challenges"
+    )
     template_name: str = "target_language_index.html"
 
     @property
@@ -90,24 +134,25 @@ class TargetLanguageIndex(IndexPage):
     def all_collections(self) -> List[str]:
         """A list of all collections for this target language"""
         all_collections = set()
-        for published_story in self.published_stories:
-            all_collections.add(published_story.collection)
+        for item in self.stories_with_challenges:
+            all_collections.add(item.story.collection)
         return sorted(list(all_collections))
 
     @computed_field
     @property
-    def stories_by_collection(self) -> Dict[str, List[PublishedStory]]:
+    def stories_by_collection(self) -> Dict[str, List[StoryWithChallenge]]:
+        """Group stories with challenges by collection."""
         stories_by_collection = defaultdict(list)
         for collection in self.all_collections:
             stories_by_collection[collection] = []
-            for published_story in self.published_stories:
-                if collection == published_story.collection:
-                    stories_by_collection[collection].append(published_story)
+            for item in self.stories_with_challenges:
+                if collection == item.story.collection:
+                    stories_by_collection[collection].append(item)
 
         return dict(
             sorted(
                 stories_by_collection.items(),
-                key=lambda x: (x[0], sorted(x[1], key=lambda y: y.deck)),
+                key=lambda x: (x[0], sorted(x[1], key=lambda y: y.story.deck)),
             )
         )
 
@@ -120,23 +165,45 @@ def create_target_language_index(
     source_language: Language | str,
     target_language: Language | str,
 ) -> TargetLanguageIndex:
-    """Data we need to create the target language index"""
+    """Create the target language index with stories and challenges."""
     source_language = get_language(source_language)
     target_language = get_language(target_language)
 
-    ALL_PUBLISHED = []
+    stories_with_challenges = []
+
     for story in stories:
-        ALL_PUBLISHED.extend(
-            story.get_published_stories(source_language, target_language)
+        # Get published stories for this language pair
+        published_stories = story.get_published_stories(
+            source_language, target_language
         )
 
+        for published_story in published_stories:
+            # Try to get the challenge for this story
+            challenge_record = get_challenge(story.key)
+            published_challenge = None
+
+            if challenge_record:
+                # Check if challenge is published for this language pair
+                matching_challenges = challenge_record.get_published_challenges(
+                    source_language=source_language, target_language=target_language
+                )
+                published_challenge = (
+                    matching_challenges[0] if matching_challenges else None
+                )
+
+            stories_with_challenges.append(
+                StoryWithChallenge(story=published_story, challenge=published_challenge)
+            )
+
     logger.info(
-        f"Stories to add {len(ALL_PUBLISHED)} for {source_language} -> {target_language}"
+        f"Found {len(stories_with_challenges)} stories (with {sum(1 for s in stories_with_challenges if s.challenge)} challenges) "
+        f"for {source_language} -> {target_language}"
     )
+
     return TargetLanguageIndex(
         source_language=source_language,
         target_language=target_language,
-        published_stories=ALL_PUBLISHED,
+        stories_with_challenges=stories_with_challenges,
     )
 
 
@@ -194,7 +261,7 @@ def create_source_language_index(
 
 
 def update_indexes() -> None:
-    """Update all indexes for all published stories"""
+    """Update all indexes for all published stories and challenges"""
 
     lang_index = create_language_index()
     lang_index.upload_html()

@@ -6,8 +6,7 @@ from google.cloud.firestore import DocumentReference
 from langcodes import Language
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from llm_tools.base import load_prompt_template
-from llm_tools.challenge_generation import generate_challenge_content
+from llm_tools.base import DEFAULT_MODEL, get_anthropic_client, load_prompt_template
 from src.connections.gcloud_auth import get_firestore_client
 from src.logger import logger
 from src.models import BCP47Language, get_language
@@ -121,6 +120,27 @@ class PublishedChallenge(BaseModel):
             self.target_language == target_language
         )
         return source_match and target_match
+
+
+def generate_challenge_content(system_prompt: str, user_prompt: str) -> "Challenge":
+    client = get_anthropic_client()
+    response = client.beta.messages.parse(
+        model=DEFAULT_MODEL,
+        betas=["structured-outputs-2025-11-13"],
+        max_tokens=3000,
+        temperature=0.4,
+        system=system_prompt,
+        messages=[
+            {
+                "role": "user",
+                "content": user_prompt,
+            }
+        ],
+        output_format=Challenge,
+    )
+
+    challenge = response.parsed_output
+    return challenge
 
 
 def generate_challenges(

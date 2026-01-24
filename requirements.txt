@@ -1,6 +1,6 @@
 altair
 anki                           #for connecting to anki database
-anthropic                      #for querying the Anthropic models hosted on Google Cloud
+anthropic>=0.76                      #for querying the Anthropic models hosted on Google Cloud
 azure-cognitiveservices-speech #as google TTS does not have some voices like Persian
 beautifulsoup4
 fastapi
@@ -17,6 +17,7 @@ httpx
 ipykernel                       #for jupyter notebook
 ipywidgets
 librosa                         #for speeding up dialogue
+langcodes
 matplotlib
 mutagen
 pandas
