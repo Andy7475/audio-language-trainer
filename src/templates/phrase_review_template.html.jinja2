@@ -19,7 +19,7 @@
             {% for phrase_data in phrases %}
             <a href="#{{ phrase_data.phrase_hash }}" class="nav-link">
                 {{ loop.index }}. {{ phrase_data.source_text|truncate(40) }}
-            </a>
+            </a><br>
             {% endfor %}
         </div>
     </nav>

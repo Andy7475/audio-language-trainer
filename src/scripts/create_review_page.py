@@ -72,7 +72,6 @@ def create_review_page(
             "audio_normal_path": None,
             "audio_slow_path": None,
         }
-
         # Get target translation
         target_lang_tag = target_lang.to_tag()
         if target_lang_tag in phrase.translations:
