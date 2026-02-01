@@ -143,7 +143,7 @@ class Phrase(FirePhraseDataModel):
         return self.english
 
     @classmethod
-    def create(cls, english_phrase: str) -> Phrase:
+    def create(cls, english_phrase: str, phrase_hash: Optional[str] = None) -> Phrase:
         """Factory method to create a Phrase with NLP processing.
 
         Args:
@@ -152,7 +152,8 @@ class Phrase(FirePhraseDataModel):
         Returns:
             Phrase: A new Phrase object with NLP analysis and default en-GB translation
         """
-        phrase_hash = generate_phrase_hash(english_phrase)
+        if phrase_hash is None:
+            phrase_hash = generate_phrase_hash(english_phrase)
         if phrase_exists(phrase_hash):
             raise ValueError(
                 f"Phrase with hash {phrase_hash} already exists in Firestore"

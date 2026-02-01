@@ -1,0 +1,98 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hello! Nice to see you!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Hello! Good evening. This restaurant is beautiful."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, it is. I like this table here."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Me too. Where is the waiter?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "There! Excuse me, can we see the menu please?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thank you. Everything looks delicious."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "I would like the fish with white wine, please."
+      },
+      {
+        "speaker": "Sam",
+        "text": "And I would like the same. Is there a bathroom here?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, it's there, by the bar."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Perfect. I'll be right back."
+      },
+      {
+        "speaker": "Alex",
+        "text": "The food is here! It's delicious!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, very good. Cheers!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Cheers!"
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Excuse me, can we have the bill please?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "How much is it?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's not too expensive. Do you have cash?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "No, sorry. I don't have cash. Just my card."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's okay. I can pay with cash."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Thank you! I'll pay next time."
+      },
+      {
+        "speaker": "Sam",
+        "text": "No problem. Goodbye!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Goodbye! See you later!"
+      }
+    ]
+  }
+}

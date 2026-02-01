@@ -98,11 +98,11 @@ class StoryPhrase(Phrase):
     ) -> "StoryPhrase":
         """Factory method to create a StoryPhrase with story-specific hash."""
         # Create base phrase for NLP processing
-        base_phrase = Phrase.create(english_phrase=english_phrase)
-
-        # Generate story-specific phrase hash
         story_specific_hash = cls._generate_story_phrase_hash(
             english_phrase, story_title_hash, story_part, sequence
+        )
+        base_phrase = Phrase.create(
+            english_phrase=english_phrase, phrase_hash=story_specific_hash
         )
 
         return cls(
