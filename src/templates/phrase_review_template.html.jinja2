@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phrase Review: {{ source_language }} → {{ target_language }}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Phrase Review</h1>
+        <p class="language-info">{{ source_language }} → {{ target_language }}</p>
+        <p class="phrase-count">{{ phrases|length }} phrase{{ 's' if phrases|length != 1 else '' }}</p>
+    </header>
+
+    <nav class="phrase-navigation">
+        <h2>Quick Navigation</h2>
+        <div class="nav-links">
+            {% for phrase_data in phrases %}
+            <a href="#{{ phrase_data.phrase_hash }}" class="nav-link">
+                {{ loop.index }}. {{ phrase_data.source_text|truncate(40) }}
+            </a><br>
+            {% endfor %}
+        </div>
+    </nav>
+
+    <main class="phrases-container">
+        {% for phrase_data in phrases %}
+        <section id="{{ phrase_data.phrase_hash }}" class="phrase-section">
+            <div class="phrase-header">
+                <span class="phrase-number">{{ loop.index }} / {{ phrases|length }}</span>
+                <span class="phrase-hash">{{ phrase_data.phrase_hash }}</span>
+            </div>
+
+            <div class="card">
+                <!-- Image -->
+                <div class="picture-container">
+                    {% if phrase_data.image_base64 %}
+                    <img src="data:image/png;base64,{{ phrase_data.image_base64 }}" 
+                         alt="Phrase illustration">
+                    {% else %}
+                    <div class="image-placeholder">Image not available</div>
+                    {% endif %}
+                </div>
+
+                <!-- Source Language Text -->
+                <div class="source-text">
+                    {{ phrase_data.source_text }}
+                </div>
+
+                <!-- Target Language Text -->
+                <div class="target-text">
+                    {{ phrase_data.target_text }}
+                </div>
+
+                <!-- Wiktionary Links -->
+                {% if phrase_data.wiktionary_html %}
+                <div class="wiktionary-links">
+                    <h3>Wiktionary Links</h3>
+                    <div class="wiktionary-content">
+                        {{ phrase_data.wiktionary_html|safe }}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Audio Controls -->
+                <div class="audio-controls">
+                    <!-- Normal Speed -->
+                    <div class="audio-button-container">
+                        <div class="audio-label">Normal</div>
+                        {% if phrase_data.audio_normal_path %}
+                        <audio controls preload="none">
+                            <source src="{{ phrase_data.audio_normal_path }}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        {% else %}
+                        <div class="audio-missing">Audio missing</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Slow Speed -->
+                    <div class="audio-button-container">
+                        <div class="audio-label">Slow</div>
+                        {% if phrase_data.audio_slow_path %}
+                        <audio controls preload="none">
+                            <source src="{{ phrase_data.audio_slow_path }}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        {% else %}
+                        <div class="audio-missing">Audio missing</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
+        {% endfor %}
+    </main>
+
+    <footer>
+        <p>Generated on {{ generation_date }}</p>
+        <a href="#top">Back to top</a>
+    </footer>
+</body>
+</html>
