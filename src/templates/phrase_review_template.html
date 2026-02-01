@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phrase Review: {{ source_language }} → {{ target_language }}</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="../src/templates/styles/styles.css">
 </head>
 <body>
     <header>
@@ -13,7 +13,7 @@
         <p class="phrase-count">{{ phrases|length }} phrase{{ 's' if phrases|length != 1 else '' }}</p>
     </header>
 
-    <nav class="phrase-navigation">
+    <nav class="phrase-navigation", id="phrase-navigation">
         <h2>Quick Navigation</h2>
         <div class="nav-links">
             {% for phrase_data in phrases %}
@@ -29,6 +29,7 @@
         <section id="{{ phrase_data.phrase_hash }}" class="phrase-section">
             <div class="phrase-header">
                 <span class="phrase-number">{{ loop.index }} / {{ phrases|length }}</span>
+                <h3>{{ phrase_data.source_text }}</h3>
                 <span class="phrase-hash">{{ phrase_data.phrase_hash }}</span>
             </div>
 
@@ -74,7 +75,7 @@
                             Your browser does not support the audio element.
                         </audio>
                         {% else %}
-                        <div class="audio-missing">Audio missing</div>
+                        <div class="audio-missing">Audio missing {{ phrase_data.audio_normal_path }}</div>
                         {% endif %}
                     </div>
 
@@ -87,11 +88,12 @@
                             Your browser does not support the audio element.
                         </audio>
                         {% else %}
-                        <div class="audio-missing">Audio missing</div>
+                        <div class="audio-missing">Audio missing {{ phrase_data.audio_slow_path }} </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
+        <a href="#phrase-navigation">Back to phrase list</a>
         </section>
         {% endfor %}
     </main>

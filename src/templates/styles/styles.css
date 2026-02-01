@@ -203,6 +203,48 @@ footer a:hover {
     text-decoration: underline;
 }
 
+/* Main Container */
+.phrases-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+/* Phrase Sections */
+.phrase-section {
+    background-color: white;
+    margin-bottom: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+    scroll-margin-top: 20px; /* For smooth scroll to anchors */
+}
+
+.phrase-header {
+    background-color: #34495e;
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.phrase-number {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.phrase-hash {
+    font-family: monospace;
+    font-size: 14px;
+    color: #bdc3c7;
+}
+
+/* Card adjustments for review page */
+.phrase-section .card {
+    padding: 30px 20px;
+}
+
 /* Desktop styles */
 @media (min-width: 768px) {
     body {

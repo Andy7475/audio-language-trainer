@@ -4,19 +4,16 @@ This module creates comprehensive review pages that display all flashcard conten
 for verification: images, translations, wiktionary links, and audio files.
 """
 
-import base64
-import io
 import os
 from datetime import datetime
 from pathlib import Path
 from typing import List, Union
 
 from langcodes import Language
-from PIL import Image
 
 # Import from your project structure
 from src.models import get_language
-from src.storage import PRIVATE_BUCKET, get_phrase_audio_path
+from src.storage import PRIVATE_BUCKET
 from src.images.manipulation import resize_image
 from src.utils import render_html_content
 from src.convert import convert_PIL_image_to_base64
@@ -27,6 +24,7 @@ def create_review_page(
     source_language: Union[str, Language],
     target_language: Union[str, Language],
     filepath: str = "review.html",
+    download: bool = True,
 ) -> str:
     """Generate an HTML review page for phrase verification.
 
@@ -63,11 +61,16 @@ def create_review_page(
     # Process each phrase
     processed_phrases = []
     for phrase in phrases:
+        if download:
+            phrase.download()
+        image_data = convert_PIL_image_to_base64(
+            resize_image(phrase.get_image(language=target_lang), height=200, width=200)
+        )
         phrase_data = {
             "phrase_hash": phrase.key,
             "source_text": phrase.english,  # Always English in your model
             "target_text": "",
-            "image_base64": None,
+            "image_base64": image_data,
             "wiktionary_html": "",
             "audio_normal_path": None,
             "audio_slow_path": None,
@@ -86,48 +89,19 @@ def create_review_page(
             except Exception as e:
                 print(f"Warning: Could not get wiktionary links for {phrase.key}: {e}")
 
-            # Get image (try to load from translation object)
-            try:
-                if translation.image is not None:
-                    # Image already loaded in memory
-                    resized_img = resize_image(translation.image, height=400, width=400)
-                    phrase_data["image_base64"] = convert_PIL_image_to_base64(
-                        resized_img
-                    )
-                elif translation.image_file_path:
-                    # Try to load from local GCS cache
-                    local_img_path = os.path.join(
-                        "outputs/gcs", PRIVATE_BUCKET, translation.image_file_path
-                    )
-                    if os.path.exists(local_img_path):
-                        img = Image.open(local_img_path)
-                        resized_img = resize_image(img, height=400, width=400)
-                        phrase_data["image_base64"] = convert_PIL_image_to_base64(
-                            resized_img
-                        )
-            except Exception as e:
-                print(f"Warning: Could not load image for {phrase.key}: {e}")
-
+            flashcard_audio = translation.audio.get("flashcard")
             # Check for audio files (flashcard context)
             # Normal speed
-            normal_file_path = get_phrase_audio_path(
-                phrase_hash=phrase.key,
-                language=target_lang,
-                context="flashcard",
-                speed="normal",
+            normal_file_path = flashcard_audio.get("normal").file_path
+            normal_path = os.path.join(
+                "../outputs/gcs", PRIVATE_BUCKET, normal_file_path
             )
-            normal_path = os.path.join("outputs/gcs", PRIVATE_BUCKET, normal_file_path)
             if os.path.exists(normal_path):
                 phrase_data["audio_normal_path"] = normal_path
 
             # Slow speed
-            slow_file_path = get_phrase_audio_path(
-                phrase_hash=phrase.key,
-                language=target_lang,
-                context="flashcard",
-                speed="slow",
-            )
-            slow_path = os.path.join("outputs/gcs", PRIVATE_BUCKET, slow_file_path)
+            slow_file_path = flashcard_audio.get("slow").file_path
+            slow_path = os.path.join("../outputs/gcs", PRIVATE_BUCKET, slow_file_path)
             if os.path.exists(slow_path):
                 phrase_data["audio_slow_path"] = slow_path
 
@@ -143,7 +117,7 @@ def create_review_page(
 
     # Render template using your existing render_html_content function
     html_content = render_html_content(
-        data=template_data, template_name="phrase_review_template.html.jinja2"
+        data=template_data, template_name="phrase_review_template.html"
     )
 
     # Write to file

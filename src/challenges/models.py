@@ -6,7 +6,7 @@ from google.cloud.firestore import DocumentReference
 from langcodes import Language
 from pydantic import BaseModel, ConfigDict, Field, computed_field
 
-from llm_tools.base import DEFAULT_MODEL, get_anthropic_client, load_prompt_template
+from src.llm_tools.base import DEFAULT_MODEL, get_anthropic_client, load_prompt_template
 from src.connections.gcloud_auth import get_firestore_client
 from src.logger import logger
 from src.models import BCP47Language, get_language

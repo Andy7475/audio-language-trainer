@@ -942,7 +942,7 @@ class Translation(FirePhraseDataModel):
         # Extract language code (e.g., 'fr' from 'fr-FR')
         language_code = self.language.language
 
-        # Get or fetch entries for all tokens (batch operation)
+        # Get or fetchentries for all tokens (batch operation)
         links = get_wiktionary_urls(words=self.tokens, lang_code=language_code)
 
         return separator.join(links)
