@@ -1,906 +1,654 @@
+"""Shopify product models for managing and exporting product listings.
+
+This module provides Pydantic models for creating and managing Shopify products,
+with a focus on language learning flashcard products. Uses inheritance and
+helper functions to eliminate code duplication.
+"""
+
+from __future__ import annotations
+
 import csv
-import math
 import os
-import random
-from typing import Dict, List, Optional, Tuple
+from typing import List, Literal, Optional, Dict, Any
 
-from PIL import Image
-from tqdm import tqdm
+from langcodes import Language
+from pydantic import BaseModel, Field, computed_field
 
-from storage import read_from_gcs
-from src.convert import clean_filename, get_story_title, get_collection_title
-from src.storage import (
-    get_phrase_path,
-    get_story_collection_path,
-    get_story_index_path,
-    get_marketing_image_path,
-    get_public_story_path,
-)
-from src.images import create_png_of_html
-from src.template_testing import generate_test_html
-from src.utils import get_story_position, load_template
-from storage import upload_to_gcs
+from src.models import BCP47Language, get_language
+from src.convert import get_collection_title
 
 
-def calculate_vocab_stats(
-    story_names: List[str], story_index: Dict, story_collection: Dict
-) -> Tuple[int, int, int]:
-    """
-    Calculate vocabulary statistics for a list of stories.
+# ============================================================================
+# PRODUCT CONFIGURATION
+# ============================================================================
 
-    Args:
-        story_names: List of story names
-        story_index: Story index data from GCS
-        story_collection: Story collection data from GCS
+PRODUCT_CONFIGS: Dict[str, Dict[str, Any]] = {
+    "LM1000": {
+        "course": {"price": 29.99},
+        "individual": {"price": 4.99, "free_count": 2},
+    },
+    "LM2000": {
+        "course": {"price": 34.99},
+        "individual": {"price": 5.99},
+    },
+    "LM3000": {
+        "course": {"price": 39.99},
+        "individual": {"price": 6.99},
+    },
+    "Medical": {
+        "specialty": {"price": 14.99},
+    },
+    "Survival": {
+        "specialty": {"price": 12.99},
+    },
+    "Business": {
+        "specialty": {"price": 16.99},
+    },
+}
 
-    Returns:
-        Tuple of (verb_count, vocab_count, phrase_count)
-    """
-    all_verbs = set()
-    all_vocab = set()
-    total_phrases = 0
-
-    for story in story_names:
-        if story in story_index.get("story_vocab", {}):
-            story_verbs = story_index["story_vocab"][story].get("verbs", [])
-            story_vocab = story_index["story_vocab"][story].get("vocab", [])
-            all_verbs.update(story_verbs)
-            all_vocab.update(story_vocab)
-
-        if story in story_collection:
-            total_phrases += len(story_collection[story])
-
-    # Round down to nearest 10 for marketing purposes
-    verb_count = math.floor(len(all_verbs) / 10) * 10
-    vocab_count = math.floor(len(all_vocab) / 10) * 10
-
-    return verb_count, vocab_count, total_phrases
-
-
-def get_sample_phrases(
-    story_name: str, story_collection: Dict, count: int = 5
-) -> List[str]:
-    """Get sample phrases from a story."""
-    if story_name not in story_collection:
-        return []
-
-    phrases = [item["phrase"] for item in story_collection[story_name][:count]]
-    return phrases
+SHOPIFY_DEFAULTS = {
+    "vendor": "FirePhrase",
+    "product_category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
+    "product_type": "Digital Flashcards",
+    "option1_name": "Format",
+    "option1_value": "Digital Download",
+    "requires_shipping": False,
+    "taxable": True,
+    "anatomy_image": "flashcard_anatomy.png",
+    "shopify_cdn_base": "https://cdn.shopify.com/s/files/1/0925/9630/6250/files/",
+}
 
 
-def generate_story_list_html(story_names: List[str], collection: str) -> str:
-    """Generate HTML list of stories with their positions and titles."""
-    story_items = []
-    for story in story_names:
-        try:
-            position = get_story_position(story, collection)
-            title = get_story_title(story)
-            story_items.append(f'<li>Story {position:02d}: "{title}"</li>')
-        except ValueError:
-            continue
-
-    return "<ul>" + "\n".join(story_items) + "</ul>"
+# ============================================================================
+# HELPER FUNCTIONS
+# ============================================================================
 
 
-def create_product_templates(
+def get_shopify_image_url(filename: str) -> str:
+    """Get Shopify CDN URL for an image."""
+    return SHOPIFY_DEFAULTS["shopify_cdn_base"] + filename
+
+
+def get_product_image_filename(
+    source_language: Language,
+    target_language: Language,
     collection: str,
-    language: str,
-    stories: List[Dict],
-    product_config: dict,
-    total_phrases: int,
-    total_audio_files: int,
-    verb_count: int,
-    collection_title: str,
-) -> Dict[str, str]:
-    """Create product templates for individual packs, bundle packs, and complete pack."""
-    templates = {}
-
-    # Create individual pack templates
-    if "individual" in product_config:
-        individual_config = product_config["individual"]
-        individual_template = load_template(individual_config["template"])
-        individual_templates = {}
-        for story in stories:
-            if story["position"] in individual_config.get("indices", []):
-                story_position = story["position"]
-                story_title = story["title"]
-                story_theme = story["theme"]
-                phrase_count = math.floor(story["phrase_count"] / 10) * 10
-                sample_phrases = story["sample_phrases"]
-                sample_phrases_html = "\n".join(
-                    [f"<li>{phrase}</li>" for phrase in sample_phrases]
-                )
-                story_hyperlink = get_public_story_path(story["name"], collection)
-                # Convert to full public URL
-                public_bucket_name = config.GCS_PUBLIC_BUCKET
-                story_hyperlink = f"https://storage.googleapis.com/{public_bucket_name}/{story_hyperlink}"
-                template = individual_template.replace("${story_title}", story_title)
-                template = template.replace(
-                    "${story_position}", f"{story_position:02d}"
-                )
-                template = template.replace("${collection}", collection)
-                template = template.replace("${collection_title}", collection_title)
-                template = template.replace("${story_theme}", story_theme)
-                template = template.replace("${phrase_count}", str(phrase_count))
-                template = template.replace(
-                    "${sample_phrases_html}", sample_phrases_html
-                )
-                template = template.replace("${language}", language)
-                template = template.replace("${story_name}", story["name"])
-                template = template.replace("${story_hyperlink}", story_hyperlink)
-                individual_templates[f"story_{story_position}"] = template
-        templates["individual_templates"] = individual_templates
-
-    # Create bundle pack templates
-    if "bundle" in product_config:
-        bundle_config = product_config["bundle"]
-        bundle_template = load_template(bundle_config["template"])
-        bundle_templates = {}
-        for start, end in bundle_config.get("ranges", []):
-            bundle_stories = [s for s in stories if start <= s["position"] <= end]
-            if not bundle_stories:
-                continue
-            range_display = f"{start}-{end}"
-            story_list = "\n".join(
-                [
-                    f'<li><a href="https://storage.googleapis.com/{config.GCS_PUBLIC_BUCKET}/{get_public_story_path(s["name"], collection)}">Story {s["position"]}: {s["title"]}</a></li>'
-                    for s in bundle_stories
-                ]
-            )
-            story_count = len(bundle_stories)
-            vocab_count = (
-                math.floor(sum(s["phrase_count"] for s in bundle_stories) / 10) * 10
-            )
-            template = bundle_template.replace("${collection}", collection)
-            template = template.replace("${collection_title}", collection_title)
-            template = template.replace("${range_display}", range_display)
-            template = template.replace("${story_list}", story_list)
-            template = template.replace("${story_count}", str(story_count))
-            template = template.replace("${vocab_count}", str(vocab_count))
-            bundle_templates[f"bundle_{start}_{end}"] = template
-        templates["bundle_templates"] = bundle_templates
-
-    # Create complete pack template
-    if "complete" in product_config:
-        complete_config = product_config["complete"]
-        complete_template = load_template(complete_config["template"])
-        story_list = "\n".join(
-            [
-                f'<li><a href="https://storage.googleapis.com/{config.GCS_PUBLIC_BUCKET}/{get_public_story_path(s["name"], collection)}">Story {s["position"]}: {s["title"]}</a></li>'
-                for s in stories
-            ]
-        )
-        complete_template = complete_template.replace("${collection}", collection)
-        complete_template = complete_template.replace(
-            "${collection_title}", collection_title
-        )
-        complete_template = complete_template.replace(
-            "${total_stories}", str(len(stories))
-        )
-        complete_template = complete_template.replace("${verb_count}", str(verb_count))
-        complete_template = complete_template.replace(
-            "${total_phrases}", str(math.floor(total_phrases / 10) * 10)
-        )
-        complete_template = complete_template.replace(
-            "${audio_files}", str(total_audio_files)
-        )
-        complete_template = complete_template.replace("${story_list}", story_list)
-        templates["complete_template"] = complete_template
-
-    return templates
-
-
-def generate_shopify_csv(
-    product_config: dict,
-    collection: str = "LM1000",
-    bucket_name: Optional[str] = None,
-    output_dir: str = "../outputs/shopify",
-    free_individual_count: int = 2,
+    pack_type: Literal["course", "individual", "specialty"],
+    position: Optional[int] = None,
 ) -> str:
-    """
-    Generate comprehensive Shopify CSV file for flashcard products with multiple images per product.
+    """Generate systematic image filename for a product.
 
     Args:
-        product_config: Dict mapping product types ('individual', 'bundle', 'complete') to their configs.
-                       Each config should include 'price', 'template', and optionally 'indices' or 'ranges'.
-        collection: Collection name (default: "LM1000")
-        bucket_name: GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
-        output_dir: Output directory for CSV file
-        free_individual_count: Number of individual packs to make free (default: 2, set to 0 for none)
+        source_language: Source language (typically English)
+        target_language: Target language being learned
+        collection: Collection name (e.g., 'LM1000', 'Medical')
+        pack_type: Type of pack (course, individual, or specialty)
+        position: Optional position number for individual packs
 
     Returns:
-        str: Path to generated CSV file
+        str: Image filename following BCP47 convention
+
+    Examples:
+        >>> get_product_image_filename(Language.get('en'), Language.get('fr'), 'LM1000', 'course')
+        'en-fr_lm1000_course.png'
+        >>> get_product_image_filename(Language.get('en'), Language.get('fr'), 'LM1000', 'individual', 1)
+        'en-fr_lm1000_individual_01.png'
     """
-    if bucket_name is None:
-        bucket_name = config.GCS_PRIVATE_BUCKET
+    source_tag = source_language.to_tag().lower()
+    target_tag = target_language.to_tag().lower()
+    collection_lower = collection.lower()
 
-    # Load data from GCS
-    collection_path = get_story_collection_path(collection)
-    story_index_path = get_story_index_path(collection)
+    base_name = f"{source_tag}-{target_tag}_{collection_lower}_{pack_type}"
 
+    if position is not None:
+        base_name += f"_{position:02d}"
+
+    return f"{base_name}.png"
+
+
+def get_price_from_config(
+    collection: str, pack_type: str, position: Optional[int] = None
+) -> float:
+    """Get price from product configuration.
+
+    Args:
+        collection: Collection name
+        pack_type: Type of pack (course, individual, specialty)
+        position: Optional position for individual packs (to check free_count)
+
+    Returns:
+        float: Product price
+
+    Raises:
+        KeyError: If collection not found in PRODUCT_CONFIGS
+        ValueError: If pack_type not configured for collection
+    """
+    if collection not in PRODUCT_CONFIGS:
+        raise KeyError(f"Collection '{collection}' not found in PRODUCT_CONFIGS")
+
+    config = PRODUCT_CONFIGS[collection]
+    if pack_type not in config:
+        raise ValueError(
+            f"Pack type '{pack_type}' not configured for collection '{collection}'"
+        )
+
+    # Handle individual packs with free_count
+    if pack_type == "individual" and position is not None:
+        free_count = config[pack_type].get("free_count", 0)
+        if position <= free_count:
+            return 0.0
+
+    return config[pack_type]["price"]
+
+
+def generate_handle(
+    source_language: Language,
+    target_language: Language,
+    collection: str,
+    pack_type: Literal["course", "individual", "specialty"],
+    position: Optional[int] = None,
+) -> str:
+    """Generate product handle following BCP47 convention.
+
+    Args:
+        source_language: Source language
+        target_language: Target language
+        collection: Collection name
+        pack_type: Type of pack
+        position: Optional position for individual packs
+
+    Returns:
+        str: Product handle
+
+    Examples:
+        >>> generate_handle(Language.get('en-GB'), Language.get('fr-FR'), 'LM1000', 'course')
+        'en-gb-fr-fr-lm1000-course'
+        >>> generate_handle(Language.get('en-GB'), Language.get('fr-FR'), 'LM1000', 'individual', 1)
+        'en-gb-fr-fr-lm1000-pack-01'
+    """
+    source_tag = source_language.to_tag().lower()
+    target_tag = target_language.to_tag().lower()
+    collection_lower = collection.lower()
+
+    if pack_type == "individual" and position is not None:
+        return f"{source_tag}-{target_tag}-{collection_lower}-pack-{position:02d}"
+    else:
+        return f"{source_tag}-{target_tag}-{collection_lower}-{pack_type}"
+
+
+def generate_title(
+    target_language: Language,
+    collection: str,
+    pack_type: Literal["course", "individual", "specialty"],
+    position: Optional[int] = None,
+) -> str:
+    """Generate product title.
+
+    Args:
+        target_language: Target language being learned
+        collection: Collection name
+        pack_type: Type of pack
+        position: Optional position for individual packs
+
+    Returns:
+        str: Product title
+
+    Examples:
+        >>> generate_title(Language.get('fr-FR'), 'LM1000', 'course')
+        'French - LM1000 Course - Complete Course'
+        >>> generate_title(Language.get('fr-FR'), 'LM1000', 'individual', 1)
+        'French - LM1000 Course - Pack 01'
+    """
     collection_title = get_collection_title(collection)
+    lang_display = target_language.display_name()
 
-    collection_data = read_from_gcs(bucket_name, collection_path, "json")
-    story_index = read_from_gcs(bucket_name, story_index_path, "json")
+    if pack_type == "course":
+        return f"{lang_display} - {collection_title} - Complete Course"
+    elif pack_type == "individual" and position is not None:
+        return f"{lang_display} - {collection_title} - Pack {position:02d}"
+    elif pack_type == "specialty":
+        return f"{lang_display} - {collection_title}"
+    else:
+        return f"{lang_display} - {collection_title}"
 
-    all_stories = list(collection_data.keys())
-    total_phrases = calculate_vocab_stats(all_stories, story_index, collection_data)[2]
-    total_audio_files = len(all_stories) * 6
-    verb_count = calculate_vocab_stats(all_stories, story_index, collection_data)[0]
 
-    # Prepare stories for templates
-    stories = []
-    for story_name in all_stories:
-        position = get_story_position(story_name, collection)
-        title = get_story_title(story_name)
-        theme = story_index.get("story_themes", {}).get(story_name, "General")
-        phrase_count = len(collection_data[story_name])
-        sample_phrases = get_sample_phrases(story_name, collection_data)
-        stories.append(
-            {
-                "position": position,
-                "title": title,
-                "theme": theme,
-                "phrase_count": phrase_count,
-                "sample_phrases": sample_phrases,
-                "name": story_name,
-            }
+def generate_tags(
+    target_language: Language,
+    collection: str,
+    pack_type: Literal["course", "individual", "specialty"],
+    position: Optional[int] = None,
+    price: float = 0.0,
+    extra_tags: Optional[List[str]] = None,
+) -> List[str]:
+    """Generate product tags.
+
+    Args:
+        target_language: Target language being learned
+        collection: Collection name
+        pack_type: Type of pack
+        position: Optional position for individual packs
+        price: Product price (to add "Free" tag if 0.0)
+        extra_tags: Optional additional tags
+
+    Returns:
+        List[str]: Product tags
+    """
+    collection_title = get_collection_title(collection)
+    lang_display = target_language.display_name()
+
+    tags = [lang_display, collection_title, "Digital Download", "Language Learning"]
+
+    if pack_type == "course":
+        tags.append("Complete Course")
+    elif pack_type == "individual" and position is not None:
+        tags.append(f"Pack {position:02d}")
+        if price == 0.0:
+            tags.append("Free")
+    elif pack_type == "specialty":
+        tags.append("Specialty Vocabulary")
+
+    if extra_tags:
+        tags.extend(extra_tags)
+
+    return tags
+
+
+def setup_product_images(
+    source_language: Language,
+    target_language: Language,
+    collection: str,
+    pack_type: Literal["course", "individual", "specialty"],
+    position: Optional[int] = None,
+    custom_images: Optional[List[str]] = None,
+) -> List[str]:
+    """Setup product images with URLs.
+
+    Args:
+        source_language: Source language
+        target_language: Target language
+        collection: Collection name
+        pack_type: Type of pack
+        position: Optional position for individual packs
+        custom_images: Optional list of custom image filenames
+
+    Returns:
+        List[str]: List of image URLs (main image + anatomy image)
+    """
+    if custom_images:
+        images = custom_images.copy()
+    else:
+        # Generate default image filename
+        main_image = get_product_image_filename(
+            source_language, target_language, collection, pack_type, position
         )
+        images = [main_image]
 
-    # Create product templates
-    templates = create_product_templates(
-        collection,
-        config.TARGET_LANGUAGE_NAME.lower(),
-        stories,
-        product_config,
-        total_phrases,
-        total_audio_files,
-        verb_count,
-        collection_title,
+    # Add anatomy image as second image
+    images.append(SHOPIFY_DEFAULTS["anatomy_image"])
+
+    # Convert all filenames to URLs
+    return [get_shopify_image_url(img) for img in images]
+
+
+# ============================================================================
+# BASE SHOPIFY PRODUCT MODEL
+# ============================================================================
+
+
+class ShopifyProductBase(BaseModel):
+    """Base model for Shopify products with common fields and defaults."""
+
+    # Core identifiers
+    handle: str = Field(..., description="Unique product identifier")
+    title: str = Field(..., description="Product display title")
+
+    # Language and collection metadata
+    source_language: BCP47Language = Field(..., description="Source language")
+    target_language: BCP47Language = Field(..., description="Target language")
+    collection: str = Field(..., description="Collection name")
+    pack_type: Literal["course", "individual", "specialty"] = Field(
+        ..., description="Type of product pack"
+    )
+    position: Optional[int] = Field(
+        default=None, description="Position for individual packs"
     )
 
-    # Prepare CSV data
-    csv_data = []
+    # Pricing and availability
+    price: float = Field(..., description="Product price in USD")
+    published: bool = Field(default=True, description="Whether product is published")
 
-    # Language and source info
-    target_language = config.TARGET_LANGUAGE_NAME
-    source_language = config.SOURCE_LANGUAGE_NAME
+    # Content
+    body_html: str = Field(..., description="Product description in HTML")
+    tags: List[str] = Field(default_factory=list, description="Product tags")
+    images: List[str] = Field(default_factory=list, description="Image URLs")
 
-    # Shopify CDN base URL
-    shopify_cdn_base = "https://cdn.shopify.com/s/files/1/0925/9630/6250/files/"
+    # Shopify defaults (from SHOPIFY_DEFAULTS)
+    vendor: str = Field(default=SHOPIFY_DEFAULTS["vendor"])
+    product_category: str = Field(default=SHOPIFY_DEFAULTS["product_category"])
+    product_type: str = Field(default=SHOPIFY_DEFAULTS["product_type"])
+    option1_name: str = Field(default=SHOPIFY_DEFAULTS["option1_name"])
+    option1_value: str = Field(default=SHOPIFY_DEFAULTS["option1_value"])
+    requires_shipping: bool = Field(default=SHOPIFY_DEFAULTS["requires_shipping"])
+    taxable: bool = Field(default=SHOPIFY_DEFAULTS["taxable"])
 
-    def add_product_with_images(base_product: dict, product_type: str, **image_kwargs):
-        """Helper function to add a product with multiple images to csv_data."""
-        # Get all image paths for this product type
-        image_paths = []
+    @computed_field
+    @property
+    def collection_title(self) -> str:
+        """Get display title for the collection."""
+        return get_collection_title(self.collection)
 
-        # Get main product images (3 images)
-        main_image_path = get_marketing_image_path(
-            product_type=product_type,
-            collection=collection,
-            language=target_language.lower(),
-            **image_kwargs,
-        )
-        # Extract just the filename from the path
-        main_image_filename = os.path.basename(main_image_path)
-        image_paths.append(main_image_filename)
-
-        # Get templates image
-        templates_image_path = get_marketing_image_path(
-            product_type="templates",
-            collection=collection,
-            language=target_language.lower(),
-        )
-        # Extract just the filename from the path
-        templates_image_filename = os.path.basename(templates_image_path)
-        image_paths.append(templates_image_filename)
-
-        # Add product with images
-        for i, image_filename in enumerate(image_paths):
-            if i == 0:
-                # First row: include all product details
-                product = base_product.copy()
-                product["Image Src"] = shopify_cdn_base + image_filename
-                product["Image Position"] = i + 1
-                csv_data.append(product)
-            else:
-                # Subsequent rows: only Handle, Image Src, and Image Position
-                image_row = {
-                    "Handle": base_product["Handle"],
-                    "Image Src": shopify_cdn_base + image_filename,
-                    "Image Position": i + 1,
-                }
-                csv_data.append(image_row)
-
-    # Add individual products
-    if "individual" in product_config:
-        individual_config = product_config["individual"]
-        individual_price = individual_config["price"]
-        individual_indices = individual_config.get("indices", [])
-        for story in stories:
-            if story["position"] in individual_indices:
-                price = (
-                    0.0
-                    if story["position"] <= free_individual_count
-                    else individual_price
-                )
-                # Convert story name from "story_better_than_a_movie" to "better-than-a-movie"
-                story_name_for_handle = (
-                    story["name"].replace("story_", "").replace("_", "-")
-                )
-
-                base_product = {
-                    "Handle": f"{target_language.lower()}-{collection.lower()}-story-{story['position']:02d}-{story_name_for_handle}",
-                    "Title": f"{target_language} - {collection_title} - Story {story['position']:02d}: {story['title']}",
-                    "Body (HTML)": templates["individual_templates"][
-                        f"story_{story['position']}"
-                    ],
-                    "Vendor": "FirePhrase",
-                    "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
-                    "Type": "Digital Flashcards",
-                    "Tags": f"{target_language}, {collection_title}, Digital Download, Language Learning",
-                    "Published": "TRUE",
-                    "Option1 Name": "Format",
-                    "Option1 Value": "Digital Download",
-                    "Variant Price": str(price),
-                    "Variant Requires Shipping": "FALSE",
-                    "Variant Taxable": "TRUE",
-                    "source language (product.metafields.custom.source_language)": source_language,
-                    "target language (product.metafields.custom.target_language)": target_language,
-                    "pack type (product.metafields.custom.pack_type)": "Single",
-                    "collection (product.metafields.custom.collection)": collection_title,
-                }
-                add_product_with_images(
-                    base_product, "individual", story_name=story["name"]
-                )
-
-    # Add bundle products
-    if "bundle" in product_config:
-        bundle_config = product_config["bundle"]
-        bundle_price = bundle_config["price"]
-        bundle_ranges = bundle_config.get("ranges", [])
-        for start, end in bundle_ranges:
-            bundle_stories = [s for s in stories if start <= s["position"] <= end]
-            if not bundle_stories:
-                continue
-            bundle_key = f"bundle_{start}_{end}"
-            if bundle_key in templates["bundle_templates"]:
-                base_product = {
-                    "Handle": f"{target_language.lower()}-{collection.lower()}-bundle-{start:02d}-{end:02d}",
-                    "Title": f"{target_language} - {collection_title} - Bundle Pack (Stories {start:02d}-{end:02d})",
-                    "Body (HTML)": templates["bundle_templates"][bundle_key],
-                    "Vendor": "FirePhrase",
-                    "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
-                    "Type": "Digital Flashcards",
-                    "Tags": f"{target_language}, {collection_title}, Continue, Digital Download, Language Learning",
-                    "Published": "TRUE",
-                    "Option1 Name": "Format",
-                    "Option1 Value": "Digital Download",
-                    "Variant Price": str(bundle_price),
-                    "Variant Requires Shipping": "FALSE",
-                    "Variant Taxable": "TRUE",
-                    "source language (product.metafields.custom.source_language)": source_language,
-                    "target language (product.metafields.custom.target_language)": target_language,
-                    "pack type (product.metafields.custom.pack_type)": "Bundle",
-                    "collection (product.metafields.custom.collection)": collection_title,
-                }
-                add_product_with_images(
-                    base_product, "bundle", bundle_range=f"{start:02d}-{end:02d}"
-                )
-
-    # Add complete pack product
-    if "complete" in product_config:
-        complete_config = product_config["complete"]
-        complete_price = complete_config["price"]
-        base_product = {
-            "Handle": f"{target_language.lower()}-{collection.lower()}-complete-pack",
-            "Title": f"{target_language} - {collection_title} - Complete Pack (All {len(all_stories)} Stories)",
-            "Body (HTML)": templates["complete_template"],
-            "Vendor": "FirePhrase",
-            "Product Category": "Toys & Games > Toys > Educational Toys > Educational Flash Cards",
-            "Type": "Digital Flashcards",
-            "Tags": f"{target_language}, {collection_title}, Complete, Digital Download, Language Learning",
-            "Published": "TRUE",
-            "Option1 Name": "Format",
-            "Option1 Value": "Digital Download",
-            "Variant Price": str(complete_price),
-            "Variant Requires Shipping": "FALSE",
-            "Variant Taxable": "TRUE",
-            "source language (product.metafields.custom.source_language)": source_language,
-            "target language (product.metafields.custom.target_language)": target_language,
-            "pack type (product.metafields.custom.pack_type)": "Complete",
-            "collection (product.metafields.custom.collection)": collection_title,
+    @computed_field
+    @property
+    def shopify_metafields(self) -> Dict[str, str]:
+        """Get custom metafields for Shopify."""
+        return {
+            "source_language": self.source_language.display_name(),
+            "target_language": self.target_language.display_name(),
+            "pack_type": self.pack_type.title(),
+            "collection": self.collection_title,
         }
-        add_product_with_images(base_product, "complete")
-
-    # Write CSV file
-    os.makedirs(output_dir, exist_ok=True)
-    csv_path = os.path.join(
-        output_dir, f"{target_language.lower()}_{collection.lower()}_shopify.csv"
-    )
-    with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=csv_data[0].keys())
-        writer.writeheader()
-        writer.writerows(csv_data)
-
-    return csv_path
 
 
-def generate_product_images(
-    product_config: Dict,
-    collection: str = "LM1000",
-    bucket_name: Optional[str] = None,
-    generate_individual: bool = True,
-) -> Dict[str, str]:
+class ShopifyProduct(ShopifyProductBase):
+    """Shopify product model for language learning flashcards.
+
+    This model uses helper functions to eliminate code duplication across
+    different product types (course, individual, specialty).
     """
-    Generate product images for individual packs, bundle packs, and complete pack.
 
-    Args:
-        product_config: Dict mapping product types ('individual', 'bundle', 'complete') to their configs.
-                       Each config should include 'template' and optionally 'indices' or 'ranges'.
-        collection: Collection name (default: "LM1000")
-        bucket_name: GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
-        generate_individual: Whether to generate individual pack images (default: True)
+    @classmethod
+    def create(
+        cls,
+        collection: str,
+        pack_type: Literal["course", "individual", "specialty"],
+        target_language: Language,
+        source_language: Language,
+        body_html: str,
+        position: Optional[int] = None,
+        images: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+    ) -> ShopifyProduct:
+        """Unified factory method for creating any type of product.
 
-    Returns:
-        Dict mapping product types to their image paths
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PRIVATE_BUCKET
+        Args:
+            collection: Collection name (e.g., 'LM1000', 'Medical')
+            pack_type: Type of pack (course, individual, specialty)
+            target_language: Target language being learned
+            source_language: Source language (typically English)
+            body_html: Product description HTML
+            position: Required for individual packs, position number (1-based)
+            images: Optional list of image filenames (will be converted to URLs)
+            tags: Optional list of additional tags
 
-    # Get collection data to find all stories
-    collection_path = get_story_collection_path(collection)
-    collection_data = read_from_gcs(bucket_name, collection_path, "json")
-    all_stories = list(collection_data.keys())
+        Returns:
+            ShopifyProduct: A configured product
 
-    language = config.TARGET_LANGUAGE_NAME.lower()
-    target_language_name = config.TARGET_LANGUAGE_NAME
+        Raises:
+            ValueError: If individual pack_type without position, or invalid configuration
 
-    # Track created images
-    created_images = {}
+        Examples:
+            >>> # Course product
+            >>> product = ShopifyProduct.create(
+            ...     collection="LM1000",
+            ...     pack_type="course",
+            ...     target_language=Language.get("fr-FR"),
+            ...     source_language=Language.get("en-GB"),
+            ...     body_html="<p>Complete course...</p>"
+            ... )
+            >>> # Individual pack
+            >>> product = ShopifyProduct.create(
+            ...     collection="LM1000",
+            ...     pack_type="individual",
+            ...     position=1,
+            ...     target_language=Language.get("fr-FR"),
+            ...     source_language=Language.get("en-GB"),
+            ...     body_html="<p>Pack 01...</p>"
+            ... )
+        """
+        # Validate individual pack has position
+        if pack_type == "individual" and position is None:
+            raise ValueError("Individual pack requires position parameter")
 
-    print(f"Generating product images for {collection} in {target_language_name}")
-    print(f"Found {len(all_stories)} stories total")
+        # Get price from config
+        price = get_price_from_config(collection, pack_type, position)
 
-    # 0. Generate Template Types Image
-    print("\n=== Generating Template Types Image ===")
-    # Get a sample phrase from the first story
-    first_story = list(collection_data.keys())[0]
-    sample_phrase = collection_data[first_story][0]["phrase"]
-    phrase_key = clean_filename(sample_phrase)
+        # Generate handle and title
+        handle = generate_handle(
+            source_language, target_language, collection, pack_type, position
+        )
+        title = generate_title(target_language, collection, pack_type, position)
 
-    # Create temp directory for template types
-    temp_base_dir = "../outputs/temp"
-    temp_dir = os.path.join(temp_base_dir, f"temp_template_types_{phrase_key}")
-    os.makedirs(temp_dir, exist_ok=True)
+        # Setup images
+        image_urls = setup_product_images(
+            source_language, target_language, collection, pack_type, position, images
+        )
 
-    # Generate HTML and PNG files for each template type
-    png_files = []
-    template_types = ["reading_front", "listening_front", "speaking_front"]
+        # Generate tags
+        product_tags = generate_tags(
+            target_language, collection, pack_type, position, price, tags
+        )
 
-    # Generate HTML for all template types
-    generate_test_html(
-        phrase_key=phrase_key,
-        output_dir=temp_dir,
-        collection=collection,
-        bucket_name=bucket_name,
-    )
-
-    # Create PNGs from the generated HTML files
-    for template_type in template_types:
-        html_path = os.path.join(temp_dir, f"{template_type}.html")
-        png_path = os.path.join(temp_dir, f"{template_type}.png")
-        create_png_of_html(html_path, png_path, width=375, height=1100)
-        png_files.append(png_path)
-
-    # Create the template types spread deck image
-    temp_output = os.path.join(temp_base_dir, "temp_template_types_spread.png")
-    create_spread_deck_image(
-        png_files=png_files,
-        output_path=temp_output,
-        angle_offset=24.0,
-        x_offset=120.0,
-        background_color="#FFFFFF",
-    )
-
-    # Upload template types image to GCS
-    gcs_file_path = get_marketing_image_path("templates", collection, language)
-    with open(temp_output, "rb") as f:
-        image_data = f.read()
-
-    template_types_uri = upload_to_gcs(
-        obj=image_data,
-        bucket_name=bucket_name,
-        file_name=gcs_file_path,
-        content_type="image/png",
-    )
-
-    created_images["template_types"] = template_types_uri
-    print(f"(y) Template types image: {template_types_uri}")
-
-    # Clean up template types temp files
-    os.remove(temp_output)
-
-    # 1. Generate Complete Pack Spread Deck Image
-    if "complete" in product_config:
-        print("\n=== Generating Complete Pack Spread Deck Image ===")
-        spread_deck_uri = generate_spread_deck_image(
-            story_positions=None,
+        return cls(
+            handle=handle,
+            title=title,
+            source_language=source_language,
+            target_language=target_language,
             collection=collection,
-            bucket_name=bucket_name,
-            product_type="complete",
-            num_phrases=12,
-            angle_offset=8,
-            x_offset=40,
+            pack_type=pack_type,
+            position=position,
+            price=price,
+            body_html=body_html,
+            images=image_urls,
+            tags=product_tags,
         )
-        marketing_path = get_marketing_image_path(
-            product_type="complete",
+
+    @classmethod
+    def create_course_product(
+        cls,
+        collection: str,
+        target_language: Language,
+        source_language: Language,
+        body_html: str,
+        images: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+    ) -> ShopifyProduct:
+        """Convenience method to create a course product."""
+        return cls.create(
             collection=collection,
-            language=language,
+            pack_type="course",
+            target_language=target_language,
+            source_language=source_language,
+            body_html=body_html,
+            images=images,
+            tags=tags,
         )
-        created_images["complete_spread_deck"] = marketing_path
 
-    # 2. Generate Bundle Pack Spread Deck Images
-    if "bundle" in product_config:
-        print("\n=== Generating Bundle Pack Spread Deck Images ===")
-        bundle_ranges = product_config["bundle"].get("ranges", [])
-        for start_pos, end_pos in bundle_ranges:
-            bundle_stories = [
-                story
-                for story in all_stories
-                if start_pos <= get_story_position(story, collection) <= end_pos
-            ]
-            if not bundle_stories:
-                print(f"No stories found for bundle {start_pos}-{end_pos}")
-                continue
-            story_positions = [
-                get_story_position(story, collection) for story in bundle_stories
-            ]
-            spread_deck_uri = generate_spread_deck_image(
-                story_positions=story_positions,
-                collection=collection,
-                bucket_name=bucket_name,
-                product_type="bundle",
-                num_phrases=5,
-                angle_offset=12,
-                x_offset=15,
-            )
-            bundle_range = f"{start_pos:02d}-{end_pos:02d}"
-            marketing_path = get_marketing_image_path(
-                product_type="bundle",
-                collection=collection,
-                language=language,
-                bundle_range=bundle_range,
-            )
-            created_images[f"bundle_{bundle_range}_spread_deck"] = marketing_path
-
-    # 3. Generate Individual Pack Spread Deck Images
-    if generate_individual and "individual" in product_config:
-        print("\n=== Generating Individual Pack Spread Deck Images ===")
-        individual_indices = product_config["individual"].get("indices", [])
-        for story in tqdm(all_stories, desc="Generating individual spread deck images"):
-            try:
-                story_position = get_story_position(story, collection)
-                if story_position not in individual_indices:
-                    continue
-                spread_deck_uri = generate_spread_deck_image(
-                    story_positions=[story_position],
-                    collection=collection,
-                    bucket_name=bucket_name,
-                    product_type="individual",
-                    num_phrases=3,
-                    angle_offset=12,
-                    x_offset=30,
-                )
-
-                marketing_path = get_marketing_image_path(
-                    product_type="individual",
-                    collection=collection,
-                    language=language,
-                    story_name=story,
-                )
-                created_images[f"individual_{story}_spread_deck"] = marketing_path
-            except ValueError as e:
-                print(f"Skipping story {story}: {e}")
-                continue
-
-    print(f"\n🎉 Generated {len(created_images)} spread deck images successfully!")
-
-    return created_images
-
-
-def create_spread_deck_image(
-    png_files: List[str],
-    output_path: str,
-    angle_offset: float = 6.0,
-    x_offset: float = 0,
-    background_color: str = "#FFFFFF",
-) -> str:
-    """
-    Creates a single image showing multiple PNG files spread out like a deck of cards.
-    Image size is calculated exactly based on the card arrangement.
-
-    Args:
-        png_files: List of paths to PNG files to include in the spread
-        output_path: Where to save the final image
-        angle_offset: Angle in degrees between each card (default: 6.0)
-        x_offset: Horizontal offset between cards in pixels - larger values spread cards wider (default: 0)
-        background_color: Color of the background (default: "#FFFFFF" - white)
-
-    Returns:
-        Path to the created image
-    """
-    if not png_files:
-        raise ValueError("No PNG files provided")
-    x_offset = abs(x_offset) * -1
-    # Load all images
-    images = []
-    max_card_width = 0
-    max_card_height = 0
-
-    for file in png_files:
-        img = Image.open(file)
-        # Convert to RGBA if not already
-        if img.mode != "RGBA":
-            img = img.convert("RGBA")
-
-        # Add border to the image
-        border_size = 2
-        bordered_img = Image.new(
-            "RGBA",
-            (img.width + 2 * border_size, img.height + 2 * border_size),
-            (240, 240, 240, 255),
-        )  # Pale grey border
-        bordered_img.paste(img, (border_size, border_size), img)
-
-        images.append(bordered_img)
-        max_card_width = max(max_card_width, bordered_img.width)
-        max_card_height = max(max_card_height, bordered_img.height)
-
-    # Calculate exact dimensions needed for the fan arrangement
-    # Find the maximum extent of all rotated cards
-    min_x = float("inf")
-    max_x = float("-inf")
-    min_y = float("inf")
-    max_y = float("-inf")
-
-    # Calculate positions for all cards to find bounds
-    card_positions = []
-
-    for draw_order, img in enumerate(images):
-        # Calculate angle for this card
-        fan_angle = angle_offset * (draw_order - (len(images) - 1) // 2)
-
-        # Rotate the image to get its dimensions
-        rotated = img.rotate(fan_angle, expand=True, resample=Image.BICUBIC)
-
-        # Calculate position relative to pivot point (rotation logic)
-        angle_rad = math.radians(fan_angle)
-        bottom_center_offset_y = img.height // 2 * math.cos(angle_rad)
-        bottom_center_offset_x = img.height // 2 * math.sin(angle_rad)
-
-        # Base position from rotation
-        base_x = -rotated.width // 2 - bottom_center_offset_x
-        base_y = -rotated.height // 2 - bottom_center_offset_y
-
-        # Apply horizontal offset AFTER rotation calculations
-        horizontal_offset = x_offset * (draw_order - (len(images) - 1) // 2)
-        final_x = base_x + horizontal_offset
-        final_y = base_y
-
-        card_positions.append((rotated, final_x, final_y))
-
-        # Update bounds with final positions
-        left = final_x
-        right = final_x + rotated.width
-        top = final_y
-        bottom = final_y + rotated.height
-
-        min_x = min(min_x, left)
-        max_x = max(max_x, right)
-        min_y = min(min_y, top)
-        max_y = max(max_y, bottom)
-
-    # Calculate final image dimensions with small padding
-    padding = 20
-    final_width = int(max_x - min_x) + 2 * padding
-    final_height = int(max_y - min_y) + 2 * padding
-
-    # Calculate pivot position in the final image
-    pivot_x = -min_x + padding
-    pivot_y = -min_y + padding
-
-    # Create new image with exact dimensions
-    final_image = Image.new("RGBA", (final_width, final_height), background_color)
-
-    # Draw all cards using pre-calculated positions
-    for rotated, rel_x, rel_y in card_positions:
-        x = int(pivot_x + rel_x)
-        y = int(pivot_y + rel_y)
-
-        # Paste the rotated image
-        final_image.paste(rotated, (x, y), rotated)
-
-    # Save the final image
-    final_image.save(output_path, "PNG")
-    return output_path
-
-
-def generate_spread_deck_image(
-    story_positions: Optional[List[int]] = None,
-    collection: str = "LM1000",
-    bucket_name: Optional[str] = None,
-    num_phrases: int = 5,
-    angle_offset: float = 6.0,
-    x_offset: float = 0.0,
-    background_color: str = "#FFFFFF",
-    product_type: Optional[str] = None,
-    template_type: str = "reading_back",
-) -> str:
-    """
-    Generate spread deck images from phrases in specified stories or collection and upload to GCS.
-    Updated to use consistent marketing image naming convention.
-
-    Args:
-        story_positions: Optional list of story positions to get phrases from (e.g. [1, 2, 3] for first three stories)
-                        If None, samples from entire collection
-        collection: Collection name (default: "LM1000")
-        bucket_name: Optional GCS bucket name (defaults to config.GCS_PRIVATE_BUCKET)
-        num_phrases: Number of phrases to include in the spread (default: 5)
-        angle_offset: Angle in degrees between each card (default: 6.0)
-        x_offset: Horizontal offset between cards in pixels (default: 0.0)
-        background_color: Color of the background (default: "#FFFFFF")
-        product_type: Product type ("complete", "bundle", "individual") - auto-detected if None
-        template_type: Type of template to use ("reading_back", "reading_front", "listening_front", "speaking_front")
-
-    Returns:
-        GCS URI of the uploaded spread deck image
-    """
-    if bucket_name is None:
-        bucket_name = config.GCS_PRIVATE_BUCKET
-
-    # Create temp directory
-    temp_base_dir = "../outputs/temp"
-    os.makedirs(temp_base_dir, exist_ok=True)
-
-    x_offset = abs(x_offset) * -1
-    # Get collection data
-    collection_path = get_story_collection_path(collection)
-    collection_data = read_from_gcs(bucket_name, collection_path, "json")
-    language = config.TARGET_LANGUAGE_NAME.lower()
-    random.seed(language + collection)  # Default seed for multi-story
-    # Get story names based on positions if provided
-    if story_positions:
-        # Convert collection_data keys to list to maintain order
-        story_names = list(collection_data.keys())
-        selected_stories = []
-        for pos in story_positions:
-            if 1 <= pos <= len(story_names):
-                selected_stories.append(story_names[pos - 1])
-            else:
-                print(
-                    f"Warning: Story position {pos} is out of range (1-{len(story_names)})"
-                )
-
-        if not selected_stories:
-            raise ValueError("No valid story positions provided")
-
-        # Get phrases from selected stories
-        story_phrases = []
-        for story_name in selected_stories:
-            story_phrases.extend([p["phrase"] for p in collection_data[story_name]])
-
-    else:
-        # Get all phrases from the collection
-        phrases_path = get_phrase_path(collection)
-        story_phrases = read_from_gcs(bucket_name, phrases_path, "json")
-
-    # Randomly sample phrases
-    if len(story_phrases) < num_phrases:
-        print(
-            f"Warning: Only {len(story_phrases)} phrases available, using all of them"
+    @classmethod
+    def create_individual_product(
+        cls,
+        collection: str,
+        position: int,
+        target_language: Language,
+        source_language: Language,
+        body_html: str,
+        images: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+    ) -> ShopifyProduct:
+        """Convenience method to create an individual pack product."""
+        return cls.create(
+            collection=collection,
+            pack_type="individual",
+            position=position,
+            target_language=target_language,
+            source_language=source_language,
+            body_html=body_html,
+            images=images,
+            tags=tags,
         )
-        selected_phrases = story_phrases
-    else:
-        selected_phrases = random.sample(story_phrases, num_phrases)
 
-    # Generate HTML and PNG files for each phrase
-    png_files = []
-    for phrase in selected_phrases:
-        phrase_key = clean_filename(phrase)
+    @classmethod
+    def create_specialty_product(
+        cls,
+        collection: str,
+        target_language: Language,
+        source_language: Language,
+        body_html: str,
+        images: Optional[List[str]] = None,
+        tags: Optional[List[str]] = None,
+    ) -> ShopifyProduct:
+        """Convenience method to create a specialty vocabulary product."""
+        return cls.create(
+            collection=collection,
+            pack_type="specialty",
+            target_language=target_language,
+            source_language=source_language,
+            body_html=body_html,
+            images=images,
+            tags=tags,
+        )
 
-        # Generate HTML files in a temporary directory
-        temp_dir = os.path.join(temp_base_dir, language, f"temp_{phrase_key}")
-        html_path = os.path.join(temp_dir, f"{template_type}.html")
-        png_path = os.path.join(temp_dir, f"{phrase_key}.png")
 
-        # Only generate HTML if directory doesn't exist or PNG doesn't exist
-        if not os.path.exists(temp_dir) or not os.path.exists(png_path):
-            os.makedirs(temp_dir, exist_ok=True)
-            generate_test_html(
-                phrase_key=phrase_key,
-                output_dir=temp_dir,
-                collection=collection,
-                bucket_name=bucket_name,
+# ============================================================================
+# SHOPIFY PRODUCT LISTING
+# ============================================================================
+
+
+class ShopifyProductListing(BaseModel):
+    """Container for managing multiple Shopify products and exporting to CSV."""
+
+    products: List[ShopifyProduct] = Field(
+        default_factory=list, description="List of Shopify products"
+    )
+
+    def add_product(self, product: ShopifyProduct) -> None:
+        """Add a product to the listing.
+
+        Args:
+            product: ShopifyProduct to add
+
+        Raises:
+            ValueError: If product with same handle already exists
+        """
+        if any(p.handle == product.handle for p in self.products):
+            raise ValueError(
+                f"Product with handle '{product.handle}' already exists in listing"
             )
+        self.products.append(product)
 
-            # Create PNG from the reading card front
-            create_png_of_html(html_path, png_path, width=375, height=1100)
+    def remove_product(self, handle: str) -> None:
+        """Remove a product from the listing by handle.
 
-        png_files.append(png_path)
+        Args:
+            handle: Product handle to remove
 
-    # Create the spread deck image
-    temp_output = os.path.join(temp_base_dir, "temp_spread_deck.png")
-    create_spread_deck_image(
-        png_files=png_files,
-        output_path=temp_output,
-        angle_offset=angle_offset,
-        x_offset=x_offset,
-        background_color=background_color,
-    )
+        Raises:
+            ValueError: If product not found
+        """
+        original_count = len(self.products)
+        self.products = [p for p in self.products if p.handle != handle]
 
-    # Auto-detect product type if not provided
-    if product_type is None:
-        if story_positions is None:
-            product_type = "complete"
-        elif len(story_positions) == 1:
-            product_type = "individual"
-        else:
-            product_type = "bundle"
+        if len(self.products) == original_count:
+            raise ValueError(f"Product with handle '{handle}' not found in listing")
 
-    # Generate filename using get_marketing_image_paths logic
-    language = config.TARGET_LANGUAGE_NAME.lower()
+    def to_csv(self, output_path: str) -> str:
+        """Export products to Shopify CSV format.
 
-    if product_type == "complete":
-        filename = f"{language}_{collection}_complete_pack.png"
-    elif product_type == "bundle":
-        range_str = f"{min(story_positions):02d}-{max(story_positions):02d}"
-        filename = f"{language}_{collection}_bundle_{range_str}.png"
-    elif product_type == "templates":
-        filename = f"{language}_{collection}_template_types.png"
-    else:  # individual
-        story_name = selected_stories[0] if len(story_positions) == 1 else None
-        if story_name:
-            filename = f"{language}_{collection}_individual_{story_name}.png"
-        else:
-            filename = f"{language}_{collection}_individual_pack.png"
+        Args:
+            output_path: Path where CSV file should be saved
 
-    # Upload to GCS using marketing images path
+        Returns:
+            str: Path to the created CSV file
 
-    # Get the marketing image path (first one contains the file we're creating)
-    bundle_range = None
-    story_name = None
+        Raises:
+            ValueError: If no products in listing
+        """
+        if not self.products:
+            raise ValueError("Cannot export empty product listing")
 
-    if product_type == "bundle":
-        bundle_range = f"{min(story_positions):02d}-{max(story_positions):02d}"
-    elif product_type == "individual" and len(story_positions) == 1:
-        story_name = selected_stories[0]
+        csv_rows = []
 
-    # Get the first marketing image path (this is the one we're creating)
-    marketing_image_path = get_marketing_image_path(
-        product_type=product_type,
-        collection=collection,
-        language=language,
-        bundle_range=bundle_range,
-        story_name=story_name,
-    )
+        for product in self.products:
+            base_data = {
+                "Handle": product.handle,
+                "Title": product.title,
+                "Body (HTML)": product.body_html,
+                "Vendor": product.vendor,
+                "Product Category": product.product_category,
+                "Type": product.product_type,
+                "Tags": ", ".join(product.tags),
+                "Published": "TRUE" if product.published else "FALSE",
+                "Option1 Name": product.option1_name,
+                "Option1 Value": product.option1_value,
+                "Variant Price": str(product.price),
+                "Variant Requires Shipping": "FALSE"
+                if not product.requires_shipping
+                else "TRUE",
+                "Variant Taxable": "TRUE" if product.taxable else "FALSE",
+                "source language (product.metafields.custom.source_language)": product.shopify_metafields[
+                    "source_language"
+                ],
+                "target language (product.metafields.custom.target_language)": product.shopify_metafields[
+                    "target_language"
+                ],
+                "pack type (product.metafields.custom.pack_type)": product.shopify_metafields[
+                    "pack_type"
+                ],
+                "collection (product.metafields.custom.collection)": product.shopify_metafields[
+                    "collection"
+                ],
+            }
 
-    # The first path is the file we're creating
-    gcs_file_path = marketing_image_path
+            # Add rows for each image
+            for i, image_url in enumerate(product.images):
+                if i == 0:
+                    row = base_data.copy()
+                    row["Image Src"] = image_url
+                    row["Image Position"] = str(i + 1)
+                    csv_rows.append(row)
+                else:
+                    csv_rows.append(
+                        {
+                            "Handle": product.handle,
+                            "Image Src": image_url,
+                            "Image Position": str(i + 1),
+                        }
+                    )
 
-    # Read the image file
-    with open(temp_output, "rb") as f:
-        image_data = f.read()
+        # Get all unique fieldnames
+        all_fieldnames = set()
+        for row in csv_rows:
+            all_fieldnames.update(row.keys())
 
-    # Upload to GCS
-    gcs_uri = upload_to_gcs(
-        obj=image_data,
-        bucket_name=bucket_name,
-        file_name=gcs_file_path,
-        content_type="image/png",
-    )
+        # Define column order
+        priority_fields = [
+            "Handle",
+            "Title",
+            "Body (HTML)",
+            "Vendor",
+            "Product Category",
+            "Type",
+            "Tags",
+            "Published",
+            "Option1 Name",
+            "Option1 Value",
+            "Variant Price",
+            "Variant Requires Shipping",
+            "Variant Taxable",
+            "Image Src",
+            "Image Position",
+        ]
 
-    # Clean up only the final spread deck image
-    os.remove(temp_output)
+        fieldnames = [f for f in priority_fields if f in all_fieldnames]
+        remaining_fields = sorted(all_fieldnames - set(fieldnames))
+        fieldnames.extend(remaining_fields)
 
-    return gcs_uri
+        # Ensure output directory exists
+        os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
+
+        # Write CSV
+        with open(output_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(csv_rows)
+
+        return output_path
