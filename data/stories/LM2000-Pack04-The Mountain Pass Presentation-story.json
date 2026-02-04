@@ -1,0 +1,94 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hey Sam, how's your assignment going? I'm completing my homework for Professor Garcia's class right now."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Not great, to be honest. I'm working on that presentation about a mountain pass in winter. It's for tomorrow's meeting with the research team."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh, the one for the geography program? That sounds complicated."
+      },
+      {
+        "speaker": "Sam",
+        "text": "It is! I have to explain how temperature and weather change at high altitude. The problem is, I can't organise my ideas easily."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Do you want some help? I finished my report yesterday, so I have time now."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Really? That would be perfect! I'm glad you're here. Let me switch on my computer and I'll show you what I have so far."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Okay, let's see your document. Wait... Sam, this section about the winter season is going in the wrong direction. You're talking about spring flowers on a mountain!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "What? No, that can't be right. Oh no... I think I copied the wrong text from my notes. This is terribly mixed up!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Don't rush. We still have time to fix this. What's the main theme you want to present?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "The team wants me to describe how a mountain pass exists in different seasons, but with detail about winter conditions."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Good. So let's complete this step by step. First, switch this paragraph with that one about temperature."
+      },
+      {
+        "speaker": "Sam",
+        "text": "You're right. And I owe you for this! I was so worried I would fail the presentation completely."
+      },
+      {
+        "speaker": "Alex",
+        "text": "It's not your fault. These intensive university programs are difficult for all of us."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "There! I think that's done. The explanation about clouds and snow is now in the right position."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Let me review it quickly. Yes, this looks impressive now! The description of the pass is clear and detailed."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Do you think the team will be happy with it?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Definitely. That completes our meeting for today, I'd say! You're ready for tomorrow."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I can't thank you enough. Next time you need help with Spanish class, just let me know."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Deal! Now, let's take a break. All this work made me hungry."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good idea. And tomorrow, I won't be nervous about the presentation. Thanks to you, my friend!"
+      }
+    ]
+  }
+}
