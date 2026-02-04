@@ -179,12 +179,12 @@ class TargetLanguageIndex(IndexPage):
                 if collection == item.story.collection:
                     stories_by_collection[collection].append(item)
 
-        return dict(
-            sorted(
-                stories_by_collection.items(),
-                key=lambda x: (x[0], sorted(x[1], key=lambda y: y.story.deck)),
-            )
-        )
+        # Sort the stories within each collection by deck
+        for collection in stories_by_collection:
+            stories_by_collection[collection].sort(key=lambda x: x.story.deck)
+
+        # Return sorted by collection name
+        return dict(sorted(stories_by_collection.items()))
 
 
 TargetLanguageIndex.model_rebuild()
