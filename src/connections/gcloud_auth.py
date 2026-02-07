@@ -8,6 +8,7 @@ from google.cloud.firestore import Client as FirestoreClient
 from google.cloud import language_v1
 from google.cloud import texttospeech
 from google.cloud import translate_v2 as translate
+from google.cloud import translate_v3
 from google.cloud import storage
 
 
@@ -19,6 +20,7 @@ _project_id: Optional[str] = None
 _firestore_client: Optional[FirestoreClient] = None
 _nlp_client: Optional[language_v1.LanguageServiceClient] = None
 _translate_client: Optional[translate.Client] = None
+_translate_v3_client: Optional[translate_v3.TranslationServiceClient] = None
 _texttospeech_client: Optional[texttospeech.TextToSpeechClient] = None
 _texttospeech_long_client: Optional[
     texttospeech.TextToSpeechLongAudioSynthesizeClient
@@ -149,6 +151,33 @@ def get_translate_client() -> translate.Client:
         raise RuntimeError(f"Failed to create Google Translate API client: {e}")
 
 
+def get_translate_v3_client() -> translate_v3.TranslationServiceClient:
+    """Get a Google Translate API v3 client instance (singleton).
+
+    Returns:
+        translate_v3.TranslationServiceClient: Google Translate API v3 client instance
+
+    Raises:
+        RuntimeError: If unable to create Translate v3 client
+        SystemExit: If authentication fails
+    """
+    global _translate_v3_client
+
+    if _translate_v3_client is not None:
+        return _translate_v3_client
+
+    try:
+        # Setup authentication (will use default credentials)
+        setup_authentication()
+
+        # Create Translate v3 client
+        _translate_v3_client = translate_v3.TranslationServiceClient()
+        print("(y) Google Translate API v3 client initialized")
+        return _translate_v3_client
+    except Exception as e:
+        raise RuntimeError(f"Failed to create Google Translate API v3 client: {e}")
+
+
 def get_texttospeech_client() -> texttospeech.TextToSpeechClient:
     """Get a Google Text-to-Speech API client instance (singleton).
 
@@ -242,6 +271,7 @@ def reset_clients() -> None:
         _firestore_client, \
         _nlp_client, \
         _translate_client, \
+        _translate_v3_client, \
         _texttospeech_client, \
         _texttospeech_long_client, \
         _storage_client
@@ -250,6 +280,7 @@ def reset_clients() -> None:
     _firestore_client = None
     _nlp_client = None
     _translate_client = None
+    _translate_v3_client = None
     _texttospeech_client = None
     _texttospeech_long_client = None
     _storage_client = None

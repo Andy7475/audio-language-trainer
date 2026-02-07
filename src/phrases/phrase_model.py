@@ -255,7 +255,7 @@ class Phrase(FirePhraseDataModel):
     def translate(
         self,
         target_language: Language | str,
-        refine: bool = True,
+        refine: bool = False,
         model: Optional[str] = None,
         overwrite: bool = False,
         translated_text: str | None = None,

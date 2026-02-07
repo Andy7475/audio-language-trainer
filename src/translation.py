@@ -2,7 +2,7 @@ from typing import List, Optional, Union
 
 import langcodes
 
-from src.connections.gcloud_auth import get_translate_client
+from src.connections.gcloud_auth import get_translate_v3_client, setup_authentication
 from src.llm_tools.review_translation import refine_translation
 from src.models import BCP47Language, get_language
 
@@ -14,7 +14,7 @@ def translate_with_google_translate(
     batch_size: int = 128,
 ) -> Union[str, List[str]]:
     """
-    Translate text using Google Translate API.
+    Translate text using Google Translate API v3.
 
     Supports both single strings and lists of strings, with automatic batching
     for large lists.
@@ -32,7 +32,8 @@ def translate_with_google_translate(
         RuntimeError: If translation fails
     """
     try:
-        translate_client = get_translate_client()
+        translate_client = get_translate_v3_client()
+        _, project_id = setup_authentication()
 
         target_language = get_language(target_language)
         source_language = get_language(source_language)
@@ -49,13 +50,18 @@ def translate_with_google_translate(
         translated_texts = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
-            result = translate_client.translate(
-                batch,
-                target_language=target_code,
-                source_language=source_code,
-                format_="text",
+            
+            parent = f"projects/{project_id}/locations/global"
+            
+            result = translate_client.translate_text(
+                contents=batch,
+                target_language_code=target_code,
+                source_language_code=source_code,
+                parent=parent,
             )
-            translated_texts.extend([item["translatedText"] for item in result])
+            translated_texts.extend(
+                [translation.translated_text for translation in result.translations]
+            )
 
         # Return in the same format as input
         return translated_texts[0] if is_single_string else translated_texts
