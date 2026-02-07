@@ -6,21 +6,6 @@ from pydub import AudioSegment
 from typing import List, Optional
 
 
-def clean_filename(phrase: str) -> str:
-    """Convert a phrase to a clean filename-safe string."""
-    # Convert to lowercase
-    clean = phrase.lower()
-    # Replace any non-alphanumeric characters (except spaces) with empty string
-    clean = re.sub(r"[^a-z0-9\s]", "", clean)
-    # Replace spaces with underscores
-    clean = clean.replace(" ", "_")
-    # Remove any double underscores
-    clean = re.sub(r"_+", "_", clean)
-    # Trim any leading/trailing underscores
-    clean = clean.strip("_")
-    return clean
-
-
 def get_collection_title(collection: str) -> str:
     """
     Convert a collection name to a title case string.
@@ -30,37 +15,11 @@ def get_collection_title(collection: str) -> str:
 
     Returns:
         str: Collection title to accommodate changes in name (e.g. "First1000")
-
-    Example:
-        >>> get_collection_title("lm1000")
-        'LM1000'
     """
 
-    MAPPING = {"LM1000": "First1000", "LM2000": "Second1000", "WarmUp150": "WarmUp1000"}
+    MAPPING = {"LM1000": "Stage 1", "LM2000": "Stage 2", "SURVIVAL": "Survival"}
 
     return MAPPING.get(collection, collection.title())
-
-
-def get_story_title(story_name: str) -> str:
-    """
-    Clean a story name by removing 'story' and underscores, returning in title case.
-
-    Args:
-        story_name: Input story name (e.g. "story_community_park")
-
-    Returns:
-        str: Cleaned story name in title case (e.g. "Community Park")
-
-    Example:
-        >>> get_story_title("story_community_park")
-        'Community Park'
-    """
-    # Remove 'story' and split on underscores
-    name = story_name.replace("story_", "")
-    words = name.split("_")
-
-    # Convert to title case and join with spaces
-    return " ".join(word.title() for word in words)
 
 
 def convert_audio_to_base64(audio_segment: Optional[AudioSegment]) -> Optional[str]:
@@ -134,30 +93,6 @@ def convert_base64_list_to_audio_segments(
     return audio_segments
 
 
-def convert_m4a_file_to_base64(m4a_file_path: str) -> str:
-    """
-    Convert an M4A file to a base64 encoded string.
-
-    Args:
-        m4a_file_path: Path to the M4A file
-
-    Returns:
-        str: Base64 encoded string representation of the M4A file
-
-    Raises:
-        FileNotFoundError: If the M4A file doesn't exist
-        IOError: If there's an error reading the file
-    """
-    try:
-        with open(m4a_file_path, "rb") as audio_file:
-            audio_bytes = audio_file.read()
-            return base64.b64encode(audio_bytes).decode("utf-8")
-    except FileNotFoundError:
-        raise FileNotFoundError(f"M4A file not found at: {m4a_file_path}")
-    except IOError as e:
-        raise IOError(f"Error reading M4A file: {str(e)}")
-
-
 def string_to_large_int(s: str) -> int:
     """Notes in Anki have a unique ID, and so to create the note ID and ensure
     it correlates with the content we can pass in the translated phrase as a string
@@ -183,37 +118,6 @@ def string_to_large_int(s: str) -> int:
     large_int = int(truncated_hex, 16)
     # Ensure the value is positive and within SQLite's signed 64-bit integer range
     return large_int & 0x7FFFFFFFFFFFFFFF
-
-
-def get_deck_name(
-    story_name: str, collection: str, story_position: Optional[int], language: str
-) -> str:
-    """
-    Format a deck name in the pattern: Language::Collection::Position Story Title
-
-    Args:
-        story_name: Name of the story (e.g. "story_community_park")
-        collection: Collection name (e.g. "LM1000")
-        story_position: Optional position number (e.g. 1 becomes "01")
-        language: Language name (e.g. "French")
-
-    Returns:
-        str: Formatted deck name (e.g. "French::LM1000::01 Community Park")
-    """
-    # Get the story title without "story_" prefix and with proper capitalization
-    story_title = get_story_title(story_name)
-    collection_title = get_collection_title(collection)
-    # Format the position if provided
-    position_str = ""
-    if story_position is not None:
-        position_str = f"{story_position:02d} "
-
-    # Capitalize the language name
-    language_cap = language.title()
-
-    return (
-        f"FirePhrase - {language_cap}::{collection_title}::{position_str} {story_title}"
-    )
 
 
 def convert_bytes_to_base64(data: bytes) -> str:
