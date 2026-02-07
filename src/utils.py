@@ -277,7 +277,16 @@ def render_html_content(data: dict, template_name: str) -> str:
     Returns:
         str: html_content
     """
-    loader = FileSystemLoader(["templates", "../src/templates", "src/templates"])
+    loader = FileSystemLoader(
+        [
+            "templates",
+            "../src/templates",
+            "src/templates",
+            "../src/templates/shop",
+            "src/templates/shop",
+            "templates/shop",
+        ]
+    )
     env = Environment(loader=loader, autoescape=False)
     template = env.get_template(template_name)
     html_content = template.render(data)
