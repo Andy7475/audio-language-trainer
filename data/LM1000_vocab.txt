@@ -55,7 +55,6 @@ boat
 bad
 pound
 machine
-daddy
 animal
 absolutely
 rid
@@ -79,7 +78,6 @@ actual
 better
 talk
 relationship
-yep
 telephone
 driver
 only
