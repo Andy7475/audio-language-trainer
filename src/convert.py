@@ -1,4 +1,3 @@
-import re
 import hashlib
 import base64
 import io

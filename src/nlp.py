@@ -136,7 +136,9 @@ def get_tokens_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> lis
     return tokens
 
 
-def get_text_tokens(text: str, language_code: str = "en") -> List[str]:
+def get_text_tokens(
+    text: str, language_code: str = "en", split_on_space: bool = False
+) -> List[str]:
     """
     Tokenize text using language-appropriate methods.
 
@@ -153,6 +155,8 @@ def get_text_tokens(text: str, language_code: str = "en") -> List[str]:
     if not text:
         return []
 
+    if split_on_space:
+        return text.split() if " " in text else [text]
     response = analyze_text_syntax(text, language_code)
     if response:
         return [token.text.content for token in response.tokens]

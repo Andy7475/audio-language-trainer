@@ -62,7 +62,7 @@ def create_review_page(
     processed_phrases = []
     for phrase in phrases:
         if download:
-            phrase.download()
+            phrase.download(language=target_language, local=False)
         image_data = convert_PIL_image_to_base64(
             resize_image(phrase.get_image(language=target_lang), height=200, width=200)
         )

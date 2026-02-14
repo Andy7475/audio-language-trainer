@@ -437,12 +437,12 @@ def download_from_gcs(
     # Download file into memory
     content = blob.download_as_bytes()
 
-    # If use_local is enabled, save a local copy for future use
-    if use_local:
-        local_path = os.path.join(local_base_dir, bucket_name, file_path)
-        os.makedirs(os.path.dirname(local_path), exist_ok=True)
-        with open(local_path, "wb") as f:
-            f.write(content)
+    # Always save for local use
+
+    local_path = os.path.join(local_base_dir, bucket_name, file_path)
+    os.makedirs(os.path.dirname(local_path), exist_ok=True)
+    with open(local_path, "wb") as f:
+        f.write(content)
 
     # Convert to the appropriate type
     try:

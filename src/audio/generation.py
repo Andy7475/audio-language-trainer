@@ -27,6 +27,7 @@ def generate_translation_audio(
     speed: Literal["normal", "slow"] = "normal",
     speaking_rate: float = SPEAKING_RATE_NORMAL,
     word_break_ms: int = DEFAULT_WORD_BREAK_MS,
+    split_on_space: bool = False,
 ) -> AudioSegment:
     """
     Generate audio for translated text at specified speed.
@@ -57,6 +58,7 @@ def generate_translation_audio(
             voice_model=voice_model,
             speaking_rate=SPEAKING_RATE_SLOW,
             word_break_ms=word_break_ms,
+            split_on_space=split_on_space,
         )
     else:
         return text_to_speech(

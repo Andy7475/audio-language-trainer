@@ -57,6 +57,7 @@ def slow_text_to_speech(
     voice_model: VoiceInfo,
     speaking_rate: float,
     word_break_ms: int = DEFAULT_WORD_BREAK_MS,
+    split_on_space: bool = False,
 ) -> AudioSegment:
     """
     Generate slowed down text-to-speech audio with breaks between words.
@@ -78,9 +79,10 @@ def slow_text_to_speech(
     Raises:
         ValueError: If the break duration exceeds provider limits
     """
+
     # Clean the text and tokenize it
     cleaned_text = clean_tts_text(text)
-    tokens = get_text_tokens(cleaned_text, voice_model.language_code)
+    tokens = get_text_tokens(cleaned_text, voice_model.language_code, split_on_space)
 
     if voice_model.provider == VoiceProvider.ELEVENLABS:
         return _slow_text_to_speech_elevenlabs(

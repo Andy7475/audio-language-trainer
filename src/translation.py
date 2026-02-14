@@ -1,7 +1,7 @@
 from typing import List, Optional, Union
 
 import langcodes
-
+import html
 from src.connections.gcloud_auth import get_translate_v3_client, setup_authentication
 from src.llm_tools.review_translation import refine_translation
 from src.models import BCP47Language, get_language
@@ -50,17 +50,22 @@ def translate_with_google_translate(
         translated_texts = []
         for i in range(0, len(texts), batch_size):
             batch = texts[i : i + batch_size]
-            
+
             parent = f"projects/{project_id}/locations/global"
-            
+
             result = translate_client.translate_text(
                 contents=batch,
                 target_language_code=target_code,
                 source_language_code=source_code,
                 parent=parent,
             )
+
+            # Then in translate_with_google_translate, after getting translations:
             translated_texts.extend(
-                [translation.translated_text for translation in result.translations]
+                [
+                    html.unescape(translation.translated_text)
+                    for translation in result.translations
+                ]
             )
 
         # Return in the same format as input

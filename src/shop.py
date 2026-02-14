@@ -13,7 +13,7 @@ from typing import List, Literal, Optional, Dict, Any
 from pathlib import Path
 
 from langcodes import Language
-from pydantic import BaseModel, Field, computed_field, field_validator
+from pydantic import BaseModel, Field, computed_field
 
 from src.models import BCP47Language, get_language
 from src.convert import get_collection_title

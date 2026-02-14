@@ -334,6 +334,9 @@ class Phrase(FirePhraseDataModel):
 
         # Step 5: Add the translation to the phrase's translations dict
         self.translations[translation.language.to_tag()] = translation
+        logger.info(
+            f"(y) Created translation for {translation.language.to_tag()}: {translation.text}"
+        )
 
         return translation
 
@@ -419,6 +422,7 @@ class Phrase(FirePhraseDataModel):
         gender: Literal["MALE", "FEMALE"] = "FEMALE",
         overwrite: bool = False,
         local: bool = True,
+        split_on_space: bool = False,
     ) -> None:
         """Generate audio for all translations (or a specific language).
 
@@ -445,13 +449,21 @@ class Phrase(FirePhraseDataModel):
         if language is not None:
             language = get_language(language)
             self.translations[language.to_tag()].generate_audio(
-                context=context, gender=gender, overwrite=overwrite, local=local
+                context=context,
+                gender=gender,
+                overwrite=overwrite,
+                local=local,
+                split_on_space=split_on_space,
             )
 
         else:
             for translation in self.translations.values():
                 translation.generate_audio(
-                    context=context, gender=gender, overwrite=overwrite, local=local
+                    context=context,
+                    gender=gender,
+                    overwrite=overwrite,
+                    local=local,
+                    split_on_space=split_on_space,
                 )
 
     def generate_image(
@@ -833,7 +845,7 @@ class PhraseAudio(FirePhraseDataModel):
         except Exception as e:
             raise ValueError(f"Failed to download audio from {self.file_path}: {e}")
 
-    def generate_audio(self) -> None:
+    def generate_audio(self, split_on_space: bool = False) -> None:
         """Generates audio for this PhraseAudio using TTS. Uploads it to GCS"""
 
         # Generate normal or slow audio using TTS
@@ -841,6 +853,7 @@ class PhraseAudio(FirePhraseDataModel):
             translated_text=self.text,
             voice_model=self.voice_info,
             speed=self.speed,
+            split_on_space=split_on_space,
         )
 
         self.duration_seconds = self.audio_segment.duration_seconds
@@ -1130,6 +1143,7 @@ class Translation(FirePhraseDataModel):
         gender: Literal["MALE", "FEMALE"] = "FEMALE",
         overwrite: bool = False,
         local: bool = True,
+        split_on_space: bool = False,
     ) -> None:
         """Generate audio for this translation at appropriate speeds based on context."""
 
@@ -1190,7 +1204,7 @@ class Translation(FirePhraseDataModel):
                 phrase_audio.duration_seconds = audio_segment.duration_seconds
             else:
                 # Generate new audio
-                phrase_audio.generate_audio()
+                phrase_audio.generate_audio(split_on_space=split_on_space)
 
             # Store in nested dict structure
             self.audio[context][speed] = phrase_audio
