@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field, computed_field
 from src.models import BCP47Language, get_language
 from src.convert import get_collection_title
 from src.utils import render_html_content
-
+from src.logger import logger
 
 # ============================================================================
 # PRODUCT CONFIGURATION
@@ -75,8 +75,8 @@ def get_product_image_filename(
     source_language: Language,
     target_language: Language,
     collection: str,
+    collection_part: str | None,
     pack_type: Literal["Course", "Individual", "Specialty"],
-    position: Optional[int] = None,
 ) -> str:
     """Generate systematic image filename for a product.
 
@@ -85,26 +85,28 @@ def get_product_image_filename(
         target_language: Target language being learned
         collection: Collection name (e.g., 'LM1000', 'Medical')
         pack_type: Type of pack (course, individual, or specialty)
-        position: Optional position number for individual packs
+        collection_part: Optional collection part (e.g., 'Month 1'); if None use whole collection
 
     Returns:
         str: Image filename following BCP47 convention
 
     Examples:
-        >>> get_product_image_filename(Language.get('en'), Language.get('fr'), 'LM1000', 'course')
-        'en-fr_lm1000_course.png'
-        >>> get_product_image_filename(Language.get('en'), Language.get('fr'), 'LM1000', 'individual', 1)
-        'en-fr_lm1000_individual_01.png'
+        >>> get_product_image_filename(Language.get('en'), Language.get('fr'), 'LM1000', None, 'course')
+        'en-fr_course_lm1000.png'
+        >>> get_product_image_filename(Language.get('en'), Language.get('fr'), 'LM1000', 'Month 1', 'individual')
+        'en-fr_individual_lm1000_month_1.png'
     """
     source_tag = source_language.to_tag().lower()
     target_tag = target_language.to_tag().lower()
     collection_lower = collection.lower()
     pack_type = pack_type.lower()
+    collection_part = (
+        collection_part.lower().replace(" ", "_") if collection_part else ""
+    )
 
-    base_name = f"{source_tag}_{target_tag}_{collection_lower}_{pack_type}"
-
-    if position is not None:
-        base_name += f"_{position:02d}"
+    base_name = (
+        f"{source_tag}_{target_tag}_{pack_type}_{collection_lower}_{collection_part}"
+    )
 
     return f"{base_name}.png"
 
@@ -117,7 +119,7 @@ def get_price_from_config(
     Args:
         collection: Collection name
         pack_type: Type of pack (course, individual, specialty)
-        position: Optional position for individual packs (to check free_count)
+        position: (DEPRECATED) previously used numeric position. Use `collection_part` semantics in higher-level code.
 
     Returns:
         float: Product price
@@ -134,12 +136,9 @@ def get_price_from_config(
         raise ValueError(
             f"Pack type '{pack_type}' not configured for collection '{collection}'"
         )
-
-    # Handle individual packs with free_count
-    if pack_type == "Individual" and position is not None:
-        free_count = config[pack_type].get("free_count", 0)
-        if position <= free_count:
-            return 0.0
+    # NOTE: Position-based free_count logic removed; callers should map their
+    # collection_part to pricing decisions prior to calling this function if
+    # special free rules are required.
 
     return config[pack_type]["price"]
 
@@ -149,7 +148,7 @@ def generate_handle(
     target_language: Language,
     collection: str,
     pack_type: Literal["Course", "Individual", "Specialty"],
-    position: Optional[int] = None,
+    collection_part: Optional[str] = None,
 ) -> str:
     """Generate product handle following BCP47 convention.
 
@@ -158,7 +157,7 @@ def generate_handle(
         target_language: Target language
         collection: Collection name
         pack_type: Type of pack
-        position: Optional position for individual packs
+        collection_part: Optional collection part (e.g., 'Month 1')
 
     Returns:
         str: Product handle
@@ -166,18 +165,17 @@ def generate_handle(
     source_tag = source_language.to_tag().lower()
     target_tag = target_language.to_tag().lower()
     collection_lower = collection.lower()
+    collection_part = (
+        collection_part.lower().replace(" ", "_") if collection_part else ""
+    )
 
-    if pack_type == "Individual" and position is not None:
-        return f"{source_tag}_{target_tag}-{collection_lower}-pack-{position:02d}"
-    else:
-        return f"{source_tag}_{target_tag}_{collection_lower}_{pack_type}"
+    return f"{source_tag}_{target_tag}_{pack_type}_{collection_lower}_{collection_part}"
 
 
 def generate_title(
     target_language: Language,
     collection: str,
-    pack_type: Literal["Course", "Individual", "Specialty"],
-    position: Optional[int] = None,
+    collection_part: Optional[str] = None,
 ) -> str:
     """Generate product title.
 
@@ -185,7 +183,7 @@ def generate_title(
         target_language: Target language being learned
         collection: Collection name
         pack_type: Type of pack
-        position: Optional position for individual packs
+        collection_part: Optional collection part (e.g., 'Month 1')
 
     Returns:
         str: Product title
@@ -199,21 +197,14 @@ def generate_title(
     collection_title = get_collection_title(collection)
     lang_display = target_language.display_name()
 
-    if pack_type == "Course":
-        return f"{lang_display} - {collection_title} - Complete Course"
-    elif pack_type == "Individual" and position is not None:
-        return f"{lang_display} - {collection_title} - Pack {position:02d}"
-    elif pack_type == "Specialty":
-        return f"{lang_display} - {collection_title}"
-    else:
-        return f"{lang_display} - {collection_title}"
+    return f"{lang_display} - {collection_title} - {collection_part}"
 
 
 def generate_tags(
     target_language: Language,
     collection: str,
     pack_type: Literal["Course", "Individual", "Specialty"],
-    position: Optional[int] = None,
+    collection_part: Optional[str] = None,
     price: float = 0.0,
     extra_tags: Optional[List[str]] = None,
 ) -> List[str]:
@@ -223,7 +214,7 @@ def generate_tags(
         target_language: Target language being learned
         collection: Collection name
         pack_type: Type of pack
-        position: Optional position for individual packs
+        collection_part: Optional collection part
         price: Product price (to add "Free" tag if 0.0)
         extra_tags: Optional additional tags
 
@@ -237,13 +228,12 @@ def generate_tags(
 
     if pack_type == "Course":
         tags.append("Complete Course")
-    elif pack_type == "Individual" and position is not None:
-        tags.append(f"Pack {position:02d}")
-        if price == 0.0:
-            tags.append("Free")
-    elif pack_type == "Specialty":
+    if price == 0.0:
+        tags.append("Free")
+    if pack_type == "Individual":
+        tags.append("Individual")
+    if pack_type == "Specialty":
         tags.append("Specialty Vocabulary")
-
     if extra_tags:
         tags.extend(extra_tags)
 
@@ -255,7 +245,7 @@ def setup_product_images(
     target_language: Language,
     collection: str,
     pack_type: Literal["Course", "Individual", "Specialty"],
-    position: Optional[int] = None,
+    collection_part: Optional[str] = None,
     custom_images: Optional[List[str]] = None,
 ) -> List[str]:
     """Setup product images with URLs.
@@ -276,7 +266,7 @@ def setup_product_images(
     else:
         # Generate default image filename
         main_image = get_product_image_filename(
-            source_language, target_language, collection, pack_type, position
+            source_language, target_language, collection, collection_part, pack_type
         )
         images = [main_image]
 
@@ -304,11 +294,12 @@ class ShopifyProductBase(BaseModel):
     source_language: BCP47Language = Field(..., description="Source language")
     target_language: BCP47Language = Field(..., description="Target language")
     collection: str = Field(..., description="Collection name")
+    collection_part: Optional[str] = Field(
+        default=None,
+        description="Part of the collection (e.g., 'Month 1'); None means the whole collection",
+    )
     pack_type: Literal["Course", "Individual", "Specialty"] = Field(
         ..., description="Type of product pack"
-    )
-    position: Optional[int] = Field(
-        default=None, description="Position for individual packs"
     )
 
     # Pricing and availability
@@ -394,11 +385,11 @@ class ShopifyProduct(ShopifyProductBase):
     def create(
         cls,
         collection: str,
+        collection_part: str | None,
         pack_type: Literal["Course", "Individual", "Specialty"],
         template: str,
         target_language: Language | str,
         source_language: Language | str = "en-GB",
-        position: Optional[int] = None,
         images: Optional[List[str]] = None,
         tags: Optional[List[str]] = None,
     ) -> ShopifyProduct:
@@ -409,7 +400,6 @@ class ShopifyProduct(ShopifyProductBase):
             pack_type: Type of pack (course, individual, specialty)
             target_language: Target language being learned
             source_language: Source language (typically English)
-            position: Required for individual packs, position number (1-based)
             images: Optional list of image filenames (will be converted to URLs)
             tags: Optional list of additional tags
 
@@ -417,33 +407,34 @@ class ShopifyProduct(ShopifyProductBase):
             ShopifyProduct: A configured product
 
         Raises:
-            ValueError: If individual pack_type without position, or invalid configuration
 
         """
 
         source_language = get_language(source_language)
         target_language = get_language(target_language)
-        # Validate individual pack has position
-        if pack_type == "Individual" and position is None:
-            raise ValueError("Individual pack requires position parameter")
 
         # Get price from config
-        price = get_price_from_config(collection, pack_type, position)
+        price = get_price_from_config(collection, pack_type, None)
 
         # Generate handle and title
         handle = generate_handle(
-            source_language, target_language, collection, pack_type, position
+            source_language, target_language, collection, pack_type, collection_part
         )
-        title = generate_title(target_language, collection, pack_type, position)
+        title = generate_title(target_language, collection, collection_part)
 
         # Setup images
         image_urls = setup_product_images(
-            source_language, target_language, collection, pack_type, position, images
+            source_language,
+            target_language,
+            collection,
+            pack_type,
+            collection_part,
+            images,
         )
-
+        logger.info(f"Generated image URLs for product '{handle}': {image_urls}")
         # Generate tags
         product_tags = generate_tags(
-            target_language, collection, pack_type, position, price, tags
+            target_language, collection, pack_type, collection_part, price, tags
         )
 
         return cls(
@@ -452,9 +443,9 @@ class ShopifyProduct(ShopifyProductBase):
             source_language=source_language,
             target_language=target_language,
             collection=collection,
+            collection_part=collection_part,
             template=template,
             pack_type=pack_type,
-            position=position,
             price=price,
             images=image_urls,
             tags=product_tags,

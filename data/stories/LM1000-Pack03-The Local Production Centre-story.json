@@ -1,0 +1,106 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, do you know what my mother does?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "No, what does she do?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "She works at a local production centre. They make television programmes there."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's very interesting! What type of programmes?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "All types. Music programmes, game programmes, and programmes for kids. I help my mother sometimes."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Really? Can we visit today?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes! She called me this morning. They need help with something."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Here we are! Hello, Mrs. Johnson."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Hi, Mother. What's the problem?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "We're here to help you."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Mother, you look worried. What is it?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Is everything okay?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "She says they have a problem with tonight's programme. The young person who does the music section can't come today."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Oh no! That's a big problem. What will you do?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Mother says we need to find somebody quickly. The programme is at seven tonight."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Wait! I have an idea. My brother knows all about music. He's available today."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's a better option! Can you call him right now?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, I'll call him. He's at home."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Sam, you're a good friend. I care about you very much."
+      },
+      {
+        "speaker": "Sam",
+        "text": "He said yes! He can be here in one hour."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Wonderful! Mother is so happy. The programme will be good tonight."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I hope everything goes well. Can we watch it together tonight?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Of course! Let's watch it at my home at seven."
+      }
+    ]
+  }
+}

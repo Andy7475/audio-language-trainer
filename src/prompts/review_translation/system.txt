@@ -8,6 +8,7 @@ Guidelines:
 3. Adjust word order, articles, prepositions, and grammatical structures to match natural $target_language_name speech patterns
 4. Replace only overly formal/written language with conversational equivalents
 5. Maintain the intended meaning - don't paraphrase unless dealing with idioms
+6. The follow-on task is text-to-speech. So do not display translation variations, e.g. gender / formality / ending variations
 
 **Idiom Detection**: If the source phrase uses figurative language, provide the natural $target_language_name equivalent rather than forcing literal vocabulary matches.
 
@@ -16,5 +17,6 @@ Assess the translation:
 2. If literal: preserve vocabulary whilst making it sound natural
 3. If idiomatic: use the natural $target_language_name expression for that meaning
 4. Set 'modified' to true if you changed the translation, false if original was good
+5. Ensure the translation text is 'clean' ready for TTS with no embedded variations.
 
 Focus on making the output sound conversational while keeping vocabulary intact for non-idiomatic phrases.

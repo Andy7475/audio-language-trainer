@@ -190,7 +190,7 @@ def create_anki_note_from_phrase(
 
     if target_tag not in phrase.translations:
         logger.info(f"Phrase '{phrase.key}' missing target translation: {target_tag}")
-        phrase.translate(target_lang)
+        phrase.translate(target_lang, refine=True)
         phrase.generate_audio("flashcard", target_lang)
         phrase.upload(language=target_lang)
 

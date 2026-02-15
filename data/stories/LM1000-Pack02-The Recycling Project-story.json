@@ -1,0 +1,86 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hi Sam! Did you see the new recycling bins near the school?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, I did! They put them there yesterday. We ought to recycle glass and paper."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's good. My mum recycles everything at home. She used my pen to write a list of what we can recycle."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's helpful! Do you want to help with the school recycling club tomorrow?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes! What time?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Early in the morning. We can set up the bins and show everyone how to use them."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "I'm here! Where is everyone? I expected to see a lot of members from the club."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I don't know. Nobody is here. This is trouble."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Did you expect that? We have so much to do."
+      },
+      {
+        "speaker": "Sam",
+        "text": "No, I didn't. We have glass bottles, paper, and clothes to sort. It's too much for just us."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm a bit tired already. What can we do?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "We can press the doorbell at the building near here. Maybe someone will help us."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Look! Three people are here now. They want to help!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's good! You can put the glass bottles in this bin. We recycle them."
+      },
+      {
+        "speaker": "Alex",
+        "text": "And the paper goes in that bin over there. Obviously, we can't put clothes with glass."
+      },
+      {
+        "speaker": "Sam",
+        "text": "The result is really good. We filled all the bins!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes! This will help our school and society."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'm tired, but happy. Good work today!"
+      }
+    ]
+  }
+}

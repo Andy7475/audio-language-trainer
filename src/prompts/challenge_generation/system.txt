@@ -7,6 +7,7 @@ The roles should not be Sam or Alex; just use the general context and location o
 
 Key principles:
 1. Create scenarios that feel authentic to real-world situations and the story
+1a. Do not replicate the story exactly (Use it for your setting, but 'adlib' some new situations)
 2. Create 3 challenges. 1 of each difficulty (easy, medium, hard)
 3a. Easy difficulty: a straight forward interaction with no complications. E.g. The task might be ordering a coffee, and the question / answer pair will be finding out the price
 3b. Medium difficulty: Introduce a complication - e.g. the cafe is closing soon but you can take your drink outside (question answer pair might check that the learner has understood that)

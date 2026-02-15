@@ -1,0 +1,102 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, look at this! I found something interesting in the box from our old house."
+      },
+      {
+        "speaker": "Sam",
+        "text": "What is it? A music box?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes! It's very old. Can you guess the age?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Maybe fifty years? It looks beautiful. Does it play music?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I don't know. Let me try... Yes! It plays a little song."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's wonderful! Wait... I hear something inside. Something is moving."
+      },
+      {
+        "speaker": "Alex",
+        "text": "You're right! I think there's a piece of paper in here."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Can you open it? We need to be careful."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm trying, but it's difficult. The top won't open."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Here, let me help. We can do this together."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Good idea! You control that side, and I'll control this side."
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's opening! Look, there's a letter inside!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "What does it say? Can you read it?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "It says 'Dear daughter, this music box is now yours. Remember our good days together. Love, your mother.'"
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's so beautiful. But who is the daughter?"
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "I believe this was from my grandmother! She gave this to my mother."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Really? Do you remember her?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "A little. She enjoyed music very much. She played the piano every day."
+      },
+      {
+        "speaker": "Alex",
+        "text": "This is a special discovery. Will you save the letter?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, I will save both the letter and the music box. They're very important to me now."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm happy we found this together. It's a good feeling."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thank you for your support, Alex. This means so much to me."
+      }
+    ]
+  }
+}
