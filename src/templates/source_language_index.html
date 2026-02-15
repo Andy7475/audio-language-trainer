@@ -19,7 +19,7 @@
 
     <h2>I am learning:</h2>
     <div class="story-list">
-        {% for target_language_tag, target_language_name in target_languages %}
+        {% for target_language_tag, target_language_name in target_languages | sort(attribute='1') %}
 
         <a href = "https://storage.googleapis.com/audio-language-trainer-stories/stories/{{ source_language }}/{{ target_language_tag }}/index.html">{{ target_language_name }}</a><br>
 
