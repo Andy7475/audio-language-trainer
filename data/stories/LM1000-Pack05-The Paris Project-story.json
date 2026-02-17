@@ -1,0 +1,114 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Good morning, Sam. Do you know where the project files are? I can't find them on my desk."
+      },
+      {
+        "speaker": "Sam",
+        "text": "They're in a small space within the kitchen. I left them on the table yesterday."
+      },
+      {
+        "speaker": "Alex",
+        "text": "The kitchen? That's an odd place for important documents."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I know, I know. I was working late and needed some coffee. Don't forget to call the team in Paris tomorrow. The meeting is early, at eight in the morning."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Eight? That's very early for us here. What time is that in Paris?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Two in the afternoon for them. They suggested this time because everyone on their team can join."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I agree with that choice. We need everyone for this presentation. Did you finish the data analysis?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Not completely. I'm waiting for you to send me the cost information. I can't complete my part without it."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Wait here. I'll get my bag from the other room. The data is on my computer."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Actually, there's another problem. The main topic for tomorrow changed. They want us to cover the future targets now, not the current position."
+      },
+      {
+        "speaker": "Alex",
+        "text": "What? When did this occur? Why didn't they tell us earlier?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I received the message an hour ago. It's a concern because we don't have all the information ready."
+      },
+      {
+        "speaker": "Alex",
+        "text": "This requires a lot of work. Can we manage to finish everything in time?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "We can do it, but we need to work through the day and maybe even tonight. Do you have the key data we need?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Some of it, yes. But certain information is with the team in America. They won't be awake for another two hours."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's not good. What are our options here?"
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Well, we can use the data from last month and make a copy with small changes. It's not completely different from now."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's a useful suggestion. I can work on that part. What will you do?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'll call the lady from the Paris office. Her name is Marie. She always helps us when we have problems."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good idea. She knows the project well and can surely answer our questions about the targets."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm calling her now. Wait here for a moment."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Take your time. I'll start working on the new pages."
+      },
+      {
+        "speaker": "Alex",
+        "text": "She answered! Marie agrees to help us. She'll send the information within the hour."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's wonderful! We can finish this now. Tomorrow's meeting will be good."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes. And next time, let's not forget to ask about changes earlier!"
+      }
+    ]
+  }
+}
