@@ -21,3 +21,4 @@ notebooks/app.log
 **/wiktionary.db
 app.log
 *.log
+/data/long_audio/
