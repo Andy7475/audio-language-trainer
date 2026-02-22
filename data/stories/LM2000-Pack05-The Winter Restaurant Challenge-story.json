@@ -1,0 +1,106 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, winter is approaching fast. We need to make some changes to the restaurant menu."
+      },
+      {
+        "speaker": "Sam",
+        "text": "You're right. What do you recommend? Our customers have been asking for more soup and hot meals."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I was thinking we could serve a new mushroom soup with fresh bread. I made it yesterday and it tastes really good."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That sounds perfect. Did you calculate the cost? We can't waste money on expensive ingredients."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, I calculated the cost this morning. It's very reasonable. We have most ingredients in the cupboard already."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Excellent. But there's something I need to tell you. A food critic is coming here next week."
+      },
+      {
+        "speaker": "Alex",
+        "text": "A critic? That's important news! We need to be very careful."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "The critic arrived early. He's sitting at the table near the window."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Already? I'm not ready! Can you handle this? I need more time to prepare."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Don't worry. I'll serve him first. What should I recommend?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "The new soup and the winter salad. Make sure the presentation is perfect, not messy."
+      },
+      {
+        "speaker": "Sam",
+        "text": "He just made a bold claim about restaurant owners. He said we don't care about customers."
+      },
+      {
+        "speaker": "Alex",
+        "text": "What? That's not true! This affects everyone here. Our whole team works very carefully."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I know. He's writing something in his book. I can't stop worrying about this."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Let me approach him. We need to show him what we really do here."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Excuse me, sir. I'm the owner. I heard your complaint. Can we talk about this?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "He wants to see how we make the food. Should we grant him permission to visit the kitchen?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes. The boss grants permission. Come with me, please. I'll show you everything."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Look at this. He's smiling now. I think he likes what he sees."
+      },
+      {
+        "speaker": "Alex",
+        "text": "He tasted the soup and said it was excellent. He's changing his review!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's wonderful! So he understands we do care about quality and our customers."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes. He said being honest and open was the best approach. This will attract more visitors to our restaurant."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good. Now we can stop worrying and focus on our menu for winter."
+      }
+    ]
+  }
+}
