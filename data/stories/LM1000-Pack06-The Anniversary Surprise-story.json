@@ -1,0 +1,98 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, do you know what day it is next weekend?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes! It's our parents' anniversary. They will be married for twenty-five years."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's a special occasion. We should prepare something for them. What's your opinion?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I have an excellent idea! We can make a surprise party at home. We can invite family and someone from the community."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect! I can prepare dinner. Perhaps we can make their favorite meal with fresh tomatoes from the shop."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good! And I will make a special cake for the occasion. We should start planning now."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, we don't have much time. The party is on Saturday afternoon. We need to work quickly."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "It's Saturday morning now. I will start the cake soon. Can you check if we have milk and eggs?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh no! We don't have enough milk. And I can't find the tomatoes!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Don't worry. You can get them from the shop in town. But please hurry! The guests will be here at three."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'll take the bus there. Wait... where are my savings? I had money on my desk yesterday."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I saw it under your book this morning. Get it quickly! You're late already."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Found it! I'll be back soon. Don't drop the cake!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Very funny. Just hurry, please. We can't miss this opportunity to make it perfect for them."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "I'm back! I got everything. The shop nearly shut when I got there. How is the cake?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's in the oven now. But Alex, I'm tired and my leg hurts from standing. Can you prepare the dinner?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Of course! I'll start now. When will our parents be home?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "They said they will be back at three. It's a quarter past two now. The guests are here!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Good timing! Everything is ready. The cake looks excellent and dinner smells good."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I can hear their car! Everyone, please be quiet. They're at the door!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Surprise! Happy anniversary! This is from me and Sam. We hope you like it."
+      }
+    ]
+  }
+}
