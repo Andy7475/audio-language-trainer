@@ -1,0 +1,122 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hey Sam! I walk to school every day, and I love the fresh air in the morning."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Me too! It's so much better than the bus. Look, what's that?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Where? Oh, there's a dog near the park. It looks lost."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Poor thing. It doesn't have a collar. Should we help it?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, we should. Come here, boy! He's friendly."
+      },
+      {
+        "speaker": "Sam",
+        "text": "He's so cute! But what can we do? We have school in twenty minutes."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I don't know. Maybe we can find the owner. A guy on the street might know something."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good idea. Let's ask that man over there."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Excuse me, sir. Do you know this dog?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "We found him here in the park. He seems lost."
+      },
+      {
+        "speaker": "Alex",
+        "text": "The man says no. This is difficult. What should we do now?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Wait, I have an idea. My phone! We can take a picture and post it."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's perfect! But we can't wait here all day."
+      },
+      {
+        "speaker": "Sam",
+        "text": "True. Maybe we can take him to school? Can you imagine it? A dog in class!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's not reasonable. The teachers will be angry. We ought to call someone."
+      },
+      {
+        "speaker": "Sam",
+        "text": "You're right. I'll call my mum. She works from home today. She can help."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Great! Does she like dogs?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "She loves animals. She'll definitely help us."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "My mum says she can meet us here in ten minutes. She'll take the dog home."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect! We should give him some water. He looks thirsty."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good idea. I have a bottle in my bag. Here, boy!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "He's drinking! Poor guy. I hope we find his owner."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Me too. Oh, look! There's my mum's car."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Your mum is so nice to do this. I'd love to help find the owner too."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Absolutely! We can check after school. Maybe someone will call about the picture."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I really hope so. Come on, we should run now, or we'll be late!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "You're right. Bye, little dog! Good luck!"
+      }
+    ]
+  }
+}

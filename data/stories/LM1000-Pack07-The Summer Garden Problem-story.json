@@ -1,0 +1,106 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Does this phone work? I want to call Grandfather before we go to his house."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, it works. But he's probably in the garden. You know he spends all his time there in summer."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's true. He really loves his plants. Do you think he'll let us help him today?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I think so. He seemed tired yesterday when we visited. All that work is too much for him."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Should we take a light lunch with us? We'll probably be there till evening."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good idea. Let me make some sandwiches. We can eat them in the garden."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect. I'm ready to go. It's going to be a long day, but I'm interested in learning about his plants."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Look! What's that big animal in Grandfather's garden?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh no! That's a bull from the farm next door. It's eating everything!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "This is really bad. Grandfather will be so upset. What do we do?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I don't know. The bull seems angry. Look at it - it's pulling up the plants with its teeth."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Should we call the police? Or the farmer?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Let's call the farmer first. Do you have his phone number?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "No, but Grandfather does. Wait - the bull is charging forward! Get back!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "That was close! We need to get help now. This is serious trouble."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "The farmer is here! He's going to take the bull back to his land."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Good. Look, he's using a rope to pull it away. The bull is going without much trouble now."
+      },
+      {
+        "speaker": "Sam",
+        "text": "But the garden... everything is destroyed. The plants, the flowers, everything."
+      },
+      {
+        "speaker": "Alex",
+        "text": "The farmer said he'll pay for the damage. He seemed really sorry about it."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That will help. But Grandfather spent so much time working here. He'll be sad."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I think we should help him plant a new garden. We can spend the summer working with him."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's a great idea! He'll like that. We can make it even better than before."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes. Eventually, it will be beautiful again. Let's go tell him our plan."
+      }
+    ]
+  }
+}
