@@ -2,6 +2,8 @@
 
 import io
 import os
+import random
+import time
 from typing import Literal, Optional
 
 from google import genai
@@ -13,6 +15,11 @@ from src.images.providers.base import ImageProvider
 
 class ImagenProvider(ImageProvider):
     """Vertex AI Imagen image generation provider."""
+
+    # Backoff config
+    _BACKOFF_BASE: float = 5.0   # seconds for first retry
+    _BACKOFF_MAX: float = 120.0  # 2-minute cap
+    _MAX_RETRIES: int = 8        # ~120 s total ceiling
 
     def __init__(
         self,
@@ -42,8 +49,8 @@ class ImagenProvider(ImageProvider):
                 "project_id must be provided or GOOGLE_CLOUD_PROJECT environment variable must be set"
             )
 
-        # Get region from parameter or environment, default to us-central1
-        self.region = region or os.getenv("VERTEX_REGION", "us-central1")
+        # Use global endpoint by default (recommended for gemini-2.5-flash-image)
+        self.region = region or os.getenv("VERTEX_REGION", "global")
 
     def generate(
         self,
@@ -63,33 +70,52 @@ class ImagenProvider(ImageProvider):
         Returns:
             Optional[Image.Image]: Generated PIL Image object, or None if generation fails
         """
-        try:
-            self._validate_prompt(prompt)
+        self._validate_prompt(prompt)
 
-            # Initialise the google-genai client pointed at Vertex AI
-            client = genai.Client(
-                vertexai=True,
-                project=self.project_id,
-                location=self.region,
-            )
+        # Initialise the google-genai client pointed at Vertex AI
+        client = genai.Client(
+            vertexai=True,
+            project=self.project_id,
+            location=self.region,
+        )
 
-            # Generate the image
-            response = client.models.generate_content(
-                model=self.model,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_modalities=[types.Modality.IMAGE],
-                ),
-            )
+        for attempt in range(self._MAX_RETRIES + 1):
+            try:
+                # Generate the image
+                response = client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_modalities=[types.Modality.IMAGE],
+                    ),
+                )
 
-            # Extract the first image part from the response
-            for part in response.candidates[0].content.parts:
-                if part.inline_data is not None:
-                    return Image.open(io.BytesIO(part.inline_data.data))
+                # Extract the first image part from the response
+                for part in response.candidates[0].content.parts:
+                    if part.inline_data is not None:
+                        return Image.open(io.BytesIO(part.inline_data.data))
 
-            print(f"No image generated using {self.model} with prompt: {prompt}")
-            return None
+                print(f"No image generated using {self.model} with prompt: {prompt}")
+                return None
 
-        except Exception as e:
-            print(f"Imagen generation failed: {e}")
-            return None
+            except Exception as e:
+                error_str = str(e)
+                is_rate_limit = "429" in error_str or "RESOURCE_EXHAUSTED" in error_str
+
+                if not is_rate_limit or attempt >= self._MAX_RETRIES:
+                    print(f"Imagen generation failed: {e}")
+                    return None
+
+                # Exponential backoff with full jitter, capped at _BACKOFF_MAX
+                delay = min(
+                    self._BACKOFF_MAX,
+                    self._BACKOFF_BASE * (2 ** attempt),
+                )
+                delay = random.uniform(0, delay)  # full jitter
+                print(
+                    f"Rate limited (429). Retry {attempt + 1}/{self._MAX_RETRIES} "
+                    f"after {delay:.1f}s..."
+                )
+                time.sleep(delay)
+
+        return None  # unreachable, but satisfies type checker
