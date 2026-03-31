@@ -1,0 +1,114 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Good morning, Sam! Are you ready for art class today?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes! I'm excited. We have to draw something special for Mrs. Chen's anniversary, right?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's right. She's been our teacher for twenty years. It's a special occasion."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I want to draw a picture of her garden. She grows tomatoes and other plants at home."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's a good idea! I'm going to draw the school building with sunlight coming through the windows."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Perfect! Can you help me prepare the paints? They're on the desk near the window."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Sure. Oh, look! Someone wrote a message on the board. It says 'That was an excellent class yesterday.'"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Mrs. Chen is the best. Every student in our class thinks so."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Okay, I'm starting now. I'll draw the windows first, then the door."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'm working on the tomato plants. They need proper sunlight to grow, so I'm drawing them in the sun."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That looks really good! Can you pass me the green paint, please?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Here you go. Oh no! I dropped the bottle!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Quickly! Get some paper! The paint is going everywhere!"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'm so sorry! It's all over your picture. What will happen now?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "My drawing is ruined. This is wrong. We don't have time to start again."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I feel terrible. I suffered a loss too - my picture has paint on it. The class starts in just fifteen minutes."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Wait. Perhaps we can do something different. We can work together on one picture."
+      },
+      {
+        "speaker": "Sam",
+        "text": "What do you mean? How will that work?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Look - the green paint made an interesting shape. It looks like a road or a path."
+      },
+      {
+        "speaker": "Sam",
+        "text": "You're right! We can draw Mrs. Chen's garden with a path leading to the school. It connects her home and her work!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Exactly! I'll draw the school on this side, and you draw the garden on that side. The green paint is the road between them."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's an excellent idea! We can write a message under the picture too."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes! 'Thank you for growing our minds and sharing your knowledge.' What's your opinion?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Perfect! I'm so happy this happened. Our mistake became something special."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Me too. Sometimes the best things happen when we don't plan them. Now let's finish quickly!"
+      }
+    ]
+  }
+}

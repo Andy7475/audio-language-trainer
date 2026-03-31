@@ -1,0 +1,126 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, can you help me tomorrow night? It's Mum's birthday and I want to do something special."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Of course! What are you planning?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I want to cook dinner for her at home. She loves fresh vegetables, so I'll make her favorite dish."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's a lovely idea. Do you need me to buy anything?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, please. Can you get some fresh vegetables from the market? I'll need them by six o'clock tomorrow."
+      },
+      {
+        "speaker": "Sam",
+        "text": "No problem. Will you show us the recipe later?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Sure! I'll send it to your phone this evening. Oh, and one more thing - can you ring the doorbell when you arrive? Don't just walk in. I want to keep it a surprise."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Got it. This will be great!"
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Alex, it's me! I'm here with the vegetables."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect timing! Come into the kitchen. Cut the vegetables please, while I work on the cake."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Okay. Should I cut them carefully or just quickly?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Carefully, please. We want them to look nice. Mum will be home in two hours."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Ouch! Oh no!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "What happened? Are you okay?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I cut my hand. It's bleeding badly."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Let me see. That's deep. We need to call the doctor. Here, push this cloth on it."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Do you think I need to go to the hospital?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I don't know. Let me phone them and ask. Keep pressure on the wound."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "The hospital said you should come in. They want to check the wound."
+      },
+      {
+        "speaker": "Sam",
+        "text": "But what about the dinner? Your mum will be home soon."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Don't worry about that. Your hand is more important. I'll call Mum and tell her the truth."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'm so sorry, Alex. I ruined everything."
+      },
+      {
+        "speaker": "Alex",
+        "text": "You didn't ruin anything. It was an accident. Come on, I'll drive you to the hospital now."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thank you. You're a good friend."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Later that night, Mum phoned the hospital to check on you. She said we can all go to a restaurant tomorrow instead."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Really? Will you accept my apology?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "There's nothing to accept! I'm just glad you're okay. The doctor said your hand will be fine in a week."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Next time, I'll be more careful. I promise."
+      }
+    ]
+  }
+}

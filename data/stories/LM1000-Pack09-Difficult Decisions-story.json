@@ -1,0 +1,110 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Good morning! You're up early today."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, I'm cutting the hedge. It's too high now. The work needs to be done before summer."
+      },
+      {
+        "speaker": "Sam",
+        "text": "It looks good. Can I help you?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's very nice of you, but I'm nearly finished. Come inside. Do you want some tea or coffee?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Tea, please. Actually, I came here because I need to tell you something."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That sounds serious. Let me put these down. Come in, sit at the table."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thanks. You have a cup on the chair here."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh, from my breakfast. I'll take it to the kitchen. So, what do you need to tell me?"
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "I received a letter yesterday. It's from David."
+      },
+      {
+        "speaker": "Alex",
+        "text": "David? I haven't heard that name in years. How is he?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "He's coming back to town next week. He wants to see you."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I don't know, Sam. That was a previous relationship. It ended badly."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I know. But maybe he wants to say sorry? People can change."
+      },
+      {
+        "speaker": "Alex",
+        "text": "He left me alone when I needed him most. I was in the hospital, and he never came."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's true. I remember. But will you tell him you don't want to meet? Or will you just not respond?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm not sure. This is a difficult problem. What do you think I should do?"
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Well, maybe you can meet him once. Just for coffee. You don't need to be close friends."
+      },
+      {
+        "speaker": "Alex",
+        "text": "You're probably right. I can't deal with the past if I never face it."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Exactly. And if it doesn't go well, you can leave early. I can come with you if you want."
+      },
+      {
+        "speaker": "Alex",
+        "text": "No, it's okay. I should do this myself. But thank you for your help and for telling me."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's what friends are for. Will you tell him yes today?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, I'll send him an email this afternoon. Now, let me make that tea. Do you want some cake too?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "That sounds perfect. And Alex? I'm proud of you. This takes courage."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Thanks, Sam. I'm glad you came here today."
+      }
+    ]
+  }
+}

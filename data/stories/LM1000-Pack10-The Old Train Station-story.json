@@ -1,0 +1,114 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Look at this place! I read about this old train station in the newspaper last week."
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's wonderful! When did it close?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "In June, I think. Maybe two years ago. None of the bars are open anymore."
+      },
+      {
+        "speaker": "Sam",
+        "text": "The windows are so dirty. We can't see inside properly."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Wait, there's a door in the back. Shall we walk around?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, please! I'm very curious about this area."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Look at all these plants growing everywhere. They grow because of the rain, I think."
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's beautiful in a natural way. The city council doesn't clean this place now."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Wait! Do you see that? Behind those plants?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "What is it? I can't see properly."
+      },
+      {
+        "speaker": "Alex",
+        "text": "It looks like... a graveyard. A very old one."
+      },
+      {
+        "speaker": "Sam",
+        "text": "You're right. I'm looking for a particular name. My grandfather mentioned this place."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Really? When did he talk about it?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Years ago, when I was young. He said his father is buried here."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's a strong connection to this area. Will you continue studying your family history?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes, I will. But this graveyard is in bad condition. Nobody takes care of it."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I have an idea. We can do something about this."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "So, what's your thought? What can we do?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "We can clean this place. Starting with the windows and the plants"
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's a wonderful idea! When shall we begin?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "How about early next week? We'll need some extra time to prepare."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Perfect. I'll bring tools and cleaning materials. This is important to me."
+      },
+      {
+        "speaker": "Alex",
+        "text": "And I'll talk to the city council about it. Maybe they can help us."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thank you. This day has been very special. I'm glad we walked here."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Me too. This is the beginning of something good for this area."
+      }
+    ]
+  }
+}

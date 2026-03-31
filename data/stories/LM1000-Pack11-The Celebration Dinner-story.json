@@ -1,0 +1,106 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam! I'm passing the supermarket now. Do you need anything?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Oh, perfect! Can you bring some floor cleaner, and pasta for dinner? I'm cleaning the apartment."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Of course. Why are you cleaning? What's the occasion?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I have important news! I'll tell you when you come home."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Now I'm curious! Okay, I'll be there in an hour."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Great! I also cleaned the desks and the table. Everything looks perfect."
+      },
+      {
+        "speaker": "Alex",
+        "text": "This sounds like very important news. See you soon!"
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "I'm home! Here's the pasta. So, what's your news?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "She passed the exam! My sister passed her doctor exam yesterday!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's wonderful! We shall celebrate! I'll cook dinner for everyone."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Really? That's a great offer. What will you cook?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Pasta with my new sauce. But there's a problem, I broke the big glass serving bowl this morning."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Don't worry. We can use that blue bowl on the table."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect! Can you call your sister? Dinner will be ready in two hours."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'll call her now. She'll be so happy!"
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "The dinner smells wonderful! My sister will be here soon."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I hope she likes it. I wish I had more time to prepare."
+      },
+      {
+        "speaker": "Sam",
+        "text": "It will be perfect. Oh, she's here! Come in!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Congratulations! Please, sit down. Dinner is ready."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Let's share this meal together. Here's to your success!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Did you like it? I can bring more pasta if you want."
+      },
+      {
+        "speaker": "Sam",
+        "text": "It's delicious! This is the best celebration dinner. Thank you for cooking."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I'm happy you enjoyed it. This day will be a great story to remember!"
+      }
+    ]
+  }
+}

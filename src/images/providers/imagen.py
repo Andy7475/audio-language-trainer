@@ -1,12 +1,12 @@
-"""Vertex AI Imagen image generation provider."""
+"""Vertex AI Imagen image generation provider using the google-genai SDK."""
 
 import io
 import os
 from typing import Literal, Optional
 
-import vertexai
+from google import genai
+from google.genai import types
 from PIL import Image
-from vertexai.preview.vision_models import ImageGenerationModel
 from src.connections.gcloud_auth import setup_authentication, _project_id
 from src.images.providers.base import ImageProvider
 
@@ -17,20 +17,14 @@ class ImagenProvider(ImageProvider):
     def __init__(
         self,
         model: Literal[
-            "imagen-4.0-generate-001",
-            "imagen-4.0-fast-generate-001",
-            "imagen-4.0-ultra-generate-001",
-            "imagen-3.0-generate-002",
-            "imagen-3.0-generate-001",
-            "imagen-3.0-fast-generate-001",
-        ] = "imagen-4.0-generate-001",
+            "gemini-2.5-flash-image",
+        ] = "gemini-2.5-flash-image",
         region: Optional[str] = None,
     ):
         """Initialize Imagen provider.
 
         Args:
-            model: Imagen model version to use (defaults to imagen-3.0-generate-002)
-            project_id: GCP project ID (defaults to GOOGLE_CLOUD_PROJECT env var if not provided)
+            model: Model version to use (defaults to gemini-2.5-flash-image)
             region: GCP region (defaults to "us-central1" if not provided)
 
         Raises:
@@ -58,12 +52,12 @@ class ImagenProvider(ImageProvider):
         safety_filter_level: Optional[str] = None,
         **kwargs,
     ) -> Optional[Image.Image]:
-        """Generate an image using Vertex AI Imagen.
+        """Generate an image using the Gemini image generation API via Vertex AI.
 
         Args:
             prompt: Text description of the image to generate
-            aspect_ratio: Image aspect ratio (default "1:1")
-            safety_filter_level: Safety filter level (optional)
+            aspect_ratio: Image aspect ratio (default "1:1") — passed via kwargs if supported
+            safety_filter_level: Safety filter level (optional, unused for Gemini models)
             **kwargs: Additional arguments (ignored)
 
         Returns:
@@ -72,23 +66,29 @@ class ImagenProvider(ImageProvider):
         try:
             self._validate_prompt(prompt)
 
-            # Initialize Vertex AI
-            vertexai.init(project=self.project_id, location=self.region)
-            generation_model = ImageGenerationModel.from_pretrained(self.model)
-
-            # Generate the image
-            images = generation_model.generate_images(
-                prompt=prompt,
-                negative_prompt="text, words",
-                number_of_images=1,
-                aspect_ratio=aspect_ratio,
+            # Initialise the google-genai client pointed at Vertex AI
+            client = genai.Client(
+                vertexai=True,
+                project=self.project_id,
+                location=self.region,
             )
 
-            if len(images.images) > 0:
-                return Image.open(io.BytesIO(images.images[0]._image_bytes))
-            else:
-                print(f"No image generated using {self.model} with prompt: {prompt}")
-                return None
+            # Generate the image
+            response = client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_modalities=[types.Modality.IMAGE],
+                ),
+            )
+
+            # Extract the first image part from the response
+            for part in response.candidates[0].content.parts:
+                if part.inline_data is not None:
+                    return Image.open(io.BytesIO(part.inline_data.data))
+
+            print(f"No image generated using {self.model} with prompt: {prompt}")
+            return None
 
         except Exception as e:
             print(f"Imagen generation failed: {e}")

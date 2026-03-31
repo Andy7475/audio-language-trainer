@@ -8,6 +8,7 @@ elevenlabs
 genanki
 google-auth
 google-cloud-aiplatform
+google-genai                    #for gemini-2.5-flash-image generation
 google-cloud-core
 google-cloud-firestore
 google-cloud-language
@@ -21,7 +22,6 @@ langcodes
 matplotlib
 mutagen
 pandas
-proto-plus==1.24.0.dev1         # fix update bug in gcloud components update
 pycountry
 pydantic
 pydub
@@ -32,4 +32,3 @@ python-dotenv
 requests
 soundfile                       #for speeding up dialogue
 tqdm
-#spacy>=3.8.0

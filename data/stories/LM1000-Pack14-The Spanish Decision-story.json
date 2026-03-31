@@ -1,0 +1,114 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hey Sam! I got your postcard yesterday. You went to Spain?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes! It was amazing. The weather was perfect, the food was delicious, and the people were so friendly."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That sounds wonderful. Did you speak Spanish with them?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "I tried, but I only know a few words. I really want to learn more. Will you learn Spanish with me?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Spanish? That's a great idea! When do you want to begin?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "There's a class that starts next Monday. We can go together every week."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect! We will do it. I bet we can learn quickly if we support each other."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Exactly! And we can practice together too. This is going to be fun."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam, can we talk? I'm very tired today."
+      },
+      {
+        "speaker": "Sam",
+        "text": "What's wrong? You look worried."
+      },
+      {
+        "speaker": "Alex",
+        "text": "It's the Spanish homework. I have so much to do every day. The teacher gives us three exercises, and I write for hours."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I agree, it's a lot. But we already paid for the class..."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I know, but I don't have time anymore. I work, I study, and now this. I wonder if I can continue."
+      },
+      {
+        "speaker": "Sam",
+        "text": "But Alex, we said we will do it together. You can't stop now. We're learning so much!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Are we? I sing the songs, I say the words, but I don't feel like I'm really learning."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Give it more time. It's only been one month. Learning a language is difficult at the beginning."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Alex! I have an idea. Why don't we change how we study?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "What do you mean?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "We can reduce the homework time. Instead of writing everything, let's just speak together for thirty minutes every day."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Speak in Spanish? About what?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "About anything! The weather, our day, what we did yesterday. It will be more fun and less like work."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's actually a good idea. I hate doing so much writing. Speaking is more useful anyway."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Exactly! And next year, we can go to Spain together and use our Spanish there."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Okay, I agree. Let's do it your way. Thanks for the support, my friend."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's what friends are for! Now, let's practice. How do you say 'I am happy' in Spanish?"
+      }
+    ]
+  }
+}

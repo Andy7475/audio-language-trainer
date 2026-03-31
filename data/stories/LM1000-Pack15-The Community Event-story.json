@@ -1,0 +1,138 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Hey Sam! Do you have a minute? I want to talk about the community event."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Sure! I plan my week on Sundays, so now is good. What's up?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Well, we need to organize the sports day for next Saturday. Can you help me?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Of course! What do we need to do?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "We need to decide on the activities. I was thinking we could have a race and maybe some tennis."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That sounds good! My neighbors play tennis together every week. They will be excited."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect! And we could add a frisbee game too. It's more social."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I like it. Where will the race finish?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "The race finishes here, at the community center. We can hang a banner."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Great! I'll make a list of everything we need today."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Sam! We have a problem. I can't find the documents for the event."
+      },
+      {
+        "speaker": "Sam",
+        "text": "What documents? The forms for the prizes?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, and the file with all the details. I left them on my desk, but they're not there now."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Did you take them to the meeting yesterday?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Oh no... I think I did. They could be in my handbag. Let me check."
+      },
+      {
+        "speaker": "Sam",
+        "text": "The event is tomorrow! We need those forms."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I know, I know. Wait... they're not here either. I feel terrible."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Okay, don't worry. Did you notice anyone near your desk today?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Actually, yes. The cleaning staff were working early this morning."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Maybe they moved the papers? Let's go outside and check the office."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Look! I see the file. It's on the small table near the coffee machine."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Thank goodness! Are all the documents there?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes, everything. The prize forms, the race details, all of it."
+      },
+      {
+        "speaker": "Sam",
+        "text": "You see? I told you not to worry. Now we can finish organizing everything."
+      },
+      {
+        "speaker": "Alex",
+        "text": "You're right. I'll be more careful. Should we go over the plan again?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Good idea. So tomorrow, he throws a frisbee at ten to start the games."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Who throws it?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "The mayor. He will throw the frisbee to open the event."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect! Then the race, then tennis, then end with a party. I hope there will be a difference in our community after this."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I hope so too. This will bring everyone together. I'm excited!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Me too. Let's finish the work now, so we can enjoy the party tomorrow."
+      }
+    ]
+  }
+}

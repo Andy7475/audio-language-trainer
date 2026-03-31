@@ -1,0 +1,138 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Good morning, Sam! Are you ready for our meeting today?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Yes! We meet every Monday, but this one is special. The charity team will be here in an hour."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I know. I'm a bit nervous. Did you check your inbox? They sent us the address for the new office."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I did. It's on Hill Street in London. By the way, I'm holding the bags with all our presentation materials."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect. We need to give them the research about our health programs. This is our chance to get their support."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Absolutely. My brother gave me advice yesterday. He said to be clear about our goals and the money we need."
+      },
+      {
+        "speaker": "Alex",
+        "text": "That's good advice. What time do we leave?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "In fifteen minutes. I'll buy us some coffee first. Do you want something to eat?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Just a pastry, thanks. We should eat quickly."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "Alex, we have a problem. I can't find the research documents. They're not in the bag!"
+      },
+      {
+        "speaker": "Alex",
+        "text": "What? Are you sure? Check again, please."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I checked three times. This is a disaster. What will we do?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Wait. Did you leave them at home? On your desk?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "Oh no. I think... yes. I printed them last night but left them there."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Okay, don't stress. Can someone bring them to us? What about your roommate?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "She's at work. But maybe I can call my neighbor. He usually helps me."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Do it now. We don't have much time. The delay will cause problems if we're not ready."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'm calling him now. Hello? Yes, it's me. I need your help. Can you go to my apartment? There are papers on my desk..."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Will he do it? What did he say?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "He said yes! He'll bring them to the address in thirty minutes."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "The charity team is here. They're waiting in the meeting room. Where is your neighbor?"
+      },
+      {
+        "speaker": "Sam",
+        "text": "He should be here any minute. I'll check my phone... yes! He's outside the door now."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Thank goodness. Go get the documents. I'll talk to them and buy us a few more minutes."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Okay. I'll be right back."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Everyone, thank you for meeting with us today. Sam will be here in just a moment with our research materials."
+      },
+      {
+        "speaker": "Sam",
+        "text": "I'm back! Here are the documents. Sorry for the small delay."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Perfect. Now, let me answer your first question about our health programs. We work with doctors in eight different cities."
+      },
+      {
+        "speaker": "Sam",
+        "text": "And this page shows the evidence of our success. Last month, we helped over two hundred people."
+      },
+      {
+        "speaker": "Alex",
+        "text": "The meeting went well! They want to give us monthly support."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's wonderful! I learned something today. I need to be more careful. No more mistakes like this."
+      },
+      {
+        "speaker": "Alex",
+        "text": "We all make mistakes. The important thing is we solved the problem together. Good teamwork!"
+      }
+    ]
+  }
+}
