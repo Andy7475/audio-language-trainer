@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 I can't find my keys
 Did you find it?
 We'll find a solution
@@ -17,11 +18,31 @@ Please feed the dog
 I make breakfast every day
 She made a mistake
 Can you make dinner?
+=======
+I find it difficult
+Did you find your keys?
+We will find a solution
+She found a new job
+Fill the bottle
+She filled in the form
+Will you fill it up?
+This fills me with joy
+I imagine a better world
+She imagined living there
+I can almost imagine it
+I feed my cat
+She fed the baby
+Will you feed the ducks?
+I make breakfast every day
+She recently made a mistake
+Will you make dinner?
+>>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1
 This makes me happy
 They make cars here
 I walk to school
 She walked in the park
 Will you walk with me?
+<<<<<<< HEAD
 I walk the dog daily
 I often lose my keys
 She lost her phone
@@ -67,3 +88,50 @@ I enjoyed that talk
 The system can regulate itself
 What is the actual situation?
 Are there any other options?
+=======
+Walk don't run
+I often lose my keys
+She lost her cat
+Will I lose weight?
+They lost the game
+Don't lose hope now
+I suppose you're right
+You're supposed to wait
+Don't worry about it
+She worried all night
+I will worry less
+I drive to work
+She drove the car
+Will you drive tomorrow?
+Ambition drives him forward
+A boy and a girl
+This boat is yours
+Is it true?
+There is never enough tea
+A guy on the street
+Texas is a state
+The regional power network
+I have absolutely no doubt
+There is sick on the floor
+I love the fresh air
+Double the profit
+The state provides education
+A smiling face
+My personal tax allowance
+if the chance is
+It's a reasonable amount
+However, the date changed
+Not unless he is concerned
+They are a perfect couple
+How many miles?
+A science course
+A totally different contract
+A long sentence
+East of their country
+You are almost correct
+What is the total figure?
+The most likely date
+The date on the calendar
+My favourite character
+An ancient wooden figure
+>>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1

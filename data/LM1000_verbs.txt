@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 play
 understand
 speak
@@ -108,3 +109,25 @@ knock
 afford
 consider
 add
+=======
+throw
+take
+plan
+recognize
+cost
+feel
+add
+leave
+organize
+decide
+try
+play
+hang
+afford
+stamp
+finish
+see
+claim
+understand
+notice
+>>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1

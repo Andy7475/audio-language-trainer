@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 These shoes fit well
 The key fitted perfectly
 Will it fit here?
@@ -69,3 +70,64 @@ It is actually green
 The rent is due this week
 I was by myself at home
 An original painting
+=======
+I deal with problems
+She dealt with it
+We'll deal with that
+He deals cards quickly
+They deal in antiques
+I pick apples for my teacher
+She picked the red one
+Will you pick me up?
+Pick a card from here
+Don't pick your nose
+They serve breakfast at 7
+She served the customers
+Will you serve dinner?
+He serves in the army
+She served the tennis ball
+That sounds good
+The alarm sounded a second time
+It will sound different tomorrow
+Sound the bell now
+I never drink coffee
+She drank some water
+Will you drink tea?
+I need some water
+Did you need help?
+We'll need more time
+I receive many emails
+Did you receive my letter?
+She will receive the package
+He received a warm welcome
+She comes here for rest
+They came to dinner
+Will you come tomorrow?
+Spring comes after winter
+I sit on the chair
+She sat near the window
+Will you sit with me?
+The house sits on a hill
+She lays the blanket down
+He laid the book there
+I will lay the table
+The hen lays eggs
+I don't know whether the site is public
+An Army driver
+This is my wife
+This region produces cheese
+A careful response
+A high rate of interest
+Take this pill once a day
+The film is near the end
+Did they give a reason?
+I paid the whole bill
+Are you busy?
+For a short period
+We have plenty of customers
+My foot has hurt since last week
+Did they have sex?
+The hotel is close to the sea
+A previous relationship
+Either the white or the blue
+>>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1

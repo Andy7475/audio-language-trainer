@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 respect
 able
 probably
@@ -147,3 +148,26 @@ response
 simply
 totally
 than
+=======
+towards
+simply
+basically
+ever
+into
+sure
+onto
+able
+thanks
+nature
+particularly
+sorry
+anyway
+yeah
+range
+sense
+why
+although
+though
+minute
+already
+>>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1
