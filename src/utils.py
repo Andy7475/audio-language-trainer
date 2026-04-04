@@ -189,7 +189,7 @@ def load_pickle(file_path: str, default_value: Any = None) -> Any:
 
 
 def load_text_file(file_path) -> List[str]:
-    with open(file_path, "r") as f:
+    with open(file_path, "r", encoding="utf-8") as f:
         return [line.strip() for line in f.readlines()]
 
 
@@ -200,7 +200,7 @@ def save_text_file(lines: List[str], file_path: str) -> None:
         lines: List of strings to save
         file_path: Path where the file will be saved
     """
-    with open(file_path, "w") as f:
+    with open(file_path, "w", encoding="utf-8") as f:
         for line in lines:
             f.write(f"{line}\n")
 

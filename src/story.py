@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 
 from pydub import AudioSegment
 
@@ -26,6 +26,24 @@ from langcodes import Language
 from src.audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
 from src.storage import upload_to_gcs
 from src.utils import render_html_content
+
+
+def get_all_story_tokens(story: Story, target_language: Language) -> Set[str]:
+    """Get all unique tokens from the story's utterances."""
+    tokens = set()
+    for story_part, utterances in story.story_parts.items():
+        for utterance in utterances:
+            if utterance.story_phrase._has_translation(target_language):
+                tokens.update(
+                    {
+                        t.lower()
+                        for t in utterance.story_phrase._get_translation(
+                            target_language
+                        ).tokens
+                    }
+                )
+
+    return set(sorted(list(tokens)))
 
 
 def get_story(

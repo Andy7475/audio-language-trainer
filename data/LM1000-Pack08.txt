@@ -1,137 +1,80 @@
-<<<<<<< HEAD
-I can't find my keys
-Did you find it?
-We'll find a solution
-She found the answer
-I find this difficult
-Please fill the bottle
-She filled out the form
-Will you fill it up?
-Music fills the room
-I imagine a better world
-She imagined living there
-Can you imagine it?
-I feed my cat every day
-She fed the baby
-Will you feed them?
-Please feed the dog
-I make breakfast every day
-She made a mistake
-Can you make dinner?
-=======
-I find it difficult
-Did you find your keys?
-We will find a solution
-She found a new job
-Fill the bottle
-She filled in the form
-Will you fill it up?
-This fills me with joy
-I imagine a better world
-She imagined living there
-I can almost imagine it
-I feed my cat
-She fed the baby
-Will you feed the ducks?
-I make breakfast every day
-She recently made a mistake
-Will you make dinner?
->>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1
-This makes me happy
-They make cars here
-I walk to school
-She walked in the park
-Will you walk with me?
-<<<<<<< HEAD
-I walk the dog daily
-I often lose my keys
-She lost her phone
-I don't want to lose this
-They lost the game
-Don't lose your patience
-I suppose you're right
-I suppose so
-What do you suppose happened?
-You're supposed to wait here
-Don't worry about it
-She worried all night
-I try not to worry
-I drive to work
-She drove the car today
-Will you drive tomorrow?
-He drives a simple car
-We have central heating
-There is a black animal in the field
-This is a terrible situation
-That was a great story
-Otherwise it won't work
-Sometimes we meet at three o'clock
-It is exactly in the middle
-We should eat food here
-He carried the load to the village
-We speak the same language
-That is the best term to use
-There is a black panel at the bottom
-It is across the field from the union
-It was a central operation
-There is gas in the mine
-Three, plus several others
-Ten minutes ago
-I don't want to go anywhere else
-It is a general rule
-We ought to help each other
-We drove for several miles
-They did whatever they could
-However, the actual people were friendly
-The people organised themselves
-I enjoyed that talk
-The system can regulate itself
-What is the actual situation?
-Are there any other options?
-=======
-Walk don't run
-I often lose my keys
-She lost her cat
-Will I lose weight?
-They lost the game
-Don't lose hope now
-I suppose you're right
-You're supposed to wait
-Don't worry about it
-She worried all night
-I will worry less
-I drive to work
-She drove the car
-Will you drive tomorrow?
-Ambition drives him forward
 A boy and a girl
-This boat is yours
-Is it true?
-There is never enough tea
 A guy on the street
-Texas is a state
-The regional power network
-I have absolutely no doubt
-There is sick on the floor
-I love the fresh air
-Double the profit
-The state provides education
-A smiling face
-My personal tax allowance
-if the chance is
-It's a reasonable amount
-However, the date changed
-Not unless he is concerned
-They are a perfect couple
-How many miles?
-A science course
-A totally different contract
 A long sentence
+A science course
+A smiling face
+Are there any other options?
+Did you find it?
+Don't lose hope now
+Don't worry about it
+Double the profit
 East of their country
-You are almost correct
-What is the total figure?
-The most likely date
-The date on the calendar
+Fill the bottle
+He carried the load to the village
+He drives a simple car
+How many miles?
+However, the date changed
+I can't find my keys
+I feed my cat
+I find this difficult
+I have absolutely no doubt
+I imagine a better world
+I love the fresh air
+Can you make dinner?
+I often lose my keys
+I suppose you're right
+I try not to worry
+I walk to school
+I will worry less
+Is it true?
+It is a general rule
+It is exactly in the middle
+It was a central operation
+It's a reasonable amount
+Music fills the room
 My favourite character
-An ancient wooden figure
->>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1
+My personal tax allowance
+Otherwise it won't work
+Please feed the dog
+She drove the car
+She fed the baby
+She filled in the form
+She found the answer
+She imagined living there
+She lost her cat
+She made a mistake
+She walked in the park
+She worried all night
+Ten minutes ago
+That is the best term to use
+That was a great story
+The date on the calendar
+The people organised themselves
+The regional power network
+The state provides education
+The system can regulate itself
+There is a black animal in the field
+There is gas in the mine
+There is never enough tea
+There is sick on the floor
+They are a perfect couple
+They did whatever they could
+This boat is yours
+This fills me with joy
+This is a terrible situation
+Three, plus several others
+Walk don't run
+We drove for several miles
+We have central heating
+We ought to help each other
+We speak the same language
+We'll find a solution
+What do you suppose happened?
+What is the total figure?
+Will I lose weight?
+Will you drive tomorrow?
+Will you feed the ducks?
+Will you fill it up?
+Will you walk with me?
+You are almost correct
+You're supposed to wait
