@@ -68,7 +68,9 @@ def create_review_page(
         )
         phrase_data = {
             "phrase_hash": phrase.key,
-            "source_text": phrase.english,  # Always English in your model
+            "source_text": phrase.translations[
+                source_lang.to_tag()
+            ].text,  # Always English in your model
             "target_text": "",
             "image_base64": image_data,
             "wiktionary_html": "",

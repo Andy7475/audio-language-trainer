@@ -26,7 +26,7 @@ from src.logger import logger
 
 PRODUCT_CONFIGS: Dict[str, Dict[str, Any]] = {
     "LM1000": {
-        "Course": {"price": 29.99},
+        "Course": {"price": 19.99},
         "Individual": {"price": 4.99, "free_count": 2},
     },
     "LM2000": {
