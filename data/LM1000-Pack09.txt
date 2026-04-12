@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 These shoes fit well
 The key fitted perfectly
 Will it fit here?
@@ -70,7 +69,6 @@ It is actually green
 The rent is due this week
 I was by myself at home
 An original painting
-=======
 I deal with problems
 She dealt with it
 We'll deal with that
@@ -130,4 +128,3 @@ Did they have sex?
 The hotel is close to the sea
 A previous relationship
 Either the white or the blue
->>>>>>> 4f94b9b08964432d8d5ce8925b7a0c5b8bfb0cf1

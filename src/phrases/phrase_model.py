@@ -266,6 +266,7 @@ class Phrase(FirePhraseDataModel):
         model: Optional[str] = None,
         overwrite: bool = False,
         translated_text: str | None = None,
+        split_on_space: bool = False,
     ) -> Translation:
         """Translate the phrase to a target language.
 
@@ -323,7 +324,9 @@ class Phrase(FirePhraseDataModel):
         # Step 3: Tokenize the translated text
         # Extract language code for tokenization (e.g., "fr" from "fr-FR")
         language_code = target_language.language
-        tokens = get_text_tokens(translated_text, language_code=language_code)
+        tokens = get_text_tokens(
+            translated_text, language_code=language_code, split_on_space=split_on_space
+        )
 
         translation_document_ref = self._get_translation_firestore_document_ref(
             target_language
@@ -342,7 +345,7 @@ class Phrase(FirePhraseDataModel):
         # Step 5: Add the translation to the phrase's translations dict
         self.translations[translation.language.to_tag()] = translation
         logger.info(
-            f"(y) Created translation for {translation.language.to_tag()}: {translation.text}"
+            f"(y) Created translation for {translation.language.to_tag()}: {translation.text} - tokens: {translation.tokens}"
         )
 
         return translation

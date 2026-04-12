@@ -261,6 +261,7 @@ class Utterance(BaseModel):
         self,
         target_language: Language | str,
         source_language: Language | str = Language.get("en-GB"),
+        split_on_space: bool = False,
     ) -> None:
         """Get the translated text with Wiktionary links for vocabulary words.
         Adds new fields into the model: target_text and wiktionary_links"""
@@ -268,7 +269,10 @@ class Utterance(BaseModel):
         source_language = get_language(source_language)
         self.get_story_phrase()
         self.story_phrase.translate(
-            target_language=target_language, refine=False, overwrite=False
+            target_language=target_language,
+            refine=False,
+            overwrite=False,
+            split_on_space=split_on_space,
         )
 
         if self.story_phrase:
@@ -430,6 +434,7 @@ class Story(FirePhraseDataModel):
         target_language: Language | str,
         source_language: Language | str = "en-GB",
         overwrite: bool = False,
+        split_on_space: bool = False,
     ) -> str:
         """Publish the story to the public GCS bucket for the specified language pair.
         Overwrite will collect translation data again and re-publish, if overwrite is False and the story is already published
@@ -448,7 +453,9 @@ class Story(FirePhraseDataModel):
                 return
 
         self._load_story_translation(
-            target_language=target_language, source_language=source_language
+            target_language=target_language,
+            source_language=source_language,
+            split_on_space=split_on_space,
         )
         self._verify_translation_loaded()
         gcs_path = self._get_gcs_path()
@@ -649,6 +656,7 @@ class Story(FirePhraseDataModel):
         self,
         target_language: Language | str,
         source_language: Language | str = Language.get("en-GB"),
+        split_on_space: bool = False,
     ) -> None:
         """Get the translated text with Wiktionary links for vocabulary words for all utterances.
         Adds new fields into each Utterance: target_text and wiktionary_links"""
@@ -666,11 +674,15 @@ class Story(FirePhraseDataModel):
                     f"Getting translation for utterance seq {utterance.text} in part '{story_part}'"
                 )
                 utterance._load_story_translation(
-                    target_language=target_language, source_language=source_language
+                    target_language=target_language,
+                    source_language=source_language,
+                    split_on_space=split_on_space,
                 )
 
         logger.debug(f"Generating audio with overwrite as False for {target_language}")
-        self.generate_audio(language=target_language, overwrite=False)
+        self.generate_audio(
+            language=target_language, overwrite=False, split_on_space=split_on_space
+        )
 
         self._load_audio(target_language=target_language, speed="normal")
 
@@ -685,7 +697,12 @@ class Story(FirePhraseDataModel):
             f"stories/{self.source_language_tag}/{self.target_language_tag}/{self.key}/"
         )
 
-    def generate_audio(self, language: Language | str, overwrite: bool = False) -> None:
+    def generate_audio(
+        self,
+        language: Language | str,
+        overwrite: bool = False,
+        split_on_space: bool = False,
+    ) -> None:
         """Generate audio for all utterances in the story for the specified language."""
         language = get_language(language)
         for story_part, utterances in self.story_parts.items():
@@ -702,6 +719,7 @@ class Story(FirePhraseDataModel):
                         gender=gender,
                         language=language,
                         overwrite=overwrite,
+                        split_on_space=split_on_space,
                     )
                 else:
                     logger.debug(
@@ -777,6 +795,7 @@ class Story(FirePhraseDataModel):
         target_language: Language | str,
         refine: bool = False,
         overwrite: bool = False,
+        split_on_space: bool = False,
     ) -> None:
         """Translate all utterances in the story to the target language."""
         target_language = get_language(target_language)
@@ -788,13 +807,16 @@ class Story(FirePhraseDataModel):
                         f"Translating utterance seq {utterance.text} in part '{story_part}'"
                     )
                     utterance.story_phrase.translate(
-                        target_language, refine=False, overwrite=overwrite
+                        target_language,
+                        refine=False,
+                        overwrite=overwrite,
+                        split_on_space=split_on_space,
                     )
         if refine:
             logger.debug(
                 f"Refining translations for story '{self.title}' to language {target_language.to_tag()}'"
             )
-            self._refine_translations(target_language)
+            self._refine_translations(target_language, split_on_space=split_on_space)
         else:
             logger.debug(
                 f"Skipping refinement of translations for story '{self.title}' to language {target_language.to_tag()}'"
@@ -804,6 +826,7 @@ class Story(FirePhraseDataModel):
         self,
         refined_translations: Dict[str, List[Dict[str, str]]],
         target_language: Language,
+        split_on_space: bool = False,
     ) -> None:
         """Replace translations in the story with refined translations."""
 
@@ -822,18 +845,23 @@ class Story(FirePhraseDataModel):
                     target_language=target_language,
                     overwrite=True,
                     translated_text=refined_text,
+                    split_on_space=split_on_space,
                 )
                 logger.debug(
                     f"Replaced translation for utterance with '{refined_text}'"
                 )
 
-    def _refine_translations(self, target_language: Language) -> None:
+    def _refine_translations(
+        self, target_language: Language, split_on_space: bool = False
+    ) -> None:
         """Refine translations for all utterances in the story to the target language."""
         translation_dialogue = self._get_dialogue_with_translations(target_language)
         refined_dialogue = refine_story_translation(
             story_parts=translation_dialogue, language=target_language
         )
-        self._replace_translations(refined_dialogue, target_language)
+        self._replace_translations(
+            refined_dialogue, target_language, split_on_space=split_on_space
+        )
 
     def _get_dialogue_with_translations(
         self, target_language: Language
