@@ -1,10 +1,143 @@
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
-
+from langcodes import Language
+from src.models import get_language
 from src.connections.gcloud_auth import get_nlp_client
 from google.cloud import language_v1
 from google.api_core.exceptions import InvalidArgument
 from src.logger import logger
+
+
+# ---------------------------------------------------------------------------
+# spaCy language model registry
+# ---------------------------------------------------------------------------
+# Maps BCP-47 language codes to their recommended spaCy model name.
+# Add entries here as you onboard new languages.
+# Models must be installed separately — see the walkthrough in the docs.
+SPACY_LANGUAGE_MODELS: Dict[str, str] = {
+    "sv": "sv_core_news_lg",   # Swedish  — latest 3.8.0
+    # Examples for extending to other languages:
+    # "de": "de_core_news_lg",
+    # "fr": "fr_core_news_lg",
+    # "es": "es_core_news_lg",
+    # "nl": "nl_core_news_lg",
+    # "nb": "nb_core_news_lg",  # Norwegian Bokmål
+    # "fi": "fi_core_news_lg",
+    # "da": "da_core_news_lg",
+    # "pl": "pl_core_news_lg",
+}
+
+# Internal cache: language_code -> loaded spaCy Language object
+_spacy_model_cache: Dict[str, object] = {}
+
+
+def _load_spacy_model(language_code: str) -> Optional[object]:
+    """
+    Lazily load and cache a spaCy model for a given language code.
+
+    If the model is not yet installed it will be downloaded automatically
+    via ``spacy.cli.download`` and then loaded.  The loaded model is cached
+    so subsequent calls are free.
+
+    Args:
+        language_code: BCP-47 language code (e.g. 'sv', 'de').
+
+    Returns:
+        A loaded spaCy Language object, or None if unavailable.
+    """
+    if language_code in _spacy_model_cache:
+        return _spacy_model_cache[language_code]
+
+    model_name = SPACY_LANGUAGE_MODELS.get(language_code)
+    if not model_name:
+        logger.debug(
+            "_load_spacy_model: no spaCy model registered for language '%s'",
+            language_code,
+        )
+        return None
+
+    try:
+        import spacy  # noqa: PLC0415  (deferred import — optional dependency)
+
+        try:
+            nlp = spacy.load(model_name)
+        except OSError:
+            # Model not installed — download it automatically and retry.
+            logger.info(
+                "_load_spacy_model: model '%s' not found locally, downloading…",
+                model_name,
+            )
+            try:
+                spacy.cli.download(model_name)
+            except SystemExit as exc:
+                # spacy.cli.download calls sys.exit(0) on success, which raises
+                # SystemExit(0).  Any non-zero exit code is a real failure.
+                if exc.code != 0:
+                    raise RuntimeError(
+                        f"spacy.cli.download failed for '{model_name}' "
+                        f"(exit code {exc.code})"
+                    ) from exc
+            nlp = spacy.load(model_name)
+
+        _spacy_model_cache[language_code] = nlp
+        logger.info(
+            "_load_spacy_model: loaded spaCy model '%s' for language '%s'",
+            model_name,
+            language_code,
+        )
+        return nlp
+
+    except RuntimeError as exc:
+        logger.warning(
+            "_load_spacy_model: could not download spaCy model '%s': %s",
+            model_name,
+            exc,
+        )
+        return None
+    except ImportError:
+        logger.warning(
+            "_load_spacy_model: spaCy is not installed. "
+            "Install it with: pip install spacy"
+        )
+        return None
+
+
+# ---------------------------------------------------------------------------
+# spaCy POS tag → normalised POS name
+# ---------------------------------------------------------------------------
+# spaCy uses Universal Dependencies POS tags (same labels as Google NLP),
+# so no mapping is required.  Both APIs produce "VERB", "NOUN", "ADJ", etc.
+# The one exception is that spaCy uses "AUX" for auxiliaries — same as Google.
+# "PUNCT" is also the same.  No translation layer needed.
+
+
+def _analyze_text_syntax_spacy(
+    text: str, language_code: str
+) -> Optional[List[Tuple[str, str]]]:
+    """
+    Analyse text with a spaCy model and return (lemma, pos) tuples.
+
+    This mirrors the output of the Google NLP path so callers are agnostic
+    to which backend produced the result.
+
+    Args:
+        text: Text to analyse.
+        language_code: BCP-47 language code.
+
+    Returns:
+        List of (lemma, pos) tuples, or None if no model is available.
+    """
+    nlp = _load_spacy_model(language_code)
+    if nlp is None:
+        return None
+
+    doc = nlp(text)
+    return [(token.lemma_.lower(), token.pos_) for token in doc]
+
+
+# ---------------------------------------------------------------------------
+# Public API — Google NLP with spaCy fallback
+# ---------------------------------------------------------------------------
 
 
 def analyze_text_syntax(
@@ -18,7 +151,8 @@ def analyze_text_syntax(
         language_code: BCP-47 language code (e.g., 'en', 'en-US')
 
     Returns:
-        AnalyzeSyntaxResponse containing tokens with lemmas and POS tags
+        AnalyzeSyntaxResponse containing tokens with lemmas and POS tags,
+        or None if the language is not supported by the Google API.
     """
     client = get_nlp_client()
 
@@ -50,29 +184,52 @@ def extract_lemmas_and_pos(
     phrases: List[str], language_code: str = "en"
 ) -> List[Tuple[str, str]]:
     """
-    Extract (lemma, POS) tuples from phrases using Google NLP API.
+    Extract (lemma, POS) tuples from phrases.
+
+    If the language is registered in SPACY_LANGUAGE_MODELS, spaCy is used
+    as the primary backend (since we know Google NLP won't support it).
+    For all other languages, Google NLP is tried first with spaCy as fallback.
 
     Args:
         phrases: List of phrases to analyze
         language_code: BCP-47 language code (default: 'en')
 
     Returns:
-        Set of (lemma, pos) tuples
+        List of (lemma, pos) tuples
     """
-    vocab_set = []
+    vocab_set: List[Tuple[str, str]] = []
+    use_spacy_first = language_code in SPACY_LANGUAGE_MODELS
 
     for phrase in phrases:
+        if use_spacy_first:
+            # --- spaCy primary path (language is registered) ---
+            spacy_results = _analyze_text_syntax_spacy(phrase, language_code)
+            if spacy_results:
+                vocab_set.extend(spacy_results)
+                continue
+            # spaCy model not installed — fall through to Google NLP
+            logger.warning(
+                "extract_lemmas_and_pos: spaCy model not available for '%s', "
+                "falling back to Google NLP",
+                language_code,
+            )
+
+        # --- Google NLP path ---
         response = analyze_text_syntax(phrase, language_code)
-        if response:
+        if response is not None:
             for token in response.tokens:
-                # Get POS tag name (e.g., 'VERB', 'NOUN', 'ADJ')
-                pos_tag = language_v1.PartOfSpeech.Tag(token.part_of_speech.tag).name
-
+                pos_tag = language_v1.PartOfSpeech.Tag(
+                    token.part_of_speech.tag
+                ).name
                 lemma = token.lemma.lower()
-
                 vocab_set.append((lemma, pos_tag))
-
-        return vocab_set
+        else:
+            logger.warning(
+                "extract_lemmas_and_pos: no backend could process phrase "
+                "for language '%s': %s",
+                language_code,
+                phrase,
+            )
 
     return vocab_set
 
@@ -116,6 +273,37 @@ def get_verbs_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
     return verbs
 
 
+def get_verbs_and_vocab(
+    phrases: List[str], language: Union[Language, str]
+) -> Dict[str, List[str]]:
+    """
+    Extract verbs and vocab from a list of phrases, returning a dict.
+
+    Accepts a ``langcodes.Language`` object or a plain BCP-47 string (e.g.
+    ``'sv'``, ``'en-GB'``).  The language code passed to the NLP backends is
+    always the two-letter alpha-2 form (e.g. ``'sv'``) so that both the spaCy
+    registry and the Google NLP API receive a consistent key.
+
+    Args:
+        phrases:  List of phrase strings to analyse.
+        language: Target language as a ``Language`` object or BCP-47 string.
+
+    Returns:
+        Dict with keys ``'verbs'`` and ``'vocab'``, each containing a
+        deduplicated list of lemma strings.
+    """
+    lang_obj: Language = get_language(language)
+    # Use the two-letter language code for both spaCy registry lookups and
+    # Google NLP API calls (e.g. 'sv', not 'sv-SE').
+    language_code: str = lang_obj.language
+
+    lemmas_and_pos = extract_lemmas_and_pos(phrases, language_code)
+    return {
+        "verbs": get_verbs_from_lemmas_and_pos(lemmas_and_pos),
+        "vocab": get_vocab_from_lemmas_and_pos(lemmas_and_pos),
+    }
+
+
 def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract verbs from a set of (word, pos) tuples."""
     verbs = [word for word, pos in lemmas_and_pos if pos in ["VERB", "AUX"]]
@@ -142,8 +330,8 @@ def get_text_tokens(
     """
     Tokenize text using language-appropriate methods.
 
-    For space-separated languages: Simply split on spaces
-    For other languages: Use Google Cloud Natural Language API
+    For space-separated languages: Simply split on spaces.
+    Tries Google NLP API, then spaCy, then falls back to splitting on spaces.
 
     Args:
         text: Text to tokenize
@@ -157,8 +345,22 @@ def get_text_tokens(
 
     if split_on_space:
         return text.split() if " " in text else [text]
+
+    # If the language is registered in spaCy, use it as the primary tokeniser
+    if language_code in SPACY_LANGUAGE_MODELS:
+        nlp = _load_spacy_model(language_code)
+        if nlp is not None:
+            doc = nlp(text)
+            return [token.text for token in doc if not token.is_space]
+        # Model not installed — fall through to Google NLP
+        logger.warning(
+            "get_text_tokens: spaCy model not available for '%s', "
+            "falling back to Google NLP",
+            language_code,
+        )
+
     response = analyze_text_syntax(text, language_code)
     if response:
         return [token.text.content for token in response.tokens]
-    else:
-        return text.split() if " " in text else [text]
+
+    return text.split() if " " in text else [text]

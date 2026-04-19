@@ -1,12 +1,13 @@
 """Querying and searching phrases in the database."""
 
-from typing import List, Optional, Set, Tuple
+from typing import Callable, Dict, List, Optional, Set, Tuple
 
 from src.phrases.utils import generate_phrase_hash
 from src.phrases.phrase_model import Phrase, Translation
 from src.connections.gcloud_auth import get_firestore_client
-from src.models import BCP47Language, get_language
+from src.models import get_language
 from google.cloud.firestore_v1 import FieldFilter, DocumentReference
+from langcodes import Language
 
 
 def get_phrases_by_collection(
@@ -78,31 +79,88 @@ def _get_translations(document_ref: DocumentReference) -> dict[str, Translation]
 def _get_phrase_coverage(
     phrase: Phrase, target_verbs: Set[str], target_vocab: Set[str]
 ) -> float:
-    """Helper function to get which target items a phrase covers.
+    """Return the fraction of a phrase's lemmas that appear in the target sets.
 
-    Args:
-        phrase: Phrase object
-        target_verbs: Set of verb lemmas to cover
-        target_vocab: Set of vocabulary lemmas to cover
-
-    Returns:
-        percentage coverage of target items covered by the phrase
+    Returns 0.0 if the phrase has no verbs or vocab (rather than raising),
+    so the greedy loop can safely skip it.
     """
-
     phrase_verbs = set(phrase.verbs)
     phrase_vocab = set(phrase.vocab)
     num_phrase_items = len(phrase_verbs) + len(phrase_vocab)
     if num_phrase_items == 0:
-        raise ValueError("Phrase has no verbs or vocabulary items to cover.")
-    matching_verbs = phrase_verbs & target_verbs
-    matching_vocab = phrase_vocab & target_vocab
+        return 0.0
+    matching = len(phrase_verbs & target_verbs) + len(phrase_vocab & target_vocab)
+    return matching / num_phrase_items
 
-    num_matching_items = len(matching_verbs) + len(matching_vocab)
-    return num_matching_items / num_phrase_items
-    phrase_items = set(phrase.verbs) | set(phrase.vocab)
-    target_items = target_verbs | target_vocab
-    covered_items = phrase_items & target_items
-    return covered_items
+
+def _translation_coverage(
+    translation: Translation,
+    remaining_verbs: Set[str],
+    remaining_vocab: Set[str],
+) -> int:
+    """Return the count of uncovered target items that *translation* covers.
+
+    Works on a Translation object so the greedy algorithm can operate on
+    target-language verbs/vocab rather than the English phrase fields.
+    """
+    tv = set(translation.verbs) if translation.verbs else set()
+    tw = set(translation.vocab) if translation.vocab else set()
+    return len(tv & remaining_verbs) + len(tw & remaining_vocab)
+
+
+def _greedy_set_cover(
+    candidates: List[Phrase],
+    target_verbs: Set[str],
+    target_vocab: Set[str],
+    get_verbs_fn: Callable[[Phrase], List[str]],
+    get_vocab_fn: Callable[[Phrase], List[str]],
+) -> List[Phrase]:
+    """Greedy set-cover: iteratively pick the phrase that covers the most
+    remaining target items until all are covered or no progress is possible.
+
+    Args:
+        candidates:   Pool of phrases to choose from (not mutated).
+        target_verbs: Verb lemmas that must be covered.
+        target_vocab: Vocab lemmas that must be covered.
+        get_verbs_fn: Callable that extracts the verb list from a Phrase.
+        get_vocab_fn: Callable that extracts the vocab list from a Phrase.
+
+    Returns:
+        Minimum (greedy-approximate) list of Phrases providing coverage.
+    """
+    if not (target_verbs or target_vocab):
+        return []
+
+    remaining_verbs = set(target_verbs)
+    remaining_vocab = set(target_vocab)
+    pool = list(candidates)          # never mutate the caller's list
+    selected: List[Phrase] = []
+
+    while remaining_verbs or remaining_vocab:
+        best_phrase: Optional[Phrase] = None
+        best_count = 0
+
+        for phrase in pool:
+            pv = set(get_verbs_fn(phrase))
+            pw = set(get_vocab_fn(phrase))
+            count = len(pv & remaining_verbs) + len(pw & remaining_vocab)
+            if count > best_count:
+                best_phrase = phrase
+                best_count = count  # ← was missing in the old implementation
+
+        if best_phrase is None or best_count == 0:
+            print(
+                f"Warning: cannot achieve full coverage. "
+                f"Missing verbs: {remaining_verbs}, vocab: {remaining_vocab}"
+            )
+            break
+
+        selected.append(best_phrase)
+        pool.remove(best_phrase)
+        remaining_verbs -= set(get_verbs_fn(best_phrase))
+        remaining_vocab -= set(get_vocab_fn(best_phrase))
+
+    return selected
 
 
 def find_minimum_coverage_phrases(
@@ -112,78 +170,31 @@ def find_minimum_coverage_phrases(
 ) -> List[Phrase]:
     """Find the minimum set of phrases that cover all target verbs and vocabulary.
 
-    Uses a greedy set cover algorithm that iteratively selects the phrase that covers
-    the most uncovered items. This provides a good approximation (log n factor) of the
-    optimal solution in polynomial time.
-
-    Algorithm complexity: O(n * m) where n = number of phrases, m = size of target set
-    For 5000 phrases and typical vocab sizes, this runs very quickly.
+    Uses a greedy set cover algorithm that iteratively selects the phrase that
+    covers the most uncovered items.  Delegates to ``_greedy_set_cover``.
 
     Args:
-        phrases: List of phrases to search through
-        target_verbs: Set of verb lemmas to cover (e.g., {'run', 'eat', 'sleep'})
-        target_vocab: Set of vocabulary lemmas to cover (e.g., {'store', 'daily', 'apple'})
+        phrases:      List of phrases to search through (not mutated).
+        target_verbs: Set of English verb lemmas to cover.
+        target_vocab: Set of English vocab lemmas to cover.
 
     Returns:
-        List of phrases that provide complete coverage of verbs and vocab.
-        Returns empty list if complete coverage is impossible.
-
-    Example:
-        >>> phrases = get_phrases_by_collection("WarmUp150")
-        >>> verbs = {'run', 'eat', 'sleep'}
-        >>> vocab = {'store', 'daily', 'apple'}
-        >>> selected = find_minimum_coverage_phrases(phrases, verbs, vocab)
-        >>> print(f"Coverage achieved with {len(selected)} phrases")
+        List of phrases providing coverage (may be incomplete if the pool
+        cannot cover all requested items).
     """
-    if len(target_verbs | target_vocab) == 0:
-        return []
-
-    remaining_verbs = target_verbs.copy()
-    remaining_vocab = target_vocab.copy()
-
-    def _update_verbs(phrase: Phrase, remaining_verbs: Set[str]) -> Set[str]:
-        phrase_verbs = set(phrase.verbs)
-        return remaining_verbs - phrase_verbs
-
-    def _update_vocab(phrase: Phrase, remaining_vocab: Set[str]) -> Set[str]:
-        phrase_vocab = set(phrase.vocab)
-        return remaining_vocab - phrase_vocab
-
-    # Track selected phrases
-    selected_phrases: List[Phrase] = []
-
-    while remaining_verbs or remaining_vocab:
-        best_phrase = None
-        best_coverage = 0.0
-
-        for phrase in phrases:
-            phrase_coverage = _get_phrase_coverage(
-                phrase, remaining_verbs, remaining_vocab
-            )
-            if phrase_coverage == 1:
-                best_phrase = phrase
-                break
-            if phrase_coverage > best_coverage:
-                best_phrase = phrase
-
-        if not best_phrase:
-            print(
-                f"Warning: Cannot achieve complete coverage. Missing verbs: {remaining_verbs}, vocab: {remaining_vocab}"
-            )
-            break
-
-        selected_phrases.append(best_phrase)
-        remaining_verbs = _update_verbs(best_phrase, remaining_verbs)
-        remaining_vocab = _update_vocab(best_phrase, remaining_vocab)
-        phrases.remove(best_phrase)
-
-    return selected_phrases
+    return _greedy_set_cover(
+        candidates=phrases,
+        target_verbs=target_verbs,
+        target_vocab=target_vocab,
+        get_verbs_fn=lambda p: p.verbs,
+        get_vocab_fn=lambda p: p.vocab,
+    )
 
 
 def find_phrases_by_token_coverage(
     phrases: List[Phrase],
     target_tokens: Set[str],
-    language: BCP47Language | str,
+    language: Language | str,
     min_coverage_ratio: float = 0.5,
 ) -> List[Tuple[Phrase, float, Set[str]]]:
     """Find phrases containing target tokens in a specific language.
@@ -246,6 +257,150 @@ def find_phrases_by_token_coverage(
     results.sort(key=lambda x: (x[1], len(x[2])), reverse=True)
 
     return results
+
+
+# ---------------------------------------------------------------------------
+# Translation-level vocab coverage (target-language aware)
+# ---------------------------------------------------------------------------
+
+
+def _load_phrases_with_translation(
+    language_tag: str,
+    collection: Optional[str] = None,
+    deck: Optional[str] = None,
+    database_name: str = "firephrases",
+) -> List[Phrase]:
+    """Load phrases that have a populated target-language translation.
+
+    Streams the ``phrases`` collection (optionally filtered by collection/deck),
+    then for each phrase does a **single direct get()** on
+    ``translations/{language_tag}`` — avoiding loading all other language
+    translations.  Only phrases whose translation has at least one verb or
+    vocab entry are returned.
+
+    Args:
+        language_tag:    Exact Firestore document key, e.g. ``'sv-SE'``.
+        collection:      Optional collection filter (e.g. ``'WarmUp150'``).
+        deck:            Optional deck filter (e.g. ``'Pack01'``).
+        database_name:   Firestore database name.
+
+    Returns:
+        List of Phrase objects, each with only the target translation populated.
+    """
+    db = get_firestore_client(database_name)
+    query = db.collection("phrases")
+    if collection:
+        query = query.where(filter=FieldFilter("collection", "==", collection))
+    if deck:
+        query = query.where(filter=FieldFilter("deck", "==", deck))
+
+    phrases: List[Phrase] = []
+    for phrase_doc in query.stream():
+        phrase_data = phrase_doc.to_dict()
+
+        # Skip story phrases (phrases that have a story_title_hash)
+        if phrase_data.get("story_title_hash"):
+            continue
+
+        t_doc = (
+            phrase_doc.reference
+            .collection("translations")
+            .document(language_tag)
+            .get()
+        )
+        if not t_doc.exists:
+            continue
+
+        t_data = t_doc.to_dict()
+        translation = Translation.model_validate(t_data)
+
+        # Only include phrases whose translation has usable NLP data
+        if not translation.verbs and not translation.vocab:
+            continue
+
+        phrase = Phrase.model_validate(phrase_data)
+        phrase.translations = {language_tag: translation}
+        phrases.append(phrase)
+
+    return phrases
+
+
+def find_phrases_by_vocab_dict(
+    vocab_dict: Dict[str, List[str]],
+    language: Language | str,
+    collection: Optional[str] = None,
+    deck: Optional[str] = None,
+    database_name: str = "firephrases",
+) -> Tuple[List[Phrase], Dict[str, List[str]]]:
+    """Find the minimum set of phrases whose target-language translation covers
+    every verb and vocab word in *vocab_dict*.
+
+    Args:
+        vocab_dict:    Dict with keys ``'verbs'`` and/or ``'vocab'``, each a
+                       list of lemma strings in the target language.
+        language:      Target language — ``Language`` object or BCP-47 string
+                       (e.g. ``'sv-SE'``).
+        collection:    Optional — restrict search to this Firestore collection.
+        deck:          Optional — restrict search to this deck.
+        database_name: Firestore database (default: ``'firephrases'``).
+
+    Returns:
+        A tuple of:
+        - ``phrases``: minimum (greedy-approximate) list of ``Phrase`` objects
+          providing coverage.  Each phrase has only the target translation
+          populated.
+        - ``missing``: dict with keys ``'verbs'`` and ``'vocab'`` listing any
+          words from *vocab_dict* that no phrase in the pool could cover
+          (sorted alphabetically).  Both lists are empty on full coverage.
+
+    Example:
+        >>> phrases, missing = find_phrases_by_vocab_dict(
+        ...     vocab_dict={"verbs": ["springa", "äta"], "vocab": ["hund", "bil"]},
+        ...     language="sv-SE",
+        ...     collection="WarmUp150",
+        ... )
+        >>> print(f"{len(phrases)} phrases selected, missing: {missing}")
+        >>> for p in phrases:
+        ...     print(p.english, p.translations["sv-SE"].text)
+    """
+    lang = get_language(language)
+    language_tag = lang.to_tag()
+
+    target_verbs: Set[str] = set(vocab_dict.get("verbs", []))
+    target_vocab: Set[str] = set(vocab_dict.get("vocab", []))
+
+    if not target_verbs and not target_vocab:
+        return [], {"verbs": [], "vocab": []}
+
+    candidates = _load_phrases_with_translation(
+        language_tag=language_tag,
+        collection=collection,
+        deck=deck,
+        database_name=database_name,
+    )
+
+    selected = _greedy_set_cover(
+        candidates=candidates,
+        target_verbs=target_verbs,
+        target_vocab=target_vocab,
+        get_verbs_fn=lambda p: p.translations[language_tag].verbs or [],
+        get_vocab_fn=lambda p: p.translations[language_tag].vocab or [],
+    )
+
+    # Compute what the selected phrases collectively cover
+    covered_verbs: Set[str] = set()
+    covered_vocab: Set[str] = set()
+    for p in selected:
+        t = p.translations[language_tag]
+        covered_verbs |= set(t.verbs or [])
+        covered_vocab |= set(t.vocab or [])
+
+    missing: Dict[str, List[str]] = {
+        "verbs": sorted(target_verbs - covered_verbs),
+        "vocab": sorted(target_vocab - covered_vocab),
+    }
+
+    return selected, missing
 
 
 def get_all_phrases(
@@ -354,3 +509,127 @@ def get_phrase_by_english(
     """
     phrase_hash = generate_phrase_hash(english_phrase)
     return get_phrase(phrase_hash, database_name=database_name)
+
+
+def add_tags_to_translations(
+    phrases: List[Phrase],
+    language: Language | str,
+    tags: List[str] | str,
+) -> List[DocumentReference]:
+    """Add Anki tags to the target language translation of a list of phrases.
+
+    Updates both the local Phrase objects and their corresponding Firestore
+    Translation documents via a targeted ``.update()``. This is efficient as
+    it only updates the tags field.
+
+    Args:
+        phrases: List of Phrase objects to update.
+        language: Target language (e.g. 'sv-SE' or a Language object).
+        tags: Single tag string or list of tags to add.
+
+    Returns:
+        List of updated Firestore DocumentReferences.
+
+    Example:
+        >>> phrases, missing = find_phrases_by_vocab_dict(vocab, "sv-SE")
+        >>> updated_refs = add_tags_to_translations(phrases, "sv-SE", "media::film::bron")
+    """
+    if isinstance(tags, str):
+        tags = [tags]
+
+    lang = get_language(language)
+    language_tag = lang.to_tag()
+
+    updated_refs: List[DocumentReference] = []
+
+    for phrase in phrases:
+        if language_tag not in phrase.translations:
+            continue
+            
+        translation = phrase.translations[language_tag]
+        
+        # Merge new tags while avoiding duplicates and preserving order
+        existing_tags = set(translation.tags)
+        new_tags = [t for t in tags if t not in existing_tags]
+        
+        if new_tags:
+            translation.tags.extend(new_tags)
+            
+            # Get the DocumentReference (using the private helper if missing)
+            doc_ref = translation.firestore_document_ref
+            if not doc_ref:
+                doc_ref = translation._get_firestore_document_reference()
+            
+            # Targeted update to avoid overwriting other fields unnecessarily
+            doc_ref.update({"tags": translation.tags})
+            updated_refs.append(doc_ref)
+
+    return updated_refs
+
+
+def find_phrases_by_tag(
+    tag: str,
+    language: Language | str,
+    collection: Optional[str] = None,
+    deck: Optional[str] = None,
+    database_name: str = "firephrases",
+) -> List[Phrase]:
+    """Find all phrases whose target-language translation contains a specific tag.
+
+    Uses a fast Firestore collection group query to directly find translation
+    documents containing the tag, then fetches their parent phrases.
+    Returned Phrase objects have all translations fully populated (which is
+    required for subsequent Anki deck generation).
+
+    Args:
+        tag: The tag to search for (e.g., 'media::film::bron').
+        language: The target language (e.g., 'sv-SE').
+        collection: Optional collection filter.
+        deck: Optional deck filter.
+        database_name: Firestore database name.
+
+    Returns:
+        List of Phrase objects that have the tag.
+    """
+    lang = get_language(language)
+    language_tag = lang.to_tag()
+    
+    db = get_firestore_client(database_name)
+    
+    # Fast collection group query on the 'tags' array
+    translations_query = db.collection_group("translations").where(
+        filter=FieldFilter("tags", "array_contains", tag)
+    )
+
+    matched_phrases: List[Phrase] = []
+    
+    for t_doc in translations_query.stream():
+        # Ensure we only process translations for the requested language
+        if t_doc.id != language_tag:
+            continue
+            
+        # The parent of a translation doc is the 'translations' subcollection, 
+        # and its parent is the phrase document
+        phrase_ref = t_doc.reference.parent.parent
+        if not phrase_ref:
+            continue
+            
+        phrase_doc = phrase_ref.get()
+        if not phrase_doc.exists:
+            continue
+            
+        phrase_data = phrase_doc.to_dict()
+        
+        # Apply the optional collection/deck filters in Python
+        # (Faster than trying to do composite queries across parent/child)
+        if collection and phrase_data.get("collection") != collection:
+            continue
+        if deck and phrase_data.get("deck") != deck:
+            continue
+            
+        phrase = Phrase.model_validate(phrase_data)
+        # Populate all translations so it can be passed directly to create_anki_deck
+        phrase.translations = _get_translations(phrase_ref)
+        matched_phrases.append(phrase)
+            
+    return matched_phrases

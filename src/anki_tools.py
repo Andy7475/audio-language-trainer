@@ -240,6 +240,13 @@ def create_anki_note_from_phrase(
     media_files.append(audio_slow_path)
     audio_slow_html = f"[sound:{audio_slow_filename}]"
 
+    # Build tags list: combine Translation media tags with Phrase collection/deck
+    note_tags = list(target_translation.tags)
+    if phrase.collection:
+        note_tags.append(phrase.collection.replace(" ", "_"))
+    if phrase.deck:
+        note_tags.append(phrase.deck.replace(" ", "_"))
+
     # Create the note
     note = genanki.Note(
         model=model,
@@ -254,6 +261,7 @@ def create_anki_note_from_phrase(
             source_lang.display_name(),
             target_lang.display_name(),
         ],
+        tags=note_tags,
         guid=_string_to_large_int(f"{phrase.key}_{source_tag}_{target_tag}"),
     )
 

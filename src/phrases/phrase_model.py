@@ -22,6 +22,7 @@ from src.nlp import (
     get_tokens_from_lemmas_and_pos,
     get_verbs_from_lemmas_and_pos,
     get_vocab_from_lemmas_and_pos,
+    get_verbs_and_vocab,
     get_text_tokens,
 )
 from src.models import BCP47Language, get_language
@@ -254,6 +255,9 @@ class Phrase(FirePhraseDataModel):
             text=self.english,
             text_lower=self.english_lower,
             tokens=tokens,
+            # Reuse NLP analysis already performed when the parent Phrase was created
+            verbs=self.verbs,
+            vocab=self.vocab,
             image_file_path=get_phrase_image_path(
                 phrase_hash=self.key, language=Language.get("en-GB")
             ),
@@ -321,12 +325,13 @@ class Phrase(FirePhraseDataModel):
                     model=model,
                 )
 
-        # Step 3: Tokenize the translated text
+        # Step 3: Tokenize and NLP-analyse the translated text
         # Extract language code for tokenization (e.g., "fr" from "fr-FR")
         language_code = target_language.language
         tokens = get_text_tokens(
             translated_text, language_code=language_code, split_on_space=split_on_space
         )
+        nlp_result = get_verbs_and_vocab([translated_text], language_code)
 
         translation_document_ref = self._get_translation_firestore_document_ref(
             target_language
@@ -339,6 +344,8 @@ class Phrase(FirePhraseDataModel):
             text=translated_text,
             text_lower=translated_text.lower(),
             tokens=tokens,
+            verbs=nlp_result["verbs"],
+            vocab=nlp_result["vocab"],
         )
         translation._set_image_file_path(default=True)
 
@@ -891,6 +898,15 @@ class Translation(FirePhraseDataModel):
     tokens: List[str] = Field(
         ..., description="Tokenised words from the translated phrase"
     )
+    verbs: List[str] = Field(
+        default_factory=list, description="Lemmatised verb forms from the translated phrase"
+    )
+    vocab: List[str] = Field(
+        default_factory=list, description="Lemmatised non-verb words from the translated phrase"
+    )
+    tags: List[str] = Field(
+        default_factory=list, description="Anki tags (e.g. ['media::film::name'])"
+    )
     audio: dict[str, dict[str, PhraseAudio]] = Field(
         default_factory=dict,
         description="Nested dict of audio files: {context: {speed: PhraseAudio}}. Example: {'flashcard': {'normal': PhraseAudio, 'slow': PhraseAudio}, 'story': {'normal': PhraseAudio}}",
@@ -1234,3 +1250,32 @@ class Translation(FirePhraseDataModel):
         for context_dict in self.audio.values():
             for phrase_audio in context_dict.values():
                 phrase_audio._upload_to_gcs()
+
+def get_unique_tokens_from_phrases(
+    phrases: List[Phrase], language: Language | str
+) -> List[str]:
+    """
+    Extract a unique list of tokens from a list of Phrase objects for a specific language.
+    Tokens are pulled from the associated Translation objects.
+
+    Args:
+        phrases: List of Phrase objects.
+        language: BCP-47 language tag to retrieve tokens for.
+
+    Returns:
+        List[str]: A list of unique tokens.
+    """
+    language = get_language(language)
+    unique_tokens = set()
+
+    for phrase in phrases:
+        try:
+            translation = phrase._get_translation(language)
+            if translation.tokens:
+                unique_tokens.update(translation.tokens)
+        except ValueError:
+            logger.warning(
+                f"get_unique_tokens_from_phrases: Phrase {phrase.key} has no translation for {language.to_tag()}"
+            )
+
+    return list(unique_tokens)
