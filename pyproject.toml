@@ -41,3 +41,6 @@ dependencies = [
     "spacy>=3.8.7",
     "tqdm>=4.67.1",
 ]
+
+[tool.pyright]
+extraPaths = ["."]
