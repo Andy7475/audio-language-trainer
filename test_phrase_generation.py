@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Test script for phrase generation with small vocab_dict."""
 
-from src.phrases.generation import generate_phrases_from_vocab_dict
+from phrases.generation import generate_phrases_from_vocab_dict
 
 # Small test vocab_dict with a few verbs and vocabs
 test_vocab_dict = {

@@ -1,4 +1,4 @@
-from src.nlp import (
+from nlp import (
     extract_substring_matches,
     find_best_card,
     find_candidate_cards,
@@ -8,7 +8,7 @@ from src.nlp import (
 )
 import pytest
 from typing import Dict, List
-from src.nlp import create_flashcard_index, process_phrase_vocabulary
+from nlp import create_flashcard_index, process_phrase_vocabulary
 
 
 @pytest.mark.parametrize(

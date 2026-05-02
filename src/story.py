@@ -6,26 +6,26 @@ from typing import Dict, List, Optional, Set
 from pydub import AudioSegment
 
 
-from src.phrases.search import get_phrase
-from src.llm_tools.refine_story_translation import refine_story_translation
-from src.storage import (
+from phrases.search import get_phrase
+from llm_tools.refine_story_translation import refine_story_translation
+from storage import (
     PUBLIC_BUCKET,
 )
 
 
 from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
-from src.models import BCP47Language, get_language
+from models import BCP47Language, get_language
 
-from src.phrases.phrase_model import Phrase, Translation  # noqa: F401 - Translation needed for Pydantic model resolution
+from phrases.phrase_model import Phrase, Translation  # noqa: F401 - Translation needed for Pydantic model resolution
 from google.cloud.firestore import DocumentReference, FieldFilter
-from src.connections.gcloud_auth import get_firestore_client
-from src.phrases.utils import generate_phrase_hash
-from src.phrases.phrase_model import FirePhraseDataModel
-from src.logger import logger
+from connections.gcloud_auth import get_firestore_client
+from phrases.utils import generate_phrase_hash
+from phrases.phrase_model import FirePhraseDataModel
+from logger import logger
 from langcodes import Language
-from src.audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
-from src.storage import upload_to_gcs
-from src.utils import render_html_content
+from audio.constants import INTER_UTTERANCE_GAP, STORY_PART_TRANSITION
+from storage import upload_to_gcs
+from utils import render_html_content
 
 
 def get_all_story_tokens(story: Story, target_language: Language) -> Set[str]:

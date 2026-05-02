@@ -10,17 +10,18 @@
 # unless you set `OVERWRITE = True`.
 
 # %% --- config -----------------------------------------------------------
-SV_TAG   = "sv-SE"         # the exact Firestore document key for Swedish translations
-OVERWRITE = False          # set True to recompute even if verbs already exist
-DRY_RUN   = False          # set True to print what would change without writing
+SV_TAG = "sv-SE"  # the exact Firestore document key for Swedish translations
+OVERWRITE = False  # set True to recompute even if verbs already exist
+DRY_RUN = False  # set True to print what would change without writing
 
 # %% --- imports ----------------------------------------------------------
-from src.connections.gcloud_auth import get_firestore_client
-from src.nlp import get_verbs_and_vocab
+from connections.gcloud_auth import get_firestore_client
+from nlp import get_verbs_and_vocab
 
 db = get_firestore_client("firephrases")
 
 # %% --- helpers ----------------------------------------------------------
+
 
 def _needs_update(translation_data: dict) -> bool:
     """Return True if verbs or vocab are absent / empty."""
@@ -31,11 +32,11 @@ def _needs_update(translation_data: dict) -> bool:
 
 # %% --- main loop --------------------------------------------------------
 
-phrase_docs    = list(db.collection("phrases").stream())
-total_phrases  = len(phrase_docs)
+phrase_docs = list(db.collection("phrases").stream())
+total_phrases = len(phrase_docs)
 
-updated   = 0
-skipped   = 0
+updated = 0
+skipped = 0
 not_found = 0
 
 print(f"Found {total_phrases} phrases to inspect.\n")
@@ -52,10 +53,12 @@ for i, phrase_doc in enumerate(phrase_docs, start=1):
         continue
 
     t_data = t_doc.to_dict()
-    text   = t_data.get("text", "")
+    text = t_data.get("text", "")
 
     if not text:
-        print(f"  [{i}/{total_phrases}] {phrase_hash[:12]}… | {SV_TAG} — ⚠️  no text, skipping")
+        print(
+            f"  [{i}/{total_phrases}] {phrase_hash[:12]}… | {SV_TAG} — ⚠️  no text, skipping"
+        )
         skipped += 1
         continue
 
@@ -71,11 +74,11 @@ for i, phrase_doc in enumerate(phrase_docs, start=1):
 
     # Run spaCy NLP (sv model loaded/cached on first call)
     result = get_verbs_and_vocab([text], "sv")
-    verbs  = result["verbs"]
-    vocab  = result["vocab"]
+    verbs = result["verbs"]
+    vocab = result["vocab"]
 
     print(
-        f"  [{i}/{total_phrases}] {phrase_hash[:12]}… | {SV_TAG} — \"{text[:50]}\"\n"
+        f'  [{i}/{total_phrases}] {phrase_hash[:12]}… | {SV_TAG} — "{text[:50]}"\n'
         f"    verbs={verbs}\n"
         f"    vocab={vocab}"
     )
@@ -90,5 +93,7 @@ print("\n" + "=" * 60)
 print(f"Done.")
 print(f"  Phrases inspected : {total_phrases}")
 print(f"  Swedish not found : {not_found}")
-print(f"  Updated           : {updated}{'  (DRY RUN — nothing written)' if DRY_RUN else ''}")
+print(
+    f"  Updated           : {updated}{'  (DRY RUN — nothing written)' if DRY_RUN else ''}"
+)
 print(f"  Skipped (ok)      : {skipped}")

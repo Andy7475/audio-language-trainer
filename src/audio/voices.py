@@ -6,7 +6,7 @@ from typing import Dict, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from src.audio.constants import VoiceProvider
+from audio.constants import VoiceProvider
 
 
 class VoiceInfo(BaseModel):
@@ -53,6 +53,7 @@ def get_voice_model(
     gender: Literal["MALE", "FEMALE"],
     audio_type: Literal["flashcard", "story"] = "flashcard",
     voices_config: Optional[Dict] = None,
+    speed: Literal["normal", "slow"] = "normal",
 ) -> VoiceInfo:
     """
     Get voice information for a specific language, gender, and audio type.
@@ -62,7 +63,7 @@ def get_voice_model(
         gender: Voice gender ("MALE" or "FEMALE")
         audio_type: Type of audio being generated ("flashcard" or "story")
         voices_config: Pre-loaded voices configuration. If None, loads from file.
-
+        speed: Speed of the voice ("normal" or "slow")
     Returns:
         VoiceInfo object containing provider and voice_id
 

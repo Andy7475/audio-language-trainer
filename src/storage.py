@@ -18,9 +18,9 @@ import langcodes
 from PIL import Image
 from pydub import AudioSegment
 
-from src.models import BCP47Language
-from src.connections.gcloud_auth import get_storage_client
-from src.logger import logger
+from models import BCP47Language
+from connections.gcloud_auth import get_storage_client
+from logger import logger
 
 # ============================================================================
 # BUCKET CONSTANTS
@@ -525,7 +525,7 @@ def upload_to_gcs(
     local_base_dir: str = "../outputs/gcs",
 ) -> str:
     """
-    DEPRECATED: Use upload_file_to_gcs from src.storage instead.
+    DEPRECATED: Use upload_file_to_gcs from storage instead.
 
     Upload various file types directly to Google Cloud Storage without writing to local disk.
 
@@ -545,7 +545,7 @@ def upload_to_gcs(
         ValueError: If unsupported object type is provided
     """
     warnings.warn(
-        "upload_to_gcs() is deprecated. Use upload_file_to_gcs() from src.storage instead.",
+        "upload_to_gcs() is deprecated. Use upload_file_to_gcs() from storage instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -572,7 +572,7 @@ def read_from_gcs(
     local_base_dir: str = "../outputs/gcs",
 ) -> Any:
     """
-    DEPRECATED: Use download_from_gcs from src.storage instead.
+    DEPRECATED: Use download_from_gcs from storage instead.
 
     Download a file from GCS or read from local cache if available.
 
@@ -588,7 +588,7 @@ def read_from_gcs(
         The file content as an appropriate Python object
     """
     warnings.warn(
-        "read_from_gcs() is deprecated. Use download_from_gcs() from src.storage instead.",
+        "read_from_gcs() is deprecated. Use download_from_gcs() from storage instead.",
         DeprecationWarning,
         stacklevel=2,
     )

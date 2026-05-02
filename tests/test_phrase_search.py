@@ -2,12 +2,12 @@
 
 import pytest
 
-from src.phrases.phrase_model import Phrase, Translation
-from src.phrases.search import (
+from phrases.phrase_model import Phrase, Translation
+from phrases.search import (
     find_minimum_coverage_phrases,
     find_phrases_by_token_coverage,
 )
-from src.models import BCP47Language
+from models import BCP47Language
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ from typing import Dict
 
 import pytest
 
-from src.nlp import get_vocab_dict_from_dialogue
+from nlp import get_vocab_dict_from_dialogue
 
 
 @pytest.fixture

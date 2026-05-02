@@ -1,11 +1,11 @@
 from typing import Dict, List, Optional, Tuple, Union
 
 from langcodes import Language
-from src.models import get_language
-from src.connections.gcloud_auth import get_nlp_client
+from models import get_language
+from connections.gcloud_auth import get_nlp_client
 from google.cloud import language_v1
 from google.api_core.exceptions import InvalidArgument
-from src.logger import logger
+from logger import logger
 
 
 # ---------------------------------------------------------------------------
@@ -15,12 +15,12 @@ from src.logger import logger
 # Add entries here as you onboard new languages.
 # Models must be installed separately — see the walkthrough in the docs.
 SPACY_LANGUAGE_MODELS: Dict[str, str] = {
-    "sv": "sv_core_news_lg",   # Swedish  — latest 3.8.0
+    "sv": "sv_core_news_lg",  # Swedish  — latest 3.8.0
     # Examples for extending to other languages:
     # "de": "de_core_news_lg",
     # "fr": "fr_core_news_lg",
     # "es": "es_core_news_lg",
-    # "nl": "nl_core_news_lg",
+    "nl": "nl_core_news_lg",
     # "nb": "nb_core_news_lg",  # Norwegian Bokmål
     # "fi": "fi_core_news_lg",
     # "da": "da_core_news_lg",
@@ -218,9 +218,7 @@ def extract_lemmas_and_pos(
         response = analyze_text_syntax(phrase, language_code)
         if response is not None:
             for token in response.tokens:
-                pos_tag = language_v1.PartOfSpeech.Tag(
-                    token.part_of_speech.tag
-                ).name
+                pos_tag = language_v1.PartOfSpeech.Tag(token.part_of_speech.tag).name
                 lemma = token.lemma.lower()
                 vocab_set.append((lemma, pos_tag))
         else:

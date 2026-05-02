@@ -1,6 +1,6 @@
 """Audio module for text-to-speech, audio processing, and voice management."""
 
-from src.audio.constants import (
+from audio.constants import (
     AUDIO_SPEED_FAST,
     AUDIO_SPEED_NORMAL,
     DEFAULT_GAP_MS,
@@ -10,24 +10,24 @@ from src.audio.constants import (
     SPEAKING_RATE_SLOW,
     VoiceProvider,
 )
-from src.audio.generation import (
+from audio.generation import (
     generate_fast_audio,
     generate_normal_and_fast_audio,
     generate_translation_audio,
 )
-from src.audio.processing import (
+from audio.processing import (
     export_audio,
     join_audio_segments,
     speed_up_audio,
 )
-from src.audio.providers import (
+from audio.providers import (
     slow_text_to_speech,
     text_to_speech,
 )
-from src.audio.text_processing import (
+from audio.text_processing import (
     clean_tts_text,
 )
-from src.audio.voices import (
+from audio.voices import (
     VoiceInfo,
     get_voice_model,
     get_voice_models,

@@ -8,15 +8,15 @@ import requests
 from google.cloud import texttospeech
 from pydub import AudioSegment
 
-from src.audio.constants import (
+from audio.constants import (
     VoiceProvider,
     SPEAKING_RATE_NORMAL,
     DEFAULT_WORD_BREAK_MS,
 )
-from src.audio.text_processing import clean_tts_text
-from src.nlp import get_text_tokens
-from src.audio.voices import VoiceInfo
-from src.connections.gcloud_auth import get_texttospeech_client
+from audio.text_processing import clean_tts_text
+from nlp import get_text_tokens
+from audio.voices import VoiceInfo
+from connections.gcloud_auth import get_texttospeech_client
 
 
 def text_to_speech(

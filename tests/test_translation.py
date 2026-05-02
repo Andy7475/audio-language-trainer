@@ -1,13 +1,13 @@
 from unittest.mock import patch, MagicMock
 from typing import List
 import copy
-from src.config_loader import config
-from src.translation import (
+from config_loader import config
+from translation import (
     translate_dialogue,
     translate_from_english,
     translate_phrases,
 )
-from src.nlp import get_text_tokens
+from nlp import get_text_tokens
 
 
 import pytest
@@ -52,12 +52,12 @@ def test_tokenize_text(
 
         # For API-based tokenization, we might want to verify patterns rather than exact matches
         if language_code in ["ja", "zh"]:
-            assert (
-                len(result) > 0
-            ), f"Failed {description}: Should have at least one token"
-            assert all(
-                len(token) > 0 for token in result
-            ), f"Failed {description}: Empty token found"
+            assert len(result) > 0, (
+                f"Failed {description}: Should have at least one token"
+            )
+            assert all(len(token) > 0 for token in result), (
+                f"Failed {description}: Empty token found"
+            )
         else:
             assert result == expected, f"Failed {description}"
 
@@ -151,22 +151,22 @@ def test_translate_dialogue_deep_copy(mock_batch_translate):
     result = translate_dialogue(original_dialogue)
 
     # Assert
-    assert (
-        original_dialogue == original_dialogue_copy
-    ), "Original dialogue should not be modified"
-    assert (
-        result != original_dialogue
-    ), "Translated dialogue should be different from the original"
-    assert id(result) != id(
-        original_dialogue
-    ), "A new list should be returned, not the original one"
+    assert original_dialogue == original_dialogue_copy, (
+        "Original dialogue should not be modified"
+    )
+    assert result != original_dialogue, (
+        "Translated dialogue should be different from the original"
+    )
+    assert id(result) != id(original_dialogue), (
+        "A new list should be returned, not the original one"
+    )
     for original, translated in zip(original_dialogue, result):
-        assert id(original) != id(
-            translated
-        ), "Each dictionary in the list should be a new object"
-        assert (
-            original["speaker"] == translated["speaker"]
-        ), "Speaker should remain the same"
+        assert id(original) != id(translated), (
+            "Each dictionary in the list should be a new object"
+        )
+        assert original["speaker"] == translated["speaker"], (
+            "Speaker should remain the same"
+        )
         assert original["text"] != translated["text"], "Text should be translated"
     mock_batch_translate.assert_called_once_with(["Hello", "How are you?"])
 

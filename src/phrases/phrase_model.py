@@ -14,10 +14,10 @@ from pydantic import (
 )
 from pydub import AudioSegment
 from PIL import Image
-from src.logger import logger
-from src.connections.gcloud_auth import get_firestore_client
-from src.phrases.utils import generate_phrase_hash
-from src.nlp import (
+from logger import logger
+from connections.gcloud_auth import get_firestore_client
+from phrases.utils import generate_phrase_hash
+from nlp import (
     extract_lemmas_and_pos,
     get_tokens_from_lemmas_and_pos,
     get_verbs_from_lemmas_and_pos,
@@ -25,12 +25,12 @@ from src.nlp import (
     get_verbs_and_vocab,
     get_text_tokens,
 )
-from src.models import BCP47Language, get_language
-from src.translation import (
+from models import BCP47Language, get_language
+from translation import (
     translate_with_google_translate,
     refine_translation_with_anthropic,
 )
-from src.storage import (
+from storage import (
     upload_file_to_gcs,
     download_from_gcs,
     get_phrase_image_path,
@@ -38,12 +38,12 @@ from src.storage import (
     check_blob_exists,
     PRIVATE_BUCKET,
 )
-from src.audio.voices import get_voice_model, VoiceInfo
-from src.audio.generation import generate_translation_audio
+from audio.voices import get_voice_model, VoiceInfo
+from audio.generation import generate_translation_audio
 from google.cloud.firestore import DocumentReference
-from src.llm_tools.image_generation import generate_phrase_image_prompt
-from src.images.generator import generate_image as generate_image_with_provider
-from src.images.manipulation import resize_image
+from llm_tools.image_generation import generate_phrase_image_prompt
+from images.generator import generate_image as generate_image_with_provider
+from images.manipulation import resize_image
 
 LowercaseStr = Annotated[str, BeforeValidator(lambda v: v.lower().strip())]
 
@@ -768,7 +768,7 @@ class PhraseAudio(FirePhraseDataModel):
         text: str,
         language: Language,
         context: Literal["flashcard", "story"],
-        speed: Literal["slow", "normal"],
+        speed: Literal["slow", "normal"] = "normal",
         gender: Literal["MALE", "FEMALE"] = "FEMALE",
     ) -> PhraseAudio:
         """Factory method to create a PhraseAudio object with generated file_path.
@@ -781,7 +781,10 @@ class PhraseAudio(FirePhraseDataModel):
         )
 
         voice_info = get_voice_model(
-            language_code=language.to_tag(), gender=gender, audio_type=context
+            language_code=language.to_tag(),
+            gender=gender,
+            audio_type=context,
+            speed=speed,
         )
 
         return cls(
@@ -899,10 +902,12 @@ class Translation(FirePhraseDataModel):
         ..., description="Tokenised words from the translated phrase"
     )
     verbs: List[str] = Field(
-        default_factory=list, description="Lemmatised verb forms from the translated phrase"
+        default_factory=list,
+        description="Lemmatised verb forms from the translated phrase",
     )
     vocab: List[str] = Field(
-        default_factory=list, description="Lemmatised non-verb words from the translated phrase"
+        default_factory=list,
+        description="Lemmatised non-verb words from the translated phrase",
     )
     tags: List[str] = Field(
         default_factory=list, description="Anki tags (e.g. ['media::film::name'])"
@@ -977,7 +982,7 @@ class Translation(FirePhraseDataModel):
             - Returns plain text for tokens without Wiktionary entries
             - Preserves original token order and casing
         """
-        from src.wiktionary.lookup import get_wiktionary_urls
+        from wiktionary.lookup import get_wiktionary_urls
 
         # Extract language code (e.g., 'fr' from 'fr-FR')
         language_code = self.language.language
@@ -1250,6 +1255,7 @@ class Translation(FirePhraseDataModel):
         for context_dict in self.audio.values():
             for phrase_audio in context_dict.values():
                 phrase_audio._upload_to_gcs()
+
 
 def get_unique_tokens_from_phrases(
     phrases: List[Phrase], language: Language | str

@@ -1,12 +1,12 @@
 """Test script to verify Firestore connectivity and phrase model functionality."""
 
 from phrases.search import get_phrase
-from src.phrases.phrase_model import (
+from phrases.phrase_model import (
     Phrase,
     upload_phrase,
     get_firestore_client,
 )
-from src.logger import logger
+from logger import logger
 
 
 def test_firestore_connection():

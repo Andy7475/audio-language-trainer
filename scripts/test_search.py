@@ -1,4 +1,4 @@
-from src.phrases.search import get_phrases_by_collection
+from phrases.search import get_phrases_by_collection
 
 COLLECTION = "WarmUp150"
 

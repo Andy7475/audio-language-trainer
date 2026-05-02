@@ -12,11 +12,11 @@ from typing import List, Union
 from langcodes import Language
 
 # Import from your project structure
-from src.models import get_language
-from src.storage import PRIVATE_BUCKET
-from src.images.manipulation import resize_image
-from src.utils import render_html_content
-from src.convert import convert_PIL_image_to_base64
+from models import get_language
+from storage import PRIVATE_BUCKET
+from images.manipulation import resize_image
+from utils import render_html_content
+from convert import convert_PIL_image_to_base64
 
 
 def create_review_page(

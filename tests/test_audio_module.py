@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 from pydub import AudioSegment
 
-from src.audio import (
+from audio import (
     VoiceInfo,
     VoiceProvider,
     clean_tts_text,

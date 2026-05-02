@@ -12,14 +12,14 @@ from storage import upload_to_gcs
 
 # Import the necessary functions from your modules
 try:
-    from src.template_testing import (
+    from template_testing import (
         build_phrase_dict_from_gcs,
         image_to_base64_html,
         audio_to_base64_html,
     )
-    from src.config_loader import config
-    from src.utils import load_template
-    from src.gcs_storage import get_tutorial_path
+    from config_loader import config
+    from utils import load_template
+    from gcs_storage import get_tutorial_path
 except ImportError as e:
     print(f"Warning: Could not import required modules: {e}")
     print("Make sure you're running from the project root directory")

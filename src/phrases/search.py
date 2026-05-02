@@ -2,10 +2,10 @@
 
 from typing import Callable, Dict, List, Optional, Set, Tuple
 
-from src.phrases.utils import generate_phrase_hash
-from src.phrases.phrase_model import Phrase, Translation
-from src.connections.gcloud_auth import get_firestore_client
-from src.models import get_language
+from phrases.utils import generate_phrase_hash
+from phrases.phrase_model import Phrase, Translation
+from connections.gcloud_auth import get_firestore_client
+from models import get_language
 from google.cloud.firestore_v1 import FieldFilter, DocumentReference
 from langcodes import Language
 
@@ -133,7 +133,7 @@ def _greedy_set_cover(
 
     remaining_verbs = set(target_verbs)
     remaining_vocab = set(target_vocab)
-    pool = list(candidates)          # never mutate the caller's list
+    pool = list(candidates)  # never mutate the caller's list
     selected: List[Phrase] = []
 
     while remaining_verbs or remaining_vocab:
@@ -303,10 +303,7 @@ def _load_phrases_with_translation(
             continue
 
         t_doc = (
-            phrase_doc.reference
-            .collection("translations")
-            .document(language_tag)
-            .get()
+            phrase_doc.reference.collection("translations").document(language_tag).get()
         )
         if not t_doc.exists:
             continue
@@ -545,21 +542,21 @@ def add_tags_to_translations(
     for phrase in phrases:
         if language_tag not in phrase.translations:
             continue
-            
+
         translation = phrase.translations[language_tag]
-        
+
         # Merge new tags while avoiding duplicates and preserving order
         existing_tags = set(translation.tags)
         new_tags = [t for t in tags if t not in existing_tags]
-        
+
         if new_tags:
             translation.tags.extend(new_tags)
-            
+
             # Get the DocumentReference (using the private helper if missing)
             doc_ref = translation.firestore_document_ref
             if not doc_ref:
                 doc_ref = translation._get_firestore_document_reference()
-            
+
             # Targeted update to avoid overwriting other fields unnecessarily
             doc_ref.update({"tags": translation.tags})
             updated_refs.append(doc_ref)
@@ -593,43 +590,43 @@ def find_phrases_by_tag(
     """
     lang = get_language(language)
     language_tag = lang.to_tag()
-    
+
     db = get_firestore_client(database_name)
-    
+
     # Fast collection group query on the 'tags' array
     translations_query = db.collection_group("translations").where(
         filter=FieldFilter("tags", "array_contains", tag)
     )
 
     matched_phrases: List[Phrase] = []
-    
+
     for t_doc in translations_query.stream():
         # Ensure we only process translations for the requested language
         if t_doc.id != language_tag:
             continue
-            
-        # The parent of a translation doc is the 'translations' subcollection, 
+
+        # The parent of a translation doc is the 'translations' subcollection,
         # and its parent is the phrase document
         phrase_ref = t_doc.reference.parent.parent
         if not phrase_ref:
             continue
-            
+
         phrase_doc = phrase_ref.get()
         if not phrase_doc.exists:
             continue
-            
+
         phrase_data = phrase_doc.to_dict()
-        
+
         # Apply the optional collection/deck filters in Python
         # (Faster than trying to do composite queries across parent/child)
         if collection and phrase_data.get("collection") != collection:
             continue
         if deck and phrase_data.get("deck") != deck:
             continue
-            
+
         phrase = Phrase.model_validate(phrase_data)
         # Populate all translations so it can be passed directly to create_anki_deck
         phrase.translations = _get_translations(phrase_ref)
         matched_phrases.append(phrase)
-            
+
     return matched_phrases

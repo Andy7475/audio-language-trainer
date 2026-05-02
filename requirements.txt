@@ -32,3 +32,5 @@ python-dotenv
 requests
 soundfile                       #for speeding up dialogue
 tqdm
+pysrt
+spacy

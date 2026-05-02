@@ -4,8 +4,8 @@ Script to upload styles.css to the public GCS bucket.
 Run this whenever you make changes to the CSS file.
 """
 
-from src.utils import load_template
-from src.storage import PUBLIC_BUCKET, upload_to_gcs
+from utils import load_template
+from storage import PUBLIC_BUCKET, upload_to_gcs
 
 
 def upload_styles_to_gcs():

@@ -15,10 +15,10 @@ from pathlib import Path
 from langcodes import Language
 from pydantic import BaseModel, Field, computed_field
 
-from src.models import BCP47Language, get_language
-from src.convert import get_collection_title
-from src.utils import render_html_content
-from src.logger import logger
+from models import BCP47Language, get_language
+from convert import get_collection_title
+from utils import render_html_content
+from logger import logger
 
 # ============================================================================
 # PRODUCT CONFIGURATION

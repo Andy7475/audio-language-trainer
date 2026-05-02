@@ -1,15 +1,15 @@
 from pydantic import BaseModel, ConfigDict, Field, computed_field, field_serializer
 from typing import List, Dict, Optional
-from src.story import Story, PublishedStory
-from src.challenges.models import PublishedChallenge
-from src.models import get_language, BCP47Language
+from story import Story, PublishedStory
+from challenges.models import PublishedChallenge
+from models import get_language, BCP47Language
 from langcodes import Language
-from src.logger import logger
+from logger import logger
 from collections import defaultdict
-from src.utils import render_html_content
-from src.storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
-from src.story import get_all_stories
-from src.challenges.models import get_challenge
+from utils import render_html_content
+from storage import PUBLIC_BUCKET, get_public_url_from_gcs_stub, upload_to_gcs
+from story import get_all_stories
+from challenges.models import get_challenge
 from urllib.parse import quote_plus
 
 

@@ -35,7 +35,7 @@ The module supports two audio types, loaded from `preferred_voices.json`:
 ### 1. Loading Voice Configurations
 
 ```python
-from src.audio import load_voices_from_json, get_voice_model, get_voice_models
+from audio import load_voices_from_json, get_voice_model, get_voice_models
 
 # Load all voice configurations
 all_voices = load_voices_from_json()
@@ -55,7 +55,7 @@ female_voice, male_voice = get_voice_models("fr-FR", "flashcards")
 ### 2. Basic Text-to-Speech
 
 ```python
-from src.audio import text_to_speech, get_voice_model
+from audio import text_to_speech, get_voice_model
 
 # Get a voice model
 voice = get_voice_model("fr-FR", "FEMALE", "flashcards")
@@ -78,8 +78,8 @@ audio_fast = text_to_speech(
 ### 3. Slow Speech with Word Breaks
 
 ```python
-from src.audio import slow_text_to_speech, get_voice_model
-from src.audio import SPEAKING_RATE_SLOW, DEFAULT_WORD_BREAK_MS
+from audio import slow_text_to_speech, get_voice_model
+from audio import SPEAKING_RATE_SLOW, DEFAULT_WORD_BREAK_MS
 
 voice = get_voice_model("fr-FR", "FEMALE", "flashcards")
 
@@ -101,7 +101,7 @@ audio = slow_text_to_speech(
 ### 4. High-Level Generation Functions
 
 ```python
-from src.audio import (
+from audio import (
     generate_translation_audio,
     generate_fast_audio,
     generate_normal_and_fast_audio,
@@ -134,7 +134,7 @@ normal, fast = generate_normal_and_fast_audio(segments)
 ### 5. Audio Processing
 
 ```python
-from src.audio import (
+from audio import (
     join_audio_segments,
     speed_up_audio,
     export_audio,
@@ -157,7 +157,7 @@ filename = export_audio(audio, filename="output.mp3", format="mp3")
 ### 6. Text Processing
 
 ```python
-from src.audio import clean_tts_text, tokenize_text
+from audio import clean_tts_text, tokenize_text
 
 # Clean HTML entities and special characters
 text = "Bonjour &#39;from&#39; France"
@@ -171,7 +171,7 @@ tokens = tokenize_text("Bonjour comment ça va", language_code="fr-FR")
 ## Complete Example: Generating Translation Audio
 
 ```python
-from src.audio import (
+from audio import (
     load_voices_from_json,
     get_voice_model,
     generate_translation_audio,
@@ -210,7 +210,7 @@ slow_file = export_audio(slow, "slow_speed.mp3")
 The module raises exceptions for errors. Always use try/except:
 
 ```python
-from src.audio import text_to_speech, get_voice_model
+from audio import text_to_speech, get_voice_model
 
 try:
     # Non-existent language
@@ -285,13 +285,13 @@ If migrating from the old `ARCHIVE/audio_generation.py`:
 
 **Old way:**
 ```python
-from src.config_loader import config
+from config_loader import config
 audio = text_to_speech("Hello", gender="FEMALE")
 ```
 
 **New way:**
 ```python
-from src.audio import text_to_speech, get_voice_model
+from audio import text_to_speech, get_voice_model
 voice = get_voice_model("en-GB", "FEMALE", "flashcards")
 audio = text_to_speech("Hello", voice_model=voice)
 ```
@@ -307,7 +307,7 @@ Key differences:
 Available constants in `src.audio.constants`:
 
 ```python
-from src.audio import (
+from audio import (
     SPEAKING_RATE_SLOW,      # 0.85
     SPEAKING_RATE_NORMAL,    # 1.0
     AUDIO_SPEED_NORMAL,      # 1.0

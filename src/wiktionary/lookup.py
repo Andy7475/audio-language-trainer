@@ -7,8 +7,8 @@ from typing import List
 import string
 
 # Database location (save in the wiktionary path)
-from src.connections.wiktionary import get_wiktionary_db
-from src.utils import normalize_lang_code_for_wiktionary
+from connections.wiktionary import get_wiktionary_db
+from utils import normalize_lang_code_for_wiktionary
 
 
 def get_wiktionary_urls(words: List[str], lang_code: str) -> List[str]:

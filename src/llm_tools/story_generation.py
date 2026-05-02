@@ -4,8 +4,8 @@ import random
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.phrases.phrase_model import Phrase
-from src.llm_tools.base import (
+    from phrases.phrase_model import Phrase
+from llm_tools.base import (
     DEFAULT_MODEL,
     get_anthropic_client,
     extract_tool_response,

@@ -11,8 +11,8 @@ Key features:
 - Separate deck generation from file saving for flexibility
 
 Example usage:
-    >>> from src.phrases.phrase_model import get_phrase_by_english
-    >>> from src.models import BCP47Language
+    >>> from phrases.phrase_model import get_phrase_by_english
+    >>> from models import BCP47Language
     >>>
     >>> # Get some phrases
     >>> phrases = [get_phrase_by_english("Hello"), get_phrase_by_english("Goodbye")]
@@ -37,10 +37,10 @@ from tempfile import TemporaryDirectory
 import genanki
 from tqdm import tqdm
 
-from src.models import BCP47Language, get_language
-from src.phrases.phrase_model import Phrase
-from src.utils import load_template
-from src.logger import logger
+from models import BCP47Language, get_language
+from phrases.phrase_model import Phrase
+from utils import load_template
+from logger import logger
 
 # ============================================================================
 # ANKI MODEL DEFINITION

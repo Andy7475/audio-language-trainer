@@ -10,7 +10,7 @@ import tempfile
 import pytest
 import genanki
 
-from src.anki_tools import (
+from anki_tools import (
     get_anki_model,
     create_anki_note_from_phrase,
     create_anki_deck,
@@ -19,9 +19,9 @@ from src.anki_tools import (
     _get_sort_field,
     _string_to_large_int,
 )
-from src.models import BCP47Language
-from src.phrases.phrase_model import Phrase, Translation, PhraseAudio
-from src.audio.voices import VoiceInfo
+from models import BCP47Language
+from phrases.phrase_model import Phrase, Translation, PhraseAudio
+from audio.voices import VoiceInfo
 from pydub import AudioSegment
 from PIL import Image
 

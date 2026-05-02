@@ -50,7 +50,7 @@ class WiktionaryEntry:
 The easiest way is through the `Translation` class:
 
 ```python
-from src.phrases.phrase_model import get_phrase_by_english
+from phrases.phrase_model import get_phrase_by_english
 
 # Get a phrase with French translation
 phrase = get_phrase_by_english("Good morning")
@@ -69,7 +69,7 @@ print(html_links)
 For direct lookups outside the Phrase model:
 
 ```python
-from src.wiktionary import get_or_fetch_wiktionary_entry
+from wiktionary import get_or_fetch_wiktionary_entry
 
 # Single token lookup
 entry = get_or_fetch_wiktionary_entry("bonjour", "fr")
@@ -84,7 +84,7 @@ if entry.exists:
 For multiple tokens (more efficient):
 
 ```python
-from src.wiktionary import batch_get_or_fetch_wiktionary_entries
+from wiktionary import batch_get_or_fetch_wiktionary_entries
 
 tokens = ["bonjour", "merci", "au revoir"]
 entries = batch_get_or_fetch_wiktionary_entries(tokens, "fr")
@@ -143,7 +143,7 @@ links = translation.get_wiktionary_links()
 Tokens are generated from the text using `get_text_tokens()` which uses Google Cloud Natural Language API to tokenize while preserving order:
 
 ```python
-from src.nlp import get_text_tokens
+from nlp import get_text_tokens
 
 text = "Bonjour le monde!"
 tokens = get_text_tokens(text, language_code="fr")
@@ -155,7 +155,7 @@ tokens = get_text_tokens(text, language_code="fr")
 The new `anki_tools` automatically generates wiktionary links:
 
 ```python
-from src.anki_tools import create_and_save_anki_deck
+from anki_tools import create_and_save_anki_deck
 
 phrases = [...]  # Your phrases
 for phrase in phrases:
@@ -173,7 +173,7 @@ create_and_save_anki_deck(
 To disable automatic generation:
 
 ```python
-from src.anki_tools import create_anki_note_from_phrase
+from anki_tools import create_anki_note_from_phrase
 
 note, media = create_anki_note_from_phrase(
     phrase=phrase,
@@ -245,7 +245,7 @@ Wiktionary doesn't distinguish between regional variants:
 ### Automatic Extraction
 
 ```python
-from src.models import BCP47Language
+from models import BCP47Language
 
 language = BCP47Language.get("fr-FR")
 code = language.language  # Returns 'fr'
@@ -299,7 +299,7 @@ wiktionary/bonjour/languages/fr: {
 ### Verification After Migration
 
 ```python
-from src.wiktionary import get_wiktionary_entry
+from wiktionary import get_wiktionary_entry
 
 # Check a migrated entry
 entry = get_wiktionary_entry("bonjour", "fr")
@@ -422,7 +422,7 @@ print(entry_en.url)  # .../wiki/pain#English
 ### Cache Management
 
 ```python
-from src.wiktionary.cache import (
+from wiktionary.cache import (
     get_wiktionary_entry,
     save_wiktionary_entry,
     is_cache_stale,
@@ -449,7 +449,7 @@ if entry:
 links = phrase.translations["fr-FR"].get_wiktionary_links()
 
 # Also good: For custom use cases
-from src.wiktionary import get_or_fetch_wiktionary_entry
+from wiktionary import get_or_fetch_wiktionary_entry
 entry = get_or_fetch_wiktionary_entry("bonjour", "fr")
 ```
 
@@ -489,7 +489,7 @@ else:
 
 **Solution:** Retokenize:
 ```python
-from src.nlp import get_text_tokens
+from nlp import get_text_tokens
 
 translation = phrase.translations["fr-FR"]
 # Re-tokenize with order preservation
@@ -515,7 +515,7 @@ translation.tokens = get_text_tokens(
 **Solution:**
 ```python
 # Verify Firestore connection
-from src.connections.gcloud_auth import get_firestore_client
+from connections.gcloud_auth import get_firestore_client
 
 client = get_firestore_client("firephrases")
 print(f"Connected to: {client.project}")
@@ -528,8 +528,8 @@ print(f"Connected to: {client.project}")
 **Solution:**
 ```python
 # Clear cache entry manually
-from src.wiktionary.cache import save_wiktionary_entry
-from src.wiktionary.lookup import fetch_wiktionary_entry
+from wiktionary.cache import save_wiktionary_entry
+from wiktionary.lookup import fetch_wiktionary_entry
 
 # Force fetch and save
 fresh_entry = fetch_wiktionary_entry("word", "fr")

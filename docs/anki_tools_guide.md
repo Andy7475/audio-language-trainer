@@ -36,8 +36,8 @@ Functions are separated by responsibility:
 ### Basic Example
 
 ```python
-from src.phrases.phrase_model import get_phrase_by_english
-from src.anki_tools import create_and_save_anki_deck
+from phrases.phrase_model import get_phrase_by_english
+from anki_tools import create_and_save_anki_deck
 
 # Get phrases
 phrases = [
@@ -213,7 +213,7 @@ This creates: Spanish → A1 Level → Grammar → Verbs → Present Tense
 Create a custom model with different styling or fields:
 
 ```python
-from src.anki_tools import get_anki_model
+from anki_tools import get_anki_model
 
 # Get the default model as a starting point
 custom_model = get_anki_model(
@@ -333,7 +333,7 @@ create_anki_deck_from_gcs(
 ### New Way
 ```python
 # New: Flexible languages, direct Phrase objects
-from src.phrases.phrase_model import Phrase
+from phrases.phrase_model import Phrase
 
 phrases = [...]  # Get your phrases however you want
 

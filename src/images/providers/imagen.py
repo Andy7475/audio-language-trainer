@@ -9,23 +9,21 @@ from typing import Literal, Optional
 from google import genai
 from google.genai import types
 from PIL import Image
-from src.connections.gcloud_auth import setup_authentication, _project_id
-from src.images.providers.base import ImageProvider
+from connections.gcloud_auth import setup_authentication, _project_id
+from images.providers.base import ImageProvider
 
 
 class ImagenProvider(ImageProvider):
     """Vertex AI Imagen image generation provider."""
 
     # Backoff config
-    _BACKOFF_BASE: float = 5.0   # seconds for first retry
+    _BACKOFF_BASE: float = 5.0  # seconds for first retry
     _BACKOFF_MAX: float = 120.0  # 2-minute cap
-    _MAX_RETRIES: int = 8        # ~120 s total ceiling
+    _MAX_RETRIES: int = 8  # ~120 s total ceiling
 
     def __init__(
         self,
-        model: Literal[
-            "gemini-2.5-flash-image",
-        ] = "gemini-2.5-flash-image",
+        model: Literal["gemini-2.5-flash-image",] = "gemini-2.5-flash-image",
         region: Optional[str] = None,
     ):
         """Initialize Imagen provider.
@@ -109,7 +107,7 @@ class ImagenProvider(ImageProvider):
                 # Exponential backoff with full jitter, capped at _BACKOFF_MAX
                 delay = min(
                     self._BACKOFF_MAX,
-                    self._BACKOFF_BASE * (2 ** attempt),
+                    self._BACKOFF_BASE * (2**attempt),
                 )
                 delay = random.uniform(0, delay)  # full jitter
                 print(
