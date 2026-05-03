@@ -6,28 +6,34 @@ from urllib.parse import quote
 
 # Configuration
 input_file = "../outputs/wiktionary_dump/raw-wiktextract-data.jsonl.gz"
-db_file = "wiktionary.db"
-batch_size = 500_000  # Insert in batches for better performance
+db_file = "wiktionary_pos.db"
+batch_size = 1_000_000
 
 print("Creating database...")
-# Create database and table
 conn = sqlite3.connect(db_file)
 c = conn.cursor()
 
-# Drop table if exists (for clean rebuilds)
-# c.execute('DROP TABLE IF EXISTS entries')
+# Pragmas for fast bulk loading — disable safety features we don't need for a rebuild
+c.execute("PRAGMA journal_mode = OFF")
+c.execute("PRAGMA synchronous = OFF")
+c.execute("PRAGMA cache_size = -1048576")  # 1GB page cache
+c.execute("PRAGMA temp_store = MEMORY")
 
-# Create table with composite primary key
-c.execute("""CREATE TABLE entries 
+c.execute("DROP TABLE IF EXISTS entries")
+
+# No PRIMARY KEY during load — index is built once at the end after all data is inserted
+c.execute("""CREATE TABLE entries
              (word TEXT NOT NULL,
               lang_code TEXT NOT NULL,
-              url TEXT NOT NULL,
-              PRIMARY KEY (word, lang_code))""")
+              pos TEXT NOT NULL,
+              url TEXT NOT NULL)""")
 
 print("Processing Wiktionary dump...")
 batch = []
 total_entries = 0
+i = 0
 
+c.execute("BEGIN")
 with gzip.open(input_file, "rt", encoding="utf-8") as f:
     for i, line in enumerate(tqdm(f, desc="Processing entries")):
         try:
@@ -35,24 +41,22 @@ with gzip.open(input_file, "rt", encoding="utf-8") as f:
             word = item.get("word")
             lang_code = item.get("lang_code")
             lang = item.get("lang")
+            pos = item.get("pos")
 
-            # Skip if missing required fields
-            if not word or not lang_code or not lang:
+            if not word or not lang_code or not lang or not pos:
                 continue
 
-            # Build URL
             url = f"https://en.wiktionary.org/wiki/{word}#{lang}"
             safe_url = url.replace(" ", "_")
             safe_url = quote(safe_url, safe=":/#")
 
-            # Add to batch
-            batch.append((word, lang_code, safe_url))
+            batch.append((word, lang_code, pos, safe_url))
             total_entries += 1
 
-            # Insert batch when it reaches batch_size
             if len(batch) >= batch_size:
-                c.executemany("INSERT OR REPLACE INTO entries VALUES (?,?,?)", batch)
+                c.executemany("INSERT INTO entries VALUES (?,?,?,?)", batch)
                 conn.commit()
+                c.execute("BEGIN")
                 batch = []
 
         except json.JSONDecodeError as e:
@@ -60,16 +64,24 @@ with gzip.open(input_file, "rt", encoding="utf-8") as f:
         except Exception as e:
             print(f"Error on line {i}: {e}")
 
-# Insert remaining entries
 if batch:
-    c.executemany("INSERT OR REPLACE INTO entries VALUES (?,?,?)", batch)
+    c.executemany("INSERT INTO entries VALUES (?,?,?,?)", batch)
     conn.commit()
 
-print("\nCreating index...")
-c.execute("CREATE INDEX IF NOT EXISTS idx_lookup ON entries(word, lang_code)")
+# Deduplicate (same word+lang+pos can appear multiple times in the dump)
+print("\nDeduplicating...")
+c.execute("""
+    DELETE FROM entries WHERE rowid NOT IN (
+        SELECT MIN(rowid) FROM entries GROUP BY word, lang_code, pos
+    )
+""")
 conn.commit()
 
-# Get statistics
+# Build the unique index once, over the final data
+print("Creating index...")
+c.execute("CREATE UNIQUE INDEX idx_lookup ON entries(word, lang_code, pos)")
+conn.commit()
+
 c.execute("SELECT COUNT(*) FROM entries")
 count = c.fetchone()[0]
 
@@ -82,7 +94,7 @@ print("\n✓ Database created successfully!")
 print(f"  File: {db_file}")
 print(f"  Total entries: {count:,}")
 print(f"  Languages: {lang_count}")
-print(f"  Processed lines: {i+1:,}")
+print(f"  Processed lines: {i + 1:,}")
 
 # Test the lookup function
 print("\n--- Testing lookup function ---")
@@ -90,20 +102,33 @@ conn = sqlite3.connect(db_file)
 c = conn.cursor()
 
 
-def get_wiktionary_link(word, lang_code):
-    c.execute("SELECT url FROM entries WHERE word=? AND lang_code=?", (word, lang_code))
+def get_wiktionary_link(word, lang_code, pos=None):
+    if pos:
+        c.execute(
+            "SELECT url FROM entries WHERE word=? AND lang_code=? AND pos=?",
+            (word, lang_code, pos),
+        )
+    else:
+        c.execute(
+            "SELECT url FROM entries WHERE word=? AND lang_code=?", (word, lang_code)
+        )
     result = c.fetchone()
     return result[0] if result else None
 
 
-# Test with a few examples
-test_cases = [("hello", "en"), ("g'day", "en"), ("you're", "en")]
+test_cases = [
+    ("hello", "en", None),
+    ("run", "en", "verb"),
+    ("run", "en", "noun"),
+    ("run", "en", "adj"),
+]
 
-for word, lang_code in test_cases:
-    url = get_wiktionary_link(word, lang_code)
+for word, lang_code, pos in test_cases:
+    url = get_wiktionary_link(word, lang_code, pos)
+    label = f"{word} ({lang_code}, pos={pos})"
     if url:
-        print(f"✓ {word} ({lang_code}): {url}")
+        print(f"✓ {label}: {url}")
     else:
-        print(f"✗ {word} ({lang_code}): Not found")
+        print(f"✗ {label}: Not found")
 
 conn.close()

@@ -309,10 +309,9 @@ def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list
 
 
 def get_vocab_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
-    """Extract vocab (non-verbs) from a set of (word, pos) tuples."""
-    vocab = [
-        word for word, pos in lemmas_and_pos if pos not in ["VERB", "AUX", "PUNCT"]
-    ]
+    """Extract vocabulary words suitable for learning from a set of (word, pos) tuples."""
+    # Keep only common nouns and adjectives, and exclude proper names.
+    vocab = [word for word, pos in lemmas_and_pos if pos in ["NOUN", "ADJ"]]
     return list(set(vocab))
 
 

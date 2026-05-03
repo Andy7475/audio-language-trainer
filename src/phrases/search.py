@@ -376,12 +376,16 @@ def find_phrases_by_vocab_dict(
         database_name=database_name,
     )
 
+    # we add tokens and vocab to the vocab checker to minimise too many returns due to lemma issues.
     selected = _greedy_set_cover(
         candidates=candidates,
         target_verbs=target_verbs,
         target_vocab=target_vocab,
         get_verbs_fn=lambda p: p.translations[language_tag].verbs or [],
-        get_vocab_fn=lambda p: p.translations[language_tag].vocab or [],
+        get_vocab_fn=lambda p: (
+            p.translations[language_tag].vocab + p.translations[language_tag].tokens
+            or []
+        ),
     )
 
     # Compute what the selected phrases collectively cover

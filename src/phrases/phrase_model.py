@@ -192,6 +192,7 @@ class Phrase(FirePhraseDataModel):
         phrase_hash: Optional[str] = None,
         overwrite: bool = False,
         split_on_space: bool = False,
+        tags: str | List[str] | None = None,
     ) -> "Phrase":
         """Factory method to create a Phrase from a non-English source phrase.
 
@@ -226,6 +227,7 @@ class Phrase(FirePhraseDataModel):
             )
         except ValueError:
             from phrases.search import get_phrase as _get_phrase
+
             existing_hash = phrase_hash or generate_phrase_hash(english_text)
             phrase = _get_phrase(existing_hash)
             if phrase is None:
@@ -236,6 +238,7 @@ class Phrase(FirePhraseDataModel):
             translated_text=foreign_phrase,
             overwrite=True,
             split_on_space=split_on_space,
+            tags=tags,
         )
 
         return phrase
@@ -327,6 +330,7 @@ class Phrase(FirePhraseDataModel):
         overwrite: bool = False,
         translated_text: str | None = None,
         split_on_space: bool = False,
+        tags: str | List[str] | None = None,
     ) -> Translation:
         """Translate the phrase to a target language.
 
@@ -393,6 +397,9 @@ class Phrase(FirePhraseDataModel):
             target_language
         )
         # Step 4: Create the Translation object
+        normalised_tags: List[str] = (
+            [tags] if isinstance(tags, str) else (tags or [])
+        )
         translation = Translation(
             key=self.key,
             firestore_document_ref=translation_document_ref,
@@ -402,6 +409,7 @@ class Phrase(FirePhraseDataModel):
             tokens=tokens,
             verbs=nlp_result["verbs"],
             vocab=nlp_result["vocab"],
+            tags=normalised_tags,
         )
         translation._set_image_file_path(default=True)
 
