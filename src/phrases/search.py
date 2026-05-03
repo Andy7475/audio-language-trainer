@@ -108,6 +108,11 @@ def _translation_coverage(
     return len(tv & remaining_verbs) + len(tw & remaining_vocab)
 
 
+def _to_lower(tokens: Set[str]) -> Set[str]:
+    """Convert a list of tokens to lowercase."""
+    return set([t.lower() for t in tokens])
+
+
 def _greedy_set_cover(
     candidates: List[Phrase],
     target_verbs: Set[str],
@@ -131,8 +136,8 @@ def _greedy_set_cover(
     if not (target_verbs or target_vocab):
         return []
 
-    remaining_verbs = set(target_verbs)
-    remaining_vocab = set(target_vocab)
+    remaining_verbs = _to_lower(set(target_verbs))
+    remaining_vocab = _to_lower(set(target_vocab))
     pool = list(candidates)  # never mutate the caller's list
     selected: List[Phrase] = []
 
@@ -141,8 +146,8 @@ def _greedy_set_cover(
         best_count = 0
 
         for phrase in pool:
-            pv = set(get_verbs_fn(phrase))
-            pw = set(get_vocab_fn(phrase))
+            pv = _to_lower(set(get_verbs_fn(phrase)))
+            pw = _to_lower(set(get_vocab_fn(phrase)))
             count = len(pv & remaining_verbs) + len(pw & remaining_vocab)
             if count > best_count:
                 best_phrase = phrase
@@ -157,8 +162,10 @@ def _greedy_set_cover(
 
         selected.append(best_phrase)
         pool.remove(best_phrase)
-        remaining_verbs -= set(get_verbs_fn(best_phrase))
-        remaining_vocab -= set(get_vocab_fn(best_phrase))
+        # Must lowercase before subtracting: remaining sets are already lowercased
+        # but tokens/verbs from phrases may have mixed case (e.g. "Ska" at sentence start).
+        remaining_verbs -= _to_lower(set(get_verbs_fn(best_phrase)))
+        remaining_vocab -= _to_lower(set(get_vocab_fn(best_phrase)))
 
     return selected
 
@@ -381,24 +388,29 @@ def find_phrases_by_vocab_dict(
         candidates=candidates,
         target_verbs=target_verbs,
         target_vocab=target_vocab,
-        get_verbs_fn=lambda p: p.translations[language_tag].verbs or [],
+        get_verbs_fn=lambda p: (
+            p.translations[language_tag].verbs + p.translations[language_tag].tokens
+            or []
+        ),
         get_vocab_fn=lambda p: (
             p.translations[language_tag].vocab + p.translations[language_tag].tokens
             or []
         ),
     )
 
-    # Compute what the selected phrases collectively cover
+    # Compute what the selected phrases collectively cover.
+    # Use same logic as the greedy algo (tokens supplement lemmas) and lowercase
+    # to match case-insensitive coverage detection.
     covered_verbs: Set[str] = set()
     covered_vocab: Set[str] = set()
     for p in selected:
         t = p.translations[language_tag]
-        covered_verbs |= set(t.verbs or [])
-        covered_vocab |= set(t.vocab or [])
+        covered_verbs |= _to_lower(set((t.verbs or []) + (t.tokens or [])))
+        covered_vocab |= _to_lower(set((t.vocab or []) + (t.tokens or [])))
 
     missing: Dict[str, List[str]] = {
-        "verbs": sorted(target_verbs - covered_verbs),
-        "vocab": sorted(target_vocab - covered_vocab),
+        "verbs": sorted(v for v in target_verbs if v.lower() not in covered_verbs),
+        "vocab": sorted(v for v in target_vocab if v.lower() not in covered_vocab),
     }
 
     return selected, missing

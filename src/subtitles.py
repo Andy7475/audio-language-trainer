@@ -50,8 +50,9 @@ def process_subtitles(
         # Remove newlines and extra spaces
         text = text.replace("\n", " ")
         text = re.sub(r"\s+", " ", text).strip()
-        words = get_text_tokens(text, language_code, split_on_space=split_on_space)
-        text = " ".join(strip_punctuation(word) for word in words)
+
+        # Strip leading speaker-change hyphens (e.g. "- Flytta" or "-Flytta")
+        text = re.sub(r"^-\s*", "", text).strip()
 
         if text and text not in seen:
             seen.add(text)
@@ -79,11 +80,19 @@ def filter_wiktionary_words(
                   one of these pos values. Defaults to None (accept any pos).
     """
     urls = get_wiktionary_urls(words, language_code, pos_list=pos_list)
-    return [word for word, url_or_word in zip(words, urls) if url_or_word.startswith("<a href")]
+    return [
+        word
+        for word, url_or_word in zip(words, urls)
+        if url_or_word.startswith("<a href")
+    ]
 
 
 def get_subtitle_tokens(
-    tokens: List[str], language_code: str, min_length: int = 3, to_lower: bool = True
+    tokens: List[str],
+    language_code: str,
+    min_length: int = 3,
+    to_lower: bool = True,
+    pos_list: Optional[List[str]] = CONTENT_WORD_POS,
 ) -> List[str]:
     """Strip punctuation, filter short tokens, lowercase, and verify against Wiktionary content words."""
     tokens = [strip_punctuation(t) for t in tokens]
@@ -91,4 +100,6 @@ def get_subtitle_tokens(
     if to_lower:
         valid_tokens = [t.lower() for t in valid_tokens]
     unique_tokens = list(set(valid_tokens))
-    return filter_wiktionary_words(unique_tokens, language_code, pos_list=CONTENT_WORD_POS)
+    return sorted(
+        filter_wiktionary_words(unique_tokens, language_code, pos_list=pos_list)
+    )

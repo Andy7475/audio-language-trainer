@@ -1,6 +1,7 @@
-Generate phrases for the following vocabulary words (note that these words are NOT verbs):
+Generate exactly one phrase per target vocabulary word:
 $target_words
-Additional context - nearby vocabulary words you may use to create interesting combinations:
+
+Nearby context words you MAY use to create natural combinations (only use if the combination makes logical sense):
 $context_words
 
-Use the generate_vocab_phrases tool to return your response with the structured phrase data for all words.
+Use the generate_vocab_phrases tool to return your structured phrase data for all target words.

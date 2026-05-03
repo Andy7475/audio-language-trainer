@@ -14,6 +14,33 @@ from utils import normalize_lang_code_for_wiktionary
 CONTENT_WORD_POS = ["verb", "noun", "adj"]
 
 
+def word_in_wiktionary(word: str, lang_code: str, pos: Optional[str] = None) -> bool:
+    """Return True if *word* has an entry in the local Wiktionary database.
+
+    Uses an exact lowercase match.  Deliberately does NOT try stripped or case
+    variants — NLP lemmas are already lowercase, and artefacts like '-flytta'
+    should fail the check rather than being rescued by stripping the hyphen.
+
+    Args:
+        word: Lemma to check (expected to already be lowercase).
+        lang_code: Language code (e.g. 'sv', 'en').
+        pos: If given, also require this part of speech ('verb', 'noun', 'adj').
+    """
+    normalized = normalize_lang_code_for_wiktionary(lang_code)
+    cursor = get_wiktionary_db().cursor()
+    if pos:
+        cursor.execute(
+            "SELECT 1 FROM entries WHERE word=? AND lang_code=? AND pos=? LIMIT 1",
+            (word.lower(), normalized, pos),
+        )
+    else:
+        cursor.execute(
+            "SELECT 1 FROM entries WHERE word=? AND lang_code=? LIMIT 1",
+            (word.lower(), normalized),
+        )
+    return cursor.fetchone() is not None
+
+
 def get_wiktionary_urls(
     words: List[str],
     lang_code: str,

@@ -272,7 +272,9 @@ def get_verbs_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
 
 
 def get_verbs_and_vocab(
-    phrases: List[str], language: Union[Language, str]
+    phrases: List[str],
+    language: Union[Language, str],
+    filter_by_wiktionary: bool = False,
 ) -> Dict[str, List[str]]:
     """
     Extract verbs and vocab from a list of phrases, returning a dict.
@@ -285,6 +287,10 @@ def get_verbs_and_vocab(
     Args:
         phrases:  List of phrase strings to analyse.
         language: Target language as a ``Language`` object or BCP-47 string.
+        filter_by_wiktionary: If True, discard any lemma not found in the local
+            Wiktionary database (verbs checked against pos='verb', vocab against
+            pos='noun' or pos='adj').  Useful for noisy input like subtitle data
+            where NLP artefacts (e.g. '-flytta') may appear as false positives.
 
     Returns:
         Dict with keys ``'verbs'`` and ``'vocab'``, each containing a
@@ -296,10 +302,26 @@ def get_verbs_and_vocab(
     language_code: str = lang_obj.language
 
     lemmas_and_pos = extract_lemmas_and_pos(phrases, language_code)
-    return {
+    result = {
         "verbs": get_verbs_from_lemmas_and_pos(lemmas_and_pos),
         "vocab": get_vocab_from_lemmas_and_pos(lemmas_and_pos),
     }
+
+    if filter_by_wiktionary:
+        from wiktionary.lookup import word_in_wiktionary
+
+        result["verbs"] = [
+            w for w in result["verbs"] if word_in_wiktionary(w, language_code, pos="verb")
+        ]
+        result["vocab"] = [
+            w
+            for w in result["vocab"]
+            if word_in_wiktionary(w, language_code, pos="noun")
+            or word_in_wiktionary(w, language_code, pos="adj")
+            or word_in_wiktionary(w, language_code, pos="adv")
+        ]
+
+    return result
 
 
 def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
@@ -310,8 +332,7 @@ def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list
 
 def get_vocab_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract vocabulary words suitable for learning from a set of (word, pos) tuples."""
-    # Keep only common nouns and adjectives, and exclude proper names.
-    vocab = [word for word, pos in lemmas_and_pos if pos in ["NOUN", "ADJ"]]
+    vocab = [word for word, pos in lemmas_and_pos if pos in ["NOUN", "ADJ", "ADV"]]
     return list(set(vocab))
 
 

@@ -4,6 +4,7 @@ import pytest
 
 from phrases.phrase_model import Phrase, Translation
 from phrases.search import (
+    _greedy_set_cover,
     find_minimum_coverage_phrases,
     find_phrases_by_token_coverage,
 )
@@ -414,3 +415,169 @@ class TestIntegrationScenarios:
         # Verify all results have the required French tokens
         for phrase, ratio, matched in filtered:
             assert len(matched & french_tokens) > 0
+
+
+# ---------------------------------------------------------------------------
+# Fixtures mirroring real Firestore sv-SE data (from diagnose_phrase_search.py)
+# ---------------------------------------------------------------------------
+
+LANG_SV = "sv-SE"
+
+
+def _sv_phrase(
+    key: str,
+    english: str,
+    tokens: list,
+    verbs: list = None,
+    vocab: list = None,
+) -> Phrase:
+    """Build a minimal Phrase with a sv-SE translation matching real Firestore shape."""
+    p = Phrase(
+        phrase_hash=key,
+        english=english,
+        english_lower=english.lower(),
+        tokens=english.split(),
+        verbs=[],
+        vocab=[],
+    )
+    p.translations[LANG_SV] = Translation(
+        phrase_hash=key,
+        language=BCP47Language.get(LANG_SV),
+        text=" ".join(tokens),
+        text_lower=" ".join(tokens).lower(),
+        tokens=tokens,
+        verbs=verbs or [],
+        vocab=vocab or [],
+    )
+    return p
+
+
+# Derived from real Firestore phrases (verified by diagnose_phrase_search.py):
+#   "Ska du pulla mig?" → tokens=['Ska','du','pulla','mig?'], verbs=['skola','pulla'], vocab=['du','jag']
+#   "Jag förstår problemet" → tokens=['Jag','förstår','problemet'], verbs=['förstå'], vocab=['problem','jag']
+#   "Tänker du åka?" → tokens=['Tänker','du','åka?'], verbs=['tänka','åka'], vocab=['du']
+#   "Kan jag boka ett bord?" → tokens=['Kan','jag','boka','ett','bord?'], verbs=['kunna','boka'], vocab=['en','bord','jag']
+
+PHRASE_SKA_PULLA = _sv_phrase(
+    key="ska_du_pulla_mig_abc",
+    english="Are you going to fuck me?",
+    tokens=["Ska", "du", "pulla", "mig?"],
+    verbs=["skola", "pulla"],
+    vocab=["du", "jag"],
+)
+PHRASE_FORSTAAR_PROBLEMET = _sv_phrase(
+    key="jag_forstar_problemet_abc",
+    english="I understand the problem",
+    tokens=["Jag", "förstår", "problemet"],
+    verbs=["förstå"],
+    vocab=["problem", "jag"],
+)
+PHRASE_TANKER_ÅKAS = _sv_phrase(
+    key="tanker_du_aka_abc",
+    english="Are you planning to go?",
+    tokens=["Tänker", "du", "åka?"],
+    verbs=["tänka", "åka"],
+    vocab=["du"],
+)
+PHRASE_KAN_BOKA = _sv_phrase(
+    key="kan_jag_boka_ett_bord_abc",
+    english="Can I book a table?",
+    tokens=["Kan", "jag", "boka", "ett", "bord?"],
+    verbs=["kunna", "boka"],
+    vocab=["en", "bord", "jag"],
+)
+
+
+def _get_verbs(p: Phrase) -> list:
+    return p.translations[LANG_SV].verbs + p.translations[LANG_SV].tokens
+
+
+def _get_vocab(p: Phrase) -> list:
+    return p.translations[LANG_SV].vocab + p.translations[LANG_SV].tokens
+
+
+class TestGreedySetCoverWithTokens:
+    """Tests for _greedy_set_cover correctness when using verbs+tokens as coverage source.
+
+    These reproduce the real Firestore bug where "ska" appears as token "Ska" (capital S
+    at sentence start) but is never in t.verbs — the lemma is 'skola'.  The old code did
+    not lowercase before subtracting from remaining_verbs, so the loop ran 5 times instead
+    of 2.
+    """
+
+    def test_sentence_initial_capital_token_covered(self):
+        """A token at sentence start ('Ska') should satisfy a lowercase target ('ska')."""
+        result = _greedy_set_cover(
+            candidates=[PHRASE_SKA_PULLA],
+            target_verbs={"ska"},
+            target_vocab=set(),
+            get_verbs_fn=_get_verbs,
+            get_vocab_fn=_get_vocab,
+        )
+        assert len(result) == 1
+
+    def test_ska_problem_returns_two_phrases(self):
+        """The real reported bug: {'verbs':['ska'],'vocab':['problem']} should give ≤2 phrases."""
+        all_phrases = [
+            PHRASE_SKA_PULLA,
+            PHRASE_FORSTAAR_PROBLEMET,
+            PHRASE_TANKER_ÅKAS,
+            PHRASE_KAN_BOKA,
+        ]
+        result = _greedy_set_cover(
+            candidates=all_phrases,
+            target_verbs={"ska"},
+            target_vocab={"problem"},
+            get_verbs_fn=_get_verbs,
+            get_vocab_fn=_get_vocab,
+        )
+        assert len(result) <= 2
+
+        # Verify coverage: 'ska' found in verbs or tokens (lower), 'problem' in vocab or tokens
+        covered_verbs = set()
+        covered_vocab = set()
+        for p in result:
+            t = p.translations[LANG_SV]
+            covered_verbs |= {x.lower() for x in (t.verbs + t.tokens)}
+            covered_vocab |= {x.lower() for x in (t.vocab + t.tokens)}
+
+        assert "ska" in covered_verbs
+        assert "problem" in covered_vocab
+
+    def test_two_verbs_in_one_phrase_returns_single_phrase(self):
+        """A phrase with 2 verbs in its verbs list covers both targets in one pick."""
+        result = _greedy_set_cover(
+            candidates=[PHRASE_TANKER_ÅKAS, PHRASE_KAN_BOKA],
+            target_verbs={"tänka", "åka"},
+            target_vocab=set(),
+            get_verbs_fn=_get_verbs,
+            get_vocab_fn=_get_vocab,
+        )
+        assert len(result) == 1
+        assert result[0] is PHRASE_TANKER_ÅKAS
+
+    def test_two_verbs_via_lemma_single_phrase(self):
+        """Searching by lemma ('kunna','boka') also resolves to one phrase."""
+        result = _greedy_set_cover(
+            candidates=[PHRASE_TANKER_ÅKAS, PHRASE_KAN_BOKA],
+            target_verbs={"kunna", "boka"},
+            target_vocab=set(),
+            get_verbs_fn=_get_verbs,
+            get_vocab_fn=_get_vocab,
+        )
+        assert len(result) == 1
+        assert result[0] is PHRASE_KAN_BOKA
+
+    def test_coverage_not_duplicated_across_verbs_and_vocab(self):
+        """Tokens feed both verbs and vocab fns; a token-hit on verbs must still clear that
+        target from remaining_verbs so the loop terminates promptly."""
+        # Only PHRASE_SKA_PULLA is in the pool; it covers 'ska' via token.
+        result = _greedy_set_cover(
+            candidates=[PHRASE_SKA_PULLA],
+            target_verbs={"ska"},
+            target_vocab=set(),
+            get_verbs_fn=_get_verbs,
+            get_vocab_fn=_get_vocab,
+        )
+        # Must terminate — if the bug were present this would loop until pool exhausted.
+        assert len(result) == 1
