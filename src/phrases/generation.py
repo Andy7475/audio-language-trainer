@@ -7,8 +7,11 @@ generating phrases and naturally tracking which words have been used.
 
 from typing import Dict, List, Tuple
 
+from langcodes import Language
+
 from llm_tools.verb_phrase_generation import generate_verb_phrases
 from llm_tools.vocab_phrase_generation import generate_vocab_phrases
+from models import get_language
 from nlp import get_vocab_from_phrases
 from logger import logger
 
@@ -16,6 +19,7 @@ from logger import logger
 def generate_phrases_from_vocab_dict(
     vocab_dict: Dict[str, List[str]],
     max_iterations: int = 10,
+    language: Language | str | None = None,
 ) -> Tuple[List[str], Dict[str, any]]:
     """Generate English phrases from a vocabulary dictionary using verb and vocab iteration.
 
@@ -26,6 +30,8 @@ def generate_phrases_from_vocab_dict(
     Args:
         vocab_dict: Dictionary with keys 'verbs' and 'vocab' containing lists of words
         max_iterations: Maximum number of vocabulary iteration rounds (only applies to vocab generation)
+        language: Target language for phrase generation (default: en-GB). When non-English,
+            the LLM generates phrases in that language instead of English.
 
     Returns:
         Tuple containing:
@@ -47,6 +53,8 @@ def generate_phrases_from_vocab_dict(
     if "verbs" not in vocab_dict or "vocab" not in vocab_dict:
         raise ValueError("vocab_dict must contain 'verbs' and 'vocab' keys")
 
+    language = get_language(language)
+
     all_phrases = []
     tracking_info = {
         "total_phrases": 0,
@@ -63,7 +71,7 @@ def generate_phrases_from_vocab_dict(
 
     # Generate phrases from verbs
     logger.info(f"Starting verb phrase generation. {len(verb_list)} verbs to process.")
-    all_phrases, verb_tracking = _generate_verb_phrases_batch(verb_list)
+    all_phrases, verb_tracking = _generate_verb_phrases_batch(verb_list, language=language)
     tracking_info["verb_phrases"] = len(all_phrases)
     tracking_info["verbs_processed"] = verb_tracking["verbs_processed"]
     tracking_info["words_used"].extend(verb_tracking["additional_words"])
@@ -75,7 +83,7 @@ def generate_phrases_from_vocab_dict(
         f"\nStarting vocab phrase generation. {len(vocab_list)} vocab words to process."
     )
     vocab_phrases, vocab_tracking = _generate_vocab_phrases_batch(
-        vocab_list, max_iterations=max_iterations
+        vocab_list, max_iterations=max_iterations, language=language
     )
     all_phrases.extend(vocab_phrases)
     tracking_info["vocab_phrases"] = len(vocab_phrases)
@@ -92,6 +100,7 @@ def generate_phrases_from_vocab_dict(
 
 def _generate_verb_phrases_batch(
     verb_list: List[str],
+    language: Language | None = None,
 ) -> Tuple[List[str], Dict[str, any]]:
     """Process all verbs and generate phrases for each.
 
@@ -111,7 +120,7 @@ def _generate_verb_phrases_batch(
             logger.info(
                 f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'"
             )
-            result = generate_verb_phrases(verb)
+            result = generate_verb_phrases(verb, language=language)
 
             # Extract all phrases
             for base_phrase in result.get("base_phrases", []):
@@ -154,6 +163,7 @@ def _generate_vocab_phrases_batch(
     vocab_list: List[str],
     max_iterations: int = 10,
     batch_size: int = 20,
+    language: Language | None = None,
 ) -> Tuple[List[str], Dict[str, any]]:
     """Process vocabulary items and generate phrases for each in batches.
 
@@ -206,7 +216,7 @@ def _generate_vocab_phrases_batch(
                     f"    [{batch_start_display}-{batch_end_display}/{initial_count}] Generating phrases for {len(batch_words)} words"
                 )
                 result = generate_vocab_phrases(
-                    batch_words, context_words=context_words
+                    batch_words, context_words=context_words, language=language
                 )
 
                 # Extract phrases from results

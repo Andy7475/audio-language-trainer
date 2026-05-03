@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 
 import langcodes
+from langcodes import Language
 import html
 from connections.gcloud_auth import (
     get_translate_v3_client,
@@ -8,13 +9,13 @@ from connections.gcloud_auth import (
     setup_authentication,
 )
 from llm_tools.review_translation import refine_translation
-from models import BCP47Language, get_language
+from models import get_language
 
 
 def translate_with_google_translate(
     text: Union[str, List[str]],
-    target_language: Union[str, BCP47Language],
-    source_language: Union[str, BCP47Language] = "en",
+    target_language: Union[str, Language],
+    source_language: Union[str, Language] = "en",
     batch_size: int = 128,
 ) -> Union[str, List[str]]:
     """
@@ -77,8 +78,8 @@ def translate_with_google_translate(
 def refine_translation_with_anthropic(
     source_phrase: str,
     initial_translation: str,
-    target_language: Union[str, BCP47Language],
-    source_language: Union[str, BCP47Language] = None,
+    target_language: Union[str, Language],
+    source_language: Union[str, Language, None] = None,
     model: Optional[str] = None,
 ) -> str:
     """

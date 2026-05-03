@@ -2,12 +2,15 @@
 
 from typing import Any
 
+from langcodes import Language
+
 from llm_tools.base import (
     load_prompt_template,
     get_anthropic_client,
     extract_tool_response,
     DEFAULT_MODEL,
 )
+from models import get_language
 
 
 # Tool definition for vocab phrase generation
@@ -45,6 +48,7 @@ def generate_vocab_phrases(
     model: str = DEFAULT_MODEL,
     max_tokens: int = 2000,
     temperature: float = 0.2,
+    language: Language | str | None = None,
 ) -> dict[str, Any]:
     """Generate descriptive phrases for multiple vocabulary words (no verbs).
 
@@ -52,11 +56,12 @@ def generate_vocab_phrases(
     and positional words. Also tracks additional words used for vocabulary list management.
 
     Args:
-        target_words: List of vocabulary words to create phrases around (e.g., ["apple", "table", "red"])
+        target_words: List of vocabulary words to create phrases around
         context_words: Optional list of nearby vocabulary words that can be used in phrases
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
         temperature: Temperature for generation
+        language: Target language for phrase generation (default: en-GB)
 
     Returns:
         Dict containing:
@@ -85,12 +90,15 @@ def generate_vocab_phrases(
         else:
             context_str = "(No context words provided)"
 
+        lang = get_language(language)
+        language_name = Language.get(lang.language or "en").display_name() if lang else "English"
+
         # Load prompts from template files
         system_template = load_prompt_template("vocab_phrase_generation", "system")
         user_template = load_prompt_template("vocab_phrase_generation", "user")
 
         # Substitute variables
-        system_prompt = system_template.substitute()
+        system_prompt = system_template.substitute(language_name=language_name)
         user_prompt = user_template.substitute(
             target_words=target_words_str, context_words=context_str
         )

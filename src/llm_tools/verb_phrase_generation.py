@@ -2,12 +2,15 @@
 
 from typing import Any
 
+from langcodes import Language
+
 from llm_tools.base import (
     load_prompt_template,
     get_anthropic_client,
     extract_tool_response,
     DEFAULT_MODEL,
 )
+from models import get_language
 
 
 # Tool definition for verb phrase generation
@@ -57,6 +60,7 @@ def generate_verb_phrases(
     model: str = DEFAULT_MODEL,
     max_tokens: int = 1500,
     temperature: float = 0.2,
+    language: Language | str | None = None,
 ) -> dict[str, Any]:
     """Generate phrases featuring a specific verb in different tenses and meanings.
 
@@ -65,10 +69,11 @@ def generate_verb_phrases(
     in the phrases to support vocabulary list management.
 
     Args:
-        verb: The English verb to generate phrases for (e.g., "run", "want", "break")
+        verb: The verb to generate phrases for
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
         temperature: Temperature for generation
+        language: Target language for phrase generation (default: en-GB)
 
     Returns:
         Dict containing:
@@ -96,13 +101,16 @@ def generate_verb_phrases(
         RuntimeError: If phrase generation fails
     """
     try:
+        lang = get_language(language)
+        language_name = Language.get(lang.language or "en").display_name() if lang else "English"
+
         # Load prompts from template files
         system_template = load_prompt_template("verb_phrase_generation", "system")
         user_template = load_prompt_template("verb_phrase_generation", "user")
 
         # Substitute variables
-        system_prompt = system_template.substitute()
-        user_prompt = user_template.substitute(verb=verb)
+        system_prompt = system_template.substitute(language_name=language_name)
+        user_prompt = user_template.substitute(verb=verb, language_name=language_name)
 
         # Get Anthropic client and make API call
         client = get_anthropic_client()

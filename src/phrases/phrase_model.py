@@ -184,6 +184,62 @@ class Phrase(FirePhraseDataModel):
 
         return phrase
 
+    @classmethod
+    def create_from_foreign(
+        cls,
+        foreign_phrase: str,
+        language: Language | str,
+        phrase_hash: Optional[str] = None,
+        overwrite: bool = False,
+        split_on_space: bool = False,
+    ) -> "Phrase":
+        """Factory method to create a Phrase from a non-English source phrase.
+
+        Translates the foreign phrase to English, creates the canonical Phrase via
+        Phrase.create(), then immediately attaches the original foreign text as a
+        Translation using the known text (no second API call needed).
+
+        Args:
+            foreign_phrase: The source phrase in a non-English language
+            language: BCP-47 language of the foreign phrase (e.g., "sv-SE")
+            phrase_hash: Optional hash override. Defaults to generating from English text
+            overwrite: If True, skip already-exists check
+            split_on_space: Use space-based tokenization for the foreign language
+
+        Returns:
+            Phrase with English as the canonical text and the foreign language as a Translation
+        """
+        language = get_language(language)
+
+        result = translate_with_google_translate(
+            text=foreign_phrase,
+            target_language=Language.get("en-GB"),
+            source_language=language.language or "en",
+        )
+        english_text = result if isinstance(result, str) else result[0]
+
+        try:
+            phrase = cls.create(
+                english_phrase=english_text,
+                phrase_hash=phrase_hash,
+                overwrite=overwrite,
+            )
+        except ValueError:
+            from phrases.search import get_phrase as _get_phrase
+            existing_hash = phrase_hash or generate_phrase_hash(english_text)
+            phrase = _get_phrase(existing_hash)
+            if phrase is None:
+                raise ValueError(f"Phrase {existing_hash} not found in Firestore")
+
+        phrase.translate(
+            target_language=language,
+            translated_text=foreign_phrase,
+            overwrite=True,
+            split_on_space=split_on_space,
+        )
+
+        return phrase
+
     def _get_translation_firestore_document_ref(
         self, language: Language
     ) -> DocumentReference:

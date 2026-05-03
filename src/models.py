@@ -21,7 +21,7 @@ BCP47Language = Annotated[
 ]
 
 
-def get_language(language: str | Language | None) -> Language | None:
+def get_language(language: str | Language) -> Language:
     """
     Convert language parameter to Language (Language) object.
 
@@ -40,8 +40,6 @@ def get_language(language: str | Language | None) -> Language | None:
         >>> lang.to_tag()
         'fr-FR'
     """
-    if language is None:
-        return None
     if isinstance(language, str):
         return Language.get(language)
     return language
