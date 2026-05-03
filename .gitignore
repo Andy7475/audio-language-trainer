@@ -18,8 +18,9 @@ snoop.txt
 
 **/.claude/settings.local.json
 notebooks/app.log
-**/wiktionary.db
+*.db
 app.log
 *.log
 /data/long_audio/
 app.log
+
