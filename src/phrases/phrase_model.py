@@ -504,6 +504,7 @@ class Phrase(FirePhraseDataModel):
         overwrite: bool = False,
         local: bool = True,
         split_on_space: bool = False,
+        use_story_voice_for_normal: bool = False,
     ) -> None:
         """Generate audio for all translations (or a specific language).
 
@@ -517,6 +518,10 @@ class Phrase(FirePhraseDataModel):
                      If None (default), generates audio for all translations.
             gender: Voice gender for TTS ("MALE" or "FEMALE", default: "FEMALE")
             overwrite: If True, regenerate audio even if it already exists (default: False)
+            use_story_voice_for_normal: If True and context is "flashcard", use the
+                higher quality "story" voice model for the normal-speed audio, while
+                the "slow" audio still uses the flashcard voice for SSML word
+                separation.
 
         Example:
             >>> phrase = Phrase.create("Hello, how are you?")
@@ -535,6 +540,7 @@ class Phrase(FirePhraseDataModel):
                 overwrite=overwrite,
                 local=local,
                 split_on_space=split_on_space,
+                use_story_voice_for_normal=use_story_voice_for_normal,
             )
 
         else:
@@ -545,6 +551,7 @@ class Phrase(FirePhraseDataModel):
                     overwrite=overwrite,
                     local=local,
                     split_on_space=split_on_space,
+                    use_story_voice_for_normal=use_story_voice_for_normal,
                 )
 
     def generate_image(
@@ -834,11 +841,17 @@ class PhraseAudio(FirePhraseDataModel):
         context: Literal["flashcard", "story"],
         speed: Literal["slow", "normal"] = "normal",
         gender: Literal["MALE", "FEMALE"] = "FEMALE",
+        voice_audio_type: Optional[Literal["flashcard", "story"]] = None,
     ) -> PhraseAudio:
         """Factory method to create a PhraseAudio object with generated file_path.
 
         Args:
-            phrase_hash: Hash of the associated English root phrase"""
+            phrase_hash: Hash of the associated English root phrase
+            voice_audio_type: Which voice config to pick the TTS voice from
+                (defaults to `context`). Useful for using the higher quality
+                "story" voice for flashcard normal-speed audio, while the file
+                is still stored under the flashcard path.
+        """
 
         file_path = get_phrase_audio_path(
             phrase_hash=key, language=language, context=context, speed=speed
@@ -847,7 +860,7 @@ class PhraseAudio(FirePhraseDataModel):
         voice_info = get_voice_model(
             language_code=language.to_tag(),
             gender=gender,
-            audio_type=context,
+            audio_type=voice_audio_type or context,
             speed=speed,
         )
 
@@ -1239,8 +1252,16 @@ class Translation(FirePhraseDataModel):
         overwrite: bool = False,
         local: bool = True,
         split_on_space: bool = False,
+        use_story_voice_for_normal: bool = False,
     ) -> None:
-        """Generate audio for this translation at appropriate speeds based on context."""
+        """Generate audio for this translation at appropriate speeds based on context.
+
+        Args:
+            use_story_voice_for_normal: If True and context is "flashcard", use the
+                higher quality "story" voice model for the normal-speed audio (the
+                flashcard voice is kept for "slow" since it supports SSML word
+                separation, which sounds worse than the story voice at normal speed).
+        """
 
         audio_speeds = {
             "story": ["normal"],
@@ -1283,6 +1304,15 @@ class Translation(FirePhraseDataModel):
                 )
 
             # Create PhraseAudio object (either with downloaded or newly generated audio)
+            voice_audio_type: Literal["flashcard", "story"] = (
+                "story"
+                if (
+                    use_story_voice_for_normal
+                    and context == "flashcard"
+                    and speed == "normal"
+                )
+                else context
+            )
             phrase_audio = PhraseAudio.create(
                 key=self.key,
                 text=self.text,
@@ -1290,6 +1320,7 @@ class Translation(FirePhraseDataModel):
                 context=context,
                 speed=speed,
                 gender=gender,
+                voice_audio_type=voice_audio_type,
             )
 
             # Use existing audio or generate new
