@@ -258,5 +258,27 @@
                 "voice_id": "sr-RS-Chirp3-HD-Achird"
             }
         }
+    },
+    "ar-XA": {
+        "flashcard": {
+            "female": {
+                "provider": "google",
+                "voice_id": "ar-XA-Wavenet-A"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "ar-XA-Wavenet-B"
+            }
+        },
+        "story": {
+            "female": {
+                "provider": "google",
+                "voice_id": "ar-XA-Chirp3-HD-Achernar"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "ar-XA-Chirp3-HD-Algenib"
+            }
+        }
     }
 }
