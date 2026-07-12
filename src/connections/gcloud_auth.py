@@ -1,5 +1,6 @@
 """Google Cloud authentication utilities."""
 
+import os
 import sys
 from typing import Tuple, Optional
 
@@ -50,6 +51,13 @@ def setup_authentication() -> Tuple[Credentials, str]:
         from google.auth import default
 
         credentials, project = default()
+
+        # Prefer the project pinned in .env over gcloud's ambient CLI project.
+        # The active `gcloud config` project is shared machine-wide state that
+        # gets switched for unrelated work, so it can't be trusted here.
+        env_project = os.environ.get("GOOGLE_PROJECT_ID")
+        if env_project:
+            project = env_project
 
         # Cache the authentication result
         _credentials = credentials
