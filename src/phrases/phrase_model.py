@@ -397,9 +397,7 @@ class Phrase(FirePhraseDataModel):
             target_language
         )
         # Step 4: Create the Translation object
-        normalised_tags: List[str] = (
-            [tags] if isinstance(tags, str) else (tags or [])
-        )
+        normalised_tags: List[str] = [tags] if isinstance(tags, str) else (tags or [])
         translation = Translation(
             key=self.key,
             firestore_document_ref=translation_document_ref,
@@ -633,7 +631,7 @@ class Phrase(FirePhraseDataModel):
             )
 
         # Resize to standard size
-        image = resize_image(image, height=500, width=500)
+        image = resize_image(image, height=512, width=512)
 
         # Set the image on the translation
         translation.image = image
