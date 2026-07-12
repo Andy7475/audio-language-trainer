@@ -1,6 +1,7 @@
 .env
 *.env
 *.pyc
+*.db
 *.ipynb_checkpoints
 audio_language_trainer_code.py
 data/booklet_foundation_swedish.pdf
