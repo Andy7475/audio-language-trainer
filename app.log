@@ -1,0 +1,1 @@
+2026-07-14 21:27:10 - audio-language-trainer - INFO - nlp.py:88 - _load_spacy_model: loaded spaCy model 'sv_core_news_lg' for language 'sv'

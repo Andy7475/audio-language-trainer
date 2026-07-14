@@ -4,6 +4,7 @@ import pytest
 
 from phrases.phrase_model import Phrase, Translation
 from phrases.search import (
+    _cover_vocab_dict,
     _greedy_set_cover,
     find_minimum_coverage_phrases,
     find_phrases_by_token_coverage,
@@ -581,3 +582,47 @@ class TestGreedySetCoverWithTokens:
         )
         # Must terminate — if the bug were present this would loop until pool exhausted.
         assert len(result) == 1
+
+
+class TestCoverVocabDict:
+    """Tests for _cover_vocab_dict, extracted from find_phrases_by_vocab_dict so it
+    can be reused against an already-loaded candidate pool (e.g. by add_tags_from_text)."""
+
+    def test_full_coverage_returns_no_missing(self):
+        """Everything requested is coverable — missing should be empty."""
+        selected, missing = _cover_vocab_dict(
+            candidates=[PHRASE_SKA_PULLA, PHRASE_FORSTAAR_PROBLEMET],
+            target_verbs={"ska"},
+            target_vocab={"problem"},
+            language_tag=LANG_SV,
+        )
+        assert len(selected) > 0
+        assert missing == {"verbs": [], "vocab": []}
+
+    def test_uncoverable_word_reported_as_missing(self):
+        """A target with no matching phrase in the pool must show up in missing."""
+        selected, missing = _cover_vocab_dict(
+            candidates=[PHRASE_SKA_PULLA],
+            target_verbs={"ska", "flyga"},  # 'flyga' (fly) is not in the pool
+            target_vocab={"cykel"},  # 'cykel' (bike) is not in the pool
+            language_tag=LANG_SV,
+        )
+        assert missing["verbs"] == ["flyga"]
+        assert missing["vocab"] == ["cykel"]
+        # 'ska' should still have been covered
+        covered_verbs = set()
+        for p in selected:
+            t = p.translations[LANG_SV]
+            covered_verbs |= {x.lower() for x in (t.verbs + t.tokens)}
+        assert "ska" in covered_verbs
+
+    def test_empty_targets_returns_empty(self):
+        """No targets means no phrases needed and no missing words."""
+        selected, missing = _cover_vocab_dict(
+            candidates=[PHRASE_SKA_PULLA, PHRASE_KAN_BOKA],
+            target_verbs=set(),
+            target_vocab=set(),
+            language_tag=LANG_SV,
+        )
+        assert selected == []
+        assert missing == {"verbs": [], "vocab": []}

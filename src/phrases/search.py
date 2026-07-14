@@ -1,13 +1,15 @@
 """Querying and searching phrases in the database."""
 
-from typing import Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple
 
-from phrases.utils import generate_phrase_hash
+from phrases.utils import generate_phrase_hash, normalize_tags
 from phrases.phrase_model import Phrase, Translation
 from connections.gcloud_auth import get_firestore_client
 from models import get_language
 from google.cloud.firestore_v1 import FieldFilter, DocumentReference
 from langcodes import Language
+from nlp import extract_token_lemma_pos, VERB_POS_TAGS, VOCAB_POS_TAGS
+from wiktionary.lookup import word_in_wiktionary
 
 
 def get_phrases_by_collection(
@@ -383,6 +385,31 @@ def find_phrases_by_vocab_dict(
         database_name=database_name,
     )
 
+    return _cover_vocab_dict(candidates, target_verbs, target_vocab, language_tag)
+
+
+def _cover_vocab_dict(
+    candidates: List[Phrase],
+    target_verbs: Set[str],
+    target_vocab: Set[str],
+    language_tag: str,
+) -> Tuple[List[Phrase], Dict[str, List[str]]]:
+    """Greedy-cover target_verbs/target_vocab using an already-loaded candidate pool.
+
+    Extracted from ``find_phrases_by_vocab_dict`` so callers that already have
+    a loaded candidate pool (e.g. ``add_tags_from_text``) can reuse the same
+    coverage + missing-word computation without a second Firestore fetch.
+
+    Args:
+        candidates:   Phrases with the target-language translation populated
+                      (see ``_load_phrases_with_translation``).
+        target_verbs: Verb lemmas/tokens to cover.
+        target_vocab: Vocab lemmas/tokens to cover.
+        language_tag: BCP-47 tag used to key into each phrase's translations.
+
+    Returns:
+        Same shape as ``find_phrases_by_vocab_dict``: (selected phrases, missing dict).
+    """
     # we add tokens and vocab to the vocab checker to minimise too many returns due to lemma issues.
     selected = _greedy_set_cover(
         candidates=candidates,
@@ -574,6 +601,166 @@ def add_tags_to_translations(
     return updated_refs
 
 
+def _passes_wiktionary_check(
+    lemma: str, bucket: Literal["verbs", "vocab"], language_code: str
+) -> bool:
+    """Check whether a lemma is a real dictionary word, to filter out NLP
+    artefacts and disfluencies (e.g. 'uh', '-flytta') before they pollute a
+    vocab_dict.
+
+    Mirrors ``nlp.get_verbs_and_vocab``'s ``filter_by_wiktionary`` logic: the
+    verb bucket is checked against pos='verb'; the vocab bucket is accepted if
+    it matches noun, adj, or adv.
+
+    Args:
+        lemma: Dictionary-form word to check.
+        bucket: Which POS bucket this word was classified into.
+        language_code: Two-letter language code (e.g. 'sv').
+    """
+    if bucket == "verbs":
+        return word_in_wiktionary(lemma, language_code, pos="verb")
+    return (
+        word_in_wiktionary(lemma, language_code, pos="noun")
+        or word_in_wiktionary(lemma, language_code, pos="adj")
+        or word_in_wiktionary(lemma, language_code, pos="adv")
+    )
+
+
+def _extract_text_vocab_dict(
+    text: str,
+    language: Language,
+    candidate_tokens: Set[str],
+) -> Tuple[Dict[str, List[str]], List[str]]:
+    """Turn story text into a vocab_dict of coverage targets, plus ignored tokens.
+
+    Extracts (token, lemma, pos) triples for *text*, drops anything that isn't
+    a verb/noun/adj/adv or has no Wiktionary entry (disfluencies, acronyms,
+    NLP artefacts), and for each surviving word prefers the native inflected
+    token as the match target if some candidate phrase already contains it
+    verbatim — falling back to the lemma otherwise. This lets coverage
+    matching reinforce the exact form seen in the text when possible.
+
+    Args:
+        text: Source text (e.g. a story) to extract vocabulary from.
+        language: Target language of *text*.
+        candidate_tokens: Lowercased tokens already present across the
+            candidate phrase pool (see ``_load_phrases_with_translation``),
+            used to decide token-vs-lemma preference.
+
+    Returns:
+        Tuple of (vocab_dict with 'verbs'/'vocab' keys, sorted unique ignored tokens).
+    """
+    language_code = language.language
+    assert language_code is not None, f"Language has no language subtag: {language!r}"
+
+    triples = extract_token_lemma_pos(text, language_code)
+
+    target_verbs: Set[str] = set()
+    target_vocab: Set[str] = set()
+    ignored_tokens: Set[str] = set()
+
+    for token_text, lemma, pos in triples:
+        if pos in VERB_POS_TAGS:
+            bucket: Literal["verbs", "vocab"] = "verbs"
+        elif pos in VOCAB_POS_TAGS:
+            bucket = "vocab"
+        else:
+            ignored_tokens.add(token_text.lower())
+            continue
+
+        if not lemma or not _passes_wiktionary_check(lemma, bucket, language_code):
+            ignored_tokens.add(token_text.lower())
+            continue
+
+        target = token_text.lower() if token_text.lower() in candidate_tokens else lemma
+        (target_verbs if bucket == "verbs" else target_vocab).add(target)
+
+    vocab_dict = {"verbs": sorted(target_verbs), "vocab": sorted(target_vocab)}
+    return vocab_dict, sorted(ignored_tokens)
+
+
+def add_tags_from_text(
+    text: str,
+    language: Language | str,
+    tags: List[str] | str,
+    collection: Optional[str] = None,
+    deck: Optional[str] = None,
+    database_name: str = "firephrases",
+) -> Tuple[List[Phrase], Dict[str, List[str]]]:
+    """Tag the minimum set of existing phrases needed to understand *text*.
+
+    Extracts the vocabulary from *text* (e.g. a story or subtitle transcript),
+    finds the minimum (greedy-approximate) set of existing phrases whose
+    target-language translation already covers it, and adds *tags* to those
+    phrases' Translation documents in Firestore — so they can later be pulled
+    into a themed Anki deck via ``find_phrases_by_tag``.
+
+    Words with no covering phrase are returned as a ``missing`` vocab_dict
+    (same shape as ``find_phrases_by_vocab_dict``'s ``missing``) so new
+    phrases can be generated for them separately, e.g. via
+    ``generate_phrases_from_vocab_dict``.
+
+    Args:
+        text: Source text in the target language.
+        language: Target language of *text* (e.g. 'sv-SE' or a Language object).
+        tags: Single tag string or list of tags to add (e.g. 'media::film::bron').
+        collection: Optional — restrict the candidate phrase pool to this collection.
+        deck: Optional — restrict the candidate phrase pool to this deck.
+        database_name: Firestore database (default: 'firephrases').
+
+    Returns:
+        Tuple of (tagged phrases, missing vocab_dict).
+
+    Example:
+        >>> phrases, missing = add_tags_from_text(
+        ...     "Han sprang till affären och köpte ett äpple.",
+        ...     language="sv-SE",
+        ...     tags="media::film::bron",
+        ... )
+        >>> print(f"{len(phrases)} phrases tagged, missing: {missing}")
+    """
+    lang = get_language(language)
+    language_tag = lang.to_tag()
+
+    candidates = _load_phrases_with_translation(
+        language_tag=language_tag,
+        collection=collection,
+        deck=deck,
+        database_name=database_name,
+    )
+
+    candidate_tokens: Set[str] = set()
+    for phrase in candidates:
+        candidate_tokens |= _to_lower(set(phrase.translations[language_tag].tokens))
+
+    vocab_dict, ignored_tokens = _extract_text_vocab_dict(text, lang, candidate_tokens)
+    target_verbs = set(vocab_dict["verbs"])
+    target_vocab = set(vocab_dict["vocab"])
+
+    selected, missing = _cover_vocab_dict(candidates, target_verbs, target_vocab, language_tag)
+
+    if selected:
+        add_tags_to_translations(selected, lang, tags)
+
+    total_targets = len(target_verbs) + len(target_vocab)
+    total_missing = len(missing["verbs"]) + len(missing["vocab"])
+    covered_count = total_targets - total_missing
+
+    print(
+        f"add_tags_from_text: {covered_count}/{total_targets} words covered by "
+        f"{len(selected)} phrase(s); {len(ignored_tokens)} tokens ignored "
+        f"(not a content word or no Wiktionary entry); {total_missing} words missing "
+        f"(no matching phrase found)"
+    )
+    if ignored_tokens:
+        print(f"  Ignored tokens: {ignored_tokens}")
+    if total_missing:
+        print(f"  Missing verbs: {missing['verbs']}")
+        print(f"  Missing vocab: {missing['vocab']}")
+
+    return selected, missing
+
+
 def find_phrases_by_tag(
     tag: str,
     language: Language | str,
@@ -640,3 +827,65 @@ def find_phrases_by_tag(
         matched_phrases.append(phrase)
 
     return matched_phrases
+
+
+def delete_tag_from_firestore(
+    tag: List[str] | str,
+    language: Language | str | None = None,
+    database_name: str = "firephrases",
+) -> List[DocumentReference]:
+    """Remove tag(s) from Translation documents in Firestore.
+
+    Tags are a property of a Translation, not a Phrase, so this operates
+    directly on translation documents via the same fast collection-group
+    query pattern as ``find_phrases_by_tag`` — no need to load full Phrase
+    objects. Useful for cleaning up tags added by mistake (e.g. while
+    experimenting with ``add_tags_from_text``/``add_tags_to_translations``).
+
+    Args:
+        tag: Single tag string or list of tags to remove.
+        language: If given, only remove from this language's translations
+            (e.g. 'sv-SE'). If None (default), removes from every language's
+            translations that have it.
+        database_name: Firestore database name.
+
+    Returns:
+        List of updated Firestore DocumentReferences (translations that
+        actually had one of the tags removed).
+
+    Example:
+        >>> delete_tag_from_firestore("media::test::story")  # every language
+        >>> delete_tag_from_firestore(["media::test::story"], language="sv-SE")
+    """
+    tags_to_remove = set(normalize_tags(tag))
+    if not tags_to_remove:
+        return []
+
+    language_tag = get_language(language).to_tag() if language is not None else None
+
+    db = get_firestore_client(database_name)
+
+    # Query once per tag (Firestore only supports one array_contains clause
+    # per query) and dedupe by path, since a translation may carry more than
+    # one of the tags being removed.
+    docs_by_path: Dict[str, Tuple[Any, List[str]]] = {}
+    for t in tags_to_remove:
+        translations_query = db.collection_group("translations").where(
+            filter=FieldFilter("tags", "array_contains", t)
+        )
+        for t_doc in translations_query.stream():
+            if language_tag is not None and t_doc.id != language_tag:
+                continue
+            docs_by_path[t_doc.reference.path] = (
+                t_doc.reference,
+                (t_doc.to_dict() or {}).get("tags", []),
+            )
+
+    updated_refs: List[DocumentReference] = []
+    for doc_ref, existing_tags in docs_by_path.values():
+        remaining_tags = [t for t in existing_tags if t not in tags_to_remove]
+        if len(remaining_tags) != len(existing_tags):
+            doc_ref.update({"tags": remaining_tags})
+            updated_refs.append(doc_ref)
+
+    return updated_refs
