@@ -16,7 +16,7 @@ from pydub import AudioSegment
 from PIL import Image
 from logger import logger
 from connections.gcloud_auth import get_firestore_client
-from phrases.utils import generate_phrase_hash
+from phrases.utils import generate_phrase_hash, normalize_tags
 from nlp import (
     extract_lemmas_and_pos,
     get_tokens_from_lemmas_and_pos,
@@ -396,8 +396,7 @@ class Phrase(FirePhraseDataModel):
         translation_document_ref = self._get_translation_firestore_document_ref(
             target_language
         )
-        # Step 4: Create the Translation object
-        normalised_tags: List[str] = [tags] if isinstance(tags, str) else (tags or [])
+        # Step 4: Create the Translation object (tags are normalized by the field validator)
         translation = Translation(
             key=self.key,
             firestore_document_ref=translation_document_ref,
@@ -407,7 +406,7 @@ class Phrase(FirePhraseDataModel):
             tokens=tokens,
             verbs=nlp_result["verbs"],
             vocab=nlp_result["vocab"],
-            tags=normalised_tags,
+            tags=normalize_tags(tags),
         )
         translation._set_image_file_path(default=True)
 
@@ -987,6 +986,11 @@ class Translation(FirePhraseDataModel):
     tags: List[str] = Field(
         default_factory=list, description="Anki tags (e.g. ['media::film::name'])"
     )
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def _normalize_tags(cls, value: str | List[str] | None) -> List[str]:
+        return normalize_tags(value)
     audio: dict[str, dict[str, PhraseAudio]] = Field(
         default_factory=dict,
         description="Nested dict of audio files: {context: {speed: PhraseAudio}}. Example: {'flashcard': {'normal': PhraseAudio, 'slow': PhraseAudio}, 'story': {'normal': PhraseAudio}}",
@@ -1028,6 +1032,19 @@ class Translation(FirePhraseDataModel):
             return result
 
         return {}
+
+    def add_tags(self, tags: str | List[str] | None) -> List[str]:
+        """Merge new Anki tags into this translation, keeping the list unique.
+
+        Args:
+            tags: Single tag string, list of tags, or None.
+
+        Returns:
+            List[str]: The tags that were newly added (excluding ones already present).
+        """
+        new_tags = [tag for tag in normalize_tags(tags) if tag not in self.tags]
+        self.tags.extend(new_tags)
+        return new_tags
 
     def get_wiktionary_links(
         self,

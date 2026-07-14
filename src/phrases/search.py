@@ -547,9 +547,6 @@ def add_tags_to_translations(
         >>> phrases, missing = find_phrases_by_vocab_dict(vocab, "sv-SE")
         >>> updated_refs = add_tags_to_translations(phrases, "sv-SE", "media::film::bron")
     """
-    if isinstance(tags, str):
-        tags = [tags]
-
     lang = get_language(language)
     language_tag = lang.to_tag()
 
@@ -562,12 +559,9 @@ def add_tags_to_translations(
         translation = phrase.translations[language_tag]
 
         # Merge new tags while avoiding duplicates and preserving order
-        existing_tags = set(translation.tags)
-        new_tags = [t for t in tags if t not in existing_tags]
+        new_tags = translation.add_tags(tags)
 
         if new_tags:
-            translation.tags.extend(new_tags)
-
             # Get the DocumentReference (using the private helper if missing)
             doc_ref = translation.firestore_document_ref
             if not doc_ref:
