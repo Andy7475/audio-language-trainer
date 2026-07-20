@@ -1,11 +1,6 @@
-"""Phrase generation module for language learners.
+"""Phrase generation module for language learners."""
 
-This module provides phrase generation using an iterative approach based on verbs and vocabulary.
-Instead of trying to "extinguish" a vocabulary list, we iterate through verbs and vocab items,
-generating phrases and naturally tracking which words have been used.
-"""
-
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from langcodes import Language
 
@@ -18,34 +13,19 @@ from logger import logger
 
 def generate_phrases_from_vocab_dict(
     vocab_dict: Dict[str, List[str]],
-    max_iterations: int = 10,
     language: Language | str | None = None,
-) -> Tuple[List[str], Dict[str, any]]:
-    """Generate English phrases from a vocabulary dictionary using verb and vocab iteration.
+) -> List[str]:
+    """Generate phrases from a vocabulary dictionary.
 
-    This method iterates through verbs to generate action-based phrases, then through vocabulary
-    items to generate descriptive phrases, naturally tracking word usage without complex
-    vocabulary "extinguishing" logic.
+    Iterates through verbs first (present/past/future tenses), then generates
+    descriptive phrases for remaining vocabulary words not already covered.
 
     Args:
         vocab_dict: Dictionary with keys 'verbs' and 'vocab' containing lists of words
-        max_iterations: Maximum number of vocabulary iteration rounds (only applies to vocab generation)
-        language: Target language for phrase generation (default: en-GB). When non-English,
-            the LLM generates phrases in that language instead of English.
+        language: Target language for phrase generation (default: en-GB)
 
     Returns:
-        Tuple containing:
-            - List of generated phrase strings
-            - Dictionary with tracking information:
-                {
-                    "total_phrases": int,
-                    "verb_phrases": int,
-                    "vocab_phrases": int,
-                    "verbs_processed": int,
-                    "vocab_processed": int,
-                    "words_used": List[str] (additional words extracted from phrases),
-                    "errors": List[str] (any errors encountered during generation)
-                }
+        List of generated phrase strings
 
     Raises:
         ValueError: If vocab_dict doesn't have required 'verbs' or 'vocab' keys
@@ -55,206 +35,77 @@ def generate_phrases_from_vocab_dict(
 
     language = get_language(language)
 
-    all_phrases = []
-    tracking_info = {
-        "total_phrases": 0,
-        "verb_phrases": 0,
-        "vocab_phrases": 0,
-        "verbs_processed": 0,
-        "vocab_processed": 0,
-        "words_used": [],
-        "errors": [],
-    }
-
-    verb_list = vocab_dict["verbs"]
-    vocab_list = vocab_dict["vocab"]
-
-    # Generate phrases from verbs
-    logger.info(f"Starting verb phrase generation. {len(verb_list)} verbs to process.")
-    all_phrases, verb_tracking = _generate_verb_phrases_batch(
-        verb_list, language=language
-    )
-    tracking_info["verb_phrases"] = len(all_phrases)
-    tracking_info["verbs_processed"] = verb_tracking["verbs_processed"]
-    tracking_info["words_used"].extend(verb_tracking["additional_words"])
-    tracking_info["errors"].extend(verb_tracking["errors"])
+    logger.info(f"Starting verb phrase generation. {len(vocab_dict['verbs'])} verbs to process.")
+    all_phrases = _generate_verb_phrases_batch(vocab_dict["verbs"], language=language)
 
     vocab_present_in_verb_phrases = get_vocab_from_phrases(all_phrases)
-    vocab_list = _remove_words_from_list(vocab_list, vocab_present_in_verb_phrases)
-    logger.info(
-        f"\nStarting vocab phrase generation. {len(vocab_list)} vocab words to process."
-    )
-    vocab_phrases, vocab_tracking = _generate_vocab_phrases_batch(
-        vocab_list, max_iterations=max_iterations, language=language
-    )
+    remaining_vocab = _remove_words_from_list(vocab_dict["vocab"], vocab_present_in_verb_phrases)
+
+    logger.info(f"Starting vocab phrase generation. {len(remaining_vocab)} vocab words to process.")
+    vocab_phrases = _generate_vocab_phrases_batch(remaining_vocab, language=language)
     all_phrases.extend(vocab_phrases)
-    tracking_info["vocab_phrases"] = len(vocab_phrases)
-    tracking_info["vocab_processed"] = vocab_tracking["vocab_processed"]
-    tracking_info["words_used"].extend(vocab_tracking["additional_words"])
-    tracking_info["errors"].extend(vocab_tracking["errors"])
 
-    # Finalize tracking
-    tracking_info["total_phrases"] = len(all_phrases)
-    tracking_info["words_used"] = list(set(tracking_info["words_used"]))  # Deduplicate
-
-    return all_phrases, tracking_info
+    return all_phrases
 
 
 def _generate_verb_phrases_batch(
     verb_list: List[str],
     language: Language | None = None,
-) -> Tuple[List[str], Dict[str, any]]:
-    """Process all verbs and generate phrases for each.
-
-    Args:
-        verb_list: List of verbs to generate phrases for
-
-    Returns:
-        Tuple of (phrases list, tracking dict)
-    """
+) -> List[str]:
+    """Generate present/past/future phrases for each verb."""
     phrases = []
-    all_additional_words = []
-    errors = []
-    processed_count = 0
 
     for i, verb in enumerate(verb_list, 1):
         try:
-            logger.info(
-                f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'"
-            )
+            logger.info(f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'")
             result = generate_verb_phrases(verb, language=language)
-
-            # Extract all phrases
             for base_phrase in result.get("base_phrases", []):
                 phrases.append(base_phrase["phrase"])
             for meaning_phrase in result.get("meaning_variations", []):
                 phrases.append(meaning_phrase["phrase"])
-
-            # Track additional words
-            all_additional_words.extend(result.get("all_additional_words", []))
-            processed_count += 1
-
         except Exception as e:
-            error_msg = f"Error generating phrases for verb '{verb}': {str(e)}"
-            logger.info(f"  ERROR: {error_msg}")
-            errors.append(error_msg)
+            logger.error(f"  Error generating phrases for verb '{verb}': {e}")
 
-    return phrases, {
-        "verbs_processed": processed_count,
-        "additional_words": all_additional_words,
-        "errors": errors,
-    }
+    return phrases
 
 
-def _remove_words_from_list(
-    word_list: List[str], words_to_remove: List[str]
-) -> List[str]:
-    """Remove specified words from a list.
-
-    Args:
-        word_list: Original list of words
-        words_to_remove: List of words to remove from the original list
-
-    Returns:
-        New list with specified words removed
-    """
+def _remove_words_from_list(word_list: List[str], words_to_remove: List[str]) -> List[str]:
     return [word for word in word_list if word not in words_to_remove]
 
 
 def _generate_vocab_phrases_batch(
     vocab_list: List[str],
-    max_iterations: int = 10,
     batch_size: int = 20,
     language: Language | None = None,
-) -> Tuple[List[str], Dict[str, any]]:
-    """Process vocabulary items and generate phrases for each in batches.
-
-    Groups vocabulary words into batches of N (default 10) and processes each batch
-    in a single API call for efficiency. Words that appear as "additional words" in
-    generated phrases are removed from the remaining vocabulary to avoid redundant
-    processing. Optionally iterates multiple times through the vocabulary list.
-
-    Args:
-        vocab_list: List of vocabulary words
-        max_iterations: Maximum number of passes through vocabulary
-        batch_size: Number of words to process per API call (default 10)
-
-    Returns:
-        Tuple of (phrases list, tracking dict)
-    """
+) -> List[str]:
+    """Generate descriptive phrases for vocabulary words in batches."""
     phrases = []
-    all_additional_words = []
-    errors = []
-    processed_count = 0
-
-    # Track remaining words to process (will be reduced as words are used in phrases)
     remaining_words = vocab_list.copy()
     initial_count = len(vocab_list)
 
-    for iteration in range(1, max_iterations + 1):
-        if not remaining_words:
-            logger.info(f"  Iteration {iteration}: All vocabulary processed.")
-            break
+    while remaining_words:
+        batch_words = remaining_words[:batch_size]
+        context_words = remaining_words[batch_size : batch_size + 25]
+        processed_so_far = initial_count - len(remaining_words)
 
-        logger.info(f"  Iteration {iteration}/{max_iterations}")
-
-        # Always take from the front of remaining_words
-        batch_num = 0
-        while remaining_words:
-            # Get current batch from the front
-            batch_words = remaining_words[:batch_size]
-
-            # Get context: next 25 words after this batch
-            context_words = remaining_words[batch_size : batch_size + 25]
-
-            # Calculate display info
-            batch_num += 1
-            processed_so_far = initial_count - len(remaining_words)
-            batch_start_display = processed_so_far + 1
-            batch_end_display = processed_so_far + len(batch_words)
-
-            try:
-                logger.info(
-                    f"    [{batch_start_display}-{batch_end_display}/{initial_count}] Generating phrases for {len(batch_words)} words"
-                )
-                result = generate_vocab_phrases(
-                    batch_words, context_words=context_words, language=language
-                )
-
-                # Extract phrases from results
-                for result_data in result.get("results", []):
-                    phrases.append(result_data["phrase"])
-
-                # Track additional words from this batch
-                batch_additional_words = result.get("all_additional_words", [])
-                all_additional_words.extend(batch_additional_words)
-                processed_count += len(batch_words)
-
-                # Remove the processed batch words from remaining list
-                remaining_words = remaining_words[len(batch_words) :]
-
-                # Also remove words that were used in phrases from remaining list
-                # This prevents processing words that have already appeared in generated phrases
-                remaining_words = _remove_words_from_list(
-                    remaining_words, batch_additional_words
-                )
-
-            except Exception as e:
-                error_msg = f"Error generating phrases for batch {batch_start_display}-{batch_end_display}: {str(e)}"
-                logger.info(f"    ERROR: {error_msg}")
-                errors.append(error_msg)
-                # Move past this batch even on error
-                remaining_words = remaining_words[len(batch_words) :]
-
-        # After completing iteration, prepare for next iteration if needed
-        # remaining_words already has used words removed, so we'll process what's left
-        if remaining_words:
+        try:
             logger.info(
-                f"  Completed iteration {iteration}. {len(remaining_words)} words remaining for next iteration."
+                f"  [{processed_so_far + 1}-{processed_so_far + len(batch_words)}/{initial_count}] "
+                f"Generating phrases for {len(batch_words)} words"
+            )
+            result = generate_vocab_phrases(
+                batch_words, context_words=context_words, language=language
             )
 
-    return phrases, {
-        "vocab_processed": processed_count,
-        "additional_words": all_additional_words,
-        "errors": errors,
-    }
+            for result_data in result.get("results", []):
+                phrases.append(result_data["phrase"])
+
+            additional_words = result.get("all_additional_words", [])
+            remaining_words = remaining_words[len(batch_words):]
+            remaining_words = _remove_words_from_list(remaining_words, additional_words)
+
+        except Exception as e:
+            logger.error(f"  Error generating phrases for batch: {e}")
+            remaining_words = remaining_words[len(batch_words):]
+
+    return phrases

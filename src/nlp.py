@@ -30,6 +30,11 @@ SPACY_LANGUAGE_MODELS: Dict[str, str] = {
 # Internal cache: language_code -> loaded spaCy Language object
 _spacy_model_cache: Dict[str, object] = {}
 
+# Universal Dependencies POS tags (shared by spaCy and Google NLP) that count
+# as verbs vs. learnable vocab, used by both this module and phrases/search.py.
+VERB_POS_TAGS = ["VERB", "AUX"]
+VOCAB_POS_TAGS = ["NOUN", "ADJ", "ADV"]
+
 
 def _load_spacy_model(language_code: str) -> Optional[object]:
     """
@@ -113,9 +118,9 @@ def _load_spacy_model(language_code: str) -> Optional[object]:
 
 def _analyze_text_syntax_spacy(
     text: str, language_code: str
-) -> Optional[List[Tuple[str, str]]]:
+) -> Optional[List[Tuple[str, str, str]]]:
     """
-    Analyse text with a spaCy model and return (lemma, pos) tuples.
+    Analyse text with a spaCy model and return (token, lemma, pos) triples.
 
     This mirrors the output of the Google NLP path so callers are agnostic
     to which backend produced the result.
@@ -125,14 +130,14 @@ def _analyze_text_syntax_spacy(
         language_code: BCP-47 language code.
 
     Returns:
-        List of (lemma, pos) tuples, or None if no model is available.
+        List of (token_text, lemma, pos) triples, or None if no model is available.
     """
     nlp = _load_spacy_model(language_code)
     if nlp is None:
         return None
 
     doc = nlp(text)
-    return [(token.lemma_.lower(), token.pos_) for token in doc]
+    return [(token.text, token.lemma_.lower(), token.pos_) for token in doc]
 
 
 # ---------------------------------------------------------------------------
@@ -180,6 +185,53 @@ def analyze_text_syntax(
         return None
 
 
+def _extract_token_lemma_pos_for_text(
+    text: str, language_code: str
+) -> List[Tuple[str, str, str]]:
+    """
+    Analyse a single text, preferring spaCy for registered languages and
+    falling back to Google NLP otherwise (or if the spaCy model isn't
+    installed).
+
+    Args:
+        text: Text to analyse.
+        language_code: BCP-47 language code.
+
+    Returns:
+        List of (token_text, lemma, pos) triples, preserving the native
+        surface form of each token alongside its lemma and POS tag.
+    """
+    use_spacy_first = language_code in SPACY_LANGUAGE_MODELS
+
+    if use_spacy_first:
+        spacy_results = _analyze_text_syntax_spacy(text, language_code)
+        if spacy_results:
+            return spacy_results
+        # spaCy model not installed — fall through to Google NLP
+        logger.warning(
+            "_extract_token_lemma_pos_for_text: spaCy model not available for '%s', "
+            "falling back to Google NLP",
+            language_code,
+        )
+
+    response = analyze_text_syntax(text, language_code)
+    if response is not None:
+        triples: List[Tuple[str, str, str]] = []
+        for token in response.tokens:
+            pos_tag = language_v1.PartOfSpeech.Tag(token.part_of_speech.tag).name
+            lemma = token.lemma.lower()
+            triples.append((token.text.content, lemma, pos_tag))
+        return triples
+
+    logger.warning(
+        "_extract_token_lemma_pos_for_text: no backend could process text "
+        "for language '%s': %s",
+        language_code,
+        text,
+    )
+    return []
+
+
 def extract_lemmas_and_pos(
     phrases: List[str], language_code: str = "en"
 ) -> List[Tuple[str, str]]:
@@ -198,38 +250,32 @@ def extract_lemmas_and_pos(
         List of (lemma, pos) tuples
     """
     vocab_set: List[Tuple[str, str]] = []
-    use_spacy_first = language_code in SPACY_LANGUAGE_MODELS
-
     for phrase in phrases:
-        if use_spacy_first:
-            # --- spaCy primary path (language is registered) ---
-            spacy_results = _analyze_text_syntax_spacy(phrase, language_code)
-            if spacy_results:
-                vocab_set.extend(spacy_results)
-                continue
-            # spaCy model not installed — fall through to Google NLP
-            logger.warning(
-                "extract_lemmas_and_pos: spaCy model not available for '%s', "
-                "falling back to Google NLP",
-                language_code,
-            )
-
-        # --- Google NLP path ---
-        response = analyze_text_syntax(phrase, language_code)
-        if response is not None:
-            for token in response.tokens:
-                pos_tag = language_v1.PartOfSpeech.Tag(token.part_of_speech.tag).name
-                lemma = token.lemma.lower()
-                vocab_set.append((lemma, pos_tag))
-        else:
-            logger.warning(
-                "extract_lemmas_and_pos: no backend could process phrase "
-                "for language '%s': %s",
-                language_code,
-                phrase,
-            )
-
+        triples = _extract_token_lemma_pos_for_text(phrase, language_code)
+        vocab_set.extend((lemma, pos) for _, lemma, pos in triples)
     return vocab_set
+
+
+def extract_token_lemma_pos(
+    text: str, language_code: str = "en"
+) -> List[Tuple[str, str, str]]:
+    """
+    Extract (token_text, lemma, pos) triples from a single text, preserving
+    the native surface form of each token (e.g. a past-tense verb form)
+    rather than only its dictionary lemma.
+
+    Useful when downstream matching should prefer an exact inflected-form
+    match before falling back to lemma-based matching (see
+    phrases.search.add_tags_from_text).
+
+    Args:
+        text: Text to analyze
+        language_code: BCP-47 language code (default: 'en')
+
+    Returns:
+        List of (token_text, lemma, pos) triples, in order.
+    """
+    return _extract_token_lemma_pos_for_text(text, language_code)
 
 
 def get_vocab_from_phrases(phrases: List[str], language_code: str = "en") -> List[str]:
@@ -272,7 +318,9 @@ def get_verbs_from_phrases(phrases: List[str], language_code: str = "en") -> Lis
 
 
 def get_verbs_and_vocab(
-    phrases: List[str], language: Union[Language, str]
+    phrases: List[str],
+    language: Union[Language, str],
+    filter_by_wiktionary: bool = False,
 ) -> Dict[str, List[str]]:
     """
     Extract verbs and vocab from a list of phrases, returning a dict.
@@ -285,6 +333,10 @@ def get_verbs_and_vocab(
     Args:
         phrases:  List of phrase strings to analyse.
         language: Target language as a ``Language`` object or BCP-47 string.
+        filter_by_wiktionary: If True, discard any lemma not found in the local
+            Wiktionary database (verbs checked against pos='verb', vocab against
+            pos='noun' or pos='adj').  Useful for noisy input like subtitle data
+            where NLP artefacts (e.g. '-flytta') may appear as false positives.
 
     Returns:
         Dict with keys ``'verbs'`` and ``'vocab'``, each containing a
@@ -296,23 +348,37 @@ def get_verbs_and_vocab(
     language_code: str = lang_obj.language
 
     lemmas_and_pos = extract_lemmas_and_pos(phrases, language_code)
-    return {
+    result = {
         "verbs": get_verbs_from_lemmas_and_pos(lemmas_and_pos),
         "vocab": get_vocab_from_lemmas_and_pos(lemmas_and_pos),
     }
 
+    if filter_by_wiktionary:
+        from wiktionary.lookup import word_in_wiktionary
+
+        result["verbs"] = [
+            w for w in result["verbs"] if word_in_wiktionary(w, language_code, pos="verb")
+        ]
+        result["vocab"] = [
+            w
+            for w in result["vocab"]
+            if word_in_wiktionary(w, language_code, pos="noun")
+            or word_in_wiktionary(w, language_code, pos="adj")
+            or word_in_wiktionary(w, language_code, pos="adv")
+        ]
+
+    return result
+
 
 def get_verbs_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
     """Extract verbs from a set of (word, pos) tuples."""
-    verbs = [word for word, pos in lemmas_and_pos if pos in ["VERB", "AUX"]]
+    verbs = [word for word, pos in lemmas_and_pos if pos in VERB_POS_TAGS]
     return list(set(verbs))
 
 
 def get_vocab_from_lemmas_and_pos(lemmas_and_pos: List[Tuple[str, str]]) -> list[str]:
-    """Extract vocab (non-verbs) from a set of (word, pos) tuples."""
-    vocab = [
-        word for word, pos in lemmas_and_pos if pos not in ["VERB", "AUX", "PUNCT"]
-    ]
+    """Extract vocabulary words suitable for learning from a set of (word, pos) tuples."""
+    vocab = [word for word, pos in lemmas_and_pos if pos in VOCAB_POS_TAGS]
     return list(set(vocab))
 
 

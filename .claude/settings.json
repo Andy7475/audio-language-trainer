@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(python -m pytest tests/test_text_vocab_extraction.py -v)",
+      "Bash(python -m pytest tests/test_phrase_search.py -v)",
+      "Bash(git stash *)",
+      "Bash(python -m pytest tests/test_phrase_search.py -v -k \"test_coverage_ratio_calculation or test_complete_workflow\")",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -m pytest tests/test_anki_tools.py tests/test_dialogue_generation.py tests/test_nlp.py tests/test_translation.py)",
+      "Bash(python -m pytest tests/ --ignore=tests/test_anki_tools.py --ignore=tests/test_dialogue_generation.py --ignore=tests/test_nlp.py --ignore=tests/test_translation.py -v)",
+      "Bash(python -m pytest tests/test_phrase_search.py tests/test_text_vocab_extraction.py -v)"
+    ]
+  }
+}

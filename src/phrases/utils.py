@@ -1,4 +1,32 @@
 import hashlib
+from typing import List, Optional
+
+
+def normalize_tags(tags: Optional[str | List[str]]) -> List[str]:
+    """Normalize Anki tags input into a unique, order-preserving list.
+
+    Accepts a single tag string, a list of tags, or None. Falsy tags (e.g.
+    empty strings) are dropped, and duplicates are removed while keeping
+    first-seen order (plain list(set(...)) would lose that order).
+
+    Args:
+        tags: Single tag string, list of tags, or None.
+
+    Returns:
+        List[str]: Unique tags in first-seen order.
+    """
+    if tags is None:
+        return []
+    if isinstance(tags, str):
+        tags = [tags]
+
+    seen: set[str] = set()
+    unique_tags: List[str] = []
+    for tag in tags:
+        if tag and tag not in seen:
+            seen.add(tag)
+            unique_tags.append(tag)
+    return unique_tags
 
 
 def generate_phrase_hash(english_text: str) -> str:

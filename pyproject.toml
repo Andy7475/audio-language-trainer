@@ -43,4 +43,4 @@ dependencies = [
 ]
 
 [tool.pyright]
-extraPaths = ["."]
+extraPaths = [".", "./src", "./src", "src"]

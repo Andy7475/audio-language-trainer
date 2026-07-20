@@ -3,7 +3,7 @@ from sqlite3 import Connection
 from pathlib import Path
 
 _wiktionary_db = None
-DB_FILE = Path(__file__).parents[1] / "wiktionary" / "wiktionary.db"
+DB_FILE = Path(__file__).parents[1] / "wiktionary" / "wiktionary_pos.db"
 
 
 # print(DB_FILE)

@@ -1,5 +1,6 @@
 """Google Cloud authentication utilities."""
 
+import os
 import sys
 from typing import Tuple, Optional
 
@@ -50,6 +51,13 @@ def setup_authentication() -> Tuple[Credentials, str]:
         from google.auth import default
 
         credentials, project = default()
+
+        # Prefer the project pinned in .env over gcloud's ambient CLI project.
+        # The active `gcloud config` project is shared machine-wide state that
+        # gets switched for unrelated work, so it can't be trusted here.
+        env_project = os.environ.get("GOOGLE_PROJECT_ID")
+        if env_project:
+            project = env_project
 
         # Cache the authentication result
         _credentials = credentials
@@ -114,10 +122,10 @@ def get_nlp_client() -> language_v1.LanguageServiceClient:
 
     try:
         # Setup authentication (will use default credentials)
-        setup_authentication()
+        credentials, _ = setup_authentication()
 
         # Create Natural Language client
-        _nlp_client = language_v1.LanguageServiceClient()
+        _nlp_client = language_v1.LanguageServiceClient(credentials=credentials)
         print("(y) Natural Language API client initialized")
         return _nlp_client
     except Exception as e:
@@ -141,10 +149,10 @@ def get_translate_client() -> translate.Client:
 
     try:
         # Setup authentication (will use default credentials)
-        setup_authentication()
+        credentials, _ = setup_authentication()
 
         # Create Translate client
-        _translate_client = translate.Client()
+        _translate_client = translate.Client(credentials=credentials)
         print("(y) Google Translate API client initialized")
         return _translate_client
     except Exception as e:
@@ -168,10 +176,12 @@ def get_translate_v3_client() -> translate_v3.TranslationServiceClient:
 
     try:
         # Setup authentication (will use default credentials)
-        setup_authentication()
+        credentials, _ = setup_authentication()
 
         # Create Translate v3 client
-        _translate_v3_client = translate_v3.TranslationServiceClient()
+        _translate_v3_client = translate_v3.TranslationServiceClient(
+            credentials=credentials
+        )
         print("(y) Google Translate API v3 client initialized")
         return _translate_v3_client
     except Exception as e:
@@ -195,10 +205,10 @@ def get_texttospeech_client() -> texttospeech.TextToSpeechClient:
 
     try:
         # Setup authentication (will use default credentials)
-        setup_authentication()
+        credentials, _ = setup_authentication()
 
         # Create Text-to-Speech client
-        _texttospeech_client = texttospeech.TextToSpeechClient()
+        _texttospeech_client = texttospeech.TextToSpeechClient(credentials=credentials)
         print("(y) Google Text-to-Speech API client initialized")
         return _texttospeech_client
     except Exception as e:
@@ -222,10 +232,10 @@ def get_storage_client() -> storage.Client:
 
     try:
         # Setup authentication (will use default credentials)
-        setup_authentication()
+        credentials, project_id = setup_authentication()
 
         # Create Storage client
-        _storage_client = storage.Client()
+        _storage_client = storage.Client(project=project_id, credentials=credentials)
         print("(y) Google Cloud Storage client initialized")
         return _storage_client
     except Exception as e:
@@ -251,10 +261,12 @@ def get_texttospeech_long_client() -> (
 
     try:
         # Setup authentication (will use default credentials)
-        setup_authentication()
+        credentials, _ = setup_authentication()
 
         # Create Long Audio TTS client
-        _texttospeech_long_client = texttospeech.TextToSpeechLongAudioSynthesizeClient()
+        _texttospeech_long_client = texttospeech.TextToSpeechLongAudioSynthesizeClient(
+            credentials=credentials
+        )
         print("(y) Google Text-to-Speech Long Audio API client initialized")
         return _texttospeech_long_client
     except Exception as e:

@@ -70,31 +70,12 @@ print("\nGenerating phrases...")
 print("-" * 60)
 
 try:
-    phrases, tracking = generate_phrases_from_vocab_dict(
-        test_vocab_dict,
-        max_iterations=1,  # Just one iteration for testing
-    )
+    phrases = generate_phrases_from_vocab_dict(test_vocab_dict)
 
-    print("\n✓ Generation complete!")
-    print("\nResults:")
-    print(f"  Total phrases generated: {tracking['total_phrases']}")
-    print(f"  Verb phrases: {tracking['verb_phrases']}")
-    print(f"  Vocab phrases: {tracking['vocab_phrases']}")
-    print(f"  Verbs processed: {tracking['verbs_processed']}")
-    print(f"  Vocab processed: {tracking['vocab_processed']}")
-    print(f"  Additional words found: {len(tracking['words_used'])}")
-
-    if tracking["errors"]:
-        print("\n⚠ Errors encountered:")
-        for error in tracking["errors"]:
-            print(f"  - {error}")
-
+    print(f"\n✓ Generation complete! {len(phrases)} phrases generated.")
     print("\nGenerated Phrases:")
     for i, phrase in enumerate(phrases, 1):
         print(f"  {i}. {phrase}")
-
-    print("\nAdditional words tracked:")
-    print(f"  {tracking['words_used']}")
 
 except Exception as e:
     print("\n✗ Error during phrase generation:")
