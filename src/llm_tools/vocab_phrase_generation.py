@@ -91,7 +91,9 @@ def generate_vocab_phrases(
             context_str = "(No context words provided)"
 
         lang = get_language(language)
-        language_name = Language.get(lang.language or "en").display_name() if lang else "English"
+        language_name = (
+            Language.get(lang.language or "en").display_name() if lang else "English"
+        )
 
         # Load prompts from template files
         system_template = load_prompt_template("vocab_phrase_generation", "system")

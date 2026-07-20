@@ -87,6 +87,28 @@
             }
         }
     },
+    "fi-FI": {
+        "flashcard": {
+            "female": {
+                "provider": "google",
+                "voice_id": "fi-FI-Wavenet-B"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "fi-FI-Wavenet-B"
+            }
+        },
+        "story": {
+            "female": {
+                "provider": "google",
+                "voice_id": "fi-FI-Chirp3-HD-Achernar"
+            },
+            "male": {
+                "provider": "google",
+                "voice_id": "fi-FI-Chirp3-HD-Algenib"
+            }
+        }
+    },
     "nb-NO": {
         "flashcard": {
             "female": {

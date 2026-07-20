@@ -90,7 +90,7 @@ for i, phrase_doc in enumerate(phrase_docs, start=1):
 
 # %% --- summary ----------------------------------------------------------
 print("\n" + "=" * 60)
-print(f"Done.")
+print("Done.")
 print(f"  Phrases inspected : {total_phrases}")
 print(f"  Swedish not found : {not_found}")
 print(

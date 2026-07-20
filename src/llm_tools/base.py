@@ -9,7 +9,7 @@ from connections.anthropic_auth import get_anthropic_client as _get_anthropic_cl
 
 # Default model for all LLM tools
 # Using 'claude-sonnet-4' which is Anthropic's recommended Sonnet model
-DEFAULT_MODEL = "claude-sonnet-4-5"
+DEFAULT_MODEL = "claude-sonnet-4-6"
 
 
 def load_prompt_template(tool_name: str, prompt_type: str = "system") -> Template:

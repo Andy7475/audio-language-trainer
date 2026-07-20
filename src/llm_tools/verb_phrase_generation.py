@@ -102,7 +102,9 @@ def generate_verb_phrases(
     """
     try:
         lang = get_language(language)
-        language_name = Language.get(lang.language or "en").display_name() if lang else "English"
+        language_name = (
+            Language.get(lang.language or "en").display_name() if lang else "English"
+        )
 
         # Load prompts from template files
         system_template = load_prompt_template("verb_phrase_generation", "system")

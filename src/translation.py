@@ -2,14 +2,13 @@ from typing import List, Optional, Union
 
 import langcodes
 from langcodes import Language
-import html
 from connections.gcloud_auth import (
-    get_translate_v3_client,
     get_translate_client,
     setup_authentication,
 )
 from llm_tools.review_translation import refine_translation
 from models import get_language
+from llm_tools.base import DEFAULT_MODEL
 
 
 def translate_with_google_translate(
@@ -99,7 +98,7 @@ def refine_translation_with_anthropic(
         RuntimeError: If refinement fails
     """
     if model is None:
-        model = "claude-sonnet-4-20250514"
+        model = DEFAULT_MODEL  # Use default model if not specified
 
     # Get target language name (e.g., "French" from "fr-FR")
     if isinstance(target_language, str) and len(target_language) == 2:

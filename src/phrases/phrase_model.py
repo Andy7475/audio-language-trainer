@@ -19,7 +19,6 @@ from connections.gcloud_auth import get_firestore_client
 from phrases.utils import generate_phrase_hash
 from nlp import (
     extract_lemmas_and_pos,
-    get_tokens_from_lemmas_and_pos,
     get_verbs_from_lemmas_and_pos,
     get_vocab_from_lemmas_and_pos,
     get_verbs_and_vocab,
@@ -226,6 +225,7 @@ class Phrase(FirePhraseDataModel):
             )
         except ValueError:
             from phrases.search import get_phrase as _get_phrase
+
             existing_hash = phrase_hash or generate_phrase_hash(english_text)
             phrase = _get_phrase(existing_hash)
             if phrase is None:

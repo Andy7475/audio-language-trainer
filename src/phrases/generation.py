@@ -71,7 +71,9 @@ def generate_phrases_from_vocab_dict(
 
     # Generate phrases from verbs
     logger.info(f"Starting verb phrase generation. {len(verb_list)} verbs to process.")
-    all_phrases, verb_tracking = _generate_verb_phrases_batch(verb_list, language=language)
+    all_phrases, verb_tracking = _generate_verb_phrases_batch(
+        verb_list, language=language
+    )
     tracking_info["verb_phrases"] = len(all_phrases)
     tracking_info["verbs_processed"] = verb_tracking["verbs_processed"]
     tracking_info["words_used"].extend(verb_tracking["additional_words"])
