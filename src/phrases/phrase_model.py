@@ -215,9 +215,16 @@ class Phrase(FirePhraseDataModel):
         result = translate_with_google_translate(
             text=foreign_phrase,
             target_language=Language.get("en-GB"),
-            source_language=language.language or "en",
+            source_language=language.language,
         )
-        english_text = result if isinstance(result, str) else result[0]
+        initial_translation = result if isinstance(result, str) else result[0]
+
+        english_text = refine_translation_with_anthropic(
+            source_phrase=foreign_phrase,
+            initial_translation=initial_translation,
+            target_language=Language.get("en-GB"),
+            source_language=language.language,
+        )
 
         try:
             phrase = cls.create(
@@ -991,6 +998,7 @@ class Translation(FirePhraseDataModel):
     @classmethod
     def _normalize_tags(cls, value: str | List[str] | None) -> List[str]:
         return normalize_tags(value)
+
     audio: dict[str, dict[str, PhraseAudio]] = Field(
         default_factory=dict,
         description="Nested dict of audio files: {context: {speed: PhraseAudio}}. Example: {'flashcard': {'normal': PhraseAudio, 'slow': PhraseAudio}, 'story': {'normal': PhraseAudio}}",

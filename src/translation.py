@@ -9,6 +9,7 @@ from connections.gcloud_auth import (
     setup_authentication,
 )
 from llm_tools.review_translation import refine_translation
+from llm_tools.base import DEFAULT_MODEL
 from models import get_language
 
 
@@ -99,7 +100,7 @@ def refine_translation_with_anthropic(
         RuntimeError: If refinement fails
     """
     if model is None:
-        model = "claude-sonnet-4-20250514"
+        model = DEFAULT_MODEL  # Use default model if not specified
 
     # Get target language name (e.g., "French" from "fr-FR")
     if isinstance(target_language, str) and len(target_language) == 2:
