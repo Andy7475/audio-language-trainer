@@ -24,4 +24,4 @@ app.log
 *.log
 /data/long_audio/
 app.log
-
+/data/text_to_process/

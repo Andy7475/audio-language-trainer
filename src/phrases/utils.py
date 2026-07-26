@@ -54,3 +54,56 @@ def generate_phrase_hash(english_text: str) -> str:
 
 def generate_deck_name(collection: str, deck: str) -> str:
     return f"{collection}-{deck}"
+
+
+def generate_note_guid(phrase_key: str, source_tag: str, target_tag: str) -> int:
+    """Generate a deterministic Anki note guid for a phrase/language pair.
+
+    Deterministic replacement for the note-guid formula that used to live
+    inline in anki_tools.py as `_string_to_large_int(f"{phrase.key}_...")`,
+    which relied on Python's randomized-per-process builtin hash() and so
+    produced a different guid every run. Takes the three components
+    separately (rather than a pre-joined string) so every call site formats
+    them identically by construction.
+
+    Args:
+        phrase_key: The phrase's Firestore key (see generate_phrase_hash).
+        source_tag: BCP-47 tag of the source language (e.g. 'en-GB').
+        target_tag: BCP-47 tag of the target language (e.g. 'sv-SE').
+
+    Returns:
+        int: Deterministic guid, positive and less than 10**10 (matches the
+            range of the formula it replaces).
+
+    Example:
+        >>> generate_note_guid("hello_world_abc123", "en-GB", "fr-FR")
+        4837291056
+    """
+    text = f"{phrase_key}_{source_tag}_{target_tag}"
+    digest = hashlib.sha256(text.encode()).hexdigest()
+    return int(digest[:10], 16) % (10**10)
+
+
+ANKI_MANAGED_TAG_PREFIX = "fs::"
+
+
+def to_anki_tags(firestore_tags: List[str]) -> List[str]:
+    """Convert Firestore tag values into the fs::-prefixed form written to Anki.
+
+    Firestore's own stored tag values are left unprefixed; the prefix is
+    applied only at the Anki-write boundary so an Anki sync can safely
+    overwrite exactly the tags it manages (anything starting with
+    ANKI_MANAGED_TAG_PREFIX) while leaving Anki-native tags (e.g. 'marked',
+    'leech') or any hand-added tag completely untouched.
+
+    Args:
+        firestore_tags: Tag values as stored in Translation.tags.
+
+    Returns:
+        List[str]: Same tags, each prefixed with ANKI_MANAGED_TAG_PREFIX.
+
+    Example:
+        >>> to_anki_tags(["SURVIVAL", "Pack01"])
+        ['fs::SURVIVAL', 'fs::Pack01']
+    """
+    return [f"{ANKI_MANAGED_TAG_PREFIX}{tag}" for tag in firestore_tags]

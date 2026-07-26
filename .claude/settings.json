@@ -9,7 +9,10 @@
       "Bash(python -m pytest tests/ -v)",
       "Bash(python -m pytest tests/test_anki_tools.py tests/test_dialogue_generation.py tests/test_nlp.py tests/test_translation.py)",
       "Bash(python -m pytest tests/ --ignore=tests/test_anki_tools.py --ignore=tests/test_dialogue_generation.py --ignore=tests/test_nlp.py --ignore=tests/test_translation.py -v)",
-      "Bash(python -m pytest tests/test_phrase_search.py tests/test_text_vocab_extraction.py -v)"
+      "Bash(python -m pytest tests/test_phrase_search.py tests/test_text_vocab_extraction.py -v)",
+      "Bash(jupyter nbconvert *)",
+      "Bash(git checkout *)",
+      "Bash(python -m pytest tests/test_phrase_utils.py -v)"
     ]
   }
 }

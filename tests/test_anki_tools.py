@@ -14,11 +14,10 @@ from anki_tools import (
     get_anki_model,
     create_anki_note_from_phrase,
     create_anki_deck,
-    save_anki_deck,
-    create_and_save_anki_deck,
     _get_sort_field,
     _string_to_large_int,
 )
+from phrases.utils import generate_note_guid
 from models import BCP47Language
 from phrases.phrase_model import Phrase, Translation, PhraseAudio
 from audio.voices import VoiceInfo
@@ -69,7 +68,9 @@ def mock_phrase():
         language=BCP47Language.get("fr-FR"),
         context="flashcard",
         speed="normal",
-        voice_info=VoiceInfo(provider="google", voice_id="fr-FR-Standard-A"),
+        voice_info=VoiceInfo(
+            provider="google", voice_id="fr-FR-Standard-A", language_code="fr-FR"
+        ),
     )
     # Create a simple silent audio segment (100ms)
     mock_audio_normal.audio_segment = AudioSegment.silent(duration=100)
@@ -81,7 +82,9 @@ def mock_phrase():
         language=BCP47Language.get("fr-FR"),
         context="flashcard",
         speed="slow",
-        voice_info=VoiceInfo(provider="google", voice_id="fr-FR-Standard-A"),
+        voice_info=VoiceInfo(
+            provider="google", voice_id="fr-FR-Standard-A", language_code="fr-FR"
+        ),
     )
     mock_audio_slow.audio_segment = AudioSegment.silent(duration=200)
 
@@ -110,8 +113,8 @@ def test_get_anki_model():
     model = get_anki_model()
 
     assert isinstance(model, genanki.Model)
-    assert model.model_id == 1607392313
-    assert model.name == "FirePhrase"
+    assert model.model_id == 1607392319
+    assert model.name == "FirePhrase2"
 
     # Check fields
     field_names = [f["name"] for f in model.fields]
@@ -160,8 +163,14 @@ def test_string_to_large_int():
     assert id1 < 10**10
 
 
-def test_create_anki_note_from_phrase(mock_phrase):
+def test_create_anki_note_from_phrase(mock_phrase, monkeypatch):
     """Test creating an Anki note from a Phrase object."""
+    # mock_phrase already has audio_segment/image populated directly; the
+    # real Phrase.download()/get_image() unconditionally hit GCS regardless
+    # of pre-set data, so they're no-op'd here rather than fixing the wider,
+    # pre-existing GCS-mocking gap (unrelated to what this test verifies).
+    monkeypatch.setattr(Phrase, "download", lambda self, **kwargs: None)
+    monkeypatch.setattr(Phrase, "get_image", lambda self, **kwargs: None)
     model = get_anki_model()
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -191,14 +200,49 @@ def test_create_anki_note_from_phrase(mock_phrase):
         for media_file in media_files:
             assert os.path.exists(media_file)
 
+        # guid must come from the deterministic generate_note_guid, not the
+        # old randomized-per-process _string_to_large_int(f"{key}_...")
+        assert note.guid == generate_note_guid("hello_world_abc123", "en-GB", "fr-FR")
 
-def test_create_anki_note_missing_translation(mock_phrase):
-    """Test error handling when translation is missing."""
+
+def test_create_anki_note_from_phrase_prefixes_firestore_tags(mock_phrase, monkeypatch):
+    """Translation.tags must be written to the note with the fs:: prefix,
+    so a live-collection sync can later identify and manage exactly them."""
+    monkeypatch.setattr(Phrase, "download", lambda self, **kwargs: None)
+    monkeypatch.setattr(Phrase, "get_image", lambda self, **kwargs: None)
+    mock_phrase.translations["fr-FR"].tags = ["SURVIVAL", "Pack01"]
     model = get_anki_model()
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        # Try to create note with missing Spanish translation
-        with pytest.raises(ValueError, match="missing target translation"):
+        note, _ = create_anki_note_from_phrase(
+            phrase=mock_phrase,
+            source_language="en-GB",
+            target_language="fr-FR",
+            index=0,
+            model=model,
+            temp_dir=temp_dir,
+        )
+
+        assert "fs::SURVIVAL" in note.tags
+        assert "fs::Pack01" in note.tags
+        assert "SURVIVAL" not in note.tags
+
+
+def test_create_anki_note_missing_translation(mock_phrase, monkeypatch):
+    """A failure auto-translating a missing target language must propagate,
+    not be silently swallowed. Uses a controlled failure via monkeypatch
+    rather than relying on a real translate API call from a test."""
+
+    def _raise(*args, **kwargs):
+        raise RuntimeError("simulated translation failure")
+
+    monkeypatch.setattr(Phrase, "translate", _raise)
+    model = get_anki_model()
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Spanish translation isn't in mock_phrase, so this must attempt
+        # (and fail) an auto-translate rather than proceeding silently.
+        with pytest.raises(RuntimeError, match="simulated translation failure"):
             create_anki_note_from_phrase(
                 phrase=mock_phrase,
                 source_language="en-GB",
@@ -209,111 +253,89 @@ def test_create_anki_note_missing_translation(mock_phrase):
             )
 
 
-def test_create_anki_deck(mock_phrase):
-    """Test creating an Anki deck from phrases."""
+def test_create_anki_deck(mock_phrase, monkeypatch):
+    """Test creating an Anki deck from phrases (writes the .apkg directly -
+    create_anki_deck has no separate save step in the current codebase)."""
+    monkeypatch.setattr(Phrase, "download", lambda self, **kwargs: None)
+    monkeypatch.setattr(Phrase, "get_image", lambda self, **kwargs: None)
     phrases = [mock_phrase]
 
-    package = create_anki_deck(
-        phrases=phrases,
-        source_language="en-GB",
-        target_language="fr-FR",
-        deck_name="Test Deck::French",
-    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        package = create_anki_deck(
+            phrases=phrases,
+            source_language="en-GB",
+            target_language="fr-FR",
+            output_path=os.path.join(temp_dir, "test_deck.apkg"),
+            deck_name="Test Deck::French",
+        )
 
-    assert isinstance(package, genanki.Package)
-    assert len(package.decks) == 1
-    assert package.decks[0].name == "Test Deck::French"
+        assert isinstance(package, genanki.Package)
+        assert len(package.decks) == 1
+        assert package.decks[0].name == "Test Deck::French"
 
-    # Check that deck has notes
-    deck = package.decks[0]
-    assert len(deck.notes) == 1
+        # Check that deck has notes
+        deck = package.decks[0]
+        assert len(deck.notes) == 1
+
+        # Check the file was actually written to disk with content
+        output_path = os.path.join(temp_dir, "test_deck.apkg")
+        assert os.path.exists(output_path)
+        assert os.path.getsize(output_path) > 0
 
 
-def test_create_anki_deck_auto_name(mock_phrase):
+def test_create_anki_deck_auto_name(mock_phrase, monkeypatch):
     """Test automatic deck name generation."""
+    monkeypatch.setattr(Phrase, "download", lambda self, **kwargs: None)
+    monkeypatch.setattr(Phrase, "get_image", lambda self, **kwargs: None)
     phrases = [mock_phrase]
 
-    package = create_anki_deck(
-        phrases=phrases,
-        source_language="en-GB",
-        target_language="fr-FR",
-    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        package = create_anki_deck(
+            phrases=phrases,
+            source_language="en-GB",
+            target_language="fr-FR",
+            output_path=os.path.join(temp_dir, "test_deck.apkg"),
+        )
 
-    # Should auto-generate name
-    assert package.decks[0].name
-    assert "French" in package.decks[0].name
+        # Should auto-generate name
+        assert package.decks[0].name
+        assert "French" in package.decks[0].name
 
 
 def test_create_anki_deck_empty_list():
     """Test error handling for empty phrase list."""
-    with pytest.raises(ValueError, match="cannot be empty"):
-        create_anki_deck(
-            phrases=[],
-            source_language="en-GB",
-            target_language="fr-FR",
-        )
-
-
-def test_save_anki_deck(mock_phrase):
-    """Test saving an Anki deck to file."""
-    phrases = [mock_phrase]
-    package = create_anki_deck(
-        phrases=phrases,
-        source_language="en-GB",
-        target_language="fr-FR",
-    )
-
     with tempfile.TemporaryDirectory() as temp_dir:
-        output_path = os.path.join(temp_dir, "test_deck.apkg")
-        saved_path = save_anki_deck(package, output_path)
-
-        # Check file was created
-        assert os.path.exists(saved_path)
-        assert saved_path.endswith(".apkg")
-
-        # Check file has content
-        assert os.path.getsize(saved_path) > 0
+        with pytest.raises(ValueError, match="cannot be empty"):
+            create_anki_deck(
+                phrases=[],
+                source_language="en-GB",
+                target_language="fr-FR",
+                output_path=os.path.join(temp_dir, "test_deck.apkg"),
+            )
 
 
-def test_save_anki_deck_auto_extension(mock_phrase):
-    """Test that .apkg extension is added automatically."""
+def test_create_anki_deck_auto_extension(mock_phrase, monkeypatch):
+    """Test that .apkg extension is added automatically to output_path."""
+    monkeypatch.setattr(Phrase, "download", lambda self, **kwargs: None)
+    monkeypatch.setattr(Phrase, "get_image", lambda self, **kwargs: None)
     phrases = [mock_phrase]
-    package = create_anki_deck(
-        phrases=phrases,
-        source_language="en-GB",
-        target_language="fr-FR",
-    )
 
     with tempfile.TemporaryDirectory() as temp_dir:
         output_path = os.path.join(temp_dir, "test_deck")  # No extension
-        saved_path = save_anki_deck(package, output_path)
-
-        assert saved_path.endswith(".apkg")
-        assert os.path.exists(saved_path)
-
-
-def test_create_and_save_anki_deck(mock_phrase):
-    """Test the convenience function for creating and saving in one step."""
-    phrases = [mock_phrase]
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        output_path = os.path.join(temp_dir, "test_deck.apkg")
-
-        saved_path = create_and_save_anki_deck(
+        create_anki_deck(
             phrases=phrases,
             source_language="en-GB",
             target_language="fr-FR",
             output_path=output_path,
-            deck_name="Test::Deck",
         )
 
-        # Check file was created
-        assert os.path.exists(saved_path)
-        assert saved_path.endswith(".apkg")
+        assert os.path.exists(output_path + ".apkg")
 
 
-def test_multiple_language_combinations(mock_phrase):
+def test_multiple_language_combinations(mock_phrase, monkeypatch):
     """Test that different language combinations work."""
+    monkeypatch.setattr(Phrase, "download", lambda self, **kwargs: None)
+    monkeypatch.setattr(Phrase, "get_image", lambda self, **kwargs: None)
     # Add a Japanese translation to the mock phrase
     ja_translation = Translation(
         phrase_hash="hello_world_abc123",
@@ -324,40 +346,60 @@ def test_multiple_language_combinations(mock_phrase):
         image_file_path="phrases/en-GB/images/hello_world_abc123.png",
     )
 
-    # Add mock audio
-    mock_audio = PhraseAudio(
+    # Add mock audio (both speeds - prepare_phrase_note_content needs both)
+    mock_audio_normal = PhraseAudio(
         phrase_hash="hello_world_abc123",
         text="こんにちは世界",
         file_path="phrases/ja-JP/audio/flashcard/normal/hello_world_abc123.mp3",
         language=BCP47Language.get("ja-JP"),
         context="flashcard",
         speed="normal",
-        voice_info=VoiceInfo(provider="google", voice_id="ja-JP-Standard-A"),
+        voice_info=VoiceInfo(
+            provider="google", voice_id="ja-JP-Standard-A", language_code="ja-JP"
+        ),
     )
-    mock_audio.audio_segment = AudioSegment.silent(duration=100)
+    mock_audio_normal.audio_segment = AudioSegment.silent(duration=100)
 
-    ja_translation.audio = {"flashcard": {"normal": mock_audio}}
+    mock_audio_slow = PhraseAudio(
+        phrase_hash="hello_world_abc123",
+        text="こんにちは世界",
+        file_path="phrases/ja-JP/audio/flashcard/slow/hello_world_abc123.mp3",
+        language=BCP47Language.get("ja-JP"),
+        context="flashcard",
+        speed="slow",
+        voice_info=VoiceInfo(
+            provider="google", voice_id="ja-JP-Standard-A", language_code="ja-JP"
+        ),
+    )
+    mock_audio_slow.audio_segment = AudioSegment.silent(duration=200)
+
+    ja_translation.audio = {
+        "flashcard": {"normal": mock_audio_normal, "slow": mock_audio_slow}
+    }
     ja_translation.image = mock_phrase.translations["en-GB"].image
 
     mock_phrase.translations["ja-JP"] = ja_translation
 
-    # Test English to Japanese
-    package = create_anki_deck(
-        phrases=[mock_phrase],
-        source_language="en-GB",
-        target_language="ja-JP",
-        deck_name="Japanese::Test",
-    )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        # Test English to Japanese
+        package = create_anki_deck(
+            phrases=[mock_phrase],
+            source_language="en-GB",
+            target_language="ja-JP",
+            output_path=os.path.join(temp_dir, "en_ja.apkg"),
+            deck_name="Japanese::Test",
+        )
 
-    assert package.decks[0].name == "Japanese::Test"
-    assert len(package.decks[0].notes) == 1
+        assert package.decks[0].name == "Japanese::Test"
+        assert len(package.decks[0].notes) == 1
 
-    # Test French to Japanese
-    package2 = create_anki_deck(
-        phrases=[mock_phrase],
-        source_language="fr-FR",
-        target_language="ja-JP",
-        deck_name="Japanese from French",
-    )
+        # Test French to Japanese
+        package2 = create_anki_deck(
+            phrases=[mock_phrase],
+            source_language="fr-FR",
+            target_language="ja-JP",
+            output_path=os.path.join(temp_dir, "fr_ja.apkg"),
+            deck_name="Japanese from French",
+        )
 
-    assert len(package2.decks[0].notes) == 1
+        assert len(package2.decks[0].notes) == 1

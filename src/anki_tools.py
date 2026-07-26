@@ -39,6 +39,7 @@ from tqdm import tqdm
 
 from models import BCP47Language, get_language
 from phrases.phrase_model import Phrase
+from phrases.utils import generate_note_guid, to_anki_tags
 from utils import load_template
 from logger import logger
 
@@ -137,43 +138,34 @@ def _string_to_large_int(text: str) -> int:
 # ============================================================================
 
 
-def create_anki_note_from_phrase(
+def prepare_phrase_note_content(
     phrase: Phrase,
     source_language: Union[str, BCP47Language],
     target_language: Union[str, BCP47Language],
     index: int,
-    model: genanki.Model,
     temp_dir: str,
-) -> tuple[genanki.Note, list[str]]:
-    """Create an Anki note from a single Phrase object.
+) -> tuple[dict[str, str], list[str]]:
+    """Prepare note field content for a phrase, independent of note destination.
 
-    Downloads target language audio and image (if needed) and creates a note with
-    all necessary fields populated. Source and target can be any language combination.
+    Ensures source/target translations exist (translating+uploading to
+    Firestore if missing), downloads and resizes target-language media into
+    temp_dir, and builds the field values used by every note this project
+    creates. Destination-agnostic: shared by create_anki_note_from_phrase
+    (genanki .apkg export) and the live-collection sync path (anki_sync.py),
+    so the translation-backfill and media-handling logic lives in one place.
 
     Args:
         phrase: Phrase object with translations
         source_language: BCP47 language tag for source (what user already knows)
         target_language: BCP47 language tag for target (what user is learning)
-        index: Index/position of this phrase in the deck (for sorting)
-        model: genanki Model to use for the note
+        index: Index/position of this phrase (used for the SortOrder field)
         temp_dir: Temporary directory to store media files
-        wiktionary_links: Optional HTML string with wiktionary links (if provided,
-                         auto_generate_wiktionary is ignored)
-        auto_generate_wiktionary: If True and wiktionary_links not provided,
-                                 automatically generate from Translation.get_wiktionary_links()
 
     Returns:
-        tuple: (genanki.Note, list of media file paths)
+        tuple: (field values keyed by field name, list of media file paths)
 
     Raises:
         ValueError: If source or target translation doesn't exist
-
-    Example:
-        >>> phrase = get_phrase_by_english("Hello")
-        >>> phrase.translate("fr-FR")
-        >>> note, media = create_anki_note_from_phrase(
-        ...     phrase, "en-GB", "fr-FR", 0, model, "/tmp"
-        ... )
     """
     # Normalize language parameters
     source_lang = get_language(source_language)
@@ -219,9 +211,6 @@ def create_anki_note_from_phrase(
         image_html = f'<img src="{image_filename}">'
 
     # Handle audio
-    audio_normal_html = ""
-    audio_slow_html = ""
-
     # Normal speed audio
     phrase_audio_normal = target_translation.audio["flashcard"]["normal"]
 
@@ -240,29 +229,78 @@ def create_anki_note_from_phrase(
     media_files.append(audio_slow_path)
     audio_slow_html = f"[sound:{audio_slow_filename}]"
 
-    # Build tags list: combine Translation media tags with Phrase collection/deck
-    note_tags = list(target_translation.tags)
+    fields = {
+        "SortOrder": _get_sort_field(index, target_translation.text),
+        "SourceText": source_translation.text,
+        "TargetText": target_translation.text,
+        "TargetAudio": audio_normal_html,
+        "TargetAudioSlow": audio_slow_html,
+        "WiktionaryLinks": wiktionary_links or "",
+        "Picture": image_html,
+        "SourceLanguageName": source_lang.display_name(),
+        "TargetLanguageName": target_lang.display_name(),
+    }
+
+    return fields, media_files
+
+
+def create_anki_note_from_phrase(
+    phrase: Phrase,
+    source_language: Union[str, BCP47Language],
+    target_language: Union[str, BCP47Language],
+    index: int,
+    model: genanki.Model,
+    temp_dir: str,
+) -> tuple[genanki.Note, list[str]]:
+    """Create an Anki note from a single Phrase object.
+
+    Downloads target language audio and image (if needed) and creates a note with
+    all necessary fields populated. Source and target can be any language combination.
+
+    Args:
+        phrase: Phrase object with translations
+        source_language: BCP47 language tag for source (what user already knows)
+        target_language: BCP47 language tag for target (what user is learning)
+        index: Index/position of this phrase in the deck (for sorting)
+        model: genanki Model to use for the note
+        temp_dir: Temporary directory to store media files
+
+    Returns:
+        tuple: (genanki.Note, list of media file paths)
+
+    Raises:
+        ValueError: If source or target translation doesn't exist
+
+    Example:
+        >>> phrase = get_phrase_by_english("Hello")
+        >>> phrase.translate("fr-FR")
+        >>> note, media = create_anki_note_from_phrase(
+        ...     phrase, "en-GB", "fr-FR", 0, model, "/tmp"
+        ... )
+    """
+    fields, media_files = prepare_phrase_note_content(
+        phrase, source_language, target_language, index, temp_dir
+    )
+
+    source_tag = get_language(source_language).to_tag()
+    target_tag = get_language(target_language).to_tag()
+    target_translation = phrase.translations[target_tag]
+
+    # Build tags list: combine Translation media tags (fs::-prefixed, so a
+    # live-collection sync can later identify and manage exactly these)
+    # with Phrase collection/deck (left unprefixed, unrelated mechanism).
+    note_tags = to_anki_tags(target_translation.tags)
     if phrase.collection:
         note_tags.append(phrase.collection.replace(" ", "_"))
     if phrase.deck:
         note_tags.append(phrase.deck.replace(" ", "_"))
 
-    # Create the note
+    # Create the note - field order must match model.fields exactly
     note = genanki.Note(
         model=model,
-        fields=[
-            _get_sort_field(index, target_translation.text),  # SortOrder
-            source_translation.text,  # SourceText
-            target_translation.text,  # TargetText
-            audio_normal_html,  # TargetAudio
-            audio_slow_html,  # TargetAudioSlow
-            wiktionary_links or "",  # WiktionaryLinks
-            image_html,  # Picture
-            source_lang.display_name(),
-            target_lang.display_name(),
-        ],
+        fields=[fields[field["name"]] for field in model.fields],
         tags=note_tags,
-        guid=_string_to_large_int(f"{phrase.key}_{source_tag}_{target_tag}"),
+        guid=generate_note_guid(phrase.key, source_tag, target_tag),
     )
 
     return note, media_files
