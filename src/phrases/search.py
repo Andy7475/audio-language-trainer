@@ -1,5 +1,6 @@
 """Querying and searching phrases in the database."""
 
+from collections import Counter
 from typing import Any, Callable, Dict, List, Literal, Optional, Set, Tuple
 
 from phrases.utils import generate_phrase_hash, normalize_tags
@@ -601,35 +602,58 @@ def add_tags_to_translations(
     return updated_refs
 
 
-def _passes_wiktionary_check(
-    lemma: str, bucket: Literal["verbs", "vocab"], language_code: str
+def _word_matches_bucket_in_wiktionary(
+    word: str, bucket: Literal["verbs", "vocab"], language_code: str
 ) -> bool:
-    """Check whether a lemma is a real dictionary word, to filter out NLP
-    artefacts and disfluencies (e.g. 'uh', '-flytta') before they pollute a
-    vocab_dict.
+    """Check whether *word* has a Wiktionary entry matching *bucket*'s POS set.
 
-    Mirrors ``nlp.get_verbs_and_vocab``'s ``filter_by_wiktionary`` logic: the
-    verb bucket is checked against pos='verb'; the vocab bucket is accepted if
-    it matches noun, adj, or adv.
+    Verb bucket is checked against pos='verb'; vocab bucket is accepted if it
+    matches noun, adj, or adv.
+    """
+    if bucket == "verbs":
+        return word_in_wiktionary(word, language_code, pos="verb")
+    return (
+        word_in_wiktionary(word, language_code, pos="noun")
+        or word_in_wiktionary(word, language_code, pos="adj")
+        or word_in_wiktionary(word, language_code, pos="adv")
+    )
+
+
+def _passes_wiktionary_check(
+    lemma: str,
+    bucket: Literal["verbs", "vocab"],
+    language_code: str,
+    token: Optional[str] = None,
+) -> bool:
+    """Check whether a lemma (or its surface token) is a real dictionary word,
+    to filter out NLP artefacts and disfluencies (e.g. 'uh', '-flytta') before
+    they pollute a vocab_dict.
+
+    Checks the lemma first; if that has no matching entry and *token* is
+    given, falls back to checking the raw surface token. This rescues words
+    where the lemmatizer produced a wrong or unrelated lemma — e.g. spaCy's
+    Swedish model mislemmatizing the plural noun "bränder" (fires) to "bränd"
+    (the unrelated adjective/verb-participle "burnt") — but the original
+    inflected token is itself a valid dictionary entry for this POS bucket.
 
     Args:
         lemma: Dictionary-form word to check.
         bucket: Which POS bucket this word was classified into.
         language_code: Two-letter language code (e.g. 'sv').
+        token: Optional raw surface token to fall back to if the lemma fails.
     """
-    if bucket == "verbs":
-        return word_in_wiktionary(lemma, language_code, pos="verb")
-    return (
-        word_in_wiktionary(lemma, language_code, pos="noun")
-        or word_in_wiktionary(lemma, language_code, pos="adj")
-        or word_in_wiktionary(lemma, language_code, pos="adv")
-    )
+    if _word_matches_bucket_in_wiktionary(lemma, bucket, language_code):
+        return True
+    if token and token.lower() != lemma:
+        return _word_matches_bucket_in_wiktionary(token.lower(), bucket, language_code)
+    return False
 
 
 def _extract_text_vocab_dict(
     text: str,
     language: Language,
     candidate_tokens: Set[str],
+    min_occurrences: int = 3,
 ) -> Tuple[Dict[str, List[str]], List[str]]:
     """Turn story text into a vocab_dict of coverage targets, plus ignored tokens.
 
@@ -640,12 +664,22 @@ def _extract_text_vocab_dict(
     verbatim — falling back to the lemma otherwise. This lets coverage
     matching reinforce the exact form seen in the text when possible.
 
+    Lemmas that occur fewer than *min_occurrences* times in *text* are treated
+    as too rare to be worth dedicating phrase coverage to, and are folded into
+    ``ignored_tokens`` rather than the vocab_dict. Counting is done on the
+    lemma (not the surface token), so the same word appearing in different
+    inflected forms still accumulates toward one count.
+
     Args:
         text: Source text (e.g. a story) to extract vocabulary from.
         language: Target language of *text*.
         candidate_tokens: Lowercased tokens already present across the
             candidate phrase pool (see ``_load_phrases_with_translation``),
             used to decide token-vs-lemma preference.
+        min_occurrences: Minimum number of times a lemma must appear in
+            *text* to be kept as a coverage target (default 3). Pass 1 to
+            disable rare-word filtering entirely, e.g. for short texts where
+            every content word only appears once.
 
     Returns:
         Tuple of (vocab_dict with 'verbs'/'vocab' keys, sorted unique ignored tokens).
@@ -655,8 +689,7 @@ def _extract_text_vocab_dict(
 
     triples = extract_token_lemma_pos(text, language_code)
 
-    target_verbs: Set[str] = set()
-    target_vocab: Set[str] = set()
+    survivors: List[Tuple[str, str, Literal["verbs", "vocab"]]] = []
     ignored_tokens: Set[str] = set()
 
     for token_text, lemma, pos in triples:
@@ -668,7 +701,21 @@ def _extract_text_vocab_dict(
             ignored_tokens.add(token_text.lower())
             continue
 
-        if not lemma or not _passes_wiktionary_check(lemma, bucket, language_code):
+        if not lemma or not _passes_wiktionary_check(
+            lemma, bucket, language_code, token=token_text
+        ):
+            ignored_tokens.add(token_text.lower())
+            continue
+
+        survivors.append((token_text, lemma, bucket))
+
+    lemma_counts = Counter(lemma for _, lemma, _ in survivors)
+
+    target_verbs: Set[str] = set()
+    target_vocab: Set[str] = set()
+
+    for token_text, lemma, bucket in survivors:
+        if lemma_counts[lemma] < min_occurrences:
             ignored_tokens.add(token_text.lower())
             continue
 
@@ -681,11 +728,14 @@ def _extract_text_vocab_dict(
 
 def add_tags_from_text(
     text: str,
-    language: Language | str,
+    target_language: Language | str,
     tags: List[str] | str,
     collection: Optional[str] = None,
     deck: Optional[str] = None,
     database_name: str = "firephrases",
+    min_occurrences: int = 3,
+    source_language: Language | str = "en-GB",
+    dry_run: bool = True,
 ) -> Tuple[List[Phrase], Dict[str, List[str]]]:
     """Tag the minimum set of existing phrases needed to understand *text*.
 
@@ -702,25 +752,44 @@ def add_tags_from_text(
 
     Args:
         text: Source text in the target language.
-        language: Target language of *text* (e.g. 'sv-SE' or a Language object).
+        target_language: Language *text* is written in, and whose phrase
+            translations are searched for coverage (e.g. 'sv-SE' or a
+            Language object).
         tags: Single tag string or list of tags to add (e.g. 'media::film::bron').
         collection: Optional — restrict the candidate phrase pool to this collection.
         deck: Optional — restrict the candidate phrase pool to this deck.
         database_name: Firestore database (default: 'firephrases').
+        min_occurrences: Minimum number of times a lemma must appear in
+            *text* to be treated as a coverage target rather than ignored
+            (default 3). Pass 1 for short texts where every content word
+            should count even if it only appears once.
+        source_language: Language of each phrase's canonical (``.english``)
+            text, used only to label the source side of the printed preview
+            (default 'en-GB' — this codebase's phrases are always authored
+            in English).
+        dry_run: If True (default), report what *would* be tagged — selected
+            phrases with their final tag state, missing vocab, and ignored
+            tokens — without writing anything to Firestore. Pass False to
+            actually persist the tags.
 
     Returns:
-        Tuple of (tagged phrases, missing vocab_dict).
+        Tuple of (tagged phrases, missing vocab_dict). When ``dry_run=True``,
+        the returned phrases reflect the selected coverage set but no
+        Firestore documents are updated.
 
     Example:
         >>> phrases, missing = add_tags_from_text(
         ...     "Han sprang till affären och köpte ett äpple.",
-        ...     language="sv-SE",
+        ...     target_language="sv-SE",
         ...     tags="media::film::bron",
+        ...     min_occurrences=1,
+        ...     dry_run=False,
         ... )
         >>> print(f"{len(phrases)} phrases tagged, missing: {missing}")
     """
-    lang = get_language(language)
+    lang = get_language(target_language)
     language_tag = lang.to_tag()
+    source_tag = get_language(source_language).to_tag()
 
     candidates = _load_phrases_with_translation(
         language_tag=language_tag,
@@ -733,30 +802,55 @@ def add_tags_from_text(
     for phrase in candidates:
         candidate_tokens |= _to_lower(set(phrase.translations[language_tag].tokens))
 
-    vocab_dict, ignored_tokens = _extract_text_vocab_dict(text, lang, candidate_tokens)
+    vocab_dict, ignored_tokens = _extract_text_vocab_dict(
+        text, lang, candidate_tokens, min_occurrences=min_occurrences
+    )
     target_verbs = set(vocab_dict["verbs"])
     target_vocab = set(vocab_dict["vocab"])
 
-    selected, missing = _cover_vocab_dict(candidates, target_verbs, target_vocab, language_tag)
+    selected, missing = _cover_vocab_dict(
+        candidates, target_verbs, target_vocab, language_tag
+    )
 
     if selected:
-        add_tags_to_translations(selected, lang, tags)
+        if dry_run:
+            print("[DRY RUN] No changes will be written to Firestore.\n")
+        else:
+            add_tags_to_translations(selected, lang, tags)
 
     total_targets = len(target_verbs) + len(target_vocab)
     total_missing = len(missing["verbs"]) + len(missing["vocab"])
     covered_count = total_targets - total_missing
 
+    if selected:
+        print(f"Selected phrase(s) ({len(selected)}), with final tag state:")
+        for phrase in selected:
+            translation = phrase.translations[language_tag]
+            if dry_run:
+                # Compute the tag list *as if* applied, without touching the
+                # Translation object — mutating it here would risk being
+                # persisted later by an unrelated phrase.upload() call.
+                final_tags = translation.tags + [
+                    t for t in normalize_tags(tags) if t not in translation.tags
+                ]
+            else:
+                final_tags = translation.tags
+            print(f"  [{source_tag}] {phrase.english}")
+            print(f"  [{language_tag}] {translation.text}")
+            print(f"    tags: {final_tags}")
+        print()
+
     print(
         f"add_tags_from_text: {covered_count}/{total_targets} words covered by "
         f"{len(selected)} phrase(s); {len(ignored_tokens)} tokens ignored "
-        f"(not a content word or no Wiktionary entry); {total_missing} words missing "
-        f"(no matching phrase found)"
+        f"(not a content word, no Wiktionary entry, or below min_occurrences); "
+        f"{total_missing} words missing (no matching phrase found)"
     )
-    if ignored_tokens:
-        print(f"  Ignored tokens: {ignored_tokens}")
     if total_missing:
         print(f"  Missing verbs: {missing['verbs']}")
         print(f"  Missing vocab: {missing['vocab']}")
+    if ignored_tokens:
+        print(f"  Ignored tokens: {ignored_tokens}")
 
     return selected, missing
 
