@@ -4,6 +4,8 @@ from typing import Dict, List
 
 from langcodes import Language
 
+from llm_tools.base import DEFAULT_MODEL, PREMIUM_MODEL
+from llm_tools.phrase_review import review_phrases
 from llm_tools.verb_phrase_generation import generate_verb_phrases
 from llm_tools.vocab_phrase_generation import generate_vocab_phrases
 from models import get_language
@@ -14,6 +16,9 @@ from logger import logger
 def generate_phrases_from_vocab_dict(
     vocab_dict: Dict[str, List[str]],
     language: Language | str | None = None,
+    model: str = DEFAULT_MODEL,
+    review: bool = False,
+    review_model: str = PREMIUM_MODEL,
 ) -> List[str]:
     """Generate phrases from a vocabulary dictionary.
 
@@ -23,6 +28,14 @@ def generate_phrases_from_vocab_dict(
     Args:
         vocab_dict: Dictionary with keys 'verbs' and 'vocab' containing lists of words
         language: Target language for phrase generation (default: en-GB)
+        model: Anthropic model id to use for generation (default: DEFAULT_MODEL).
+            Pass PREMIUM_MODEL from llm_tools.base for higher-quality generation.
+        review: If True, run a second pass over the generated phrases to check
+            grammatical correctness and register (e.g. slang creeping in from the
+            source articles/subtitles). Most useful for non-English target languages,
+            where mistakes are harder to catch by eye. Defaults to False.
+        review_model: Anthropic model id to use for the review pass (default:
+            PREMIUM_MODEL), independent of the model used for generation.
 
     Returns:
         List of generated phrase strings
@@ -36,14 +49,18 @@ def generate_phrases_from_vocab_dict(
     language = get_language(language)
 
     logger.info(f"Starting verb phrase generation. {len(vocab_dict['verbs'])} verbs to process.")
-    all_phrases = _generate_verb_phrases_batch(vocab_dict["verbs"], language=language)
+    all_phrases = _generate_verb_phrases_batch(vocab_dict["verbs"], language=language, model=model)
 
     vocab_present_in_verb_phrases = get_vocab_from_phrases(all_phrases)
     remaining_vocab = _remove_words_from_list(vocab_dict["vocab"], vocab_present_in_verb_phrases)
 
     logger.info(f"Starting vocab phrase generation. {len(remaining_vocab)} vocab words to process.")
-    vocab_phrases = _generate_vocab_phrases_batch(remaining_vocab, language=language)
+    vocab_phrases = _generate_vocab_phrases_batch(remaining_vocab, language=language, model=model)
     all_phrases.extend(vocab_phrases)
+
+    if review:
+        logger.info(f"Reviewing {len(all_phrases)} generated phrases for correctness.")
+        all_phrases = _review_phrases_batch(all_phrases, language=language, model=review_model)
 
     return all_phrases
 
@@ -51,6 +68,7 @@ def generate_phrases_from_vocab_dict(
 def _generate_verb_phrases_batch(
     verb_list: List[str],
     language: Language | None = None,
+    model: str = DEFAULT_MODEL,
 ) -> List[str]:
     """Generate present/past/future phrases for each verb."""
     phrases = []
@@ -58,7 +76,7 @@ def _generate_verb_phrases_batch(
     for i, verb in enumerate(verb_list, 1):
         try:
             logger.info(f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'")
-            result = generate_verb_phrases(verb, language=language)
+            result = generate_verb_phrases(verb, language=language, model=model)
             for base_phrase in result.get("base_phrases", []):
                 phrases.append(base_phrase["phrase"])
             for meaning_phrase in result.get("meaning_variations", []):
@@ -73,10 +91,34 @@ def _remove_words_from_list(word_list: List[str], words_to_remove: List[str]) ->
     return [word for word in word_list if word not in words_to_remove]
 
 
+def _review_phrases_batch(
+    phrases: List[str],
+    batch_size: int = 25,
+    language: Language | None = None,
+    model: str = PREMIUM_MODEL,
+) -> List[str]:
+    """Review generated phrases for grammatical correctness and register, in batches."""
+    reviewed_phrases = []
+
+    for i in range(0, len(phrases), batch_size):
+        batch = phrases[i : i + batch_size]
+        try:
+            logger.info(
+                f"  [{i + 1}-{i + len(batch)}/{len(phrases)}] Reviewing phrases"
+            )
+            reviewed_phrases.extend(review_phrases(batch, language=language, model=model))
+        except Exception as e:
+            logger.error(f"  Error reviewing phrase batch: {e}")
+            reviewed_phrases.extend(batch)  # fall back to the unreviewed originals
+
+    return reviewed_phrases
+
+
 def _generate_vocab_phrases_batch(
     vocab_list: List[str],
     batch_size: int = 20,
     language: Language | None = None,
+    model: str = DEFAULT_MODEL,
 ) -> List[str]:
     """Generate descriptive phrases for vocabulary words in batches."""
     phrases = []
@@ -94,7 +136,7 @@ def _generate_vocab_phrases_batch(
                 f"Generating phrases for {len(batch_words)} words"
             )
             result = generate_vocab_phrases(
-                batch_words, context_words=context_words, language=language
+                batch_words, context_words=context_words, language=language, model=model
             )
 
             for result_data in result.get("results", []):

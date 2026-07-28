@@ -8,8 +8,11 @@ from connections.anthropic_auth import get_anthropic_client as _get_anthropic_cl
 
 
 # Default model for all LLM tools
-# Using 'claude-sonnet-4' which is Anthropic's recommended Sonnet model
-DEFAULT_MODEL = "claude-sonnet-4-6"
+DEFAULT_MODEL = "claude-sonnet-5"
+
+# Higher-quality model for tasks where extra grammatical/idiomatic reliability
+# is worth the added cost (e.g. phrase generation in less-common languages)
+PREMIUM_MODEL = "claude-opus-5"
 
 
 def load_prompt_template(tool_name: str, prompt_type: str = "system") -> Template:

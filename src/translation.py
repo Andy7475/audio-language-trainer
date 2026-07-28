@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 import langcodes
 from langcodes import Language
@@ -6,9 +6,21 @@ from connections.gcloud_auth import (
     get_translate_client,
     setup_authentication,
 )
-from llm_tools.review_translation import refine_translation
-from models import get_language
+from llm_tools.review_translation import refine_translation, refine_translations_batch
 from llm_tools.base import DEFAULT_MODEL
+from models import get_language
+
+
+def _resolve_language_name(target_language: Union[str, Language]) -> str:
+    """Resolve a language code or BCP47Language object to its display name."""
+    if isinstance(target_language, str) and len(target_language) == 2:
+        # It's a language code, map it to language name
+        return langcodes.get(target_language).display_name()
+    if isinstance(target_language, str):
+        # It's already a language name
+        return target_language
+    # It's a BCP47Language object
+    return target_language.display_name()
 
 
 def translate_with_google_translate(
@@ -100,16 +112,7 @@ def refine_translation_with_anthropic(
     if model is None:
         model = DEFAULT_MODEL  # Use default model if not specified
 
-    # Get target language name (e.g., "French" from "fr-FR")
-    if isinstance(target_language, str) and len(target_language) == 2:
-        # It's a language code, map it to language name
-        target_language_name = langcodes.get(target_language).display_name()
-    elif isinstance(target_language, str):
-        # It's already a language name
-        target_language_name = target_language
-    else:
-        # It's a BCP47Language object
-        target_language_name = target_language.display_name()
+    target_language_name = _resolve_language_name(target_language)
 
     # Use the llm_tools module
     # Note: source_language parameter is accepted for future compatibility
@@ -117,6 +120,40 @@ def refine_translation_with_anthropic(
     return refine_translation(
         english_phrase=source_phrase,
         initial_translation=initial_translation,
+        target_language_name=target_language_name,
+        model=model,
+    )
+
+
+def refine_translations_with_anthropic_batch(
+    pairs: List[Tuple[str, str]],
+    target_language: Union[str, Language],
+    model: Optional[str] = None,
+) -> List[str]:
+    """
+    Refine a batch of translations using Anthropic's Claude API in a single call.
+
+    Use this instead of calling refine_translation_with_anthropic() in a loop when
+    translating many phrases at once - it trades N sequential API round trips for one.
+
+    Args:
+        pairs: List of (source_phrase, initial_translation) tuples
+        target_language: BCP47Language object or language name string for the target language
+        model: Anthropic model to use (default: DEFAULT_MODEL)
+
+    Returns:
+        List[str]: Refined translations, same length and order as `pairs`
+
+    Raises:
+        RuntimeError: If refinement fails
+    """
+    if model is None:
+        model = DEFAULT_MODEL  # Use default model if not specified
+
+    target_language_name = _resolve_language_name(target_language)
+
+    return refine_translations_batch(
+        pairs=pairs,
         target_language_name=target_language_name,
         model=model,
     )

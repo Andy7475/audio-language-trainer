@@ -1,0 +1,7 @@
+Review the following $language_name phrases, generated for language learners from vocabulary found in articles and subtitles. Watch particularly for slang or overly colloquial phrasing that should be simplified to a standard, everyday phrase.
+
+$phrases
+
+For each phrase, in the same order, return the original phrase, the reviewed (corrected if necessary) phrase, and whether you modified it.
+
+Use the review_phrases tool to return your response.

@@ -28,6 +28,7 @@ from models import BCP47Language, get_language
 from translation import (
     translate_with_google_translate,
     refine_translation_with_anthropic,
+    refine_translations_with_anthropic_batch,
 )
 from storage import (
     upload_file_to_gcs,
@@ -184,6 +185,34 @@ class Phrase(FirePhraseDataModel):
         return phrase
 
     @classmethod
+    def _create_or_get_existing(
+        cls,
+        english_phrase: str,
+        phrase_hash: Optional[str] = None,
+        overwrite: bool = False,
+    ) -> "Phrase":
+        """Create a new Phrase, or fetch the existing one if it already exists.
+
+        Shared by create_from_foreign() and create_from_foreign_batch() - Phrase.create()
+        raises ValueError when the phrase_hash already exists in Firestore, so this falls
+        back to fetching it instead of failing the whole batch/call.
+        """
+        try:
+            return cls.create(
+                english_phrase=english_phrase,
+                phrase_hash=phrase_hash,
+                overwrite=overwrite,
+            )
+        except ValueError:
+            from phrases.search import get_phrase as _get_phrase
+
+            existing_hash = phrase_hash or generate_phrase_hash(english_phrase)
+            phrase = _get_phrase(existing_hash)
+            if phrase is None:
+                raise ValueError(f"Phrase {existing_hash} not found in Firestore")
+            return phrase
+
+    @classmethod
     def create_from_foreign(
         cls,
         foreign_phrase: str,
@@ -198,6 +227,10 @@ class Phrase(FirePhraseDataModel):
         Translates the foreign phrase to English, creates the canonical Phrase via
         Phrase.create(), then immediately attaches the original foreign text as a
         Translation using the known text (no second API call needed).
+
+        For creating many phrases at once, prefer create_from_foreign_batch() - it
+        translates and refines all phrases in a small, fixed number of API calls
+        instead of one Google Translate call and one Claude call per phrase.
 
         Args:
             foreign_phrase: The source phrase in a non-English language
@@ -218,19 +251,11 @@ class Phrase(FirePhraseDataModel):
         )
         english_text = result if isinstance(result, str) else result[0]
 
-        try:
-            phrase = cls.create(
-                english_phrase=english_text,
-                phrase_hash=phrase_hash,
-                overwrite=overwrite,
-            )
-        except ValueError:
-            from phrases.search import get_phrase as _get_phrase
-
-            existing_hash = phrase_hash or generate_phrase_hash(english_text)
-            phrase = _get_phrase(existing_hash)
-            if phrase is None:
-                raise ValueError(f"Phrase {existing_hash} not found in Firestore")
+        phrase = cls._create_or_get_existing(
+            english_phrase=english_text,
+            phrase_hash=phrase_hash,
+            overwrite=overwrite,
+        )
 
         phrase.translate(
             target_language=language,
@@ -241,6 +266,81 @@ class Phrase(FirePhraseDataModel):
         )
 
         return phrase
+
+    @classmethod
+    def create_from_foreign_batch(
+        cls,
+        foreign_phrases: List[str],
+        language: Language | str,
+        overwrite: bool = False,
+        split_on_space: bool = False,
+        tags: str | List[str] | None = None,
+        refine: bool = True,
+        model: Optional[str] = None,
+    ) -> List["Phrase"]:
+        """Batch factory method to create Phrases from many non-English source phrases.
+
+        Speeds up bulk import: instead of one Google Translate call and one Claude
+        refine call per phrase (create_from_foreign() in a loop), this translates and
+        refines every phrase in two API calls total. Each Phrase is then created
+        locally (NLP + Firestore existence check) and given the original foreign text
+        directly via translate(translated_text=...), which needs no further API calls
+        since the foreign text is already known.
+
+        Args:
+            foreign_phrases: The source phrases in a non-English language
+            language: BCP-47 language of the foreign phrases (e.g., "sv-SE")
+            overwrite: If True, skip already-exists check
+            split_on_space: Use space-based tokenization for the foreign language
+            tags: Anki tags to attach to each foreign-language translation
+            refine: Whether to refine the Google Translate English text with Claude
+                before creating each Phrase (default: True)
+            model: Anthropic model to use for refinement (default: DEFAULT_MODEL)
+
+        Returns:
+            List[Phrase]: One Phrase per input, in the same order, with English as the
+            canonical text and the foreign language attached as a Translation
+
+        Example:
+            >>> phrases = Phrase.create_from_foreign_batch(
+            ...     new_phrases, TARGET_LANGUAGE, split_on_space=True, tags=[TAG]
+            ... )
+        """
+        if not foreign_phrases:
+            return []
+
+        language = get_language(language)
+
+        initial_translations = translate_with_google_translate(
+            text=foreign_phrases,
+            target_language=Language.get("en-GB"),
+            source_language=language.language,
+        )
+
+        if refine:
+            english_texts = refine_translations_with_anthropic_batch(
+                pairs=list(zip(foreign_phrases, initial_translations)),
+                target_language=Language.get("en-GB"),
+                model=model,
+            )
+        else:
+            english_texts = initial_translations
+
+        phrases: List[Phrase] = []
+        for foreign_phrase, english_text in zip(foreign_phrases, english_texts):
+            phrase = cls._create_or_get_existing(
+                english_phrase=english_text, overwrite=overwrite
+            )
+            phrase.translate(
+                target_language=language,
+                translated_text=foreign_phrase,
+                overwrite=True,
+                split_on_space=split_on_space,
+                tags=tags,
+            )
+            phrases.append(phrase)
+
+        return phrases
 
     def _get_translation_firestore_document_ref(
         self, language: Language

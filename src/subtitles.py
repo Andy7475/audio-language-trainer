@@ -54,6 +54,9 @@ def process_subtitles(
         # Strip leading speaker-change hyphens (e.g. "- Flytta" or "-Flytta")
         text = re.sub(r"^-\s*", "", text).strip()
 
+        # strip the same if part way through a word
+        text = re.sub(r"\s+-\s*", " ", text).strip()
+
         if text and text not in seen:
             seen.add(text)
             unique_phrases.append(text)

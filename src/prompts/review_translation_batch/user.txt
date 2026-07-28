@@ -1,0 +1,5 @@
+Review each of the following source phrase / $target_language_name translation pairs and return your assessment using the review_translations_batch tool:
+
+$pairs
+
+For each pair, in the same order, determine if the translation needs improvement and provide a more natural-sounding version if so.
