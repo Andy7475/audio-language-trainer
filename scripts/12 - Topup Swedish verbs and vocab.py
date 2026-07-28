@@ -97,3 +97,82 @@ print(
     f"  Updated           : {updated}{'  (DRY RUN — nothing written)' if DRY_RUN else ''}"
 )
 print(f"  Skipped (ok)      : {skipped}")
+
+# %% [markdown]
+# # Demo: tag a phrase from text, then sync the tag to Anki
+#
+# Walks through the real end-to-end workflow with one concrete example:
+#
+# 1. `add_tags_from_text` — from a piece of Swedish text, find the minimum
+#    set of *existing* phrases whose Swedish translation already covers its
+#    vocab, and tag those phrases in Firestore (tag stored unprefixed).
+# 2. Confirm the tag landed on the phrase's `sv-SE` translation in Firestore.
+# 3. `sync_tag_to_anki` — sync that tag into the live Anki collection
+#    (`dry_run=True` first). It should show up on the note as
+#    `fs::food_and_drink` — the `fs::` prefix is added only at this step,
+#    Firestore itself keeps the bare `food_and_drink`.
+# 4. Only once you're happy with the dry-run report: flip to a real write.
+
+# %% --- demo config --------------------------------------------------------
+DEMO_TEXT = "en flaska vin"  # Swedish for "a bottle of wine"
+DEMO_LANGUAGE = "sv-SE"
+DEMO_TAG = "food_and_drink"
+DEMO_SOURCE_LANGUAGE = "en-GB"
+
+# %% --- demo imports --------------------------------------------------------
+from phrases.search import add_tags_from_text
+from connections.anki_collection import get_anki_collection, close_anki_collection
+from anki_sync import sync_tag_to_anki
+
+# %% --- 1. tag the covering phrase(s) in Firestore --------------------------
+tagged_phrases, demo_missing = add_tags_from_text(DEMO_TEXT, DEMO_LANGUAGE, DEMO_TAG)
+
+print(f"\nTagged {len(tagged_phrases)} phrase(s):")
+for p in tagged_phrases:
+    sv_text = p.translations[DEMO_LANGUAGE].text
+    print(f"  {p.key} | en: {p.english!r} | sv-SE: {sv_text!r}")
+print(f"Missing vocab (no covering phrase found): {demo_missing}")
+
+# %% --- 2. confirm the tag in Firestore, unprefixed --------------------------
+for p in tagged_phrases:
+    print(p.key, "->", p.translations[DEMO_LANGUAGE].tags)
+
+# %% --- 3. sync the tag into the live Anki collection (dry run) -------------
+demo_col = get_anki_collection()
+try:
+    demo_report = sync_tag_to_anki(
+        demo_col, DEMO_TAG, DEMO_SOURCE_LANGUAGE, DEMO_LANGUAGE, dry_run=True
+    )
+    print(demo_report.summary())
+    for r in demo_report.results:
+        print(" ", r)
+finally:
+    close_anki_collection()
+
+# %% [markdown]
+# ### 4. Run for real — only after reviewing the dry-run report above
+#
+# Close Anki Desktop first (it holds an exclusive lock on the collection
+# file). Takes a real Anki backup before writing, same as
+# `scripts/sync_anki_tags.py`.
+
+# %% --- 4. real write (run manually when ready) -----------------------------
+import os
+from pathlib import Path
+
+demo_col = get_anki_collection()
+try:
+    backup_folder = str(Path(os.environ["ANKI_COLLECTION_PATH"]).parent / "backups")
+    os.makedirs(backup_folder, exist_ok=True)
+    demo_col.create_backup(
+        backup_folder=backup_folder, force=True, wait_for_completion=True
+    )
+
+    demo_report = sync_tag_to_anki(
+        demo_col, DEMO_TAG, DEMO_SOURCE_LANGUAGE, DEMO_LANGUAGE, dry_run=False
+    )
+    print(demo_report.summary())
+    for r in demo_report.results:
+        print(" ", r)
+finally:
+    close_anki_collection()

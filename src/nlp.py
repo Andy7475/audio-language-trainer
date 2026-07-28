@@ -357,7 +357,9 @@ def get_verbs_and_vocab(
         from wiktionary.lookup import word_in_wiktionary
 
         result["verbs"] = [
-            w for w in result["verbs"] if word_in_wiktionary(w, language_code, pos="verb")
+            w
+            for w in result["verbs"]
+            if word_in_wiktionary(w, language_code, pos="verb")
         ]
         result["vocab"] = [
             w
