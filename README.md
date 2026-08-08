@@ -1,64 +1,62 @@
 # audio-language-trainer
 
-## Caveat
-You are welcome to use what is here, but it will not work out of the box (see setup section later)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 ## Motivation
-There is often a gap after completing a basic language course (like Section 1 on DuoLingo, or perhaps you've done a Foundation Michel Thomas method) - the advice is typically to start reading magazines and watching TV, but this is far too hard. I was wanting something that exposed me to some longer dialogue, rapidly increased by vocabulary, and also reinforced what I had learnt (or was still learning). A sort of 'stepping stone' towards watching a TV program perhaps, or going abroad and being more comfortable in the middle of a group where people are conversing - they won't pause after 3 or 4 words, they just keep talking amongst each other!
+There is often a gap after completing a basic language course (like Section 1 on DuoLingo, or perhaps you've done a Foundation Michel Thomas method) - the advice is typically to start reading magazines and watching TV, but this is far too hard. I was wanting something that exposed me to some longer dialogue, rapidly increased my vocabulary, and also reinforced what I had learnt (or was still learning). A sort of 'stepping stone' towards watching a TV program, or going abroad and being comfortable in the middle of a group where people are conversing - they won't pause after 3 or 4 words, they just keep talking amongst each other!
 
 This is designed to fill that gap.
 
-## Introduction
+## What it produces
 
-Given a vocab list and target language, it will produce practice material for you. This practice comes in two formats: Flash cards and stories.
-It is not easy; you have to concentrate, and you will get tired - but this is a sign the brain is forming new connections and you are learning (an experience I found was absent in DuoLingo). In particular, I found the first couple of weeks very hard as most of the words were new, but after 200 phrases in, each subsequent phrase became a lot easier as I started to see common patterns (lexical chunks) and was learning fewer new words per phrase.
+Given a vocab list and a target language, it generates practice material in two formats:
 
-### Flash cards
-I've used evidence-based techniques to make engaging flash cards:
+**Flash cards**
+- Phrases rather than isolated words ([Lexical Approach](https://en.wikipedia.org/wiki/Lexical_approach))
+- Images and audio for multiple encodings ([dual-coding theory](https://en.wikipedia.org/wiki/Dual-coding_theory))
+- [Cloze deletion](https://en.wikipedia.org/wiki/Cloze_test) rather than multiple choice
+- Word-separated 'slow' audio to help with pronunciation
+- Links into [Wiktionary](https://www.wiktionary.org/) for further study
 
-✓ Phrases rather than isolated words (So you learn to use these in the right context - [Lexical Approach](https://en.wikipedia.org/wiki/Lexical_approach))
-
-✓ Images and Audio for multiple encodings ([dual-encoding theory](https://en.wikipedia.org/wiki/Dual-coding_theory) of language learning - retention and recall boost)
-
-✓ [Cloze deletion](https://en.wikipedia.org/wiki/Cloze_test) to encourage your brain to complete sentences (rather than giving you the answer as multiple choice)
-
-✓ Additional, word-separated 'slow' audio to help with your pronunciation
-
-✓ Handy hyperlinks and prompts for further study in [Wiktionary](https://www.wiktionary.org/) or an LLM of your choice
-
-### Long-form stories
-We can pair up a set of flash cards with a story (that uses the same vocab). This lets you consolidate what you have learnt, and gives you practice in long-form listening.
-I also produce a section of double-speed audio for the whole story, as research shows this can improve language parsing ability (your brain learns to separate words better) - but crucially this double-speed effect only works if you already know the vocab.
-
-## Inputs
-You need to update or provide your own (english) vocab list (a JSON file). The target language is controlled from a single line in a configuration file - the code here will translate to almost any language without any additional input.
-There are various notebooks to create material:
-* create phrases
-* create images for those phrases
-* package those up into an Anki flashcard deck
-* create a story off a selection of flashcards (embedded in both a webpage and a downloadable album with synchronised lyrics)
-* publish the story to the cloud (so you can access it from the flashcard)
+**Long-form stories**
+- Paired with a set of flash cards so you consolidate the same vocab in a longer dialogue
+- Includes double-speed audio (helps parsing ability once you already know the vocab)
+- Published to the web alongside a downloadable album with synchronised lyrics
 
 ## Setup
-Use the notebook which guides you through the process, but there is substantial setup required in terms of Google Cloud APIs,and FFMPEG (for audio generation) to configure if you want to run the code yourself. If you want an example lesson, happy to oblige!
 
-Google Cloud:
-* You will need an account and a project with the ID and Number, as well as know your regions for the LLM.
-* Enable TTS, Translate, Vertex AI
-* Apply for access to Anthropic's models in the Model Garden
+Full walkthrough (Google Cloud project/APIs, buckets, API keys, FFmpeg, Anki): **[docs/setup.md](docs/setup.md)**.
 
-Azure:
-* You will need an API key and a speech synthesis service
-* Azure has some TTS languages that Google doesn't cover, so it's worth having both
+Short version once that's done:
+```bash
+uv sync
+cp .env.example .env   # fill in your keys
+uv run python scripts/check_gcloud_project.py
+```
 
-Client:
-* install FFMPEG for audio generation and fonts for the PDF system to work
-  
-# Road Map:
-* Finish linking stories with flash cards using the Anki ecosystem - DONE! Feb 2025
-* Embed a real-time conversation challenge in the web (for more open-ended speech practice) - DONE! Feb 2025
-* Learning new alphabets - I have some ideas of linking each new letter with an image, using some custom AI services; could be particuarly useful for Chinese.
-  
-# Acknowledgements
+## Usage
+
+Everything is driven from the numbered notebooks in [`notebooks/`](notebooks/), run in order for a new batch of material:
+
+| Notebook | Does |
+|---|---|
+| `00 Phrase data preparation` | Turn a vocab list into verb/vocab word lists |
+| `01 Flashcards - create phrases` | Generate English phrases from a word list, translate, add images/audio |
+| `04 Anki Deck` | Package a collection of phrases into an `.apkg` file |
+| `05 generate a story from vocab` | Build a dialogue story from a set of learnt phrases |
+| `06 generate stories in new lang` | Reuse an existing story's structure in a new target language |
+| `08 build speaking challenges` | Publish a story as a real-time speaking challenge |
+| `10 Review flashcards` | Spot-check generated phrases/media before publishing |
+| `13 Tag phrases and sync to Anki` | Tag phrases and push updates into a local Anki collection |
+
+Each notebook only needs a `COLLECTION`/`DECK` (or similar) variable set at the top — the rest is handled by `src/`. See [docs/anki_tools_guide.md](docs/anki_tools_guide.md) for the Anki deck subsystem and [AUDIO_MODULE_GUIDE.md](AUDIO_MODULE_GUIDE.md) for the audio pipeline. Wiktionary word-links are powered by a local database — see [docs/setup.md](docs/setup.md#3-wiktionary-dictionary-links-required).
+
+## Data model
+
+Phrases and stories are stored in Firestore, with audio/images in Google Cloud Storage — see [firestore.md](firestore.md) for the schema.
+
+## Roadmap
+- Learning new alphabets — linking each new letter with an image, possibly useful for Chinese.
+
+## Acknowledgements
 https://www.saysomethingin.com/en/home/ - heavily inspired by the approach of this company, DuoLingo and the Michel Thomas method.
