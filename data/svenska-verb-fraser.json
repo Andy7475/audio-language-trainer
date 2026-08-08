@@ -1,0 +1,4534 @@
+{
+  "title": "Svenska verb — clusters, forms and phrase pairs",
+  "generated": "2026-08-08",
+  "tenseOrder": {
+    "sequence": [
+      "infinitiv",
+      "presens",
+      "preteritum",
+      "supinum"
+    ],
+    "note": "Standard Swedish 'verbets tema' — the principal parts, always cited in this order. The imperative is not a principal part; it is the bare stem and is derivable, so it is listed last as a derived form. Wiktionary's headword line shows present, preterite, supine, imperative — the same sequence with the infinitive implied (it is the lemma) and the imperative appended.",
+    "derived": [
+      "imperativ",
+      "perfekt particip"
+    ],
+    "supineNote": "Within the vowel changers the supine vowel is only ever u, or a return to the vowel of the infinitive. supineMove records which: 'u' or 'home'."
+  },
+  "clusters": [
+    {
+      "id": "a-crowd",
+      "name": "The -a crowd",
+      "pattern": "-a · -ar · -ade · -at",
+      "verbCount": 22,
+      "verbs": [
+        {
+          "infinitive": "tala",
+          "english": "speak",
+          "forms": {
+            "infinitiv": "tala",
+            "presens": "talar",
+            "preteritum": "talade",
+            "supinum": "talat",
+            "imperativ": "tala"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag talar svenska med mina grannar.",
+              "en": "I speak Swedish with my neighbours."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon talade länge på mötet.",
+              "en": "She spoke for a long time at the meeting."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har talat med chefen.",
+              "en": "We have spoken to the boss."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "jobba",
+          "english": "work",
+          "forms": {
+            "infinitiv": "jobba",
+            "presens": "jobbar",
+            "preteritum": "jobbade",
+            "supinum": "jobbat",
+            "imperativ": "jobba"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han jobbar på ett sjukhus.",
+              "en": "He works at a hospital."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag jobbade hela helgen.",
+              "en": "I worked all weekend."
+            },
+            {
+              "form": "supine",
+              "sv": "De har jobbat tillsammans i tio år.",
+              "en": "They have worked together for ten years."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "fråga",
+          "english": "ask",
+          "forms": {
+            "infinitiv": "fråga",
+            "presens": "frågar",
+            "preteritum": "frågade",
+            "supinum": "frågat",
+            "imperativ": "fråga"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Barnen frågar alltid varför.",
+              "en": "The children always ask why."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag frågade en polis om vägen.",
+              "en": "I asked a policeman for directions."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har frågat läraren om provet.",
+              "en": "We have asked the teacher about the test."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "svara",
+          "english": "answer",
+          "forms": {
+            "infinitiv": "svara",
+            "presens": "svarar",
+            "preteritum": "svarade",
+            "supinum": "svarat",
+            "imperativ": "svara"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon svarar aldrig på mina mejl.",
+              "en": "She never answers my emails."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han svarade på alla frågor.",
+              "en": "He answered all the questions."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har svarat på inbjudan.",
+              "en": "I have replied to the invitation."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "titta",
+          "english": "look",
+          "forms": {
+            "infinitiv": "titta",
+            "presens": "tittar",
+            "preteritum": "tittade",
+            "supinum": "tittat",
+            "imperativ": "titta"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi tittar på en film ikväll.",
+              "en": "We are watching a film tonight."
+            },
+            {
+              "form": "preterite",
+              "sv": "De tittade på fåglarna i trädgården.",
+              "en": "They looked at the birds in the garden."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har tittat på kartan.",
+              "en": "I have looked at the map."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "handla",
+          "english": "shop, act",
+          "forms": {
+            "infinitiv": "handla",
+            "presens": "handlar",
+            "preteritum": "handlade",
+            "supinum": "handlat",
+            "imperativ": "handla"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag handlar mat på lördagar.",
+              "en": "I shop for food on Saturdays."
+            },
+            {
+              "form": "preterite",
+              "sv": "Min bror handlade kläder i Stockholm.",
+              "en": "My brother shopped for clothes in Stockholm."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har handlat presenter till barnen.",
+              "en": "We have bought presents for the children."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "börja",
+          "english": "begin",
+          "forms": {
+            "infinitiv": "börja",
+            "presens": "börjar",
+            "preteritum": "började",
+            "supinum": "börjat",
+            "imperativ": "börja"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Filmen börjar klockan åtta.",
+              "en": "The film begins at eight o'clock."
+            },
+            {
+              "form": "preterite",
+              "sv": "Kursen började i januari.",
+              "en": "The course began in January."
+            },
+            {
+              "form": "supine",
+              "sv": "Det har börjat regna.",
+              "en": "It has started to rain."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "sluta",
+          "english": "finish, quit",
+          "forms": {
+            "infinitiv": "sluta",
+            "presens": "slutar",
+            "preteritum": "slutade",
+            "supinum": "slutat",
+            "imperativ": "sluta"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag slutar jobbet klockan fem.",
+              "en": "I finish work at five."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon slutade röka förra året.",
+              "en": "She quit smoking last year."
+            },
+            {
+              "form": "supine",
+              "sv": "Mötet har slutat.",
+              "en": "The meeting has ended."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "spela",
+          "english": "play",
+          "forms": {
+            "infinitiv": "spela",
+            "presens": "spelar",
+            "preteritum": "spelade",
+            "supinum": "spelat",
+            "imperativ": "spela"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han spelar gitarr i ett band.",
+              "en": "He plays guitar in a band."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi spelade kort hela kvällen.",
+              "en": "We played cards all evening."
+            },
+            {
+              "form": "supine",
+              "sv": "Laget har spelat tre matcher.",
+              "en": "The team has played three matches."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "betala",
+          "english": "pay",
+          "forms": {
+            "infinitiv": "betala",
+            "presens": "betalar",
+            "preteritum": "betalade",
+            "supinum": "betalat",
+            "imperativ": "betala"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag betalar räkningen idag.",
+              "en": "I am paying the bill today."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon betalade för lunchen.",
+              "en": "She paid for the lunch."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har betalat hyran.",
+              "en": "We have paid the rent."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "stanna",
+          "english": "stop, stay",
+          "forms": {
+            "infinitiv": "stanna",
+            "presens": "stannar",
+            "preteritum": "stannade",
+            "supinum": "stannat",
+            "imperativ": "stanna"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Tåget stannar i Uppsala.",
+              "en": "The train stops in Uppsala."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi stannade en vecka i Göteborg.",
+              "en": "We stayed a week in Gothenburg."
+            },
+            {
+              "form": "supine",
+              "sv": "Bilen har stannat mitt på vägen.",
+              "en": "The car has stopped in the middle of the road."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "vänta",
+          "english": "wait",
+          "forms": {
+            "infinitiv": "vänta",
+            "presens": "väntar",
+            "preteritum": "väntade",
+            "supinum": "väntat",
+            "imperativ": "vänta"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag väntar på bussen.",
+              "en": "I am waiting for the bus."
+            },
+            {
+              "form": "preterite",
+              "sv": "De väntade i två timmar.",
+              "en": "They waited for two hours."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har väntat på ditt svar.",
+              "en": "We have waited for your answer."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "öppna",
+          "english": "open",
+          "forms": {
+            "infinitiv": "öppna",
+            "presens": "öppnar",
+            "preteritum": "öppnade",
+            "supinum": "öppnat",
+            "imperativ": "öppna"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Affären öppnar klockan nio.",
+              "en": "The shop opens at nine."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han öppnade fönstret.",
+              "en": "He opened the window."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har öppnat ett nytt konto.",
+              "en": "I have opened a new account."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "älska",
+          "english": "love",
+          "forms": {
+            "infinitiv": "älska",
+            "presens": "älskar",
+            "preteritum": "älskade",
+            "supinum": "älskat",
+            "imperativ": "älska"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon älskar sitt jobb.",
+              "en": "She loves her job."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag älskade den boken som barn.",
+              "en": "I loved that book as a child."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har älskat varje minut.",
+              "en": "We have loved every minute."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "laga",
+          "english": "fix, cook",
+          "forms": {
+            "infinitiv": "laga",
+            "presens": "lagar",
+            "preteritum": "lagade",
+            "supinum": "lagat",
+            "imperativ": "laga"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Pappa lagar middag på söndagar.",
+              "en": "Dad cooks dinner on Sundays."
+            },
+            {
+              "form": "preterite",
+              "sv": "Grannen lagade min cykel.",
+              "en": "The neighbour fixed my bicycle."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har lagat soppa till ikväll.",
+              "en": "I have made soup for tonight."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "vakna",
+          "english": "wake up",
+          "forms": {
+            "infinitiv": "vakna",
+            "presens": "vaknar",
+            "preteritum": "vaknade",
+            "supinum": "vaknat",
+            "imperativ": "vakna"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag vaknar tidigt på vardagar.",
+              "en": "I wake up early on weekdays."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon vaknade av ett ljud.",
+              "en": "She woke up from a sound."
+            },
+            {
+              "form": "supine",
+              "sv": "Barnen har vaknat.",
+              "en": "The children have woken up."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "prata",
+          "english": "talk, chat",
+          "forms": {
+            "infinitiv": "prata",
+            "presens": "pratar",
+            "preteritum": "pratade",
+            "supinum": "pratat",
+            "imperativ": "prata"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi pratar om vädret.",
+              "en": "We are talking about the weather."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han pratade med sin syster igår.",
+              "en": "He talked to his sister yesterday."
+            },
+            {
+              "form": "supine",
+              "sv": "De har pratat i telefon i en timme.",
+              "en": "They have talked on the phone for an hour."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "mejla",
+          "english": "email",
+          "forms": {
+            "infinitiv": "mejla",
+            "presens": "mejlar",
+            "preteritum": "mejlade",
+            "supinum": "mejlat",
+            "imperativ": "mejla"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag mejlar dig adressen.",
+              "en": "I'll email you the address."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon mejlade rapporten till chefen.",
+              "en": "She emailed the report to the boss."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har mejlat alla kollegor.",
+              "en": "We have emailed all the colleagues."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "googla",
+          "english": "google",
+          "forms": {
+            "infinitiv": "googla",
+            "presens": "googlar",
+            "preteritum": "googlade",
+            "supinum": "googlat",
+            "imperativ": "googla"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han googlar allt han inte vet.",
+              "en": "He googles everything he doesn't know."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag googlade restaurangen först.",
+              "en": "I googled the restaurant first."
+            },
+            {
+              "form": "supine",
+              "sv": "De har googlat vår adress.",
+              "en": "They have googled our address."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "streama",
+          "english": "stream",
+          "forms": {
+            "infinitiv": "streama",
+            "presens": "streamar",
+            "preteritum": "streamade",
+            "supinum": "streamat",
+            "imperativ": "streama"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi streamar en serie varje kväll.",
+              "en": "We stream a series every evening."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon streamade konserten hemifrån.",
+              "en": "She streamed the concert from home."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har streamat hela säsongen.",
+              "en": "I have streamed the whole season."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "fika",
+          "english": "have coffee",
+          "forms": {
+            "infinitiv": "fika",
+            "presens": "fikar",
+            "preteritum": "fikade",
+            "supinum": "fikat",
+            "imperativ": "fika"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi fikar klockan tre.",
+              "en": "We have coffee at three."
+            },
+            {
+              "form": "preterite",
+              "sv": "De fikade i parken.",
+              "en": "They had coffee in the park."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har fikat med min granne.",
+              "en": "I have had coffee with my neighbour."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        },
+        {
+          "infinitive": "plugga",
+          "english": "study",
+          "forms": {
+            "infinitiv": "plugga",
+            "presens": "pluggar",
+            "preteritum": "pluggade",
+            "supinum": "pluggat",
+            "imperativ": "plugga"
+          },
+          "textbookGroup": "1",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon pluggar medicin i Lund.",
+              "en": "She studies medicine in Lund."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag pluggade till provet hela natten.",
+              "en": "I studied for the test all night."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har pluggat svenska i två år.",
+              "en": "We have studied Swedish for two years."
+            }
+          ],
+          "_cluster": "The -a crowd",
+          "_cid": "a-crowd"
+        }
+      ]
+    },
+    {
+      "id": "split-de",
+      "name": "The split cluster — buzzing half",
+      "pattern": "-a · -er · -de · -t",
+      "verbCount": 14,
+      "verbs": [
+        {
+          "infinitive": "ringa",
+          "english": "call, ring",
+          "forms": {
+            "infinitiv": "ringa",
+            "presens": "ringer",
+            "preteritum": "ringde",
+            "supinum": "ringt",
+            "imperativ": "ring"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag ringer min mamma varje söndag.",
+              "en": "I call my mum every Sunday."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han ringde en taxi.",
+              "en": "He called a taxi."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har ringt till banken.",
+              "en": "We have called the bank."
+            }
+          ],
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "stänga",
+          "english": "close",
+          "forms": {
+            "infinitiv": "stänga",
+            "presens": "stänger",
+            "preteritum": "stängde",
+            "supinum": "stängt",
+            "imperativ": "stäng"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Affären stänger klockan sex.",
+              "en": "The shop closes at six."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon stängde dörren tyst.",
+              "en": "She closed the door quietly."
+            },
+            {
+              "form": "supine",
+              "sv": "De har stängt vägen.",
+              "en": "They have closed the road."
+            }
+          ],
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "känna",
+          "english": "feel, know",
+          "forms": {
+            "infinitiv": "känna",
+            "presens": "känner",
+            "preteritum": "kände",
+            "supinum": "känt",
+            "imperativ": "känn"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag känner hans bror.",
+              "en": "I know his brother."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon kände en kall vind.",
+              "en": "She felt a cold wind."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har känt varandra länge.",
+              "en": "We have known each other a long time."
+            }
+          ],
+          "englishCognate": "ken",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "lära",
+          "english": "teach, learn",
+          "forms": {
+            "infinitiv": "lära",
+            "presens": "lär",
+            "preteritum": "lärde",
+            "supinum": "lärt",
+            "imperativ": "lär"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han lär sig spanska.",
+              "en": "He is learning Spanish."
+            },
+            {
+              "form": "preterite",
+              "sv": "Läraren lärde oss ett nytt ord.",
+              "en": "The teacher taught us a new word."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har lärt mig att simma.",
+              "en": "I have learned to swim."
+            }
+          ],
+          "englishCognate": "lore",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "glömma",
+          "english": "forget",
+          "forms": {
+            "infinitiv": "glömma",
+            "presens": "glömmer",
+            "preteritum": "glömde",
+            "supinum": "glömt",
+            "imperativ": "glöm"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag glömmer alltid nycklarna.",
+              "en": "I always forget the keys."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon glömde sitt paraply på tåget.",
+              "en": "She forgot her umbrella on the train."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har glömt hans födelsedag.",
+              "en": "We have forgotten his birthday."
+            }
+          ],
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "höra",
+          "english": "hear",
+          "forms": {
+            "infinitiv": "höra",
+            "presens": "hör",
+            "preteritum": "hörde",
+            "supinum": "hört",
+            "imperativ": "hör"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag hör en fågel utanför.",
+              "en": "I hear a bird outside."
+            },
+            {
+              "form": "preterite",
+              "sv": "De hörde ett skrik i natten.",
+              "en": "They heard a scream in the night."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har hört nyheten.",
+              "en": "We have heard the news."
+            }
+          ],
+          "englishCognate": "hear",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "följa",
+          "english": "follow",
+          "forms": {
+            "infinitiv": "följa",
+            "presens": "följer",
+            "preteritum": "följde",
+            "supinum": "följt",
+            "imperativ": "följ"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hunden följer mig överallt.",
+              "en": "The dog follows me everywhere."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi följde floden hela dagen.",
+              "en": "We followed the river all day."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har följt kursen från början.",
+              "en": "I have followed the course from the beginning."
+            }
+          ],
+          "englishCognate": "follow",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "leva",
+          "english": "live",
+          "forms": {
+            "infinitiv": "leva",
+            "presens": "lever",
+            "preteritum": "levde",
+            "supinum": "levt",
+            "imperativ": "lev"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Min farmor lever fortfarande.",
+              "en": "My grandmother is still alive."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han levde i Norge i tio år.",
+              "en": "He lived in Norway for ten years."
+            },
+            {
+              "form": "supine",
+              "sv": "De har levt ett bra liv.",
+              "en": "They have lived a good life."
+            }
+          ],
+          "englishCognate": "live",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "bygga",
+          "english": "build",
+          "forms": {
+            "infinitiv": "bygga",
+            "presens": "bygger",
+            "preteritum": "byggde",
+            "supinum": "byggt",
+            "imperativ": "bygg"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "De bygger ett nytt hus.",
+              "en": "They are building a new house."
+            },
+            {
+              "form": "preterite",
+              "sv": "Min farfar byggde en båt.",
+              "en": "My grandfather built a boat."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har byggt en altan.",
+              "en": "We have built a deck."
+            }
+          ],
+          "englishCognate": "build",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "ställa",
+          "english": "stand (sth) up",
+          "forms": {
+            "infinitiv": "ställa",
+            "presens": "ställer",
+            "preteritum": "ställde",
+            "supinum": "ställt",
+            "imperativ": "ställ"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag ställer glaset på bordet.",
+              "en": "I put the glass on the table."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon ställde cykeln vid dörren.",
+              "en": "She stood the bicycle by the door."
+            },
+            {
+              "form": "supine",
+              "sv": "De har ställt stolarna i ordning.",
+              "en": "They have put the chairs in order."
+            }
+          ],
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "hända",
+          "english": "happen",
+          "forms": {
+            "infinitiv": "hända",
+            "presens": "händer",
+            "preteritum": "hände",
+            "supinum": "hänt",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Det händer mycket i staden nu.",
+              "en": "A lot is happening in the city now."
+            },
+            {
+              "form": "preterite",
+              "sv": "Olyckan hände förra veckan.",
+              "en": "The accident happened last week."
+            },
+            {
+              "form": "supine",
+              "sv": "Något konstigt har hänt.",
+              "en": "Something strange has happened."
+            }
+          ],
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "behöva",
+          "english": "need",
+          "forms": {
+            "infinitiv": "behöva",
+            "presens": "behöver",
+            "preteritum": "behövde",
+            "supinum": "behövt",
+            "imperativ": "behöv"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag behöver en ny jacka.",
+              "en": "I need a new jacket."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi behövde mer tid.",
+              "en": "We needed more time."
+            },
+            {
+              "form": "supine",
+              "sv": "Han har behövt hjälp länge.",
+              "en": "He has needed help for a long time."
+            }
+          ],
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "bränna",
+          "english": "burn (sth)",
+          "forms": {
+            "infinitiv": "bränna",
+            "presens": "bränner",
+            "preteritum": "brände",
+            "supinum": "bränt",
+            "imperativ": "bränn"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Solen bränner på ryggen idag.",
+              "en": "The sun is burning on my back today."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag brände fingret på spisen.",
+              "en": "I burned my finger on the stove."
+            },
+            {
+              "form": "supine",
+              "sv": "De har bränt allt skräp.",
+              "en": "They have burned all the rubbish."
+            }
+          ],
+          "englishCognate": "burn",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        },
+        {
+          "infinitive": "fälla",
+          "english": "fell, drop",
+          "forms": {
+            "infinitiv": "fälla",
+            "presens": "fäller",
+            "preteritum": "fällde",
+            "supinum": "fällt",
+            "imperativ": "fäll"
+          },
+          "textbookGroup": "2a",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Skogsarbetaren fäller ett träd.",
+              "en": "The forestry worker fells a tree."
+            },
+            {
+              "form": "preterite",
+              "sv": "Stormen fällde flera träd i parken.",
+              "en": "The storm felled several trees in the park."
+            },
+            {
+              "form": "supine",
+              "sv": "De har fällt den gamla eken.",
+              "en": "They have felled the old oak."
+            }
+          ],
+          "englishCognate": "fell",
+          "_cluster": "The split cluster — buzzing half",
+          "_cid": "split-de"
+        }
+      ]
+    },
+    {
+      "id": "split-te",
+      "name": "The split cluster — silent half",
+      "pattern": "-a · -er · -te · -t",
+      "verbCount": 14,
+      "verbs": [
+        {
+          "infinitive": "köpa",
+          "english": "buy",
+          "forms": {
+            "infinitiv": "köpa",
+            "presens": "köper",
+            "preteritum": "köpte",
+            "supinum": "köpt",
+            "imperativ": "köp"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag köper bröd varje morgon.",
+              "en": "I buy bread every morning."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon köpte en begagnad bil.",
+              "en": "She bought a used car."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har köpt biljetter till konserten.",
+              "en": "We have bought tickets for the concert."
+            }
+          ],
+          "englishCognate": "cheap",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "läsa",
+          "english": "read",
+          "forms": {
+            "infinitiv": "läsa",
+            "presens": "läser",
+            "preteritum": "läste",
+            "supinum": "läst",
+            "imperativ": "läs"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han läser tidningen vid frukosten.",
+              "en": "He reads the newspaper at breakfast."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag läste tre böcker i somras.",
+              "en": "I read three books this summer."
+            },
+            {
+              "form": "supine",
+              "sv": "Barnen har läst hela kapitlet.",
+              "en": "The children have read the whole chapter."
+            }
+          ],
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "tycka",
+          "english": "think (opinion)",
+          "forms": {
+            "infinitiv": "tycka",
+            "presens": "tycker",
+            "preteritum": "tyckte",
+            "supinum": "tyckt",
+            "imperativ": "tyck"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag tycker om starkt kaffe.",
+              "en": "I like strong coffee."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon tyckte att filmen var för lång.",
+              "en": "She thought the film was too long."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har alltid tyckt så.",
+              "en": "We have always thought so."
+            }
+          ],
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "hjälpa",
+          "english": "help",
+          "forms": {
+            "infinitiv": "hjälpa",
+            "presens": "hjälper",
+            "preteritum": "hjälpte",
+            "supinum": "hjälpt",
+            "imperativ": "hjälp"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Min granne hjälper mig med trädgården.",
+              "en": "My neighbour helps me with the garden."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han hjälpte en turist med kartan.",
+              "en": "He helped a tourist with the map."
+            },
+            {
+              "form": "supine",
+              "sv": "De har hjälpt oss mycket.",
+              "en": "They have helped us a lot."
+            }
+          ],
+          "englishCognate": "help",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "åka",
+          "english": "go, travel",
+          "forms": {
+            "infinitiv": "åka",
+            "presens": "åker",
+            "preteritum": "åkte",
+            "supinum": "åkt",
+            "imperativ": "åk"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi åker tåg till Malmö.",
+              "en": "We are going by train to Malmö."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag åkte skidor i februari.",
+              "en": "I went skiing in February."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har åkt hem redan.",
+              "en": "She has already gone home."
+            }
+          ],
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "röka",
+          "english": "smoke",
+          "forms": {
+            "infinitiv": "röka",
+            "presens": "röker",
+            "preteritum": "rökte",
+            "supinum": "rökt",
+            "imperativ": "rök"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han röker aldrig inomhus.",
+              "en": "He never smokes indoors."
+            },
+            {
+              "form": "preterite",
+              "sv": "Min farfar rökte pipa.",
+              "en": "My grandfather smoked a pipe."
+            },
+            {
+              "form": "supine",
+              "sv": "De har rökt fisken själva.",
+              "en": "They have smoked the fish themselves."
+            }
+          ],
+          "englishCognate": "reek",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "tänka",
+          "english": "think",
+          "forms": {
+            "infinitiv": "tänka",
+            "presens": "tänker",
+            "preteritum": "tänkte",
+            "supinum": "tänkt",
+            "imperativ": "tänk"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag tänker på min familj.",
+              "en": "I am thinking about my family."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon tänkte länge innan hon svarade.",
+              "en": "She thought for a long time before she answered."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har tänkt på saken.",
+              "en": "We have thought about the matter."
+            }
+          ],
+          "englishCognate": "think",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "söka",
+          "english": "search",
+          "forms": {
+            "infinitiv": "söka",
+            "presens": "söker",
+            "preteritum": "sökte",
+            "supinum": "sökt",
+            "imperativ": "sök"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han söker ett nytt jobb.",
+              "en": "He is looking for a new job."
+            },
+            {
+              "form": "preterite",
+              "sv": "Polisen sökte efter hunden.",
+              "en": "The police searched for the dog."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har sökt till universitetet.",
+              "en": "I have applied to the university."
+            }
+          ],
+          "englishCognate": "seek",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "möta",
+          "english": "meet",
+          "forms": {
+            "infinitiv": "möta",
+            "presens": "möter",
+            "preteritum": "mötte",
+            "supinum": "mött",
+            "imperativ": "möt"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag möter dig vid stationen.",
+              "en": "I'll meet you at the station."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi mötte en älg på vägen.",
+              "en": "We met a moose on the road."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har mött hans föräldrar.",
+              "en": "She has met his parents."
+            }
+          ],
+          "englishCognate": "meet",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "byta",
+          "english": "change, swap",
+          "forms": {
+            "infinitiv": "byta",
+            "presens": "byter",
+            "preteritum": "bytte",
+            "supinum": "bytt",
+            "imperativ": "byt"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag byter tröja innan middagen.",
+              "en": "I'll change my sweater before dinner."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han bytte däck på bilen.",
+              "en": "He changed the tyres on the car."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har bytt lägenhet.",
+              "en": "We have swapped flats."
+            }
+          ],
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "resa",
+          "english": "travel",
+          "forms": {
+            "infinitiv": "resa",
+            "presens": "reser",
+            "preteritum": "reste",
+            "supinum": "rest",
+            "imperativ": "res"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "De reser till Italien i juni.",
+              "en": "They travel to Italy in June."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag reste ensam genom Norge.",
+              "en": "I travelled alone through Norway."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har rest jorden runt.",
+              "en": "She has travelled around the world."
+            }
+          ],
+          "englishCognate": "raise",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "väcka",
+          "english": "wake (sb)",
+          "forms": {
+            "infinitiv": "väcka",
+            "presens": "väcker",
+            "preteritum": "väckte",
+            "supinum": "väckt",
+            "imperativ": "väck"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Musiken väcker grannarna.",
+              "en": "The music wakes the neighbours."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag väckte min son klockan sju.",
+              "en": "I woke my son at seven."
+            },
+            {
+              "form": "supine",
+              "sv": "Hunden har väckt hela huset.",
+              "en": "The dog has woken the whole house."
+            }
+          ],
+          "englishCognate": "wake",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "sänka",
+          "english": "lower, sink (sth)",
+          "forms": {
+            "infinitiv": "sänka",
+            "presens": "sänker",
+            "preteritum": "sänkte",
+            "supinum": "sänkt",
+            "imperativ": "sänk"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "De sänker priset i januari.",
+              "en": "They lower the price in January."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon sänkte rösten.",
+              "en": "She lowered her voice."
+            },
+            {
+              "form": "supine",
+              "sv": "Banken har sänkt räntan.",
+              "en": "The bank has lowered the interest rate."
+            }
+          ],
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        },
+        {
+          "infinitive": "klippa",
+          "english": "cut (scissors)",
+          "forms": {
+            "infinitiv": "klippa",
+            "presens": "klipper",
+            "preteritum": "klippte",
+            "supinum": "klippt",
+            "imperativ": "klipp"
+          },
+          "textbookGroup": "2b",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag klipper gräset på lördag.",
+              "en": "I'll cut the grass on Saturday."
+            },
+            {
+              "form": "preterite",
+              "sv": "Frisören klippte mitt hår för kort.",
+              "en": "The hairdresser cut my hair too short."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har klippt ut en artikel.",
+              "en": "She has cut out an article."
+            }
+          ],
+          "englishCognate": "clip",
+          "_cluster": "The split cluster — silent half",
+          "_cid": "split-te"
+        }
+      ]
+    },
+    {
+      "id": "stubs",
+      "name": "The stubs",
+      "pattern": "— · -r · -dde · -tt",
+      "verbCount": 7,
+      "verbs": [
+        {
+          "infinitive": "bo",
+          "english": "live, reside",
+          "forms": {
+            "infinitiv": "bo",
+            "presens": "bor",
+            "preteritum": "bodde",
+            "supinum": "bott",
+            "imperativ": "bo"
+          },
+          "textbookGroup": "3",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi bor i en lägenhet i centrum.",
+              "en": "We live in a flat in the centre."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han bodde i Berlin i tre år.",
+              "en": "He lived in Berlin for three years."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har bott här hela mitt liv.",
+              "en": "I have lived here all my life."
+            }
+          ],
+          "_cluster": "The stubs",
+          "_cid": "stubs"
+        },
+        {
+          "infinitive": "tro",
+          "english": "believe",
+          "forms": {
+            "infinitiv": "tro",
+            "presens": "tror",
+            "preteritum": "trodde",
+            "supinum": "trott",
+            "imperativ": "tro"
+          },
+          "textbookGroup": "3",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag tror på dig.",
+              "en": "I believe in you."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon trodde på hans historia.",
+              "en": "She believed his story."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har alltid trott det.",
+              "en": "We have always believed that."
+            }
+          ],
+          "_cluster": "The stubs",
+          "_cid": "stubs"
+        },
+        {
+          "infinitive": "sy",
+          "english": "sew",
+          "forms": {
+            "infinitiv": "sy",
+            "presens": "syr",
+            "preteritum": "sydde",
+            "supinum": "sytt",
+            "imperativ": "sy"
+          },
+          "textbookGroup": "3",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Min mormor syr sina egna kläder.",
+              "en": "My grandmother sews her own clothes."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon sydde en gardin till köket.",
+              "en": "She sewed a curtain for the kitchen."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har sytt fast en knapp.",
+              "en": "I have sewn on a button."
+            }
+          ],
+          "englishCognate": "sew",
+          "_cluster": "The stubs",
+          "_cid": "stubs"
+        },
+        {
+          "infinitive": "må",
+          "english": "feel (well)",
+          "forms": {
+            "infinitiv": "må",
+            "presens": "mår",
+            "preteritum": "mådde",
+            "supinum": "mått",
+            "imperativ": "må"
+          },
+          "textbookGroup": "3",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag mår bra idag.",
+              "en": "I feel well today."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han mådde dåligt efter maten.",
+              "en": "He felt ill after the meal."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har mått bättre sedan i somras.",
+              "en": "She has felt better since the summer."
+            }
+          ],
+          "_cluster": "The stubs",
+          "_cid": "stubs"
+        },
+        {
+          "infinitive": "nå",
+          "english": "reach",
+          "forms": {
+            "infinitiv": "nå",
+            "presens": "når",
+            "preteritum": "nådde",
+            "supinum": "nått",
+            "imperativ": "nå"
+          },
+          "textbookGroup": "3",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag når inte översta hyllan.",
+              "en": "I can't reach the top shelf."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi nådde toppen vid middagstid.",
+              "en": "We reached the summit at midday."
+            },
+            {
+              "form": "supine",
+              "sv": "De har nått sitt mål.",
+              "en": "They have reached their goal."
+            }
+          ],
+          "_cluster": "The stubs",
+          "_cid": "stubs"
+        },
+        {
+          "infinitive": "klä",
+          "english": "dress",
+          "forms": {
+            "infinitiv": "klä",
+            "presens": "klär",
+            "preteritum": "klädde",
+            "supinum": "klätt",
+            "imperativ": "klä"
+          },
+          "textbookGroup": "3",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon klär sig snabbt på morgonen.",
+              "en": "She dresses quickly in the morning."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag klädde barnen i varma kläder.",
+              "en": "I dressed the children in warm clothes."
+            },
+            {
+              "form": "supine",
+              "sv": "Han har klätt om till middagen.",
+              "en": "He has changed for dinner."
+            }
+          ],
+          "englishCognate": "clothe",
+          "_cluster": "The stubs",
+          "_cid": "stubs"
+        },
+        {
+          "infinitive": "ske",
+          "english": "occur",
+          "forms": {
+            "infinitiv": "ske",
+            "presens": "sker",
+            "preteritum": "skedde",
+            "supinum": "skett",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "3",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Sådant sker varje dag.",
+              "en": "Such things happen every day."
+            },
+            {
+              "form": "preterite",
+              "sv": "Olyckan skedde på natten.",
+              "en": "The accident occurred at night."
+            },
+            {
+              "form": "supine",
+              "sv": "Ett mirakel har skett.",
+              "en": "A miracle has occurred."
+            }
+          ],
+          "_cluster": "The stubs",
+          "_cid": "stubs"
+        }
+      ]
+    },
+    {
+      "id": "vowel-changers",
+      "name": "The vowel changers",
+      "pattern": "-a · -er · vowel change · -it",
+      "verbCount": 53,
+      "verbs": [
+        {
+          "infinitive": "skriva",
+          "english": "write",
+          "forms": {
+            "infinitiv": "skriva",
+            "presens": "skriver",
+            "preteritum": "skrev",
+            "supinum": "skrivit",
+            "imperativ": "skriv"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag skriver ett brev till min moster.",
+              "en": "I am writing a letter to my aunt."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon skrev en roman förra året.",
+              "en": "She wrote a novel last year."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har skrivit under kontraktet.",
+              "en": "We have signed the contract."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "write",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "bita",
+          "english": "bite",
+          "forms": {
+            "infinitiv": "bita",
+            "presens": "biter",
+            "preteritum": "bet",
+            "supinum": "bitit",
+            "imperativ": "bit"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hunden biter aldrig barn.",
+              "en": "The dog never bites children."
+            },
+            {
+              "form": "preterite",
+              "sv": "Myggan bet mig i armen.",
+              "en": "The mosquito bit me on the arm."
+            },
+            {
+              "form": "supine",
+              "sv": "Katten har bitit sönder sladden.",
+              "en": "The cat has bitten through the cable."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "bite",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "rida",
+          "english": "ride",
+          "forms": {
+            "infinitiv": "rida",
+            "presens": "rider",
+            "preteritum": "red",
+            "supinum": "ridit",
+            "imperativ": "rid"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon rider varje lördag.",
+              "en": "She rides every Saturday."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi red längs stranden.",
+              "en": "We rode along the beach."
+            },
+            {
+              "form": "supine",
+              "sv": "Han har ridit sedan han var sex.",
+              "en": "He has ridden since he was six."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "ride",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "driva",
+          "english": "drive, push",
+          "forms": {
+            "infinitiv": "driva",
+            "presens": "driver",
+            "preteritum": "drev",
+            "supinum": "drivit",
+            "imperativ": "driv"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vinden driver båten mot land.",
+              "en": "The wind drives the boat towards land."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han drev ett kafé i tio år.",
+              "en": "He ran a café for ten years."
+            },
+            {
+              "form": "supine",
+              "sv": "De har drivit frågan i domstol.",
+              "en": "They have pursued the matter in court."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "drive",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "stiga",
+          "english": "rise, step",
+          "forms": {
+            "infinitiv": "stiga",
+            "presens": "stiger",
+            "preteritum": "steg",
+            "supinum": "stigit",
+            "imperativ": "stig"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Priserna stiger varje år.",
+              "en": "Prices rise every year."
+            },
+            {
+              "form": "preterite",
+              "sv": "Solen steg över bergen.",
+              "en": "The sun rose over the mountains."
+            },
+            {
+              "form": "supine",
+              "sv": "Temperaturen har stigit igen.",
+              "en": "The temperature has risen again."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "gripa",
+          "english": "grasp",
+          "forms": {
+            "infinitiv": "gripa",
+            "presens": "griper",
+            "preteritum": "grep",
+            "supinum": "gripit",
+            "imperativ": "grip"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Polisen griper mannen på gatan.",
+              "en": "The police arrest the man in the street."
+            },
+            {
+              "form": "preterite",
+              "sv": "Historien grep mig direkt.",
+              "en": "The story gripped me straight away."
+            },
+            {
+              "form": "supine",
+              "sv": "De har gripit två misstänkta.",
+              "en": "They have arrested two suspects."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "grip",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "skrika",
+          "english": "scream",
+          "forms": {
+            "infinitiv": "skrika",
+            "presens": "skriker",
+            "preteritum": "skrek",
+            "supinum": "skrikit",
+            "imperativ": "skrik"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Barnet skriker i affären.",
+              "en": "The child is screaming in the shop."
+            },
+            {
+              "form": "preterite",
+              "sv": "Måsarna skrek över hamnen.",
+              "en": "The gulls screamed over the harbour."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har skrikit sig hes.",
+              "en": "She has screamed herself hoarse."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "shriek",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "slita",
+          "english": "wear out, toil",
+          "forms": {
+            "infinitiv": "slita",
+            "presens": "sliter",
+            "preteritum": "slet",
+            "supinum": "slitit",
+            "imperativ": "slit"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han sliter hårt på jobbet.",
+              "en": "He toils hard at work."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vinden slet av en gren.",
+              "en": "The wind tore off a branch."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har slitit ut mina stövlar.",
+              "en": "I have worn out my boots."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "slit",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "svika",
+          "english": "betray",
+          "forms": {
+            "infinitiv": "svika",
+            "presens": "sviker",
+            "preteritum": "svek",
+            "supinum": "svikit",
+            "imperativ": "svik"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han sviker aldrig sina vänner.",
+              "en": "He never lets his friends down."
+            },
+            {
+              "form": "preterite",
+              "sv": "Minnet svek mig helt.",
+              "en": "My memory failed me completely."
+            },
+            {
+              "form": "supine",
+              "sv": "De har svikit sitt löfte.",
+              "en": "They have broken their promise."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "lida",
+          "english": "suffer",
+          "forms": {
+            "infinitiv": "lida",
+            "presens": "lider",
+            "preteritum": "led",
+            "supinum": "lidit",
+            "imperativ": "lid"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Många lider av allergi på våren.",
+              "en": "Many suffer from allergies in spring."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon led av huvudvärk hela dagen.",
+              "en": "She suffered from a headache all day."
+            },
+            {
+              "form": "supine",
+              "sv": "Han har lidit i tysthet.",
+              "en": "He has suffered in silence."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "vrida",
+          "english": "twist",
+          "forms": {
+            "infinitiv": "vrida",
+            "presens": "vrider",
+            "preteritum": "vred",
+            "supinum": "vridit",
+            "imperativ": "vrid"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag vrider på kranen.",
+              "en": "I turn the tap."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han vred om nyckeln.",
+              "en": "He turned the key."
+            },
+            {
+              "form": "supine",
+              "sv": "Vinden har vridit sig norrut.",
+              "en": "The wind has turned northwards."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "writhe",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "skina",
+          "english": "shine",
+          "forms": {
+            "infinitiv": "skina",
+            "presens": "skiner",
+            "preteritum": "sken",
+            "supinum": "skinit",
+            "imperativ": "skin"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Solen skiner över sjön.",
+              "en": "The sun is shining over the lake."
+            },
+            {
+              "form": "preterite",
+              "sv": "Månen sken hela natten.",
+              "en": "The moon shone all night."
+            },
+            {
+              "form": "supine",
+              "sv": "Det har skinit sedan i morse.",
+              "en": "It has been shining since this morning."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "shine",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "riva",
+          "english": "tear down",
+          "forms": {
+            "infinitiv": "riva",
+            "presens": "river",
+            "preteritum": "rev",
+            "supinum": "rivit",
+            "imperativ": "riv"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "De river den gamla fabriken.",
+              "en": "They are demolishing the old factory."
+            },
+            {
+              "form": "preterite",
+              "sv": "Katten rev soffan.",
+              "en": "The cat scratched the sofa."
+            },
+            {
+              "form": "supine",
+              "sv": "Kommunen har rivit huset.",
+              "en": "The council has demolished the house."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "englishCognate": "rive",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "vika",
+          "english": "fold",
+          "forms": {
+            "infinitiv": "vika",
+            "presens": "viker",
+            "preteritum": "vek",
+            "supinum": "vikit",
+            "imperativ": "vik"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag viker tvätten på kvällen.",
+              "en": "I fold the laundry in the evening."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon vek pappret till en fågel.",
+              "en": "She folded the paper into a bird."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har vikit alla kartonger.",
+              "en": "We have folded all the boxes."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "bli",
+          "english": "become",
+          "forms": {
+            "infinitiv": "bli",
+            "presens": "blir",
+            "preteritum": "blev",
+            "supinum": "blivit",
+            "imperativ": "bli"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han blir läkare till sommaren.",
+              "en": "He becomes a doctor by the summer."
+            },
+            {
+              "form": "preterite",
+              "sv": "Det blev kallt på kvällen.",
+              "en": "It got cold in the evening."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har blivit chef.",
+              "en": "She has become a manager."
+            }
+          ],
+          "vowelPattern": "i → e → i",
+          "pod": "The long-i family",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "flyga",
+          "english": "fly",
+          "forms": {
+            "infinitiv": "flyga",
+            "presens": "flyger",
+            "preteritum": "flög",
+            "supinum": "flugit",
+            "imperativ": "flyg"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi flyger till Rom på fredag.",
+              "en": "We fly to Rome on Friday."
+            },
+            {
+              "form": "preterite",
+              "sv": "Fågeln flög in genom fönstret.",
+              "en": "The bird flew in through the window."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har flugit över Atlanten en gång.",
+              "en": "I have flown across the Atlantic once."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "fly",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "bjuda",
+          "english": "offer, invite",
+          "forms": {
+            "infinitiv": "bjuda",
+            "presens": "bjuder",
+            "preteritum": "bjöd",
+            "supinum": "bjudit",
+            "imperativ": "bjud"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag bjuder på kaffe.",
+              "en": "The coffee is on me."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon bjöd hela klassen på tårta.",
+              "en": "She treated the whole class to cake."
+            },
+            {
+              "form": "supine",
+              "sv": "De har bjudit oss på middag.",
+              "en": "They have invited us to dinner."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "bid",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "frysa",
+          "english": "freeze",
+          "forms": {
+            "infinitiv": "frysa",
+            "presens": "fryser",
+            "preteritum": "frös",
+            "supinum": "frusit",
+            "imperativ": "frys"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag fryser om fötterna.",
+              "en": "My feet are cold."
+            },
+            {
+              "form": "preterite",
+              "sv": "Sjön frös till i december.",
+              "en": "The lake froze over in December."
+            },
+            {
+              "form": "supine",
+              "sv": "Bären har frusit i frysen.",
+              "en": "The berries have frozen in the freezer."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "freeze",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "njuta",
+          "english": "enjoy",
+          "forms": {
+            "infinitiv": "njuta",
+            "presens": "njuter",
+            "preteritum": "njöt",
+            "supinum": "njutit",
+            "imperativ": "njut"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi njuter av tystnaden här.",
+              "en": "We enjoy the silence here."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han njöt av varje tugga.",
+              "en": "He enjoyed every bite."
+            },
+            {
+              "form": "supine",
+              "sv": "Jag har njutit av semestern.",
+              "en": "I have enjoyed the holiday."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "skjuta",
+          "english": "shoot",
+          "forms": {
+            "infinitiv": "skjuta",
+            "presens": "skjuter",
+            "preteritum": "sköt",
+            "supinum": "skjutit",
+            "imperativ": "skjut"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jägaren skjuter aldrig mot ljud.",
+              "en": "The hunter never shoots at sounds."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon sköt upp mötet till måndag.",
+              "en": "She postponed the meeting to Monday."
+            },
+            {
+              "form": "supine",
+              "sv": "De har skjutit ett mål i första halvlek.",
+              "en": "They have scored a goal in the first half."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "shoot",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "flyta",
+          "english": "float",
+          "forms": {
+            "infinitiv": "flyta",
+            "presens": "flyter",
+            "preteritum": "flöt",
+            "supinum": "flutit",
+            "imperativ": "flyt"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Isen flyter på vattnet.",
+              "en": "The ice floats on the water."
+            },
+            {
+              "form": "preterite",
+              "sv": "Båten flöt iväg om natten.",
+              "en": "The boat floated away during the night."
+            },
+            {
+              "form": "supine",
+              "sv": "Löven har flutit ner till bron.",
+              "en": "The leaves have floated down to the bridge."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "fleet",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "bryta",
+          "english": "break",
+          "forms": {
+            "infinitiv": "bryta",
+            "presens": "bryter",
+            "preteritum": "bröt",
+            "supinum": "brutit",
+            "imperativ": "bryt"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag bryter av ett stycke choklad.",
+              "en": "I break off a piece of chocolate."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han bröt benet i backen.",
+              "en": "He broke his leg on the slope."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har brutit tystnaden.",
+              "en": "We have broken the silence."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "break",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "krypa",
+          "english": "crawl",
+          "forms": {
+            "infinitiv": "krypa",
+            "presens": "kryper",
+            "preteritum": "kröp",
+            "supinum": "krupit",
+            "imperativ": "kryp"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Barnet kryper redan.",
+              "en": "The baby is already crawling."
+            },
+            {
+              "form": "preterite",
+              "sv": "Katten kröp under sängen.",
+              "en": "The cat crawled under the bed."
+            },
+            {
+              "form": "supine",
+              "sv": "Insekten har krupit in i skon.",
+              "en": "The insect has crawled into the shoe."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "creep",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "smyga",
+          "english": "sneak",
+          "forms": {
+            "infinitiv": "smyga",
+            "presens": "smyger",
+            "preteritum": "smög",
+            "supinum": "smugit",
+            "imperativ": "smyg"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han smyger ut ur rummet.",
+              "en": "He sneaks out of the room."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi smög förbi vakten.",
+              "en": "We sneaked past the guard."
+            },
+            {
+              "form": "supine",
+              "sv": "Hunden har smugit sig in i köket.",
+              "en": "The dog has sneaked into the kitchen."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "sjunga",
+          "english": "sing",
+          "forms": {
+            "infinitiv": "sjunga",
+            "presens": "sjunger",
+            "preteritum": "sjöng",
+            "supinum": "sjungit",
+            "imperativ": "sjung"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Kören sjunger varje torsdag.",
+              "en": "The choir sings every Thursday."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon sjöng en gammal visa.",
+              "en": "She sang an old ballad."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har sjungit alla verser.",
+              "en": "We have sung all the verses."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "sing",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "sjunka",
+          "english": "sink",
+          "forms": {
+            "infinitiv": "sjunka",
+            "presens": "sjunker",
+            "preteritum": "sjönk",
+            "supinum": "sjunkit",
+            "imperativ": "sjunk"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Priset sjunker på hösten.",
+              "en": "The price drops in the autumn."
+            },
+            {
+              "form": "preterite",
+              "sv": "Skeppet sjönk utanför kusten.",
+              "en": "The ship sank off the coast."
+            },
+            {
+              "form": "supine",
+              "sv": "Temperaturen har sjunkit under noll.",
+              "en": "The temperature has dropped below zero."
+            }
+          ],
+          "vowelPattern": "y / ju / u → ö → u",
+          "pod": "The y/ju family",
+          "englishCognate": "sink",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "dricka",
+          "english": "drink",
+          "forms": {
+            "infinitiv": "dricka",
+            "presens": "dricker",
+            "preteritum": "drack",
+            "supinum": "druckit",
+            "imperativ": "drick"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag dricker te på morgonen.",
+              "en": "I drink tea in the morning."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han drack ett glas vatten.",
+              "en": "He drank a glass of water."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har druckit upp all mjölk.",
+              "en": "We have drunk all the milk."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "drink",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "finna",
+          "english": "find",
+          "forms": {
+            "infinitiv": "finna",
+            "presens": "finner",
+            "preteritum": "fann",
+            "supinum": "funnit",
+            "imperativ": "finn"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Forskarna finner nya arter varje år.",
+              "en": "Researchers find new species every year."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon fann en nyckel under mattan.",
+              "en": "She found a key under the rug."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har funnit en lösning.",
+              "en": "We have found a solution."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "find",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "brinna",
+          "english": "burn",
+          "forms": {
+            "infinitiv": "brinna",
+            "presens": "brinner",
+            "preteritum": "brann",
+            "supinum": "brunnit",
+            "imperativ": "brinn"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Ljuset brinner på bordet.",
+              "en": "The candle is burning on the table."
+            },
+            {
+              "form": "preterite",
+              "sv": "Ladan brann hela natten.",
+              "en": "The barn burned all night."
+            },
+            {
+              "form": "supine",
+              "sv": "Skogen har brunnit i en vecka.",
+              "en": "The forest has burned for a week."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "burn",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "springa",
+          "english": "run",
+          "forms": {
+            "infinitiv": "springa",
+            "presens": "springer",
+            "preteritum": "sprang",
+            "supinum": "sprungit",
+            "imperativ": "spring"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon springer fem kilometer varje dag.",
+              "en": "She runs five kilometres every day."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi sprang efter bussen.",
+              "en": "We ran after the bus."
+            },
+            {
+              "form": "supine",
+              "sv": "Hunden har sprungit iväg.",
+              "en": "The dog has run off."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "spring",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "vinna",
+          "english": "win",
+          "forms": {
+            "infinitiv": "vinna",
+            "presens": "vinner",
+            "preteritum": "vann",
+            "supinum": "vunnit",
+            "imperativ": "vinn"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vårt lag vinner sällan borta.",
+              "en": "Our team rarely wins away."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han vann en cykel på lotteriet.",
+              "en": "He won a bicycle in the lottery."
+            },
+            {
+              "form": "supine",
+              "sv": "De har vunnit tre matcher i rad.",
+              "en": "They have won three matches in a row."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "win",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "binda",
+          "english": "tie",
+          "forms": {
+            "infinitiv": "binda",
+            "presens": "binder",
+            "preteritum": "band",
+            "supinum": "bundit",
+            "imperativ": "bind"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag binder ihop tidningarna.",
+              "en": "I tie the newspapers together."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon band en krans av blommor.",
+              "en": "She tied a wreath of flowers."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har bundit fast båten.",
+              "en": "We have tied up the boat."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "bind",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "försvinna",
+          "english": "disappear",
+          "forms": {
+            "infinitiv": "försvinna",
+            "presens": "försvinner",
+            "preteritum": "försvann",
+            "supinum": "försvunnit",
+            "imperativ": "försvinn"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Mina strumpor försvinner i tvätten.",
+              "en": "My socks disappear in the wash."
+            },
+            {
+              "form": "preterite",
+              "sv": "Katten försvann i tre dagar.",
+              "en": "The cat disappeared for three days."
+            },
+            {
+              "form": "supine",
+              "sv": "Nycklarna har försvunnit igen.",
+              "en": "The keys have disappeared again."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "sitta",
+          "english": "sit",
+          "forms": {
+            "infinitiv": "sitta",
+            "presens": "sitter",
+            "preteritum": "satt",
+            "supinum": "suttit",
+            "imperativ": "sitt"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han sitter alltid längst bak.",
+              "en": "He always sits at the very back."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi satt vid brasan hela kvällen.",
+              "en": "We sat by the fire all evening."
+            },
+            {
+              "form": "supine",
+              "sv": "Fågeln har suttit på taket i timmar.",
+              "en": "The bird has sat on the roof for hours."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "sit",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "spricka",
+          "english": "crack",
+          "forms": {
+            "infinitiv": "spricka",
+            "presens": "spricker",
+            "preteritum": "sprack",
+            "supinum": "spruckit",
+            "imperativ": "sprick"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Isen spricker på våren.",
+              "en": "The ice cracks in the spring."
+            },
+            {
+              "form": "preterite",
+              "sv": "Glaset sprack i diskmaskinen.",
+              "en": "The glass cracked in the dishwasher."
+            },
+            {
+              "form": "supine",
+              "sv": "Muren har spruckit på flera ställen.",
+              "en": "The wall has cracked in several places."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "slippa",
+          "english": "be spared",
+          "forms": {
+            "infinitiv": "slippa",
+            "presens": "slipper",
+            "preteritum": "slapp",
+            "supinum": "sluppit",
+            "imperativ": "slipp"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag slipper jobba på fredag.",
+              "en": "I don't have to work on Friday."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon slapp betala avgiften.",
+              "en": "She got out of paying the fee."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har sluppit alla problem.",
+              "en": "We have escaped all the problems."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "hinna",
+          "english": "have time",
+          "forms": {
+            "infinitiv": "hinna",
+            "presens": "hinner",
+            "preteritum": "hann",
+            "supinum": "hunnit",
+            "imperativ": "hinn"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag hinner inte äta lunch.",
+              "en": "I don't have time to eat lunch."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han hann med sista tåget.",
+              "en": "He caught the last train."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har hunnit se två museer.",
+              "en": "We have managed to see two museums."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "rinna",
+          "english": "flow, trickle",
+          "forms": {
+            "infinitiv": "rinna",
+            "presens": "rinner",
+            "preteritum": "rann",
+            "supinum": "runnit",
+            "imperativ": "rinn"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vattnet rinner ur kranen.",
+              "en": "The water runs from the tap."
+            },
+            {
+              "form": "preterite",
+              "sv": "Tårarna rann nerför hennes kind.",
+              "en": "The tears ran down her cheek."
+            },
+            {
+              "form": "supine",
+              "sv": "Färgen har runnit på duken.",
+              "en": "The paint has run on the canvas."
+            }
+          ],
+          "vowelPattern": "i → a → u",
+          "pod": "The short-i family",
+          "englishCognate": "run",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "bära",
+          "english": "carry",
+          "forms": {
+            "infinitiv": "bära",
+            "presens": "bär",
+            "preteritum": "bar",
+            "supinum": "burit",
+            "imperativ": "bär"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han bär alla väskor själv.",
+              "en": "He carries all the bags himself."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag bar veden in i huset.",
+              "en": "I carried the firewood into the house."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har burit klockan i tjugo år.",
+              "en": "She has worn the watch for twenty years."
+            }
+          ],
+          "vowelPattern": "ä → a → u",
+          "pod": "The ä family",
+          "englishCognate": "bear",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "skära",
+          "english": "cut",
+          "forms": {
+            "infinitiv": "skära",
+            "presens": "skär",
+            "preteritum": "skar",
+            "supinum": "skurit",
+            "imperativ": "skär"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag skär brödet i tunna skivor.",
+              "en": "I cut the bread into thin slices."
+            },
+            {
+              "form": "preterite",
+              "sv": "Kocken skar upp kakan.",
+              "en": "The chef cut up the cake."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har skurit alla grönsaker.",
+              "en": "We have cut all the vegetables."
+            }
+          ],
+          "vowelPattern": "ä → a → u",
+          "pod": "The ä family",
+          "englishCognate": "shear",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "stjäla",
+          "english": "steal",
+          "forms": {
+            "infinitiv": "stjäla",
+            "presens": "stjäl",
+            "preteritum": "stal",
+            "supinum": "stulit",
+            "imperativ": "stjäl"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Någon stjäl äpplen från trädgården.",
+              "en": "Someone steals apples from the garden."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han stal min plats på tåget.",
+              "en": "He stole my seat on the train."
+            },
+            {
+              "form": "supine",
+              "sv": "Tjuven har stulit två cyklar.",
+              "en": "The thief has stolen two bicycles."
+            }
+          ],
+          "vowelPattern": "ä → a → u",
+          "pod": "The ä family",
+          "englishCognate": "steal",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "svälta",
+          "english": "starve",
+          "forms": {
+            "infinitiv": "svälta",
+            "presens": "svälter",
+            "preteritum": "svalt",
+            "supinum": "svultit",
+            "imperativ": "svält"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Ingen svälter i det här landet.",
+              "en": "Nobody starves in this country."
+            },
+            {
+              "form": "preterite",
+              "sv": "Djuren svalt under vintern.",
+              "en": "The animals starved during the winter."
+            },
+            {
+              "form": "supine",
+              "sv": "Han har svultit sig i en vecka.",
+              "en": "He has starved himself for a week."
+            }
+          ],
+          "vowelPattern": "ä → a → u",
+          "pod": "The ä family",
+          "supineMove": "u",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "fara",
+          "english": "travel",
+          "forms": {
+            "infinitiv": "fara",
+            "presens": "far",
+            "preteritum": "for",
+            "supinum": "farit",
+            "imperativ": "far"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Tåget far förbi utan att stanna.",
+              "en": "The train goes past without stopping."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi for till fjällen i påsk.",
+              "en": "We went to the mountains at Easter."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har farit illa av stressen.",
+              "en": "She has suffered from the stress."
+            }
+          ],
+          "vowelPattern": "a / å → o → a",
+          "pod": "The og-rhymers",
+          "englishCognate": "fare",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "ta",
+          "english": "take",
+          "forms": {
+            "infinitiv": "ta",
+            "presens": "tar",
+            "preteritum": "tog",
+            "supinum": "tagit",
+            "imperativ": "ta"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag tar bussen till jobbet.",
+              "en": "I take the bus to work."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han tog en bild av huset.",
+              "en": "He took a picture of the house."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har tagit ett viktigt beslut.",
+              "en": "We have made an important decision."
+            }
+          ],
+          "vowelPattern": "a / å → o → a",
+          "pod": "The og-rhymers",
+          "englishCognate": "take",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "dra",
+          "english": "pull",
+          "forms": {
+            "infinitiv": "dra",
+            "presens": "drar",
+            "preteritum": "drog",
+            "supinum": "dragit",
+            "imperativ": "dra"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hästen drar vagnen.",
+              "en": "The horse pulls the cart."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag drog ut sladden.",
+              "en": "I pulled out the cable."
+            },
+            {
+              "form": "supine",
+              "sv": "De har dragit en ny linje på kartan.",
+              "en": "They have drawn a new line on the map."
+            }
+          ],
+          "vowelPattern": "a / å → o → a",
+          "pod": "The og-rhymers",
+          "englishCognate": "drag",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "slå",
+          "english": "hit",
+          "forms": {
+            "infinitiv": "slå",
+            "presens": "slår",
+            "preteritum": "slog",
+            "supinum": "slagit",
+            "imperativ": "slå"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han slår gräset varje vecka.",
+              "en": "He mows the grass every week."
+            },
+            {
+              "form": "preterite",
+              "sv": "Blixten slog ner i tornet.",
+              "en": "Lightning struck the tower."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har slagit rekordet.",
+              "en": "She has broken the record."
+            }
+          ],
+          "vowelPattern": "a / å → o → a",
+          "pod": "The og-rhymers",
+          "englishCognate": "slay",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "falla",
+          "english": "fall",
+          "forms": {
+            "infinitiv": "falla",
+            "presens": "faller",
+            "preteritum": "föll",
+            "supinum": "fallit",
+            "imperativ": "fall"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Löven faller i oktober.",
+              "en": "The leaves fall in October."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han föll på isen.",
+              "en": "He fell on the ice."
+            },
+            {
+              "form": "supine",
+              "sv": "Snön har fallit hela natten.",
+              "en": "The snow has fallen all night."
+            }
+          ],
+          "vowelPattern": "a / å → ö → a / å",
+          "pod": "The ‑lla pair",
+          "englishCognate": "fall",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "hålla",
+          "english": "hold",
+          "forms": {
+            "infinitiv": "hålla",
+            "presens": "håller",
+            "preteritum": "höll",
+            "supinum": "hållit",
+            "imperativ": "håll"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag håller din kaffekopp.",
+              "en": "I'm holding your coffee cup."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon höll ett tal på bröllopet.",
+              "en": "She gave a speech at the wedding."
+            },
+            {
+              "form": "supine",
+              "sv": "Repet har hållit hela vintern.",
+              "en": "The rope has held all winter."
+            }
+          ],
+          "vowelPattern": "a / å → ö → a / å",
+          "pod": "The ‑lla pair",
+          "englishCognate": "hold",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "äta",
+          "english": "eat",
+          "forms": {
+            "infinitiv": "äta",
+            "presens": "äter",
+            "preteritum": "åt",
+            "supinum": "ätit",
+            "imperativ": "ät"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi äter fisk på fredagar.",
+              "en": "We eat fish on Fridays."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han åt en hel pizza.",
+              "en": "He ate a whole pizza."
+            },
+            {
+              "form": "supine",
+              "sv": "Barnen har ätit upp all glass.",
+              "en": "The children have eaten all the ice cream."
+            }
+          ],
+          "vowelPattern": "ä / å swap",
+          "pod": "The ‑ta trio",
+          "englishCognate": "eat",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "låta",
+          "english": "let, sound",
+          "forms": {
+            "infinitiv": "låta",
+            "presens": "låter",
+            "preteritum": "lät",
+            "supinum": "låtit",
+            "imperativ": "låt"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Fiolen låter vackert.",
+              "en": "The violin sounds beautiful."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon lät mig köra bilen.",
+              "en": "She let me drive the car."
+            },
+            {
+              "form": "supine",
+              "sv": "De har låtit dörren stå öppen.",
+              "en": "They have left the door standing open."
+            }
+          ],
+          "vowelPattern": "ä / å swap",
+          "pod": "The ‑ta trio",
+          "englishCognate": "let",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "gråta",
+          "english": "cry",
+          "forms": {
+            "infinitiv": "gråta",
+            "presens": "gråter",
+            "preteritum": "grät",
+            "supinum": "gråtit",
+            "imperativ": "gråt"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Barnet gråter i vagnen.",
+              "en": "The baby is crying in the pram."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag grät under hela filmen.",
+              "en": "I cried during the whole film."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har gråtit sig till sömns.",
+              "en": "She has cried herself to sleep."
+            }
+          ],
+          "vowelPattern": "ä / å swap",
+          "pod": "The ‑ta trio",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "sova",
+          "english": "sleep",
+          "forms": {
+            "infinitiv": "sova",
+            "presens": "sover",
+            "preteritum": "sov",
+            "supinum": "sovit",
+            "imperativ": "sov"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag sover dåligt på somrarna.",
+              "en": "I sleep badly in the summers."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han sov i tolv timmar.",
+              "en": "He slept for twelve hours."
+            },
+            {
+              "form": "supine",
+              "sv": "Katten har sovit i soffan.",
+              "en": "The cat has slept on the sofa."
+            }
+          ],
+          "vowelPattern": "o → o → o",
+          "pod": "The still pair",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        },
+        {
+          "infinitive": "komma",
+          "english": "come",
+          "forms": {
+            "infinitiv": "komma",
+            "presens": "kommer",
+            "preteritum": "kom",
+            "supinum": "kommit",
+            "imperativ": "kom"
+          },
+          "textbookGroup": "4",
+          "type": "strong",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Bussen kommer om fem minuter.",
+              "en": "The bus comes in five minutes."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon kom hem sent igår.",
+              "en": "She came home late yesterday."
+            },
+            {
+              "form": "supine",
+              "sv": "Posten har kommit.",
+              "en": "The post has come."
+            }
+          ],
+          "vowelPattern": "o → o → o",
+          "pod": "The still pair",
+          "englishCognate": "come",
+          "supineMove": "home",
+          "_cluster": "The vowel changers",
+          "_cid": "vowel-changers"
+        }
+      ]
+    },
+    {
+      "id": "wildcards",
+      "name": "The wildcards",
+      "pattern": "irregular",
+      "verbCount": 22,
+      "verbs": [
+        {
+          "infinitive": "vara",
+          "english": "be",
+          "forms": {
+            "infinitiv": "vara",
+            "presens": "är",
+            "preteritum": "var",
+            "supinum": "varit",
+            "imperativ": "var"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag är trött idag.",
+              "en": "I am tired today."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han var lärare förr.",
+              "en": "He was a teacher before."
+            },
+            {
+              "form": "supine",
+              "sv": "Det har varit en lång vecka.",
+              "en": "It has been a long week."
+            }
+          ],
+          "englishCognate": "was",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "ha",
+          "english": "have",
+          "forms": {
+            "infinitiv": "ha",
+            "presens": "har",
+            "preteritum": "hade",
+            "supinum": "haft",
+            "imperativ": "ha"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi har en gammal katt.",
+              "en": "We have an old cat."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon hade långt hår som ung.",
+              "en": "She had long hair when she was young."
+            },
+            {
+              "form": "supine",
+              "sv": "De har haft samma bil i tjugo år.",
+              "en": "They have had the same car for twenty years."
+            }
+          ],
+          "englishCognate": "have",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "göra",
+          "english": "do, make",
+          "forms": {
+            "infinitiv": "göra",
+            "presens": "gör",
+            "preteritum": "gjorde",
+            "supinum": "gjort",
+            "imperativ": "gör"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag gör läxorna på kvällen.",
+              "en": "I do my homework in the evening."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han gjorde en tavla till mig.",
+              "en": "He made a painting for me."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har gjort allt vi kan.",
+              "en": "We have done everything we can."
+            }
+          ],
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "gå",
+          "english": "go, walk",
+          "forms": {
+            "infinitiv": "gå",
+            "presens": "går",
+            "preteritum": "gick",
+            "supinum": "gått",
+            "imperativ": "gå"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon går till skolan varje dag.",
+              "en": "She walks to school every day."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi gick genom parken.",
+              "en": "We walked through the park."
+            },
+            {
+              "form": "supine",
+              "sv": "Klockan har gått sönder.",
+              "en": "The clock has broken."
+            }
+          ],
+          "englishCognate": "go",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "stå",
+          "english": "stand",
+          "forms": {
+            "infinitiv": "stå",
+            "presens": "står",
+            "preteritum": "stod",
+            "supinum": "stått",
+            "imperativ": "stå"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Bilen står på gatan.",
+              "en": "The car is standing in the street."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han stod i kö i en timme.",
+              "en": "He stood in a queue for an hour."
+            },
+            {
+              "form": "supine",
+              "sv": "Vasen har stått där i åratal.",
+              "en": "The vase has stood there for years."
+            }
+          ],
+          "englishCognate": "stand",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "få",
+          "english": "get, may",
+          "forms": {
+            "infinitiv": "få",
+            "presens": "får",
+            "preteritum": "fick",
+            "supinum": "fått",
+            "imperativ": "få"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag får ett paket idag.",
+              "en": "I'm getting a parcel today."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon fick ett brev från banken.",
+              "en": "She got a letter from the bank."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har fått ett nytt förslag.",
+              "en": "We have received a new proposal."
+            }
+          ],
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "se",
+          "english": "see",
+          "forms": {
+            "infinitiv": "se",
+            "presens": "ser",
+            "preteritum": "såg",
+            "supinum": "sett",
+            "imperativ": "se"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag ser en älg i skogen.",
+              "en": "I see a moose in the forest."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han såg filmen två gånger.",
+              "en": "He saw the film twice."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har sett hela utställningen.",
+              "en": "We have seen the whole exhibition."
+            }
+          ],
+          "englishCognate": "see",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "ge",
+          "english": "give",
+          "forms": {
+            "infinitiv": "ge",
+            "presens": "ger",
+            "preteritum": "gav",
+            "supinum": "gett",
+            "imperativ": "ge"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag ger dig min adress.",
+              "en": "I'll give you my address."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon gav honom en present.",
+              "en": "She gave him a present."
+            },
+            {
+              "form": "supine",
+              "sv": "De har gett oss mer tid.",
+              "en": "They have given us more time."
+            }
+          ],
+          "englishCognate": "give",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "veta",
+          "english": "know (facts)",
+          "forms": {
+            "infinitiv": "veta",
+            "presens": "vet",
+            "preteritum": "visste",
+            "supinum": "vetat",
+            "imperativ": "vet"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag vet svaret på frågan.",
+              "en": "I know the answer to the question."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han visste vägen hem.",
+              "en": "He knew the way home."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har alltid vetat det.",
+              "en": "We have always known that."
+            }
+          ],
+          "englishCognate": "wit",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "kunna",
+          "english": "can, know how",
+          "forms": {
+            "infinitiv": "kunna",
+            "presens": "kan",
+            "preteritum": "kunde",
+            "supinum": "kunnat",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Hon kan tala fyra språk.",
+              "en": "She can speak four languages."
+            },
+            {
+              "form": "preterite",
+              "sv": "Jag kunde inte sova inatt.",
+              "en": "I couldn't sleep last night."
+            },
+            {
+              "form": "supine",
+              "sv": "Han har kunnat cykla sedan han var fyra.",
+              "en": "He has been able to cycle since he was four."
+            }
+          ],
+          "englishCognate": "can",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "vilja",
+          "english": "want",
+          "forms": {
+            "infinitiv": "vilja",
+            "presens": "vill",
+            "preteritum": "ville",
+            "supinum": "velat",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag vill ha en kopp te.",
+              "en": "I want a cup of tea."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi ville stanna längre.",
+              "en": "We wanted to stay longer."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har alltid velat resa till Japan.",
+              "en": "She has always wanted to travel to Japan."
+            }
+          ],
+          "englishCognate": "will",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "skola",
+          "english": "shall, will",
+          "forms": {
+            "infinitiv": "skola",
+            "presens": "ska",
+            "preteritum": "skulle",
+            "supinum": "skolat",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Vi ska äta klockan sju.",
+              "en": "We're going to eat at seven."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han skulle ringa igår.",
+              "en": "He was supposed to call yesterday."
+            },
+            {
+              "form": "supine",
+              "sv": "Supinum skolat används knappt alls i modern svenska.",
+              "en": "The supine skolat is barely used at all in modern Swedish."
+            }
+          ],
+          "englishCognate": "shall",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "böra",
+          "english": "ought to",
+          "forms": {
+            "infinitiv": "böra",
+            "presens": "bör",
+            "preteritum": "borde",
+            "supinum": "bort",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Du bör vila mer.",
+              "en": "You ought to rest more."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi borde ha frågat först.",
+              "en": "We should have asked first."
+            },
+            {
+              "form": "supine",
+              "sv": "Supinum bort är ovanligt utanför formell skrift.",
+              "en": "The supine bort is uncommon outside formal writing."
+            }
+          ],
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "måste",
+          "english": "must",
+          "forms": {
+            "infinitiv": "måste",
+            "presens": "måste",
+            "preteritum": "måste",
+            "supinum": "måst",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag måste gå nu.",
+              "en": "I must go now."
+            },
+            {
+              "form": "preterite",
+              "sv": "Vi måste vänta i regnet.",
+              "en": "We had to wait in the rain."
+            },
+            {
+              "form": "supine",
+              "sv": "Hon har måst arbeta över.",
+              "en": "She has had to work overtime."
+            }
+          ],
+          "englishCognate": "must",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "säga",
+          "english": "say",
+          "forms": {
+            "infinitiv": "säga",
+            "presens": "säger",
+            "preteritum": "sa",
+            "supinum": "sagt",
+            "imperativ": "säg"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Han säger alltid samma sak.",
+              "en": "He always says the same thing."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon sa ingenting på hela kvällen.",
+              "en": "She said nothing all evening."
+            },
+            {
+              "form": "supine",
+              "sv": "Du har sagt det förut.",
+              "en": "You have said that before."
+            }
+          ],
+          "englishCognate": "say",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "lägga",
+          "english": "lay, put down",
+          "forms": {
+            "infinitiv": "lägga",
+            "presens": "lägger",
+            "preteritum": "la",
+            "supinum": "lagt",
+            "imperativ": "lägg"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag lägger nycklarna på hyllan.",
+              "en": "I put the keys on the shelf."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han la boken på bordet.",
+              "en": "He put the book on the table."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har lagt nytt golv i köket.",
+              "en": "We have laid a new floor in the kitchen."
+            }
+          ],
+          "englishCognate": "lay",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "välja",
+          "english": "choose",
+          "forms": {
+            "infinitiv": "välja",
+            "presens": "väljer",
+            "preteritum": "valde",
+            "supinum": "valt",
+            "imperativ": "välj"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Du väljer alltid rätt vin.",
+              "en": "You always choose the right wine."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon valde den blå jackan.",
+              "en": "She chose the blue jacket."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har valt en ny ordförande.",
+              "en": "We have chosen a new chairperson."
+            }
+          ],
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "sälja",
+          "english": "sell",
+          "forms": {
+            "infinitiv": "sälja",
+            "presens": "säljer",
+            "preteritum": "sålde",
+            "supinum": "sålt",
+            "imperativ": "sälj"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "De säljer jordgubbar vid vägen.",
+              "en": "They sell strawberries by the road."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han sålde sin gamla cykel.",
+              "en": "He sold his old bicycle."
+            },
+            {
+              "form": "supine",
+              "sv": "Vi har sålt huset.",
+              "en": "We have sold the house."
+            }
+          ],
+          "englishCognate": "sell",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "sätta",
+          "english": "set, put",
+          "forms": {
+            "infinitiv": "sätta",
+            "presens": "sätter",
+            "preteritum": "satte",
+            "supinum": "satt",
+            "imperativ": "sätt"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag sätter blommorna i vatten.",
+              "en": "I put the flowers in water."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hon satte barnet i stolen.",
+              "en": "She put the child in the chair."
+            },
+            {
+              "form": "supine",
+              "sv": "De har satt upp en skylt.",
+              "en": "They have put up a sign."
+            }
+          ],
+          "englishCognate": "set",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "dö",
+          "english": "die",
+          "forms": {
+            "infinitiv": "dö",
+            "presens": "dör",
+            "preteritum": "dog",
+            "supinum": "dött",
+            "imperativ": "dö"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Träden dör av torkan.",
+              "en": "The trees are dying from the drought."
+            },
+            {
+              "form": "preterite",
+              "sv": "Min farfar dog för tio år sedan.",
+              "en": "My grandfather died ten years ago."
+            },
+            {
+              "form": "supine",
+              "sv": "Elden har dött ut.",
+              "en": "The fire has died out."
+            }
+          ],
+          "englishCognate": "die",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "heta",
+          "english": "be called",
+          "forms": {
+            "infinitiv": "heta",
+            "presens": "heter",
+            "preteritum": "hette",
+            "supinum": "hetat",
+            "imperativ": "—",
+            "imperativNote": "no imperative in practice"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Jag heter Andy.",
+              "en": "My name is Andy."
+            },
+            {
+              "form": "preterite",
+              "sv": "Hunden hette Bella.",
+              "en": "The dog was called Bella."
+            },
+            {
+              "form": "supine",
+              "sv": "Gatan har hetat så sedan 1800-talet.",
+              "en": "The street has been called that since the 19th century."
+            }
+          ],
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        },
+        {
+          "infinitive": "ligga",
+          "english": "lie",
+          "forms": {
+            "infinitiv": "ligga",
+            "presens": "ligger",
+            "preteritum": "låg",
+            "supinum": "legat",
+            "imperativ": "ligg"
+          },
+          "textbookGroup": "irregular",
+          "type": "weak",
+          "examples": [
+            {
+              "form": "present",
+              "sv": "Boken ligger på bordet.",
+              "en": "The book is lying on the table."
+            },
+            {
+              "form": "preterite",
+              "sv": "Han låg i sängen hela dagen.",
+              "en": "He lay in bed all day."
+            },
+            {
+              "form": "supine",
+              "sv": "Nyckeln har legat i fickan.",
+              "en": "The key has been in the pocket."
+            }
+          ],
+          "englishCognate": "lie",
+          "_cluster": "The wildcards",
+          "_cid": "wildcards"
+        }
+      ]
+    }
+  ]
+}
