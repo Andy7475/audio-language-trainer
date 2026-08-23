@@ -53,7 +53,6 @@ def refine_translation(
     target_language_name: str,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 1000,
-    temperature: float = 0.2,
 ) -> str:
     """Refine a translation using Claude API.
 
@@ -63,7 +62,7 @@ def refine_translation(
         target_language_name: Display name of target language (e.g., "French")
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
-        temperature: Temperature for generation
+
 
     Returns:
         str: The refined translation text
@@ -93,7 +92,6 @@ def refine_translation(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
             tools=[TOOL_SCHEMA],
             tool_choice={
                 "type": "tool",
@@ -119,7 +117,6 @@ def refine_translations_batch(
     target_language_name: str,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
-    temperature: float = 0.2,
 ) -> list[str]:
     """Refine a batch of translations in a single Claude API call.
 
@@ -131,7 +128,7 @@ def refine_translations_batch(
         target_language_name: Display name of the translation's language (e.g., "French")
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
-        temperature: Temperature for generation
+
 
     Returns:
         List[str]: Refined translations, same length and order as `pairs`. Falls back to
@@ -168,7 +165,6 @@ def refine_translations_batch(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
             tools=[BATCH_TOOL_SCHEMA],
             tool_choice={
                 "type": "tool",

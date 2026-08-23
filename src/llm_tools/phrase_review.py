@@ -42,7 +42,6 @@ def review_phrases(
     language: Language | str | None = None,
     model: str = PREMIUM_MODEL,
     max_tokens: int = 4000,
-    temperature: float = 0.2,
 ) -> list[str]:
     """Review a batch of generated phrases for grammatical correctness and register.
 
@@ -55,7 +54,6 @@ def review_phrases(
         language: Target language of the phrases (default: en-GB)
         model: Anthropic model to use (default: PREMIUM_MODEL for higher-quality review)
         max_tokens: Maximum tokens for response
-        temperature: Temperature for generation
 
     Returns:
         List[str]: Reviewed phrases, same length and order as input. Falls back to the
@@ -69,7 +67,9 @@ def review_phrases(
 
     try:
         lang = get_language(language)
-        language_name = Language.get(lang.language or "en").display_name() if lang else "English"
+        language_name = (
+            Language.get(lang.language or "en").display_name() if lang else "English"
+        )
 
         # Load prompts from template files
         system_template = load_prompt_template("phrase_review", "system")
@@ -89,7 +89,6 @@ def review_phrases(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
             tools=[TOOL_SCHEMA],
             tool_choice={
                 "type": "tool",

@@ -55,7 +55,7 @@ def _build_story_schema() -> Dict[str, Any]:
         "part_2": part_schema(),
         "part_3": part_schema(),
     }
-    required = ["story_name", "part_1", "part_2", "part_3"]
+    required = ["story_name", "summary", "part_1", "part_2", "part_3"]
 
     return {
         "name": "generate_story",
@@ -92,7 +92,6 @@ def generate_story(
     phrase_list: List["Phrase"],
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
-    temperature: float = 0.4,
     num_phrases: int = 5,
     learner_level: str = "beginner",
     story_length: str = "30 seconds",
@@ -105,7 +104,6 @@ def generate_story(
         phrase_list: List of phrases to include in the story
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
-        temperature: Generation temperature
 
     Returns:
         Tuple of (story_name, story_dialogue)
@@ -154,7 +152,6 @@ def generate_story(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
             tools=[story_schema],
             tool_choice={"type": "tool", "name": "generate_story"},
         )

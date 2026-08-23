@@ -8,10 +8,7 @@ from llm_tools.base import (
 
 
 def generate_phrase_image_prompt(
-    phrase: str,
-    model: str = DEFAULT_MODEL,
-    max_tokens: int = 500,
-    temperature: float = 0.4,
+    phrase: str, model: str = DEFAULT_MODEL, max_tokens: int = 500
 ) -> str:
     """Generate an image prompt for a language learning phrase.
 
@@ -19,7 +16,7 @@ def generate_phrase_image_prompt(
         phrase: The English phrase to create an image prompt for
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
-        temperature: Temperature for generation
+
 
     Returns:
         str: A detailed image generation prompt
@@ -43,7 +40,6 @@ def generate_phrase_image_prompt(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
         )
 
         # Extract text from response

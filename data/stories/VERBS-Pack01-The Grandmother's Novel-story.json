@@ -1,0 +1,94 @@
+{
+  "part_1": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "My grandmother wrote a novel when she was young. She never showed it to anyone."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Really? What is it about?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "It's about a cat who saves a village. She says it really happened when she was a child."
+      },
+      {
+        "speaker": "Sam",
+        "text": "A cat saving a village? That sounds like a miracle."
+      },
+      {
+        "speaker": "Alex",
+        "text": "I have lived here all my life, and I never heard this story until last Saturday, when she finally told me."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Where did she keep it?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "On a shelf in the kitchen, behind some old clothes and curtains."
+      }
+    ]
+  },
+  "part_2": {
+    "dialogue": [
+      {
+        "speaker": "Sam",
+        "text": "I'm sorry, but I don't believe it. Cats don't save villages."
+      },
+      {
+        "speaker": "Alex",
+        "text": "She believed the story, though. My grandfather told it to her every summer."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Maybe he just wanted to feel special. Such things happen every day; people change stories."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Maybe. But she signed the last page with 'This is true.'"
+      },
+      {
+        "speaker": "Sam",
+        "text": "That's strange. Did anything else happen in the story?"
+      },
+      {
+        "speaker": "Alex",
+        "text": "Yes! The cat bit a snake before it could reach the children playing near the beach."
+      },
+      {
+        "speaker": "Sam",
+        "text": "A snake? Now I really don't believe it."
+      }
+    ]
+  },
+  "part_3": {
+    "dialogue": [
+      {
+        "speaker": "Alex",
+        "text": "Wait, look outside! There's a cat sitting by the door, and it looks just like the one in the novel."
+      },
+      {
+        "speaker": "Sam",
+        "text": "That can't be the same cat. It's just a normal cat."
+      },
+      {
+        "speaker": "Alex",
+        "text": "Maybe, but it just bit a snake right by the door, the same as in the story."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Okay, okay. I believe you now. This is a good story, and I feel warm just hearing it."
+      },
+      {
+        "speaker": "Alex",
+        "text": "See? Some things you just have to believe, even without proof."
+      },
+      {
+        "speaker": "Sam",
+        "text": "Well, tomorrow I will read the whole novel myself, from morning until midday if I have to!"
+      }
+    ]
+  }
+}

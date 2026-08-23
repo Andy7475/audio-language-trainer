@@ -47,7 +47,6 @@ def generate_vocab_phrases(
     context_words: list[str] | None = None,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 2000,
-    temperature: float = 0.2,
     language: Language | str | None = None,
 ) -> dict[str, Any]:
     """Generate descriptive phrases for multiple vocabulary words (no verbs).
@@ -60,7 +59,6 @@ def generate_vocab_phrases(
         context_words: Optional list of nearby vocabulary words that can be used in phrases
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
-        temperature: Temperature for generation
         language: Target language for phrase generation (default: en-GB)
 
     Returns:
@@ -112,7 +110,6 @@ def generate_vocab_phrases(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
             tools=[TOOL_SCHEMA],
             tool_choice={
                 "type": "tool",

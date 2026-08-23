@@ -13,7 +13,6 @@ def generate_story_image_prompt(
     story_part: Union[Dict, List[Dict]],
     model: str = DEFAULT_MODEL,
     max_tokens: int = 500,
-    temperature: float = 0.7,
 ) -> str:
     """Generate an image prompt from a story part containing dialogue.
 
@@ -22,7 +21,6 @@ def generate_story_image_prompt(
             Each dialogue entry should be a list of speaker/text pairs.
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
-        temperature: Temperature for generation
 
     Returns:
         str: A detailed image generation prompt for the scene
@@ -59,7 +57,6 @@ def generate_story_image_prompt(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
         )
 
         # Extract text from response

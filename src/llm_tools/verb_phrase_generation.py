@@ -59,7 +59,6 @@ def generate_verb_phrases(
     verb: str,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 1500,
-    temperature: float = 0.2,
     language: Language | str | None = None,
 ) -> dict[str, Any]:
     """Generate phrases featuring a specific verb in different tenses and meanings.
@@ -72,7 +71,6 @@ def generate_verb_phrases(
         verb: The verb to generate phrases for
         model: Anthropic model to use
         max_tokens: Maximum tokens for response
-        temperature: Temperature for generation
         language: Target language for phrase generation (default: en-GB)
 
     Returns:
@@ -121,7 +119,6 @@ def generate_verb_phrases(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
             tools=[TOOL_SCHEMA],
             tool_choice={
                 "type": "tool",

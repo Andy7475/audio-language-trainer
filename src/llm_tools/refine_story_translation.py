@@ -48,7 +48,6 @@ def refine_story_translation(
     language: BCP47Language,
     model: str = DEFAULT_MODEL,
     max_tokens: int = 4000,
-    temperature: float = 0.2,
 ) -> Dict[str, List[dict[str, str]]]:
     """Review and improve story dialogue translations using Claude API.
 
@@ -57,7 +56,7 @@ def refine_story_translation(
         language: Target language as a BCP47Language object.
         model: Anthropic model to use.
         max_tokens: Maximum tokens for response.
-        temperature: Temperature for generation.
+
 
     Returns:
         Modified dictionary with improved translations.
@@ -86,7 +85,6 @@ def refine_story_translation(
             system=system_prompt,
             messages=[{"role": "user", "content": user_prompt}],
             max_tokens=max_tokens,
-            temperature=temperature,
             tools=[TOOL_SCHEMA],
             tool_choice={
                 "type": "tool",
