@@ -34,7 +34,9 @@ def main() -> None:
 
     ok = True
 
-    account = run(["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"])
+    account = run(
+        ["gcloud", "auth", "list", "--filter=status:ACTIVE", "--format=value(account)"]
+    )
     if account:
         print(f"(y) Active gcloud account: {account}")
     else:

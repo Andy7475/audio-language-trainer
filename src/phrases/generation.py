@@ -48,19 +48,31 @@ def generate_phrases_from_vocab_dict(
 
     language = get_language(language)
 
-    logger.info(f"Starting verb phrase generation. {len(vocab_dict['verbs'])} verbs to process.")
-    all_phrases = _generate_verb_phrases_batch(vocab_dict["verbs"], language=language, model=model)
+    logger.info(
+        f"Starting verb phrase generation. {len(vocab_dict['verbs'])} verbs to process."
+    )
+    all_phrases = _generate_verb_phrases_batch(
+        vocab_dict["verbs"], language=language, model=model
+    )
 
     vocab_present_in_verb_phrases = get_vocab_from_phrases(all_phrases)
-    remaining_vocab = _remove_words_from_list(vocab_dict["vocab"], vocab_present_in_verb_phrases)
+    remaining_vocab = _remove_words_from_list(
+        vocab_dict["vocab"], vocab_present_in_verb_phrases
+    )
 
-    logger.info(f"Starting vocab phrase generation. {len(remaining_vocab)} vocab words to process.")
-    vocab_phrases = _generate_vocab_phrases_batch(remaining_vocab, language=language, model=model)
+    logger.info(
+        f"Starting vocab phrase generation. {len(remaining_vocab)} vocab words to process."
+    )
+    vocab_phrases = _generate_vocab_phrases_batch(
+        remaining_vocab, language=language, model=model
+    )
     all_phrases.extend(vocab_phrases)
 
     if review:
         logger.info(f"Reviewing {len(all_phrases)} generated phrases for correctness.")
-        all_phrases = _review_phrases_batch(all_phrases, language=language, model=review_model)
+        all_phrases = _review_phrases_batch(
+            all_phrases, language=language, model=review_model
+        )
 
     return all_phrases
 
@@ -75,7 +87,9 @@ def _generate_verb_phrases_batch(
 
     for i, verb in enumerate(verb_list, 1):
         try:
-            logger.info(f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'")
+            logger.info(
+                f"  [{i}/{len(verb_list)}] Generating phrases for verb: '{verb}'"
+            )
             result = generate_verb_phrases(verb, language=language, model=model)
             for base_phrase in result.get("base_phrases", []):
                 phrases.append(base_phrase["phrase"])
@@ -87,7 +101,9 @@ def _generate_verb_phrases_batch(
     return phrases
 
 
-def _remove_words_from_list(word_list: List[str], words_to_remove: List[str]) -> List[str]:
+def _remove_words_from_list(
+    word_list: List[str], words_to_remove: List[str]
+) -> List[str]:
     return [word for word in word_list if word not in words_to_remove]
 
 
@@ -106,7 +122,9 @@ def _review_phrases_batch(
             logger.info(
                 f"  [{i + 1}-{i + len(batch)}/{len(phrases)}] Reviewing phrases"
             )
-            reviewed_phrases.extend(review_phrases(batch, language=language, model=model))
+            reviewed_phrases.extend(
+                review_phrases(batch, language=language, model=model)
+            )
         except Exception as e:
             logger.error(f"  Error reviewing phrase batch: {e}")
             reviewed_phrases.extend(batch)  # fall back to the unreviewed originals
@@ -143,11 +161,11 @@ def _generate_vocab_phrases_batch(
                 phrases.append(result_data["phrase"])
 
             additional_words = result.get("all_additional_words", [])
-            remaining_words = remaining_words[len(batch_words):]
+            remaining_words = remaining_words[len(batch_words) :]
             remaining_words = _remove_words_from_list(remaining_words, additional_words)
 
         except Exception as e:
             logger.error(f"  Error generating phrases for batch: {e}")
-            remaining_words = remaining_words[len(batch_words):]
+            remaining_words = remaining_words[len(batch_words) :]
 
     return phrases

@@ -29,7 +29,7 @@ dependencies = [
     "pandas>=2.3.3",
     "plotly>=6.3.1",
     "pre-commit>=4.5.0",
-    "proto-plus==1.24.0.dev1",
+    "protobuf>=6.31.1",
     "pycountry>=24.6.1",
     "pydantic>=2.12.3",
     "pydub>=0.25.1",
@@ -40,7 +40,20 @@ dependencies = [
     "soundfile>=0.13.1",
     "spacy>=3.8.7",
     "tqdm>=4.67.1",
+    "pysrt"
 ]
 
 [tool.pyright]
 extraPaths = [".", "./src", "./src", "src"]
+
+[tool.ruff]
+# Notebooks are exploratory: cells share one namespace and are run out of
+# order, so whole-file lint rules (F405 undefined/star-import names, F811
+# redefinition) fire constantly on correct code. nbstripout still runs on
+# them via pre-commit to clear outputs.
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint.per-file-ignores]
+# jupytext "# %%" cell scripts: each cell imports what it needs, so imports
+# legitimately appear below top-level code.
+"scripts/*.py" = ["E402"]

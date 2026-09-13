@@ -1,4 +1,5 @@
 """pytest configuration: add src/ to sys.path so tests can import project modules."""
+
 import sys
 from pathlib import Path
 

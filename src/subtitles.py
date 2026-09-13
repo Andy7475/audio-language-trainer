@@ -1,7 +1,6 @@
 import pysrt
 import re
 from typing import List, Optional
-from nlp import get_text_tokens
 import string
 from wiktionary.lookup import get_wiktionary_urls, CONTENT_WORD_POS
 

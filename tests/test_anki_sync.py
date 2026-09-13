@@ -263,7 +263,9 @@ def test_find_existing_note_returns_none_when_absent(anki_collection, sample_phr
 # ---------------------------------------------------------------------------
 
 
-def test_sync_creates_missing_note_and_sets_tags(anki_collection, sample_phrase, no_gcs):
+def test_sync_creates_missing_note_and_sets_tags(
+    anki_collection, sample_phrase, no_gcs
+):
     report = sync_phrases_to_anki(
         anki_collection, [sample_phrase], "en-GB", "fr-FR", dry_run=False
     )

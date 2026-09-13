@@ -380,9 +380,7 @@ def sync_phrases_to_anki(
 
                 if target_tag in phrase.translations:
                     note = col.get_note(found.note_id)
-                    changed = sync_note_tags(
-                        note, phrase.translations[target_tag].tags
-                    )
+                    changed = sync_note_tags(note, phrase.translations[target_tag].tags)
                     if changed:
                         result.tags_changed = True
                         if not dry_run:

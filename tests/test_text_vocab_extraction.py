@@ -28,9 +28,7 @@ class TestPassesWiktionaryCheck:
         # has no noun/adj/adv Wiktionary entry. The surface token "bränder"
         # itself does have a noun entry, so it should rescue the check.
         assert _passes_wiktionary_check("bränd", "vocab", "sv") is False
-        assert (
-            _passes_wiktionary_check("bränd", "vocab", "sv", token="bränder") is True
-        )
+        assert _passes_wiktionary_check("bränd", "vocab", "sv", token="bränder") is True
 
     def test_token_fallback_does_not_rescue_real_disfluencies(self):
         # A genuine non-word shouldn't pass just because a "token" happens to
@@ -128,7 +126,9 @@ class TestMislemmatizedTokenFallback:
         )
         assert "bränder" not in ignored
         assert "bränderna" not in ignored
-        assert "bränd" in vocab_dict["vocab"]  # still the (wrong) lemma as coverage target
+        assert (
+            "bränd" in vocab_dict["vocab"]
+        )  # still the (wrong) lemma as coverage target
 
 
 class TestExtractLemmasAndPosRegression:

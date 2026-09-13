@@ -55,7 +55,10 @@ def get_wiktionary_urls(
         pos: Exact part of speech to match (e.g. 'verb'). Takes priority over pos_list.
         pos_list: Accept any of these pos values (e.g. ['verb', 'noun', 'adj']).
     """
-    return [_find_wiktionary_url_from_token(word, lang_code, pos, pos_list) for word in words]
+    return [
+        _find_wiktionary_url_from_token(word, lang_code, pos, pos_list)
+        for word in words
+    ]
 
 
 def _find_wiktionary_url_from_token(

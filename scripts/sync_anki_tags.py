@@ -26,7 +26,9 @@ def sync_tag(
     col = get_anki_collection()
     try:
         if not dry_run:
-            backup_folder = str(Path(os.environ["ANKI_COLLECTION_PATH"]).parent / "backups")
+            backup_folder = str(
+                Path(os.environ["ANKI_COLLECTION_PATH"]).parent / "backups"
+            )
             os.makedirs(backup_folder, exist_ok=True)
             col.create_backup(
                 backup_folder=backup_folder, force=True, wait_for_completion=True

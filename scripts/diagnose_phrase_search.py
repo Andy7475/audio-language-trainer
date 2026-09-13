@@ -4,6 +4,7 @@ Usage:
     cd "y:\\Python Scripts\\audio-language-trainer"
     python scripts/diagnose_phrase_search.py
 """
+
 import sys
 import os
 
@@ -80,7 +81,9 @@ def _trace_greedy(phrases, target_verbs, target_vocab, language_tag, label):
 
 def find_candidate_phrases(phrases, target_verbs, target_vocab, language_tag):
     """Show which phrases contain any of the target words."""
-    print(f"\n--- Candidate phrases containing any of {target_verbs | target_vocab} ---")
+    print(
+        f"\n--- Candidate phrases containing any of {target_verbs | target_vocab} ---"
+    )
     candidates = []
     for p in phrases:
         t = p.translations[language_tag]
@@ -104,9 +107,7 @@ def find_multi_verb_phrases(phrases, language_tag, min_verbs=2, limit=10):
     """Find phrases with multiple verbs — good for test fixture generation."""
     print(f"\n--- Phrases with {min_verbs}+ verbs in {language_tag} (top {limit}) ---")
     results = [
-        p
-        for p in phrases
-        if len(p.translations[language_tag].verbs or []) >= min_verbs
+        p for p in phrases if len(p.translations[language_tag].verbs or []) >= min_verbs
     ]
     for p in results[:limit]:
         t = p.translations[language_tag]
@@ -133,7 +134,9 @@ def main():
     _trace_greedy(phrases, target_verbs, target_vocab, LANGUAGE_TAG, "BUGGY (current)")
 
     # 3. Trace fixed algorithm
-    _trace_greedy(phrases, target_verbs, target_vocab, LANGUAGE_TAG, "FIXED (lowercase removals)")
+    _trace_greedy(
+        phrases, target_verbs, target_vocab, LANGUAGE_TAG, "FIXED (lowercase removals)"
+    )
 
     # 4. Output multi-verb phrases for test fixture generation
     find_multi_verb_phrases(phrases, LANGUAGE_TAG)
